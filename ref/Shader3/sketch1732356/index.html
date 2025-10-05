@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Shader Park</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+		<script src="https://openprocessing.org/openprocessing_sketch.js"></script>
+
+<!-- 	 	Include to take screenshot with webGL2 -->
+<!-- 		<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/addons/p5.sound.min.js"></script>
+		<script src="screenShot.js"></script> -->
+    <link rel="stylesheet" href="./style.css">
+  </head>  
+  <body>
+    <canvas class="my-canvas"></canvas>		
+    <script type="module">
+      import {sculptToMinimalRenderer} from 'https://unpkg.com/shader-park-core/dist/shader-park-core.esm.js';
+      import {spCode} from './spCode.js';
+      let canvas = document.querySelector('.my-canvas');
+			
+			      let state = {
+        buttonHover: 0.0,
+        currButtonHover: 0.0,
+        click: 0.0,
+        currClick: 0.0
+      };
+      let test = 5;
+      
+      canvas.addEventListener('mouseover', () => state.buttonHover = 5, false);
+      canvas.addEventListener('mouseout', () => state.buttonHover = 0.0, false);
+      canvas.addEventListener('mousedown', () => state.click = 1.0, false);
+      canvas.addEventListener('mouseup', () => state.click = 0.0, false);
+      
+      // This converts your Shader Park code into a shader and renders it to the my-canvas element
+      sculptToMinimalRenderer(canvas, spCode, () => {
+        state.currButtonHover = state.currButtonHover*.999 + state.buttonHover*.001;
+        state.currClick = state.currClick*.92 + state.click*.08;
+        return {
+          'buttonHover' : state.currButtonHover,
+          'click' : state.currClick
+        };
+      });
+			
+      // This converts your Shader Park code into a shader and renders it to the my-canvas element
+      // sculptToMinimalRenderer(canvas, spCode, () => ({mousePress: 0}));
+    </script>
+  </body>
+</html>
