@@ -6,7 +6,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { messages } = body ?? {};
+    const { messages, model: modelFromBody, temperature: tempFromBody } = body ?? {};
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json({ error: "messages required" }, { status: 400 });
@@ -15,8 +15,8 @@ export async function POST(req: NextRequest) {
     // 构造简化的对话输入：用户与助手轮次
     const prompt = messages.map((m: any) => `${m.role || "user"}: ${m.content || ""}`).join("\n");
 
-    const model = process.env.ANICCA_DEFAULT_MODEL || "gpt-4o-mini";
-    const temperature = 0.7;
+    const model = modelFromBody || process.env.ANICCA_DEFAULT_MODEL || "gpt-4o-mini";
+    const temperature = typeof tempFromBody === 'number' ? tempFromBody : 0.7;
 
     const res = await openai.responses.create({
       model,
