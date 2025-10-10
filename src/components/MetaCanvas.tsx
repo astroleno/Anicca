@@ -108,7 +108,7 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
         #define USE_TETRA_NORMAL
 
         // ============== Phase 6: 调试开关（便于回滚对比） ==============
-        #define USE_SDF_METHOD 0        // 0=体积渲染(Phase 5), 1=SDF表面(Phase 6)
+        #define USE_SDF_METHOD 1        // 0=体积渲染(Phase 5), 1=SDF表面(Phase 6) ← 已启用！
         #define SMOOTH_UNION_TYPE 0     // 0=多项式soft-min, 1=指数soft-min
         #define NOISE_SPACE 0           // 0=view-space, 1=screen-space
         #define DEBUG_PERF 0            // 1=输出性能统计（步数/miss率）
