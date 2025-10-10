@@ -253,10 +253,11 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
           float d = 1e10;  // 初始化为很大的距离
 
           // ⚠️ 使用固定上限避免动态循环比较（WebGL 兼容性）
-          for (int i = 0; i < MAX_SOURCES; ++i) {
+          // ⚠️ 使用 j 而非 i 避免与外层循环变量名冲突
+          for (int j = 0; j < MAX_SOURCES; ++j) {
             // 使用条件判断而非 break（避免某些 WebGL 实现的限制）
-            if (i < u_source_count) {
-              float di = sdSphere(p, u_source_pos[i], u_source_rad[i]);
+            if (j < u_source_count) {
+              float di = sdSphere(p, u_source_pos[j], u_source_rad[j]);
               // 平滑融合（k 参数控制融合范围）
               d = smin(d, di, u_blend_k);
             }
@@ -300,14 +301,15 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
         // Metaball场函数（原始版本，带threshold）
         float field(vec3 p) {
           float s = -u_threshold_t;
-          for (int i = 0; i < MAX_SOURCES; ++i) {
-            if (i < u_source_count) {
-              vec3  d  = p - u_source_pos[i];
+          // ⚠️ 使用 j 而非 i 避免与外层循环变量名冲突
+          for (int j = 0; j < MAX_SOURCES; ++j) {
+            if (j < u_source_count) {
+              vec3  d  = p - u_source_pos[j];
               float r  = length(d);
               // ⚠️ 移除 if (r <= u_r_cut) 避免非常量比较
               // 改用平滑衰减：超出裁剪距离时贡献自然趋近于零
-              float rn = r / max(u_source_rad[i], 1e-6);
-              float contribution = u_source_k[i] * kernelInvPow(rn, u_kernel_eps, u_kernel_pow);
+              float rn = r / max(u_source_rad[j], 1e-6);
+              float contribution = u_source_k[j] * kernelInvPow(rn, u_kernel_eps, u_kernel_pow);
               // 平滑截断因子（在 u_r_cut 附近从 1 衰减到 0）
               float cutoff = smoothstep(u_r_cut * 1.2, u_r_cut * 0.8, r);
               s += contribution * cutoff;
@@ -319,14 +321,15 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
         // 原始场强（不减threshold，用于调试）
         float fieldRaw(vec3 p) {
           float s = 0.0;
-          for (int i = 0; i < MAX_SOURCES; ++i) {
-            if (i < u_source_count) {
-              vec3  d  = p - u_source_pos[i];
+          // ⚠️ 使用 j 而非 i 避免与外层循环变量名冲突
+          for (int j = 0; j < MAX_SOURCES; ++j) {
+            if (j < u_source_count) {
+              vec3  d  = p - u_source_pos[j];
               float r  = length(d);
               // ⚠️ 移除 if (r <= u_r_cut) 避免非常量比较
               // 改用平滑衰减：超出裁剪距离时贡献自然趋近于零
-              float rn = r / max(u_source_rad[i], 1e-6);
-              float contribution = u_source_k[i] * kernelInvPow(rn, u_kernel_eps, u_kernel_pow);
+              float rn = r / max(u_source_rad[j], 1e-6);
+              float contribution = u_source_k[j] * kernelInvPow(rn, u_kernel_eps, u_kernel_pow);
               // 平滑截断因子（在 u_r_cut 附近从 1 衰减到 0）
               float cutoff = smoothstep(u_r_cut * 1.2, u_r_cut * 0.8, r);
               s += contribution * cutoff;
