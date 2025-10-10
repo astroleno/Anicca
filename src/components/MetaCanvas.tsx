@@ -466,6 +466,25 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
             vec3 albedo = u_albedo;  // 基础反射率
             vec3 col = albedo * (u_ambient + (1.0 - u_ambient) * ndotl);
 
+            // 5) 磨砂颗粒质感（关键！）
+            // ⚠️ 噪声必须绑定在视线方向（view-space），不是世界坐标
+            #if NOISE_SPACE == 0
+              // View-space 噪声（推荐，磨砂感）
+              vec3 s = rd;  // ← 视线方向（等同于 ShaderPark 的 getRayDirection()）
+            #else
+              // Screen-space 噪声（备选，颗粒更稳定但缺乏3D感）
+              vec3 s = vec3(gl_FragCoord.xy / u_resolution, 0.0);
+            #endif
+
+            float noiseVal = snoise(s * 5.0 + vec3(0, 0, u_time * 0.1));  // 时间动画
+            noiseVal = noiseVal * 0.5 + 0.5;  // 映射到 [0,1]
+
+            // 高伽马颗粒化（参考代码用 pow(n, 8)）
+            float grain = pow(noiseVal, 8.0);
+
+            // 调制表面颜色（不是 alpha！）
+            col *= mix(0.8, 1.2, grain);  // 颜色调制范围：80% - 120%
+
             gl_FragColor = vec4(col, 1.0);  // 基础光照，不透明
 
           #else
