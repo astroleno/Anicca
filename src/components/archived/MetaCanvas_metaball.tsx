@@ -17,7 +17,7 @@ import { on, off, Events } from '@/events/bus'
  */
 
 // --------------------------- ShaderPark 程序（可以直接替换/沿用） ---------------------------
-const MAX_SOURCES = 64; // Raymarching版本：支持更多球体
+const MAX_SOURCES = 12; // 上限：移动端建议 6–8，桌面 12–40
 
 export const spCode = `
 // Shader Park JS-DSL (基础Metaball演示)
@@ -70,7 +70,6 @@ type SPInputs = {
 type SPRuntime = {
   setInputs: (vars: SPInputs) => void;
   draw: () => void;
-  start?: () => void;  // 可选：启动渲染循环
   dispose: () => void;
 };
 
@@ -97,53 +96,28 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
       `;
 
       const fragmentShaderSource = `
+        precision mediump float;
         #ifdef GL_ES
         #extension GL_OES_standard_derivatives : enable
         #endif
-        precision highp float;
-
-        // ====== 配置 ======
-        #define MAX_SOURCES 64
-        #define BISECT_STEPS 5
-        #define USE_TETRA_NORMAL
-
-        // ====== Uniforms: 相机/画布 ======
-        uniform vec2  u_resolution;
+        uniform vec2 u_resolution;
         uniform float u_time;
-        uniform vec3  u_cam_pos;
-        uniform vec3  u_cam_dir;
-        uniform vec3  u_cam_right;
-        uniform vec3  u_cam_up;
-        uniform float u_fov_y;
-
-        // ====== Uniforms: 包围体AABB ======
-        uniform vec3  u_bounds_min;
-        uniform vec3  u_bounds_max;
-
-        // ====== Uniforms: 场函数/核参数 ======
-        uniform int   u_source_count;
-        uniform vec3  u_source_pos[MAX_SOURCES];
-        uniform float u_source_rad[MAX_SOURCES];
-        uniform float u_source_k[MAX_SOURCES];
-        uniform float u_threshold_t;
-        uniform float u_r_cut;
-        uniform float u_kernel_eps;
-        uniform float u_kernel_pow;
-
-        // ====== Uniforms: 步进/命中参数 ======
-        uniform float u_step_far;
-        uniform float u_step_near;
-        uniform float u_f_gate;
-        uniform float u_eps_hit;
-        uniform int   u_max_steps;
-
-        // ====== Uniforms: 光照/颜色 ======
-        uniform vec3  u_light_dir;
-        uniform vec3  u_albedo;
-        uniform float u_ambient;
-
-        // ====== Uniforms: 调试视图 ======
-        uniform int   u_debug_view;
+        // 交互参数映射：
+        // u_scale ← r (全局尺寸缩放)
+        // u_edge  ← k (阈值边缘软化宽度)
+        // u_threshold ← d (等值面阈值，越大越易粘连)
+        uniform float u_edge;
+        uniform float u_scale;
+        uniform float u_threshold;
+        // 额外：场衰减（可后续映射到 UI）
+        uniform float u_sigma;   // 衰减尺度（越小越细腰）
+        uniform float u_gain;    // 场增益（扩大可见性）
+        uniform int u_source_count;  // 源数量
+        uniform vec2 u_sources[20];  // 源位置 (最多20个)
+        uniform float u_radii[20];   // 每个源的半径（规范化，和 st 同尺度）
+        // 移除每源着色，采用背景主导配色
+        // 兼容旧版默认两圆演示所需
+        uniform float u_d;
 
         // ============== 3D Simplex Noise (移植自 webgl-noise) ==============
         vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
@@ -211,189 +185,72 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
           return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
         }
 
-        // ============== 工具函数 ==============
-
-        // AABB vs Ray 相交测试
-        float sdBox(vec3 ro, vec3 rd, vec3 bmin, vec3 bmax, out float tNear, out float tFar) {
-          vec3 invD = 1.0 / rd;
-          vec3 t0 = (bmin - ro) * invD;
-          vec3 t1 = (bmax - ro) * invD;
-          vec3 tsm = min(t0, t1);
-          vec3 tbg = max(t0, t1);
-          tNear = max(max(tsm.x, tsm.y), tsm.z);
-          tFar  = min(min(tbg.x, tbg.y), tbg.z);
-          return (tFar >= max(tNear, 0.0)) ? 1.0 : 0.0;
+        // ============== FBM (分形布朗运动) ==============
+        // ShaderPark 的 noise() 返回 [0,1]，但 snoise 返回 [-1,1]
+        // 需要重映射到 [0,1]
+        vec3 fbm(vec3 p) {
+          float offset = 0.1;
+          return vec3(
+            snoise(p) * 0.5 + 0.5,
+            snoise(p + offset) * 0.5 + 0.5,
+            snoise(p + offset * 2.0) * 0.5 + 0.5
+          );
         }
 
-        // 核函数
-        float kernelInvPow(float r, float epsk, float n) {
-          float d2 = r*r + epsk;
-          return 1.0 / pow(d2, n);
-        }
-
-        // Metaball场函数（原始版本，带threshold）
-        float field(vec3 p) {
-          float s = -u_threshold_t;
-          for (int i = 0; i < MAX_SOURCES; ++i) {
-            if (i >= u_source_count) break;
-            vec3  d  = p - u_source_pos[i];
-            float r  = length(d);
-            if (r > u_r_cut) continue;
-            float rn = r / max(u_source_rad[i], 1e-6);
-            s += u_source_k[i] * kernelInvPow(rn, u_kernel_eps, u_kernel_pow);
-          }
-          return s;
-        }
-
-        // 原始场强（不减threshold，用于调试）
-        float fieldRaw(vec3 p) {
-          float s = 0.0;
-          for (int i = 0; i < MAX_SOURCES; ++i) {
-            if (i >= u_source_count) break;
-            vec3  d  = p - u_source_pos[i];
-            float r  = length(d);
-            if (r > u_r_cut) continue;
-            float rn = r / max(u_source_rad[i], 1e-6);
-            s += u_source_k[i] * kernelInvPow(rn, u_kernel_eps, u_kernel_pow);
-          }
-          return s;
-        }
-
-        // 四面体法线
-        vec3 normalTetra(vec3 p, float e) {
-          const vec3 k1 = vec3( 1.0, -1.0, -1.0);
-          const vec3 k2 = vec3(-1.0, -1.0,  1.0);
-          const vec3 k3 = vec3(-1.0,  1.0, -1.0);
-          const vec3 k4 = vec3( 1.0,  1.0,  1.0);
-          float f1 = field(p + k1*e);
-          float f2 = field(p + k2*e);
-          float f3 = field(p + k3*e);
-          float f4 = field(p + k4*e);
-          vec3  n  = k1*f1 + k2*f2 + k3*f3 + k4*f4;
-          return normalize(n);
-        }
-
-        // 中心差分法线
-        vec3 normalCentral(vec3 p, float e) {
-          vec3 ex = vec3(e,0.0,0.0), ey = vec3(0.0,e,0.0), ez = vec3(0.0,0.0,e);
-          float fx = field(p + ex) - field(p - ex);
-          float fy = field(p + ey) - field(p - ey);
-          float fz = field(p + ez) - field(p - ez);
-          return normalize(vec3(fx, fy, fz));
-        }
-
-        // 二分精化
-        float refineBisection(vec3 ro, vec3 rd, float t0, float t1) {
-          float f0 = field(ro + rd * t0);
-          float f1 = field(ro + rd * t1);
-          if (f0 * f1 > 0.0) {
-            return (abs(f0) < abs(f1)) ? t0 : t1;
-          }
-          float a = t0, b = t1;
-          float fa = f0, fb = f1;
-          for (int i = 0; i < BISECT_STEPS; ++i) {
-            float m  = 0.5*(a + b);
-            float fm = field(ro + rd * m);
-            if (fa * fm <= 0.0) { b = m; fb = fm; }
-            else { a = m; fa = fm; }
-          }
-          return 0.5*(a + b);
-        }
-
-        // 生成世界射线
-        void makeRay(in vec2 fragCoord, out vec3 ro, out vec3 rd) {
-          ro = u_cam_pos;
-          vec2 ndc = (2.0 * fragCoord - u_resolution) / u_resolution;
-          float aspect = u_resolution.x / max(u_resolution.y, 1.0);
-          float tY = tan(0.5 * u_fov_y);
-          float tX = tY * aspect;
-          vec3 dir = normalize(u_cam_dir + ndc.x * tX * u_cam_right + ndc.y * tY * u_cam_up);
-          rd = dir;
-        }
-
-        // Lambert光照
-        vec3 lambert(vec3 n, vec3 viewDir, vec3 base) {
-          vec3 L = normalize(-u_light_dir);
-          float ndotl = max(dot(n, L), 0.0);
-          vec3  col = base * (u_ambient + (1.0 - u_ambient) * ndotl);
-          return col;
-        }
-
-        // 体积渲染参数（全局常量）
-        const float STEP = 0.08;
-        const int MAX_VOL_STEPS = 128;
-        const float OPACITY_CUTOFF = 0.95;
-        const float DITHER = 0.5;
-        const float T_GLOW = 0.05;     // 降低：更早开始软边
-        const float T_CORE = 0.40;     // 降低：核心更大
-        const float DENSITY_K = 1.5;   // 大幅降低：让整体更透明
-        const float CORE_BOOST = 1.2;  // 降低：核心不那么实
-
-        // 阈值化密度函数：三段映射
-        float densityFromField(float fRaw) {
-          if (fRaw < T_GLOW) return 0.0;
-
-          // 软边：平滑起势
-          float x = clamp((fRaw - T_GLOW) / max(T_CORE - T_GLOW, 1e-6), 0.0, 1.0);
-          float edge = pow(x, 2.5);
-
-          // 核心：陡峭+增益
-          float core = max(fRaw - T_CORE, 0.0);
-          core = CORE_BOOST * core;
-          core = pow(clamp(core, 0.0, 1.0), 2.0);
-
-          return DENSITY_K * (edge + core);
-        }
+         // bgColor函数已移除，背景完全由ShaderParkLayer负责
 
         void main() {
-          vec2 fragCoord = gl_FragCoord.xy;
+          // 统一像素空间的各向同性度量：x 轴按长宽比缩放
+          float aspect = u_resolution.x / u_resolution.y;
+          vec2 st = gl_FragCoord.xy / u_resolution.xy;
+          vec2 stAspect = st;
+          stAspect.x *= aspect;
 
-          // 1) 相机射线
-          vec3 ro, rd;
-          makeRay(fragCoord, ro, rd);
+          // 原始 uv（用于背景渐变）
+          vec2 uv = gl_FragCoord.xy / u_resolution.xy;
 
-          // 2) AABB裁剪
-          float tNear, tFar;
-          float hitBox = sdBox(ro, rd, u_bounds_min, u_bounds_max, tNear, tFar);
-          if (hitBox < 0.5) {
-            gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
-            return;
-          }
+          // ============== 1. 计算 Metaball 场 ==============
+          float field = 0.0;
 
-          // 3) 体积渲染：阈值化密度 + 前向累积
-          float rand = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
-          float t = tNear + (DITHER * rand) * STEP;
+          if (u_source_count > 0) {
+            for (int i = 0; i < 20; i++) {
+              if (i >= u_source_count) break;
 
-          vec3 accum = vec3(0.0);
-          float alpha = 0.0;
+              vec2 p = u_sources[i];
+              p.x *= aspect;
+              float ri = max(0.0001, u_radii[i]) * max(0.0001, u_scale);
+              float s = max(0.0001, u_sigma);
 
-          for (int i = 0; i < MAX_VOL_STEPS; ++i) {
-            if (t > tFar || alpha > OPACITY_CUTOFF) break;
+              float dist = distance(stAspect, p);
+              float q = dist / (ri * s);
+              float fi = exp(-q*q);
 
-            vec3 p = ro + rd * t;
-            float fRaw = fieldRaw(p);
-            float rho = densityFromField(fRaw);
-
-            if (rho > 0.0) {
-              // Beer-Lambert前向合成
-              float a = 1.0 - exp(-rho * STEP);
-
-              // 颜色：边缘淡青→中心饱和青
-              vec3 cEdge = vec3(0.88, 0.95, 0.98);
-              vec3 cCore = vec3(0.55, 0.85, 0.90);
-              float w = clamp((fRaw - T_GLOW) / max(T_CORE - T_GLOW, 1e-6), 0.0, 1.0);
-              vec3 col = mix(cEdge, cCore, pow(w, 1.5));
-
-              // 预乘合成
-              col *= a;
-              accum += (1.0 - alpha) * col;
-              alpha += (1.0 - alpha) * a;
+              field += fi;
             }
-
-            t += STEP;
           }
 
-          gl_FragColor = vec4(accum, alpha);
+          // ============== 2. Metaball 渲染（带噪波质感的弥散球） ==============
+          float fieldNorm = field * u_gain;
+
+          // 使用更柔和的边缘过渡
+          float T = clamp(u_threshold, 0.0, 5.0);
+          float edgeWidth = 2.0;
+          float a = smoothstep(T - edgeWidth, T + edgeWidth, fieldNorm);
+
+          // 添加噪波纹理，模拟ShaderPark的模糊质感
+          vec3 noiseDir = normalize(vec3((uv - 0.5) * 2.0, 1.0));
+          vec3 noiseVal = fbm(noiseDir * 3.0 + vec3(0.0, 0.0, u_time * 0.08));
+
+          // 噪波扰动：增强变化让质感更明显
+          float noiseFactor = (noiseVal.x * 0.5 + 0.5) * 0.25 + 0.75; // [0.75, 1.0]
+
+          // 基础颜色：略带灰度的白色，更接近ShaderPark渲染的质感
+          vec3 ballColor = vec3(0.96, 0.97, 0.98) * noiseFactor;
+
+          // 根据场强调整透明度，中心更实，边缘更虚
+          float alphaFinal = a * mix(0.65, 0.92, smoothstep(0.5, 3.0, fieldNorm));
+
+          gl_FragColor = vec4(ballColor, alphaFinal);
         }
       `;
 
@@ -412,8 +269,7 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
       }
 
       isInitialized = true;
-      console.log('[MetaCanvas-Raymarch] WebGL initialized successfully');
-      console.log('[MetaCanvas-Raymarch] Shader compiled OK');
+      console.log('[MetaCanvas] Simple WebGL initialized successfully');
       return true;
     } catch (err) {
       console.error('[MetaCanvas] WebGL initialization failed:', err);
@@ -466,62 +322,11 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
     }
   };
 
-  // Raymarching相机配置（固定正交相机看XY平面）
-  const cameraConfig = {
-    pos: [0, 0, 5] as [number, number, number],
-    dir: [0, 0, -1] as [number, number, number],
-    right: [1, 0, 0] as [number, number, number],
-    up: [0, 1, 0] as [number, number, number],
-    fovY: Math.PI / 4
-  };
-
-  // Raymarching参数配置（极限测试：暴力小步长）
-  const raymarchParams = {
-    thresholdT: 1.0,
-    rCut: 2.5,
-    kernelEps: 1e-3,
-    kernelPow: 2.0,
-    stepFar: 0.15,     // 极小步长
-    stepNear: 0.015,   // 极小步长
-    fGate: 0.3,
-    epsHit: 1e-3,
-    maxSteps: 256,     // 大幅增加步数
-    lightDir: [0.4, 0.7, 0.2] as [number, number, number],
-    albedo: [0.92, 0.93, 0.94] as [number, number, number],
-    ambient: 0.25,
-    debugView: 0  // 0=光照 1=场强 2=命中 3=法线
-  };
-
-  // 计算AABB包围体
-  function computeAABB(sources3D: Array<{x: number, y: number, z: number}>, radii: number[], rCut: number) {
-    const bmin = [Infinity, Infinity, Infinity];
-    const bmax = [-Infinity, -Infinity, -Infinity];
-
-    sources3D.forEach((src, i) => {
-      const r = rCut * Math.max(radii[i], 1e-6);
-      bmin[0] = Math.min(bmin[0], src.x - r);
-      bmin[1] = Math.min(bmin[1], src.y - r);
-      bmin[2] = Math.min(bmin[2], src.z - r);
-      bmax[0] = Math.max(bmax[0], src.x + r);
-      bmax[1] = Math.max(bmax[1], src.y + r);
-      bmax[2] = Math.max(bmax[2], src.z + r);
-    });
-
-    return { bmin, bmax };
-  }
-
   const render = (params: SPInputs = {}) => {
     if (!gl || !program || !isInitialized) {
       if (Math.random() < 0.001) {
         console.log('[MetaCanvas] Render skipped: gl=', !!gl, 'program=', !!program, 'init=', isInitialized);
       }
-      return;
-    }
-
-    // 如果没有sources，跳过渲染（等待初始化）
-    if (!params.sources || params.sources.length === 0) {
-      gl.clearColor(0.0, 0.0, 0.0, 0.0);
-      gl.clear(gl.COLOR_BUFFER_BIT);
       return;
     }
 
@@ -564,138 +369,72 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
     gl.enableVertexAttribArray(positionLocation);
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
-    // 转换sources从2D到3D世界坐标
-    const sources3D = (params.sources || []).map(s => {
-      // s.x和s.y是[0,1]范围，但s.y已经带了屏幕翻转
-      // 需要先反转回局部坐标，再转3D
-      const localX = (s.x - 0.5) * 2.0;      // [0,1] -> [-1,1]
-      const localY = (0.5 - s.y) * 2.0;      // [0,1] -> [-1,1]，反转屏幕翻转
-      const x = localX * 2.0;                // [-1,1] -> [-2,2]
-      const y = localY * 2.0;
-      const z = 0.0;                         // 固定在Z=0平面
-      return { x, y, z };
-    });
+    // 设置uniforms
+    const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
+    const timeLocation = gl.getUniformLocation(program, 'u_time');
+    const edgeLocation = gl.getUniformLocation(program, 'u_edge');
+    const scaleLocation = gl.getUniformLocation(program, 'u_scale');
+    const thresholdLocation = gl.getUniformLocation(program, 'u_threshold');
+    const sigmaLocation = gl.getUniformLocation(program, 'u_sigma');
+    const gainLocation = gl.getUniformLocation(program, 'u_gain');
+    const sourceCountLocation = gl.getUniformLocation(program, 'u_source_count');
+    const sourcesLocation = gl.getUniformLocation(program, 'u_sources[0]'); // WebGL 1.0 需要单独设置每个元素
+    // 半径数组（规范化）：u_radii[i]
+    const radii0 = gl.getUniformLocation(program, 'u_radii[0]');
 
-    const radii = (params as any).radii || [];
-
-    // 计算AABB包围体
-    const aabb = sources3D.length > 0
-      ? computeAABB(sources3D, radii, raymarchParams.rCut)
-      : { bmin: [-3, -3, -3], bmax: [3, 3, 3] };
-
-    // 获取所有uniform locations
-    const resolutionLoc = gl.getUniformLocation(program, 'u_resolution');
-    const timeLoc = gl.getUniformLocation(program, 'u_time');
-    const camPosLoc = gl.getUniformLocation(program, 'u_cam_pos');
-    const camDirLoc = gl.getUniformLocation(program, 'u_cam_dir');
-    const camRightLoc = gl.getUniformLocation(program, 'u_cam_right');
-    const camUpLoc = gl.getUniformLocation(program, 'u_cam_up');
-    const fovYLoc = gl.getUniformLocation(program, 'u_fov_y');
-
-    const boundsMinLoc = gl.getUniformLocation(program, 'u_bounds_min');
-    const boundsMaxLoc = gl.getUniformLocation(program, 'u_bounds_max');
-
-    const sourceCountLoc = gl.getUniformLocation(program, 'u_source_count');
-    const thresholdTLoc = gl.getUniformLocation(program, 'u_threshold_t');
-    const rCutLoc = gl.getUniformLocation(program, 'u_r_cut');
-    const kernelEpsLoc = gl.getUniformLocation(program, 'u_kernel_eps');
-    const kernelPowLoc = gl.getUniformLocation(program, 'u_kernel_pow');
-
-    const stepFarLoc = gl.getUniformLocation(program, 'u_step_far');
-    const stepNearLoc = gl.getUniformLocation(program, 'u_step_near');
-    const fGateLoc = gl.getUniformLocation(program, 'u_f_gate');
-    const epsHitLoc = gl.getUniformLocation(program, 'u_eps_hit');
-    const maxStepsLoc = gl.getUniformLocation(program, 'u_max_steps');
-
-    const lightDirLoc = gl.getUniformLocation(program, 'u_light_dir');
-    const albedoLoc = gl.getUniformLocation(program, 'u_albedo');
-    const ambientLoc = gl.getUniformLocation(program, 'u_ambient');
-
-    const debugViewLoc = gl.getUniformLocation(program, 'u_debug_view');
-
-    // 设置所有uniform值
-    if (resolutionLoc) gl.uniform2f(resolutionLoc, canvas.width, canvas.height);
-    if (timeLoc) gl.uniform1f(timeLoc, params.t ?? Date.now() * 0.001);
-
-    // 相机
-    if (camPosLoc) gl.uniform3fv(camPosLoc, cameraConfig.pos);
-    if (camDirLoc) gl.uniform3fv(camDirLoc, cameraConfig.dir);
-    if (camRightLoc) gl.uniform3fv(camRightLoc, cameraConfig.right);
-    if (camUpLoc) gl.uniform3fv(camUpLoc, cameraConfig.up);
-    if (fovYLoc) gl.uniform1f(fovYLoc, cameraConfig.fovY);
-
-    // 包围体
-    if (boundsMinLoc) gl.uniform3fv(boundsMinLoc, aabb.bmin);
-    if (boundsMaxLoc) gl.uniform3fv(boundsMaxLoc, aabb.bmax);
-
-    // 场参数
-    const sourceCount = sources3D.length;
-    if (sourceCountLoc) gl.uniform1i(sourceCountLoc, Math.min(sourceCount, MAX_SOURCES));
-    if (thresholdTLoc) gl.uniform1f(thresholdTLoc, raymarchParams.thresholdT);
-    if (rCutLoc) gl.uniform1f(rCutLoc, raymarchParams.rCut);
-    if (kernelEpsLoc) gl.uniform1f(kernelEpsLoc, raymarchParams.kernelEps);
-    if (kernelPowLoc) gl.uniform1f(kernelPowLoc, raymarchParams.kernelPow);
-
-    // 步进参数
-    if (stepFarLoc) gl.uniform1f(stepFarLoc, raymarchParams.stepFar);
-    if (stepNearLoc) gl.uniform1f(stepNearLoc, raymarchParams.stepNear);
-    if (fGateLoc) gl.uniform1f(fGateLoc, raymarchParams.fGate);
-    if (epsHitLoc) gl.uniform1f(epsHitLoc, raymarchParams.epsHit);
-    if (maxStepsLoc) gl.uniform1i(maxStepsLoc, raymarchParams.maxSteps);
-
-    // 光照
-    const lightDirNorm = raymarchParams.lightDir.map((v, _i, arr) => {
-      const len = Math.sqrt(arr.reduce((sum, x) => sum + x*x, 0));
-      return v / len;
-    });
-    if (lightDirLoc) gl.uniform3fv(lightDirLoc, lightDirNorm);
-    if (albedoLoc) gl.uniform3fv(albedoLoc, raymarchParams.albedo);
-    if (ambientLoc) gl.uniform1f(ambientLoc, raymarchParams.ambient);
-
-    // 调试
-    if (debugViewLoc) gl.uniform1i(debugViewLoc, raymarchParams.debugView);
-
-    // 设置每个源的位置、半径、权重
-    for (let i = 0; i < Math.min(sourceCount, MAX_SOURCES); i++) {
-      const posLoc = gl.getUniformLocation(program, `u_source_pos[${i}]`);
-      const radLoc = gl.getUniformLocation(program, `u_source_rad[${i}]`);
-      const kLoc = gl.getUniformLocation(program, `u_source_k[${i}]`);
-
-      if (posLoc) {
-        gl.uniform3f(posLoc, sources3D[i].x, sources3D[i].y, sources3D[i].z);
-      } else {
-        console.warn(`[MetaCanvas] posLoc[${i}] is null`);
-      }
-
-      if (radLoc) {
-        gl.uniform1f(radLoc, radii[i] || 0.5);
-      } else {
-        console.warn(`[MetaCanvas] radLoc[${i}] is null`);
-      }
-
-      if (kLoc) {
-        gl.uniform1f(kLoc, 1.0);
-      } else {
-        console.warn(`[MetaCanvas] kLoc[${i}] is null`);
-      }
+    if (resolutionLocation) {
+      gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
     }
+    if (timeLocation) {
+      gl.uniform1f(timeLocation, params.t ?? Date.now() * 0.001);
+    }
+    const actualK = params.k ?? 0.08;
+    const actualR = params.r ?? 0.55;
+    const actualD = params.d ?? 0.35;
+    const actualSigma = params.sigma ?? 0.6;
+    const actualGain = params.gain ?? 2.0;
 
-    // DEBUG: 始终输出关键参数（第一次渲染时）
-    const firstRenderKey = '__raymarch_first_render__';
-    if (!(gl as any)[firstRenderKey]) {
-      (gl as any)[firstRenderKey] = true;
-      console.log('[MetaCanvas-Raymarch] === FIRST RENDER DEBUG ===');
-      console.log('[MetaCanvas-Raymarch] sourceCount:', sourceCount);
-      console.log('[MetaCanvas-Raymarch] sources3D[0]: x=' + sources3D[0]?.x + ' y=' + sources3D[0]?.y + ' z=' + sources3D[0]?.z);
-      console.log('[MetaCanvas-Raymarch] radii[0]:', radii[0]);
-      console.log('[MetaCanvas-Raymarch] debugView:', raymarchParams.debugView);
-      console.log('[MetaCanvas-Raymarch] thresholdT:', raymarchParams.thresholdT);
-      console.log('[MetaCanvas-Raymarch] rCut:', raymarchParams.rCut);
-      console.log('[MetaCanvas-Raymarch] AABB min: [' + aabb.bmin.join(', ') + ']');
-      console.log('[MetaCanvas-Raymarch] AABB max: [' + aabb.bmax.join(', ') + ']');
-      console.log('[MetaCanvas-Raymarch] camera pos: [' + cameraConfig.pos.join(', ') + ']');
-      console.log('[MetaCanvas-Raymarch] resolution: ' + canvas.width + 'x' + canvas.height);
-      console.log('[MetaCanvas-Raymarch] ========================');
+    if (edgeLocation) gl.uniform1f(edgeLocation, actualK);           // 边缘软化宽度
+    if (scaleLocation) gl.uniform1f(scaleLocation, actualR);          // 全局尺寸缩放
+    if (thresholdLocation) gl.uniform1f(thresholdLocation, actualD);  // 等值阈值
+    if (sigmaLocation) gl.uniform1f(sigmaLocation, actualSigma);       // 衰减尺度
+    if (gainLocation) gl.uniform1f(gainLocation, actualGain);          // 场增益
+
+    // DEBUG: Log actual uniform values being sent to GPU
+    if (Math.random() < 0.001) {
+      console.log('[MetaCanvas] Uniforms sent to GPU:', { k: actualK, r: actualR, d: actualD, sigma: actualSigma, gain: actualGain });
+    }
+    if (sourceCountLocation) {
+      const sourceCount = params.sources?.length || 0;
+      gl.uniform1i(sourceCountLocation, Math.min(sourceCount, 20));
+
+      // DEBUG: 输出source信息
+      if (Math.random() < 0.005 && sourceCount > 0) {
+        console.log('[MetaCanvas] Setting sources to GPU:', {
+          count: sourceCount,
+          sources: params.sources?.slice(0, 3),
+          radii: (params as any).radii?.slice(0, 3)
+        });
+      }
+
+      // 设置每个源的位置
+      if (params.sources && sourceCount > 0) {
+        for (let i = 0; i < Math.min(sourceCount, 20); i++) {
+          const sourceLoc = gl.getUniformLocation(program, `u_sources[${i}]`);
+          if (sourceLoc && params.sources[i]) {
+            gl.uniform2f(sourceLoc, params.sources[i].x, params.sources[i].y);
+          }
+          const rLoc = gl.getUniformLocation(program, `u_radii[${i}]`);
+          if (rLoc && (params as any).radii && (params as any).radii[i] != null) {
+            gl.uniform1f(rLoc, (params as any).radii[i]);
+          }
+          const cLoc = gl.getUniformLocation(program, `u_colors[${i}]`);
+          if (cLoc && (params as any).colors && (params as any).colors[i] != null) {
+            const col = (params as any).colors[i];
+            gl.uniform3f(cLoc, col[0], col[1], col[2]);
+          }
+        }
+      }
     }
 
     // 绘制
@@ -712,27 +451,22 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
   }
 
   let currentParams: SPInputs = {};
-  let isAnimating = false;
 
+  // 开始渲染循环
   const animate = () => {
-    if (!isAnimating) return;
     render(currentParams);
     animationId = requestAnimationFrame(animate);
   };
+  animate();
 
-  const runtimeAPI = {
+  return {
     setInputs: (vars: SPInputs) => {
+      // console.log('[MetaCanvas] setInputs called with:', vars);
       currentParams = { ...currentParams, ...vars };
+      // console.log('[MetaCanvas] currentParams after update:', currentParams);
     },
     draw: () => render(currentParams),
-    start: () => {
-      if (!isAnimating) {
-        isAnimating = true;
-        animate();
-      }
-    },
     dispose: () => {
-      isAnimating = false;
       if (animationId) {
         cancelAnimationFrame(animationId);
       }
@@ -741,8 +475,6 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
       }
     }
   };
-
-  return runtimeAPI;
 }
 
 // --------------------------- 组件：MetaCanvasSplitMerge ---------------------------
@@ -918,26 +650,8 @@ export default function MetaCanvasSplitMerge() {
     };
     window.addEventListener('resize', onResize);
 
-    // 初始化参数（包含初始sources）
-    const initialWebglSources = sources.map(source => ({
-      x: 0.5 + source.pos[0] * 0.5,
-      y: 0.5 - source.pos[1] * 0.5
-    }));
-    const r0 = 0.65;
-    const alpha = 0.88;
-    const initialRadii = sources.map(s => {
-      const dpt = 0; // 初始时root节点深度为0
-      const base = r0 * Math.pow(alpha, dpt);
-      return Math.max(0.008, Math.min(0.60, base));
-    });
-    runtime.setInputs({
-      k, r, d, sigma, gain, t: time,
-      sources: initialWebglSources,
-      radii: initialRadii
-    });
-
-    // 参数设置完成后启动渲染循环
-    (runtime as any).start();
+    // 初始化参数
+    runtime.setInputs({ k, r, d, sigma, gain, t: time });
 
     return () => {
       window.removeEventListener('resize', onResize);
@@ -1062,7 +776,7 @@ export default function MetaCanvasSplitMerge() {
     const x01 = (clientX - rect.left) / rect.width;  // 0..1
     const y01 = (clientY - rect.top) / rect.height; // 0..1
     const lx = (x01 - 0.5) * 2; // -1..1
-    const ly = (0.5 - y01) * 2; // -1..1，Y轴翻转
+    const ly = (y01 - 0.5) * 2; // -1..1
     return [Math.max(-0.98, Math.min(0.98, lx)), Math.max(-0.98, Math.min(0.98, ly))];
   };
 
@@ -1075,43 +789,12 @@ export default function MetaCanvasSplitMerge() {
     if (!draggingRef.current) return;
     const id = draggingRef.current.id;
     const [lx, ly] = screenToLocal(ev.clientX, ev.clientY);
-    // 写入锚定与节点表
+    // 写入锚定与节点表，并即时刷新 sources
     anchoredPosRef.current[id] = [lx, ly];
     if (nodeMapRef.current[id]) {
       nodeMapRef.current[id].pos = [lx, ly, 0];
     }
-
-    // 立即更新sources状态
-    const newSources = Object.keys(nodeMapRef.current).map(k => ({ ...nodeMapRef.current[k] }));
-    setSources(newSources);
-
-    // 同时直接更新WebGL uniforms以获得实时响应
-    if (runtimeRef.current) {
-      const webglSources = newSources.map(source => ({
-        x: 0.5 + source.pos[0] * 0.5,
-        y: 0.5 - source.pos[1] * 0.5
-      }));
-
-      const depthMap: Record<string, number> = {};
-      const childrenOf = (id: string) => tree[id] || [];
-      const dfsDepth = (id: string, d: number) => {
-        depthMap[id] = d;
-        childrenOf(id).forEach(cid => dfsDepth(cid, d + 1));
-      };
-      dfsDepth('root', 0);
-      const r0 = 0.65;
-      const alpha = 0.88;
-      const radii = newSources.map(s => {
-        const dpt = depthMap[s.id] ?? 1;
-        const base = r0 * Math.pow(alpha, dpt);
-        return Math.max(0.008, Math.min(0.60, base));
-      });
-
-      runtimeRef.current.setInputs({
-        sources: webglSources,
-        radii
-      });
-    }
+    setSources(Object.keys(nodeMapRef.current).map(k => ({ ...nodeMapRef.current[k] })));
   };
 
   const endDrag = () => {
@@ -1249,7 +932,7 @@ export default function MetaCanvasSplitMerge() {
       >
         {sources.map((s, i) => {
           const x01 = 0.5 + s.pos[0] * 0.5; // 映射到 [0,1]
-          const y01 = 0.5 - s.pos[1] * 0.5; // Y轴翻转（屏幕坐标Y向下）
+          const y01 = 0.5 + s.pos[1] * 0.5;
           const size = 20 + i * 1; // 更小的标记，避免遮挡弥散球
           // 使用中性灰色，避免颜色干扰
           const color = i === 0 ? 'rgba(80, 80, 80, 0.95)' : 'rgba(100, 100, 100, 0.85)';

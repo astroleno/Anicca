@@ -12,7 +12,9 @@ export class OpenAIProvider implements LlmProvider {
     });
     if (!res.ok) throw new Error(`openaiProvider_http_${res.status}`);
     const data = await res.json();
-    return String(data?.reply || "");
+    // 兼容旧版 { reply } 与新版 { text, summary }
+    const text = typeof data?.text === 'string' ? data.text : (data?.reply || "");
+    return String(text || "");
   }
 }
 

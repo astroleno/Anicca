@@ -26,9 +26,27 @@ export async function runNode(providerName: string, nodeId: string, model: strin
   if (target.branchType === '正') systemPrelude = await fetchPrompt('thesis');
   if (target.branchType === '反') systemPrelude = await fetchPrompt('antithesis');
 
-  // 父系 5 轮上下文（已裁剪）
-  const built = buildParentContext(nodeId, systemPrelude);
+  // 父系 5 轮上下文（已裁剪，仅同分支摘要）
+  const built = buildParentContext(nodeId, systemPrelude, target.branchType);
   const msgs: Message[] = built.messages;
+
+  // 在 system 注入“上下文配额宣言”（表格文本），便于模型知晓上下文构成与长度上限
+  try {
+    const header = `上下文配额宣言\n- 说明：w_k = exp(-0.5*(k-1))，按权重分配 user 原文与摘要上限。\n- k 为向上第 k 轮父 user。`; // 简明说明
+    const lines: string[] = [];
+    for (let i = 0; i < built.weightsUsed.length; i++) {
+      const k = i + 1;
+      const w = built.weightsUsed[i];
+      const cap = built.lengthCaps[i];
+      lines.push(`k=${k}\tw=${w.toFixed(2)}\tuser≤${cap.userCap}\tsum≤${cap.sumCap}`);
+    }
+    const footer = `请在遵守上限前提下，优先利用最近轮的用户原文与要点摘要。`;
+    const quotaText = [header, lines.join("\n"), footer].filter(Boolean).join("\n");
+    msgs.unshift({ id: `sys_quota_${nodeId}` , role: 'system', content: quotaText, createdAt: new Date().toISOString() });
+  } catch (e) {
+    // 注入宣言失败不应阻断生成
+    console.warn('inject quota declaration failed', e);
+  }
 
   const { text } = await chatRun({
     providerName,

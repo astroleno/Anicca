@@ -1,5 +1,6 @@
 import { branchGraphStore } from "@/store/branchGraph";
 import { Message } from "@/types/chat";
+import { BranchType } from "@/types/anicca";
 
 // 计算权重：w_k = exp(-0.5*(k-1))
 function weight(k: number): number { return Math.exp(-0.5 * (k - 1)); }
@@ -24,7 +25,7 @@ export interface BuiltContext {
 }
 
 // 从目标 assistant 节点回溯父系最近 5 轮 user，拼装“用户原文+该轮正反摘要”（若有）
-export function buildParentContext(targetId: string, systemPrelude: string): BuiltContext {
+export function buildParentContext(targetId: string, systemPrelude: string, branchFilter?: BranchType): BuiltContext {
   const g = branchGraphStore.getGraph();
   const target = g.nodes[targetId];
   const msgs: Message[] = [];
@@ -53,12 +54,14 @@ export function buildParentContext(targetId: string, systemPrelude: string): Bui
       msgs.push({ id: userNode.id, role: 'user', content: userText, createdAt: userNode.createdAt });
     }
 
-    // 收集该轮的正/反摘要：从该 user 的 children 中找 branchType=正/反 的摘要
+    // 收集该轮的同分支摘要：仅从该 user 的 children 中选择 branchType 匹配的摘要
     const childSummaries: string[] = [];
     for (const childId of userNode.children) {
       const child = g.nodes[childId];
       if (child?.kind === 'assistant' && child.meta?.summary) {
-        childSummaries.push(child.meta.summary);
+        if (!branchFilter || child.branchType === branchFilter) {
+          childSummaries.push(child.meta.summary);
+        }
       }
     }
     if (childSummaries.length) {

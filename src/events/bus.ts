@@ -23,7 +23,11 @@ export const Events = {
   NodeHover: "NodeHover",
   Merge: "Merge",
   RerunStart: "RerunStart",
-  RerunEnd: "RerunEnd"
+  RerunEnd: "RerunEnd",
+  // Chat-Canvas 联动事件
+  ChatAddChildren: "ChatAddChildren", // payload: { parentId: string, children: Array<{ id: string; branch: 'thesis'|'antithesis'|'synthesis'; label?: string }> }
+  CombineSeeds: "CombineSeeds",       // payload: { fromId: string, toId: string }
+  ForkSeed: "ForkSeed"                // payload: { fromId: string, toId: string }
 } as const;
 
 
