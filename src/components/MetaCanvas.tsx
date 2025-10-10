@@ -252,13 +252,14 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
         float sdfMetaballs(vec3 p) {
           float d = 1e10;  // 初始化为很大的距离
 
+          // ⚠️ 使用固定上限避免动态循环比较（WebGL 兼容性）
           for (int i = 0; i < MAX_SOURCES; ++i) {
-            if (i >= u_source_count) break;
-
-            float di = sdSphere(p, u_source_pos[i], u_source_rad[i]);
-
-            // 平滑融合（k 参数控制融合范围）
-            d = smin(d, di, u_blend_k);
+            // 使用条件判断而非 break（避免某些 WebGL 实现的限制）
+            if (i < u_source_count) {
+              float di = sdSphere(p, u_source_pos[i], u_source_rad[i]);
+              // 平滑融合（k 参数控制融合范围）
+              d = smin(d, di, u_blend_k);
+            }
           }
 
           return d;  // 返回带符号距离
@@ -300,12 +301,14 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
         float field(vec3 p) {
           float s = -u_threshold_t;
           for (int i = 0; i < MAX_SOURCES; ++i) {
-            if (i >= u_source_count) break;
-            vec3  d  = p - u_source_pos[i];
-            float r  = length(d);
-            if (r > u_r_cut) continue;
-            float rn = r / max(u_source_rad[i], 1e-6);
-            s += u_source_k[i] * kernelInvPow(rn, u_kernel_eps, u_kernel_pow);
+            if (i < u_source_count) {
+              vec3  d  = p - u_source_pos[i];
+              float r  = length(d);
+              if (r <= u_r_cut) {
+                float rn = r / max(u_source_rad[i], 1e-6);
+                s += u_source_k[i] * kernelInvPow(rn, u_kernel_eps, u_kernel_pow);
+              }
+            }
           }
           return s;
         }
@@ -314,12 +317,14 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
         float fieldRaw(vec3 p) {
           float s = 0.0;
           for (int i = 0; i < MAX_SOURCES; ++i) {
-            if (i >= u_source_count) break;
-            vec3  d  = p - u_source_pos[i];
-            float r  = length(d);
-            if (r > u_r_cut) continue;
-            float rn = r / max(u_source_rad[i], 1e-6);
-            s += u_source_k[i] * kernelInvPow(rn, u_kernel_eps, u_kernel_pow);
+            if (i < u_source_count) {
+              vec3  d  = p - u_source_pos[i];
+              float r  = length(d);
+              if (r <= u_r_cut) {
+                float rn = r / max(u_source_rad[i], 1e-6);
+                s += u_source_k[i] * kernelInvPow(rn, u_kernel_eps, u_kernel_pow);
+              }
+            }
           }
           return s;
         }
@@ -861,6 +866,7 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
     return {
       setInputs: () => {},
       draw: () => {},
+      start: () => {},  // 添加空的 start 方法
       dispose: () => {}
     };
   }
