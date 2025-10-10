@@ -107,6 +107,18 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
         #define BISECT_STEPS 5
         #define USE_TETRA_NORMAL
 
+        // ============== Phase 6: 调试开关（便于回滚对比） ==============
+        #define USE_SDF_METHOD 0        // 0=体积渲染(Phase 5), 1=SDF表面(Phase 6)
+        #define SMOOTH_UNION_TYPE 0     // 0=多项式soft-min, 1=指数soft-min
+        #define NOISE_SPACE 0           // 0=view-space, 1=screen-space
+        #define DEBUG_PERF 0            // 1=输出性能统计（步数/miss率）
+
+        // ============== Phase 6: 常量配置 ==============
+        const float HIT_EPS = 1e-4;      // 命中判定阈值
+        const float NORMAL_EPS = 4e-4;   // 法线差分步长（2-4倍HIT_EPS）
+        const float MIN_STEP = 1e-3;     // 步进下限（防蜗牛走）
+        const float MAX_STEP = 0.5;      // 步进上限（防过步）
+
         // ====== Uniforms: 相机/画布 ======
         uniform vec2  u_resolution;
         uniform float u_time;
