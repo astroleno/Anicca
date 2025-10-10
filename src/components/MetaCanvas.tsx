@@ -264,6 +264,18 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
           return d;  // 返回带符号距离
         }
 
+        // ============== Phase 6: SDF 法线计算 ==============
+
+        // SDF 梯度法线（中心差分，epsilon 作为参数）
+        vec3 sdfNormal(vec3 p, float e) {
+          vec3 n = vec3(
+            sdfMetaballs(vec3(p.x + e, p.y, p.z)) - sdfMetaballs(vec3(p.x - e, p.y, p.z)),
+            sdfMetaballs(vec3(p.x, p.y + e, p.z)) - sdfMetaballs(vec3(p.x, p.y - e, p.z)),
+            sdfMetaballs(vec3(p.x, p.y, p.z + e)) - sdfMetaballs(vec3(p.x, p.y, p.z - e))
+          );
+          return normalize(n);
+        }
+
         // ============== 工具函数 ==============
 
         // AABB vs Ray 相交测试
@@ -444,9 +456,17 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
               return;
             }
 
-            // 4) 命中点着色（临时：洋红色调试）
+            // 4) 命中点着色：法线 + Lambert 光照
             vec3 p = ro + rd * t;
-            gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0);  // 洋红色标记命中
+            vec3 n = sdfNormal(p, NORMAL_EPS);  // 使用 NORMAL_EPS（不是 HIT_EPS！）
+
+            // Lambert 光照
+            vec3 lightDir = normalize(u_light_dir);
+            float ndotl = max(dot(n, lightDir), 0.0);
+            vec3 albedo = u_albedo;  // 基础反射率
+            vec3 col = albedo * (u_ambient + (1.0 - u_ambient) * ndotl);
+
+            gl_FragColor = vec4(col, 1.0);  // 基础光照，不透明
 
           #else
             // ============== Phase 5: Volume Rendering (原始实现) ==============
