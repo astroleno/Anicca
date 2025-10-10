@@ -137,8 +137,13 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
         uniform vec3  u_source_pos[MAX_SOURCES];
         uniform float u_source_rad[MAX_SOURCES];
         uniform float u_source_k[MAX_SOURCES];
-        uniform float u_threshold_t;
         uniform float u_r_cut;
+
+        // ====== Phase 6: SDF smooth union 参数 ======
+        uniform float u_blend_k;         // SDF smooth union的融合参数
+
+        // ====== Phase 5: 势场参数（仅在USE_SDF_METHOD=0时使用）======
+        uniform float u_threshold_t;
         uniform float u_kernel_eps;
         uniform float u_kernel_pow;
 
@@ -221,6 +226,42 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
           vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
           m = m * m;
           return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+        }
+
+        // ============== Phase 6: SDF 基元（替代势场） ==============
+
+        // 单个球体的 SDF（有符号距离场）
+        float sdSphere(vec3 p, vec3 center, float radius) {
+          return length(p - center) - radius;
+        }
+
+        // SDF 平滑最小值（产生融合效果）
+        float smin(float a, float b, float k) {
+          #if SMOOTH_UNION_TYPE == 0
+            // 多项式 soft-min（更稳定，推荐）
+            float h = max(k - abs(a - b), 0.0) / k;
+            return min(a, b) - h * h * k * 0.25;
+          #else
+            // 指数 soft-min（更平滑，但小半径时易过平）
+            float res = exp(-k * a) + exp(-k * b);
+            return -log(res) / k;
+          #endif
+        }
+
+        // 多球 SDF 场（smooth union 融合）
+        float sdfMetaballs(vec3 p) {
+          float d = 1e10;  // 初始化为很大的距离
+
+          for (int i = 0; i < MAX_SOURCES; ++i) {
+            if (i >= u_source_count) break;
+
+            float di = sdSphere(p, u_source_pos[i], u_source_rad[i]);
+
+            // 平滑融合（k 参数控制融合范围）
+            d = smin(d, di, u_blend_k);
+          }
+
+          return d;  // 返回带符号距离
         }
 
         // ============== 工具函数 ==============
@@ -489,15 +530,23 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
 
   // Raymarching参数配置（极限测试：暴力小步长）
   const raymarchParams = {
+    // Phase 6: SDF参数
+    blendK: 0.5,       // SDF smooth union融合参数（推荐0.3-0.8）
+
+    // Phase 5: 势场参数（仅在USE_SDF_METHOD=0时使用）
     thresholdT: 1.0,
     rCut: 2.5,
     kernelEps: 1e-3,
     kernelPow: 2.0,
+
+    // 通用步进参数
     stepFar: 0.15,     // 极小步长
     stepNear: 0.015,   // 极小步长
     fGate: 0.3,
     epsHit: 1e-3,
     maxSteps: 256,     // 大幅增加步数
+
+    // 光照参数
     lightDir: [0.4, 0.7, 0.2] as [number, number, number],
     albedo: [0.92, 0.93, 0.94] as [number, number, number],
     ambient: 0.25,
@@ -608,8 +657,13 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
     const boundsMaxLoc = gl.getUniformLocation(program, 'u_bounds_max');
 
     const sourceCountLoc = gl.getUniformLocation(program, 'u_source_count');
-    const thresholdTLoc = gl.getUniformLocation(program, 'u_threshold_t');
     const rCutLoc = gl.getUniformLocation(program, 'u_r_cut');
+
+    // Phase 6: SDF参数
+    const blendKLoc = gl.getUniformLocation(program, 'u_blend_k');
+
+    // Phase 5: 势场参数（仅在USE_SDF_METHOD=0时使用）
+    const thresholdTLoc = gl.getUniformLocation(program, 'u_threshold_t');
     const kernelEpsLoc = gl.getUniformLocation(program, 'u_kernel_eps');
     const kernelPowLoc = gl.getUniformLocation(program, 'u_kernel_pow');
 
@@ -643,8 +697,13 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
     // 场参数
     const sourceCount = sources3D.length;
     if (sourceCountLoc) gl.uniform1i(sourceCountLoc, Math.min(sourceCount, MAX_SOURCES));
-    if (thresholdTLoc) gl.uniform1f(thresholdTLoc, raymarchParams.thresholdT);
     if (rCutLoc) gl.uniform1f(rCutLoc, raymarchParams.rCut);
+
+    // Phase 6: SDF参数
+    if (blendKLoc) gl.uniform1f(blendKLoc, raymarchParams.blendK);
+
+    // Phase 5: 势场参数（仅在USE_SDF_METHOD=0时使用）
+    if (thresholdTLoc) gl.uniform1f(thresholdTLoc, raymarchParams.thresholdT);
     if (kernelEpsLoc) gl.uniform1f(kernelEpsLoc, raymarchParams.kernelEps);
     if (kernelPowLoc) gl.uniform1f(kernelPowLoc, raymarchParams.kernelPow);
 
