@@ -485,7 +485,12 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
             // 调制表面颜色（不是 alpha！）
             col *= mix(0.8, 1.2, grain);  // 颜色调制范围：80% - 120%
 
-            gl_FragColor = vec4(col, 1.0);  // 基础光照，不透明
+            // 6) 边缘透明度（Fresnel 效果）
+            float fresnel = pow(1.0 - abs(dot(n, -rd)), 2.0);  // Fresnel 幂次 2.0
+            float alpha = mix(0.9, 0.3, fresnel);  // 中心 90% 不透明，边缘 30%
+
+            // 最终输出（预乘 Alpha）
+            gl_FragColor = vec4(col * alpha, alpha);
 
           #else
             // ============== Phase 5: Volume Rendering (原始实现) ==============
