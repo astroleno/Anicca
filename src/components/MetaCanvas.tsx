@@ -304,10 +304,13 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
             if (i < u_source_count) {
               vec3  d  = p - u_source_pos[i];
               float r  = length(d);
-              if (r <= u_r_cut) {
-                float rn = r / max(u_source_rad[i], 1e-6);
-                s += u_source_k[i] * kernelInvPow(rn, u_kernel_eps, u_kernel_pow);
-              }
+              // ⚠️ 移除 if (r <= u_r_cut) 避免非常量比较
+              // 改用平滑衰减：超出裁剪距离时贡献自然趋近于零
+              float rn = r / max(u_source_rad[i], 1e-6);
+              float contribution = u_source_k[i] * kernelInvPow(rn, u_kernel_eps, u_kernel_pow);
+              // 平滑截断因子（在 u_r_cut 附近从 1 衰减到 0）
+              float cutoff = smoothstep(u_r_cut * 1.2, u_r_cut * 0.8, r);
+              s += contribution * cutoff;
             }
           }
           return s;
@@ -320,10 +323,13 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
             if (i < u_source_count) {
               vec3  d  = p - u_source_pos[i];
               float r  = length(d);
-              if (r <= u_r_cut) {
-                float rn = r / max(u_source_rad[i], 1e-6);
-                s += u_source_k[i] * kernelInvPow(rn, u_kernel_eps, u_kernel_pow);
-              }
+              // ⚠️ 移除 if (r <= u_r_cut) 避免非常量比较
+              // 改用平滑衰减：超出裁剪距离时贡献自然趋近于零
+              float rn = r / max(u_source_rad[i], 1e-6);
+              float contribution = u_source_k[i] * kernelInvPow(rn, u_kernel_eps, u_kernel_pow);
+              // 平滑截断因子（在 u_r_cut 附近从 1 衰减到 0）
+              float cutoff = smoothstep(u_r_cut * 1.2, u_r_cut * 0.8, r);
+              s += contribution * cutoff;
             }
           }
           return s;
