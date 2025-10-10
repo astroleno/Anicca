@@ -438,22 +438,23 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
             bool hit = false;
             float prevD = 1e10;  // 记录上一步距离（用于掠射角判定）
 
+            // ⚠️ 使用条件判断而非 break（避免某些 WebGL 实现的限制）
             for (int i = 0; i < u_max_steps; ++i) {
-              if (t > tFar) break;
+              // 仅在未命中且在边界内时执行
+              if (!hit && t <= tFar) {
+                vec3 p = ro + rd * t;
+                float d = sdfMetaballs(p);  // 使用 SDF 距离场
 
-              vec3 p = ro + rd * t;
-              float d = sdfMetaballs(p);  // 使用 SDF 距离场
-
-              // 改进的命中判定（结合距离减小趋势）
-              if (d < HIT_EPS || (d < prevD && d < HIT_EPS * 2.0)) {
-                hit = true;
-                break;
+                // 改进的命中判定（结合距离减小趋势）
+                if (d < HIT_EPS || (d < prevD && d < HIT_EPS * 2.0)) {
+                  hit = true;
+                } else {
+                  // 步进护栏（防止极端情况）
+                  float step = clamp(d, MIN_STEP, MAX_STEP);
+                  t += step;
+                  prevD = d;
+                }
               }
-
-              // 步进护栏（防止极端情况）
-              float step = clamp(d, MIN_STEP, MAX_STEP);
-              t += step;
-              prevD = d;
             }
 
             if (!hit) {
@@ -507,30 +508,32 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
             vec3 accum = vec3(0.0);
             float alpha = 0.0;
 
+            // ⚠️ 使用条件判断而非 break（避免某些 WebGL 实现的限制）
             for (int i = 0; i < MAX_VOL_STEPS; ++i) {
-              if (t > tFar || alpha > OPACITY_CUTOFF) break;
+              // 仅在边界内且未达到不透明度截止时执行
+              if (t <= tFar && alpha <= OPACITY_CUTOFF) {
+                vec3 p = ro + rd * t;
+                float fRaw = fieldRaw(p);
+                float rho = densityFromField(fRaw);
 
-              vec3 p = ro + rd * t;
-              float fRaw = fieldRaw(p);
-              float rho = densityFromField(fRaw);
+                if (rho > 0.0) {
+                  // Beer-Lambert前向合成
+                  float a = 1.0 - exp(-rho * STEP);
 
-              if (rho > 0.0) {
-                // Beer-Lambert前向合成
-                float a = 1.0 - exp(-rho * STEP);
+                  // 颜色：边缘淡青→中心饱和青
+                  vec3 cEdge = vec3(0.88, 0.95, 0.98);
+                  vec3 cCore = vec3(0.55, 0.85, 0.90);
+                  float w = clamp((fRaw - T_GLOW) / max(T_CORE - T_GLOW, 1e-6), 0.0, 1.0);
+                  vec3 col = mix(cEdge, cCore, pow(w, 1.5));
 
-                // 颜色：边缘淡青→中心饱和青
-                vec3 cEdge = vec3(0.88, 0.95, 0.98);
-                vec3 cCore = vec3(0.55, 0.85, 0.90);
-                float w = clamp((fRaw - T_GLOW) / max(T_CORE - T_GLOW, 1e-6), 0.0, 1.0);
-                vec3 col = mix(cEdge, cCore, pow(w, 1.5));
+                  // 预乘合成
+                  col *= a;
+                  accum += (1.0 - alpha) * col;
+                  alpha += (1.0 - alpha) * a;
+                }
 
-                // 预乘合成
-                col *= a;
-                accum += (1.0 - alpha) * col;
-                alpha += (1.0 - alpha) * a;
+                t += STEP;
               }
-
-              t += STEP;
             }
 
             gl_FragColor = vec4(accum, alpha);
