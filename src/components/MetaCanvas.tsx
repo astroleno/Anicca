@@ -65,6 +65,10 @@ type SPInputs = {
   // colors 已移除（改为背景主导配色）
   sigma?: number; // 衰减尺度
   gain?: number;  // 场增益（避免过暗）
+  // 麻薯质感参数
+  grainPow?: number;   // 颗粒强度（推荐 6-10）
+  wrapK?: number;      // 包裹漫反射宽度（推荐 0.5-0.7）
+  thinBoost?: number;  // 薄处提亮强度（推荐 0.3-0.8）
 };
 
 type SPRuntime = {
@@ -159,6 +163,11 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
         uniform vec3  u_light_dir;
         uniform vec3  u_albedo;
         uniform float u_ambient;
+
+        // ====== Uniforms: 麻薯质感参数 ======
+        uniform float u_grain_pow;   // 颗粒强度（推荐 6-10）
+        uniform float u_wrap_k;      // 包裹漫反射宽度（推荐 0.5-0.7）
+        uniform float u_thin_boost;  // 薄处提亮强度（推荐 0.3-0.8）
 
         // ====== Uniforms: 调试视图 ======
         uniform int   u_debug_view;
@@ -468,15 +477,31 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
               t -= dr * 0.5;  // 保守往回走一半
             }
 
-            // 5) 命中点着色：法线 + Lambert 光照
+            // 5) 命中点着色：法线 + Wrapped Diffuse 光照 + 厚度提亮
             vec3 p = ro + rd * t;
             vec3 n = sdfNormal(p, NORMAL_EPS);  // 使用 NORMAL_EPS（不是 HIT_EPS！）
 
-            // Lambert 光照
+            // Wrapped Diffuse 光照（更柔和的边缘，适合半透明材质）
             vec3 lightDir = normalize(u_light_dir);
-            float ndotl = max(dot(n, lightDir), 0.0);
+            float ndotl = (dot(n, lightDir) + u_wrap_k) / (1.0 + u_wrap_k);
+            ndotl = max(ndotl, 0.0);
+
+            // 厚度估算：沿 -n 方向采样 SDF 多次
+            float thickness = 0.0;
+            const int THICKNESS_SAMPLES = 3;
+            for (int i = 1; i <= THICKNESS_SAMPLES; i++) {
+              float offset = float(i) * 0.05;  // 采样距离 0.05, 0.10, 0.15
+              float d_sample = sdfMetaballs(p - n * offset);
+              // 如果采样点仍在内部（d < 0），说明比较厚
+              thickness += step(d_sample, 0.0);
+            }
+            thickness /= float(THICKNESS_SAMPLES);  // 归一化到 [0,1]
+
+            // 薄处提亮：薄的地方（thickness 接近 0）更亮
+            float thinGlow = (1.0 - thickness) * u_thin_boost;
+
             vec3 albedo = u_albedo;  // 基础反射率
-            vec3 col = albedo * (u_ambient + (1.0 - u_ambient) * ndotl);
+            vec3 col = albedo * (u_ambient + (1.0 - u_ambient) * ndotl + thinGlow);
 
             // 6) 磨砂颗粒质感（关键！）
             // ⚠️ 噪声必须绑定在视线方向（view-space），不是世界坐标
@@ -491,8 +516,8 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
             float noiseVal = snoise(s * 5.0 + vec3(0, 0, u_time * 0.1));  // 时间动画
             noiseVal = noiseVal * 0.5 + 0.5;  // 映射到 [0,1]
 
-            // 高伽马颗粒化（参考代码用 pow(n, 8)）
-            float grain = pow(noiseVal, 8.0);
+            // 高伽马颗粒化（可调节强度，推荐 6-10）
+            float grain = pow(noiseVal, u_grain_pow);
 
             // 调制表面颜色（不是 alpha！）
             col *= mix(0.8, 1.2, grain);  // 颜色调制范围：80% - 120%
@@ -658,7 +683,12 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
     lightDir: [0.4, 0.7, 0.2] as [number, number, number],
     albedo: [0.92, 0.93, 0.94] as [number, number, number],
     ambient: 0.25,
-    debugView: 0  // 0=光照 1=场强 2=命中 3=法线
+    debugView: 0,  // 0=光照 1=场强 2=命中 3=法线
+
+    // 麻薯质感参数
+    grainPow: 8.0,      // 颗粒强度（推荐 6-10）
+    wrapK: 0.6,         // 包裹漫反射宽度（推荐 0.5-0.7）
+    thinBoost: 0.5      // 薄处提亮强度（推荐 0.3-0.8）
   };
 
   // 计算AABB包围体
@@ -789,6 +819,11 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
     const albedoLoc = gl.getUniformLocation(program, 'u_albedo');
     const ambientLoc = gl.getUniformLocation(program, 'u_ambient');
 
+    // 麻薯质感参数
+    const grainPowLoc = gl.getUniformLocation(program, 'u_grain_pow');
+    const wrapKLoc = gl.getUniformLocation(program, 'u_wrap_k');
+    const thinBoostLoc = gl.getUniformLocation(program, 'u_thin_boost');
+
     const debugViewLoc = gl.getUniformLocation(program, 'u_debug_view');
 
     // 设置所有uniform值
@@ -834,6 +869,11 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
     if (lightDirLoc) gl.uniform3fv(lightDirLoc, lightDirNorm);
     if (albedoLoc) gl.uniform3fv(albedoLoc, raymarchParams.albedo);
     if (ambientLoc) gl.uniform1f(ambientLoc, raymarchParams.ambient);
+
+    // 麻薯质感参数（支持动态传入）
+    if (grainPowLoc) gl.uniform1f(grainPowLoc, params.grainPow ?? raymarchParams.grainPow);
+    if (wrapKLoc) gl.uniform1f(wrapKLoc, params.wrapK ?? raymarchParams.wrapK);
+    if (thinBoostLoc) gl.uniform1f(thinBoostLoc, params.thinBoost ?? raymarchParams.thinBoost);
 
     // 调试
     if (debugViewLoc) gl.uniform1i(debugViewLoc, raymarchParams.debugView);
@@ -984,6 +1024,11 @@ export default function MetaCanvasSplitMerge() {
   const [gain, setGain] = useState(1.5);   // 场放大系数（u_gain）- 提高到1.5增强可见性
   const [time, setTime] = useState(0);   // 时间
 
+  // 麻薯质感参数
+  const [grainPow, setGrainPow] = useState(8.0);     // 颗粒强度
+  const [wrapK, setWrapK] = useState(0.6);           // 包裹漫反射宽度
+  const [thinBoost, setThinBoost] = useState(0.5);   // 薄处提亮强度
+
   // 源列表：初始 1 个 root，与 nodeMapRef 同步
   const [sources, setSources] = useState<Source[]>(() => [initialRootSource]);
 
@@ -1083,10 +1128,13 @@ export default function MetaCanvasSplitMerge() {
         gain,
         t: time,
         sources: webglSources,
-        radii
+        radii,
+        grainPow,
+        wrapK,
+        thinBoost
       });
     }
-  }, [k, r, d, sigma, gain, time, sources, tree]); // 添加tree依赖
+  }, [k, r, d, sigma, gain, time, sources, tree, grainPow, wrapK, thinBoost]); // 添加麻薯质感参数依赖
 
   // 初始化渲染器
   useEffect(() => {
@@ -1640,6 +1688,53 @@ export default function MetaCanvasSplitMerge() {
             style={{ flex: 1 }}
           />
           <span style={{ width: '30px', textAlign: 'right' }}>{gain.toFixed(1)}</span>
+        </div>
+
+        {/* 麻薯质感参数 */}
+        <div style={{ borderTop: '1px solid #666', paddingTop: '8px', marginTop: '8px', marginBottom: '8px' }}>
+          <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '8px' }}>麻薯质感</div>
+
+          <div style={{ marginBottom: '8px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ width: '50px', fontSize: '11px' }}>颗粒</span>
+            <input
+              type="range"
+              min={6.0}
+              max={10.0}
+              step={0.1}
+              value={grainPow}
+              onChange={e=>setGrainPow(parseFloat(e.target.value))}
+              style={{ flex: 1 }}
+            />
+            <span style={{ width: '30px', textAlign: 'right', fontSize: '11px' }}>{grainPow.toFixed(1)}</span>
+          </div>
+
+          <div style={{ marginBottom: '8px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ width: '50px', fontSize: '11px' }}>柔光</span>
+            <input
+              type="range"
+              min={0.3}
+              max={0.9}
+              step={0.05}
+              value={wrapK}
+              onChange={e=>setWrapK(parseFloat(e.target.value))}
+              style={{ flex: 1 }}
+            />
+            <span style={{ width: '30px', textAlign: 'right', fontSize: '11px' }}>{wrapK.toFixed(2)}</span>
+          </div>
+
+          <div style={{ marginBottom: '8px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ width: '50px', fontSize: '11px' }}>薄亮</span>
+            <input
+              type="range"
+              min={0.0}
+              max={1.0}
+              step={0.05}
+              value={thinBoost}
+              onChange={e=>setThinBoost(parseFloat(e.target.value))}
+              style={{ flex: 1 }}
+            />
+            <span style={{ width: '30px', textAlign: 'right', fontSize: '11px' }}>{thinBoost.toFixed(2)}</span>
+          </div>
         </div>
 
         {/* 导入导出 */}
