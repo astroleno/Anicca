@@ -238,6 +238,16 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
           return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
         }
 
+        // ============== ACES 色调映射（电影级色彩） ==============
+        vec3 ACESFilm(vec3 x) {
+          float a = 2.51;
+          float b = 0.03;
+          float c = 2.43;
+          float d = 0.59;
+          float e = 0.14;
+          return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
+        }
+
         // ============== Phase 6: SDF 基元（替代势场） ==============
 
         // 单个球体的 SDF（有符号距离场）
@@ -470,8 +480,8 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
               return;
             }
 
-            // 4) 命中点精化（二分/割线近似，3步，成本低）
-            for (int j = 0; j < 3; ++j) {
+            // 4) 命中点精化（二分/割线近似，5步，提升边缘质量）
+            for (int j = 0; j < 5; ++j) {
               vec3 pr = ro + rd * t;
               float dr = sdfMetaballs(pr);
               t -= dr * 0.5;  // 保守往回走一半
@@ -533,6 +543,10 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
               // 将 AA 与原 alpha 合并：提升边缘覆盖度但不过度
               alpha = max(alpha, aa * alpha);
             #endif
+
+            // 9) ACES 色调映射 + Gamma 2.2 校正（电影级色彩）
+            col = ACESFilm(col);                    // ACES 色调映射
+            col = pow(col, vec3(1.0 / 2.2));        // Gamma 校正
 
             // 最终输出（非预乘 Alpha，匹配当前混合函数 SRC_ALPHA/ONE_MINUS_SRC_ALPHA）
             gl_FragColor = vec4(col, alpha);
@@ -638,10 +652,10 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
   };
 
   const updateCanvasSize = () => {
-    // 使用window尺寸确保全屏，但降低渲染分辨率至 75% 以提帧
+    // 使用window尺寸确保全屏，保持 1.0 以获得最佳边缘质量
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
-    const renderScale = 0.75;
+    const renderScale = 1.0;
     const targetWidth = Math.floor(windowWidth * renderScale);
     const targetHeight = Math.floor(windowHeight * renderScale);
 
@@ -681,8 +695,8 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
 
     // 光照参数
     lightDir: [0.4, 0.7, 0.2] as [number, number, number],
-    albedo: [0.92, 0.93, 0.94] as [number, number, number],
-    ambient: 0.25,
+    albedo: [0.95, 0.88, 0.85] as [number, number, number],  // 暖色调（桃色/肤色）
+    ambient: 0.15,  // 降低环境光，增加对比
     debugView: 0,  // 0=光照 1=场强 2=命中 3=法线
 
     // 麻薯质感参数
