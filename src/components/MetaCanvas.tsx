@@ -17,7 +17,7 @@ import { on, off, Events } from '@/events/bus'
  */
 
 // --------------------------- ShaderPark 程序（可以直接替换/沿用） ---------------------------
-const MAX_SOURCES = 64; // Raymarching版本：支持更多球体
+const MAX_SOURCES = 32; // 降低来源上限，减少每像素遍历
 
 export const spCode = `
 // Shader Park JS-DSL (基础Metaball演示)
@@ -97,7 +97,7 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
       `;
 
       const fragmentShaderSource = `
-        #ifdef GL_ES
+        #ifdef GL_OES_standard_derivatives
         #extension GL_OES_standard_derivatives : enable
         #endif
         precision highp float;
@@ -105,6 +105,7 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
         // ====== 配置 ======
         #define MAX_SOURCES 64
         #define BISECT_STEPS 5
+        #define MAX_STEPS 64
         #define USE_TETRA_NORMAL
 
         // ============== Phase 6: 调试开关（便于回滚对比） ==============
@@ -248,19 +249,16 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
           #endif
         }
 
-        // 多球 SDF 场（smooth union 融合）
+        // 多球 SDF 场（smooth union 融合） - 安全：固定上界 + 算术掩码
         float sdfMetaballs(vec3 p) {
           float d = 1e10;  // 初始化为很大的距离
 
-          // ⚠️ 使用固定上限避免动态循环比较（WebGL 兼容性）
-          // ⚠️ 使用 j 而非 i 避免与外层循环变量名冲突
           for (int j = 0; j < MAX_SOURCES; ++j) {
-            // 使用条件判断而非 break（避免某些 WebGL 实现的限制）
-            if (j < u_source_count) {
-              float di = sdSphere(p, u_source_pos[j], u_source_rad[j]);
-              // 平滑融合（k 参数控制融合范围）
-              d = smin(d, di, u_blend_k);
-            }
+            float r  = u_source_rad[j];
+            float v  = step(0.0, r - 1e-6);      // 半径>0 视为有效
+            float di = sdSphere(p, u_source_pos[j], r);
+            di = mix(1e10, di, v);               // 无效槽位屏蔽
+            d = smin(d, di, u_blend_k);          // 平滑融合
           }
 
           return d;  // 返回带符号距离
@@ -301,19 +299,15 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
         // Metaball场函数（原始版本，带threshold）
         float field(vec3 p) {
           float s = -u_threshold_t;
-          // ⚠️ 使用 j 而非 i 避免与外层循环变量名冲突
           for (int j = 0; j < MAX_SOURCES; ++j) {
-            if (j < u_source_count) {
-              vec3  d  = p - u_source_pos[j];
-              float r  = length(d);
-              // ⚠️ 移除 if (r <= u_r_cut) 避免非常量比较
-              // 改用平滑衰减：超出裁剪距离时贡献自然趋近于零
-              float rn = r / max(u_source_rad[j], 1e-6);
-              float contribution = u_source_k[j] * kernelInvPow(rn, u_kernel_eps, u_kernel_pow);
-              // 平滑截断因子（在 u_r_cut 附近从 1 衰减到 0）
-              float cutoff = smoothstep(u_r_cut * 1.2, u_r_cut * 0.8, r);
-              s += contribution * cutoff;
-            }
+            float r0 = u_source_rad[j];
+            float v  = step(0.0, r0 - 1e-6);
+            vec3  d  = p - u_source_pos[j];
+            float r  = length(d);
+            float rn = r / max(r0, 1e-6);
+            float contribution = u_source_k[j] * kernelInvPow(rn, u_kernel_eps, u_kernel_pow);
+            float cutoff = smoothstep(u_r_cut * 1.2, u_r_cut * 0.8, r);
+            s += v * contribution * cutoff;
           }
           return s;
         }
@@ -321,19 +315,15 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
         // 原始场强（不减threshold，用于调试）
         float fieldRaw(vec3 p) {
           float s = 0.0;
-          // ⚠️ 使用 j 而非 i 避免与外层循环变量名冲突
           for (int j = 0; j < MAX_SOURCES; ++j) {
-            if (j < u_source_count) {
-              vec3  d  = p - u_source_pos[j];
-              float r  = length(d);
-              // ⚠️ 移除 if (r <= u_r_cut) 避免非常量比较
-              // 改用平滑衰减：超出裁剪距离时贡献自然趋近于零
-              float rn = r / max(u_source_rad[j], 1e-6);
-              float contribution = u_source_k[j] * kernelInvPow(rn, u_kernel_eps, u_kernel_pow);
-              // 平滑截断因子（在 u_r_cut 附近从 1 衰减到 0）
-              float cutoff = smoothstep(u_r_cut * 1.2, u_r_cut * 0.8, r);
-              s += contribution * cutoff;
-            }
+            float r0 = u_source_rad[j];
+            float v  = step(0.0, r0 - 1e-6);
+            vec3  d  = p - u_source_pos[j];
+            float r  = length(d);
+            float rn = r / max(r0, 1e-6);
+            float contribution = u_source_k[j] * kernelInvPow(rn, u_kernel_eps, u_kernel_pow);
+            float cutoff = smoothstep(u_r_cut * 1.2, u_r_cut * 0.8, r);
+            s += v * contribution * cutoff;
           }
           return s;
         }
@@ -447,9 +437,9 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
             bool hit = false;
             float prevD = 1e10;  // 记录上一步距离（用于掠射角判定）
 
-            // ⚠️ 使用条件判断而非 break（避免某些 WebGL 实现的限制）
-            for (int i = 0; i < u_max_steps; ++i) {
-              // 仅在未命中且在边界内时执行
+            // ⚠️ WebGL兼容：使用条件执行替代break，避免"Loop index cannot be compared with non-constant expression"
+            for (int i = 0; i < MAX_STEPS; ++i) {
+              // 仅在未命中且未超出边界时执行
               if (!hit && t <= tFar) {
                 vec3 p = ro + rd * t;
                 float d = sdfMetaballs(p);  // 使用 SDF 距离场
@@ -471,7 +461,14 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
               return;
             }
 
-            // 4) 命中点着色：法线 + Lambert 光照
+            // 4) 命中点精化（二分/割线近似，3步，成本低）
+            for (int j = 0; j < 3; ++j) {
+              vec3 pr = ro + rd * t;
+              float dr = sdfMetaballs(pr);
+              t -= dr * 0.5;  // 保守往回走一半
+            }
+
+            // 5) 命中点着色：法线 + Lambert 光照
             vec3 p = ro + rd * t;
             vec3 n = sdfNormal(p, NORMAL_EPS);  // 使用 NORMAL_EPS（不是 HIT_EPS！）
 
@@ -481,7 +478,7 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
             vec3 albedo = u_albedo;  // 基础反射率
             vec3 col = albedo * (u_ambient + (1.0 - u_ambient) * ndotl);
 
-            // 5) 磨砂颗粒质感（关键！）
+            // 6) 磨砂颗粒质感（关键！）
             // ⚠️ 噪声必须绑定在视线方向（view-space），不是世界坐标
             #if NOISE_SPACE == 0
               // View-space 噪声（推荐，磨砂感）
@@ -500,12 +497,20 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
             // 调制表面颜色（不是 alpha！）
             col *= mix(0.8, 1.2, grain);  // 颜色调制范围：80% - 120%
 
-            // 6) 边缘透明度（Fresnel 效果）
+            // 7) 边缘透明度（Fresnel 效果）
             float fresnel = pow(1.0 - abs(dot(n, -rd)), 2.0);  // Fresnel 幂次 2.0
             float alpha = mix(0.9, 0.3, fresnel);  // 中心 90% 不透明，边缘 30%
 
-            // 最终输出（预乘 Alpha）
-            gl_FragColor = vec4(col * alpha, alpha);
+            // 8) 解析抗锯齿（基于像素脚印），设备支持才启用
+            #ifdef GL_OES_standard_derivatives
+              float dSurf = sdfMetaballs(p);
+              float aa = clamp(0.5 - dSurf / fwidth(dSurf), 0.0, 1.0);
+              // 将 AA 与原 alpha 合并：提升边缘覆盖度但不过度
+              alpha = max(alpha, aa * alpha);
+            #endif
+
+            // 最终输出（非预乘 Alpha，匹配当前混合函数 SRC_ALPHA/ONE_MINUS_SRC_ALPHA）
+            gl_FragColor = vec4(col, alpha);
 
           #else
             // ============== Phase 5: Volume Rendering (原始实现) ==============
@@ -608,14 +613,17 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
   };
 
   const updateCanvasSize = () => {
-    // 使用window尺寸确保全屏
+    // 使用window尺寸确保全屏，但降低渲染分辨率至 75% 以提帧
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
+    const renderScale = 0.75;
+    const targetWidth = Math.floor(windowWidth * renderScale);
+    const targetHeight = Math.floor(windowHeight * renderScale);
 
-    if (canvas.width !== windowWidth || canvas.height !== windowHeight) {
-      canvas.width = windowWidth;
-      canvas.height = windowHeight;
-      console.log(`[MetaCanvas] Canvas resized to ${windowWidth}x${windowHeight} (full screen)`);
+    if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      console.log(`[MetaCanvas] Canvas resized to ${targetWidth}x${targetHeight} (renderScale=${renderScale})`);
     }
   };
 
@@ -713,26 +721,30 @@ function createMinimalRendererFromString(canvas: HTMLCanvasElement, code: string
 
     gl.useProgram(program);
 
-    // 设置矩形 (全屏四边形)
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-      -1, -1,  1, -1,  -1, 1,
-      -1, 1,   1, -1,   1, 1
-    ]), gl.STATIC_DRAW);
+    // 设置矩形 (全屏四边形) - 缓存buffer避免每帧创建
+    const positionBufferKey = '__quad_buffer__';
+    let positionBuffer: WebGLBuffer | null = (gl as any)[positionBufferKey] || null;
+    if (!positionBuffer) {
+      positionBuffer = gl.createBuffer();
+      (gl as any)[positionBufferKey] = positionBuffer;
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+        -1, -1,  1, -1,  -1, 1,
+        -1, 1,   1, -1,   1, 1
+      ]), gl.STATIC_DRAW);
+    } else {
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    }
 
     const positionLocation = gl.getAttribLocation(program, 'a_position');
     gl.enableVertexAttribArray(positionLocation);
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
-    // 转换sources从2D到3D世界坐标
+    // 转换sources从屏幕坐标到3D世界坐标（与标记点坐标映射保持一致）
     const sources3D = (params.sources || []).map(s => {
-      // s.x和s.y是[0,1]范围，但s.y已经带了屏幕翻转
-      // 需要先反转回局部坐标，再转3D
-      const localX = (s.x - 0.5) * 2.0;      // [0,1] -> [-1,1]
-      const localY = (0.5 - s.y) * 2.0;      // [0,1] -> [-1,1]，反转屏幕翻转
-      const x = localX * 2.0;                // [-1,1] -> [-2,2]
-      const y = localY * 2.0;
+      // s.x 和 s.y 是 [0,1] 屏幕坐标，需要映射到 [-2,2] 世界坐标
+      const x = (s.x - 0.5) * 4.0;           // [0,1] -> [-2,2]
+      const y = (0.5 - s.y) * 4.0;           // [0,1] -> [-2,2]，Y轴翻转
       const z = 0.0;                         // 固定在Z=0平面
       return { x, y, z };
     });
@@ -1040,11 +1052,11 @@ export default function MetaCanvasSplitMerge() {
   useEffect(() => {
     // console.log('[MetaCanvas] Uniform update effect triggered:', { r, d, sigma, gain, sources: sources.length });
     if (runtimeRef.current) {
-      // 将sources转换为WebGL需要的格式
-      const webglSources = sources.map(source => ({
-        x: 0.5 + source.pos[0] * 0.5,
-        y: 0.5 - source.pos[1] * 0.5
-      }));
+      // 将sources转换为WebGL需要的格式（世界坐标 -> 屏幕坐标）
+      const webglSources = sources.map(source => {
+        const [screenX, screenY] = worldToScreen(source.pos[0], source.pos[1]);
+        return { x: screenX, y: screenY };
+      });
 
       // 计算每个节点的层级基础半径并做夹持
       const depthMap: Record<string, number> = {};
@@ -1090,11 +1102,11 @@ export default function MetaCanvasSplitMerge() {
     };
     window.addEventListener('resize', onResize);
 
-    // 初始化参数（包含初始sources）
-    const initialWebglSources = sources.map(source => ({
-      x: 0.5 + source.pos[0] * 0.5,
-      y: 0.5 - source.pos[1] * 0.5
-    }));
+    // 初始化参数（包含初始sources，世界坐标 -> 屏幕坐标）
+    const initialWebglSources = sources.map(source => {
+      const [screenX, screenY] = worldToScreen(source.pos[0], source.pos[1]);
+      return { x: screenX, y: screenY };
+    });
     const r0 = 0.65;
     const alpha = 0.88;
     const initialRadii = sources.map(s => {
@@ -1227,15 +1239,24 @@ export default function MetaCanvasSplitMerge() {
   const markersRef = useRef<HTMLDivElement | null>(null);
   const draggingRef = useRef<{ id: string } | null>(null);
 
-  const screenToLocal = (clientX: number, clientY: number): [number, number] => {
+  // 屏幕坐标 → 世界坐标（与着色器完全一致）
+  const screenToWorld = (clientX: number, clientY: number): [number, number] => {
     const el = markersRef.current;
     if (!el) return [0, 0];
     const rect = el.getBoundingClientRect();
     const x01 = (clientX - rect.left) / rect.width;  // 0..1
     const y01 = (clientY - rect.top) / rect.height; // 0..1
-    const lx = (x01 - 0.5) * 2; // -1..1
-    const ly = (0.5 - y01) * 2; // -1..1，Y轴翻转
-    return [Math.max(-0.98, Math.min(0.98, lx)), Math.max(-0.98, Math.min(0.98, ly))];
+    // 直接映射到世界坐标 [-2,2]，与着色器坐标范围一致
+    const worldX = (x01 - 0.5) * 4.0;  // [0,1] -> [-2,2]
+    const worldY = (0.5 - y01) * 4.0;  // [0,1] -> [-2,2]，Y轴翻转
+    return [Math.max(-1.98, Math.min(1.98, worldX)), Math.max(-1.98, Math.min(1.98, worldY))];
+  };
+
+  // 世界坐标 → 屏幕坐标（用于标记点显示）
+  const worldToScreen = (worldX: number, worldY: number): [number, number] => {
+    const x01 = worldX / 4.0 + 0.5;  // [-2,2] -> [0,1]
+    const y01 = 0.5 - worldY / 4.0;  // [-2,2] -> [0,1]，Y轴翻转
+    return [x01, y01];
   };
 
   const beginDrag = (id: string, ev: React.MouseEvent) => {
@@ -1246,11 +1267,11 @@ export default function MetaCanvasSplitMerge() {
   const onMouseMove = (ev: React.MouseEvent) => {
     if (!draggingRef.current) return;
     const id = draggingRef.current.id;
-    const [lx, ly] = screenToLocal(ev.clientX, ev.clientY);
-    // 写入锚定与节点表
-    anchoredPosRef.current[id] = [lx, ly];
+    const [worldX, worldY] = screenToWorld(ev.clientX, ev.clientY);
+    // 写入锚定与节点表（存储世界坐标）
+    anchoredPosRef.current[id] = [worldX, worldY];
     if (nodeMapRef.current[id]) {
-      nodeMapRef.current[id].pos = [lx, ly, 0];
+      nodeMapRef.current[id].pos = [worldX, worldY, 0];
     }
 
     // 立即更新sources状态
@@ -1259,10 +1280,11 @@ export default function MetaCanvasSplitMerge() {
 
     // 同时直接更新WebGL uniforms以获得实时响应
     if (runtimeRef.current) {
-      const webglSources = newSources.map(source => ({
-        x: 0.5 + source.pos[0] * 0.5,
-        y: 0.5 - source.pos[1] * 0.5
-      }));
+      const webglSources = newSources.map(source => {
+        // 世界坐标 -> 屏幕坐标（用于着色器输入）
+        const [screenX, screenY] = worldToScreen(source.pos[0], source.pos[1]);
+        return { x: screenX, y: screenY };
+      });
 
       const depthMap: Record<string, number> = {};
       const childrenOf = (id: string) => tree[id] || [];
@@ -1420,8 +1442,8 @@ export default function MetaCanvasSplitMerge() {
         onMouseLeave={endDrag}
       >
         {sources.map((s, i) => {
-          const x01 = 0.5 + s.pos[0] * 0.5; // 映射到 [0,1]
-          const y01 = 0.5 - s.pos[1] * 0.5; // Y轴翻转（屏幕坐标Y向下）
+          // 世界坐标 -> 屏幕坐标（用于标记点显示）
+          const [x01, y01] = worldToScreen(s.pos[0], s.pos[1]);
           const size = 20 + i * 1; // 更小的标记，避免遮挡弥散球
           // 使用中性灰色，避免颜色干扰
           const color = i === 0 ? 'rgba(80, 80, 80, 0.95)' : 'rgba(100, 100, 100, 0.85)';
@@ -1466,66 +1488,87 @@ export default function MetaCanvasSplitMerge() {
           fontFamily: 'monospace'
         }}
       >
-        <div style={{ marginBottom: '12px', fontWeight: 'bold' }}>
-          Metaball 控制面板
-        </div>
-
-        {/* 调试信息 */}
-        <div style={{ marginBottom: '12px', fontSize: '11px', color: '#aaa', padding: '8px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px', border: '1px solid #444' }}>
-          <div>Sources: {sources.length}</div>
-          <div style={{ fontSize: '10px', color: '#888', marginTop: '4px' }}>IDs: {sources.map(s => s.id).join(', ')}</div>
-          <div>WebGL: {runtimeRef.current ? '✓' : '✗'}</div>
-        </div>
-
-        {/* 操作按钮 */}
-        <div style={{ marginBottom: '12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <div style={{ fontWeight: 'bold' }}>Metaball 控制面板</div>
           <button
-            onClick={fork}
-            disabled={sources.length >= MAX_SOURCES}
+            onClick={() => {
+              const panel = document.getElementById('metaball-controls-body');
+              if (panel) {
+                const hidden = panel.style.display === 'none';
+                panel.style.display = hidden ? 'block' : 'none';
+              }
+            }}
             style={{
-              padding: '6px 12px',
-              backgroundColor: sources.length >= MAX_SOURCES ? '#666' : '#3b82f6',
+              padding: '4px 8px',
+              backgroundColor: '#444',
               color: 'white',
-              border: 'none',
+              border: '1px solid #666',
               borderRadius: '4px',
-              cursor: sources.length >= MAX_SOURCES ? 'not-allowed' : 'pointer'
+              cursor: 'pointer',
+              fontSize: '11px'
             }}
           >
-            Fork
+            折叠/展开
           </button>
-          <button
-            onClick={merge}
-            disabled={sources.length <= 1}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: sources.length <= 1 ? '#666' : '#ef4444',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: sources.length <= 1 ? 'not-allowed' : 'pointer'
-            }}
-          >
-            Merge
-          </button>
-          <div style={{ fontSize: '12px', color: '#ccc' }}>
-            源: {sources.length}/{MAX_SOURCES}
+        </div>
+
+        <div id="metaball-controls-body">
+          {/* 调试信息 */}
+          <div style={{ marginBottom: '12px', fontSize: '11px', color: '#aaa', padding: '8px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px', border: '1px solid #444' }}>
+            <div>Sources: {sources.length}</div>
+            <div style={{ fontSize: '10px', color: '#888', marginTop: '4px' }}>IDs: {sources.map(s => s.id).join(', ')}</div>
+            <div>WebGL: {runtimeRef.current ? '✓' : '✗'}</div>
           </div>
-        </div>
 
-        {/* 参数控制 */}
-        <div style={{ marginBottom: '8px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ width: '20px' }}>k</span>
-          <input
-            type="range"
-            min={0.01}
-            max={0.2}
-            step={0.01}
-            value={k}
-            onChange={e=>setK(parseFloat(e.target.value))}
-            style={{ flex: 1 }}
-          />
-          <span style={{ width: '30px', textAlign: 'right' }}>{k.toFixed(2)}</span>
-        </div>
+          {/* 操作按钮 */}
+          <div style={{ marginBottom: '12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button
+              onClick={fork}
+              disabled={sources.length >= MAX_SOURCES}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: sources.length >= MAX_SOURCES ? '#666' : '#3b82f6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: sources.length >= MAX_SOURCES ? 'not-allowed' : 'pointer'
+              }}
+            >
+              Fork
+            </button>
+            <button
+              onClick={merge}
+              disabled={sources.length <= 1}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: sources.length <= 1 ? '#666' : '#ef4444',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: sources.length <= 1 ? 'not-allowed' : 'pointer'
+              }}
+            >
+              Merge
+            </button>
+            <div style={{ fontSize: '12px', color: '#ccc' }}>
+              源: {sources.length}/{MAX_SOURCES}
+            </div>
+          </div>
+
+          {/* 参数控制 */}
+          <div style={{ marginBottom: '8px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ width: '20px' }}>k</span>
+            <input
+              type="range"
+              min={0.01}
+              max={0.2}
+              step={0.01}
+              value={k}
+              onChange={e=>setK(parseFloat(e.target.value))}
+              style={{ flex: 1 }}
+            />
+            <span style={{ width: '30px', textAlign: 'right' }}>{k.toFixed(2)}</span>
+          </div>
 
         <div style={{ marginBottom: '8px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ width: '20px' }}>r</span>
@@ -1635,6 +1678,7 @@ export default function MetaCanvasSplitMerge() {
             />
           </label>
         </div>
+      </div>
       </div>
     </div>
   )
