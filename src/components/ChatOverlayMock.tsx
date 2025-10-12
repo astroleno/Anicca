@@ -86,6 +86,14 @@ export default function ChatOverlayMock() {
   const [forkFrom, setForkFrom] = useState('');
   const [forkTo, setForkTo] = useState('');
 
+  // 组件加载状态报告
+  React.useEffect(() => {
+    console.log("ChatOverlayMock: Component mounted");
+    window.dispatchEvent(new CustomEvent('component-load', { 
+      detail: { component: 'chatOverlay', loaded: true } 
+    }));
+  }, []);
+
   const canSend = input.trim().length > 0;
 
   const scrollToBottom = () => {

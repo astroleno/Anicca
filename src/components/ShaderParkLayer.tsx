@@ -14,27 +14,26 @@ export default function ShaderParkLayer() {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      console.error("ShaderParkLayer: Canvas not found");
+      window.dispatchEvent(new CustomEvent('component-load', { 
+        detail: { component: 'shaderPark', loaded: false } 
+      }));
+      return;
+    }
+    
+    console.log("ShaderParkLayer: Initializing...");
 
-    // 只渲染纯背景噪波，完全按照ref配置
+    // 简化的背景噪波代码
     const spCode = `
-      setMaxIterations(8);
-      let offset = .1;
-      function fbm(p) {
-        return vec3(
-          noise(p),
-          noise(p+offset),
-          noise(p+offset*2),
-        )
-      }
-
+      setMaxIterations(4);
+      
       let s = getRayDirection();
-      let n = sin(fbm(s+vec3(0, 0, -time*.1))*2)*.5+.75;
-      n = pow(n, vec3(8));
-      color(n)
-
-      // 超大球体承载背景
-      sphere(100.0)
+      let n = noise(s + vec3(0, 0, -time * 0.1));
+      n = sin(n * 3.0) * 0.5 + 0.5;
+      color(vec3(n * 0.8, n * 0.9, n * 1.0))
+      
+      sphere(50.0)
     `;
 
     let disposeFunc: (() => void) | null = null;
@@ -53,15 +52,36 @@ export default function ShaderParkLayer() {
           if (!sculptFunc) {
             console.error('[ShaderParkLayer] sculptToMinimalRenderer not found!');
             console.log('[ShaderParkLayer] Available:', Object.keys(module));
+            // 发送组件加载失败事件
+            window.dispatchEvent(new CustomEvent('component-load', { 
+              detail: { component: 'shaderPark', loaded: false } 
+            }));
             return;
           }
 
           console.log('[ShaderParkLayer] Calling sculptToMinimalRenderer...');
-          disposeFunc = sculptFunc(canvas, spCode, () => ({}));
-          console.log('[ShaderParkLayer] Render SUCCESS!');
+          try {
+            disposeFunc = sculptFunc(canvas, spCode, () => ({}));
+            console.log('[ShaderParkLayer] Render SUCCESS!');
+            
+            // 发送组件加载成功事件
+            window.dispatchEvent(new CustomEvent('component-load', { 
+              detail: { component: 'shaderPark', loaded: true } 
+            }));
+          } catch (renderError) {
+            console.error('[ShaderParkLayer] Render error:', renderError);
+            // 发送组件加载失败事件
+            window.dispatchEvent(new CustomEvent('component-load', { 
+              detail: { component: 'shaderPark', loaded: false } 
+            }));
+          }
         })
         .catch((err: any) => {
           console.error('[ShaderParkLayer] Import error:', err);
+          // 发送组件加载失败事件
+          window.dispatchEvent(new CustomEvent('component-load', { 
+            detail: { component: 'shaderPark', loaded: false } 
+          }));
         });
     }, 100);
 
@@ -82,7 +102,8 @@ export default function ShaderParkLayer() {
         width: '100%',
         height: '100%',
         zIndex: 1,
-        pointerEvents: 'none'
+        pointerEvents: 'none',
+        background: '#000' // 添加黑色背景
       }}
     />
   );

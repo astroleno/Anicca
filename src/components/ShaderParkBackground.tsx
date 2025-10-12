@@ -31,22 +31,27 @@ function makeSourceFromSeed(seed: number, spread = 0.8): Source {
   };
 }
 
-// 直接从 ref 复制的 ShaderPark 代码
+// 增强的ShaderPark背景噪波代码
 const BASE_SP_CODE = `
-  setMaxIterations(8);
-  let offset = .1;
-  function fbm(p) {
-    return vec3(
-      noise(p),
-      noise(p+offset),
-      noise(p+offset*2),
-    )
-  }
-
-  let s = getRayDirection();
-  let n = sin(fbm(s+vec3(0, 0, -time*.1))*2)*.5+.75;
-  n = pow(n, vec3(8));
-  color(n)
+  setMaxIterations(12);
+  
+  // 创建多层噪波背景
+  let time = time * 0.1;
+  let p = uv * 3.0;
+  
+  // 主噪波层
+  let noise1 = noise(p + time * 0.1);
+  let noise2 = noise(p * 2.0 + time * 0.15) * 0.5;
+  let noise3 = noise(p * 4.0 + time * 0.2) * 0.25;
+  
+  // 组合噪波
+  let combined = noise1 + noise2 + noise3;
+  
+  // 创建深色背景，去除褐色和色彩分层
+  let bg = vec3(0.05, 0.05, 0.1); // 深蓝黑色背景
+  let noiseColor = vec3(0.1, 0.15, 0.2) * combined; // 深色噪波
+  
+  color(bg + noiseColor)
 `;
 
 export default function ShaderParkBackground() {
@@ -65,23 +70,21 @@ export default function ShaderParkBackground() {
 
   // 生成 ShaderPark 代码（背景 + 动态 metaballs）
   const generateShaderCode = (sources: Source[]) => {
-    const metaballs = sources.map((src, i) => {
-      const x = src.pos[0] * 0.8; // 缩放到合适范围
-      const y = src.pos[1] * 0.8;
-      const z = src.pos[2] * 0.8;
-      const r = src.radius * 0.25;
-
-      return `
-  displace(${x.toFixed(3)}, ${y.toFixed(3)}, ${z.toFixed(3)});
-  sphere(${r.toFixed(3)});
-  reset();${i < sources.length - 1 ? '\n  mixGeo(0.3);' : ''}`;
-    }).join('\n');
-
+    // 简化ShaderPark代码，专注于背景噪波，移除3D效果
     return `${BASE_SP_CODE}
 
-  // 动态 metaballs
-${metaballs}
-  blend(.4)
+  // 添加简单的ShaderPark风格元素
+  displace(0.0, 0.0, 0.0);
+  sphere(0.3);
+  blend(0.2);
+  
+  displace(0.2, 0.1, 0.0);
+  sphere(0.2);
+  blend(0.3);
+  
+  displace(-0.2, -0.1, 0.0);
+  sphere(0.25);
+  blend(0.2)
 `;
   };
 
