@@ -1,4 +1,4 @@
-var img; 
+var img;
 function preload(){
   img = loadImage('IMG_6605.JPG');
 }

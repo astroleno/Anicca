@@ -3,8 +3,8 @@ import React from 'react';
 import dynamic from 'next/dynamic';
 
 // ShaderPark 背景层 + MetaCanvas 交互层
-const ShaderParkLayer = dynamic(() => import('@/components/ShaderParkLayer'), { ssr: false });
-const MetaCanvas = dynamic(() => import('@/components/MetaCanvas'), { ssr: false });
+const ShaderParkLayer = dynamic(() => import('@/components/archived/ShaderParkLayer'), { ssr: false });
+const MetaCanvas = dynamic(() => import('@/components/archived/MetaCanvas_8'), { ssr: false });
 const ChatOverlayMock = dynamic(() => import('@/components/ChatOverlayMock'), { ssr: false });
 
 // 添加错误边界和调试信息
@@ -107,26 +107,103 @@ export default function Page(){
           <ChatOverlayMock />
         </div>
         
-        {/* 隐藏/显示开关（右下角悬浮） */}
-        <button
-          onClick={()=>setShowChat(v=>!v)}
-          style={{
-            position: 'fixed',
-            right: '20px',
-            bottom: '20px',
-            zIndex: 10001,
-            width: '44px',
-            height: '44px',
-            borderRadius: '50%',
-            border: '1px solid rgba(0,0,0,0.15)',
-            background: 'rgba(255,255,255,0.9)',
-            boxShadow: '0 6px 20px rgba(0,0,0,0.18)',
-            cursor: 'pointer'
-          }}
-          title={showChat ? '隐藏聊天' : '显示聊天'}
-        >
-          {showChat ? '×' : '💬'}
-        </button>
+        {/* 导航按钮组（右下角悬浮） */}
+        <div style={{
+          position: 'fixed',
+          right: '20px',
+          bottom: '20px',
+          zIndex: 10001,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px'
+        }}>
+          {/* 麻薯质感页面链接 */}
+          <a
+            href="/mochi"
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '50%',
+              border: '1px solid rgba(0,0,0,0.15)',
+              background: 'rgba(255,255,255,0.9)',
+              boxShadow: '0 6px 20px rgba(0,0,0,0.18)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textDecoration: 'none',
+              color: '#333',
+              fontSize: '18px'
+            }}
+            title="麻薯质感弥散圆"
+          >
+            🍡
+          </a>
+          
+          {/* Metaball 页面链接 */}
+          <a
+            href="/metaball"
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '50%',
+              border: '1px solid rgba(0,0,0,0.15)',
+              background: 'rgba(255,255,255,0.9)',
+              boxShadow: '0 6px 20px rgba(0,0,0,0.18)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textDecoration: 'none',
+              color: '#333',
+              fontSize: '18px'
+            }}
+            title="磁流体 Metaball 交互"
+          >
+            🔮
+          </a>
+          
+          {/* 合并页面链接 */}
+          <a
+            href="/combined"
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '50%',
+              border: '1px solid rgba(0,0,0,0.15)',
+              background: 'rgba(255,255,255,0.9)',
+              boxShadow: '0 6px 20px rgba(0,0,0,0.18)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textDecoration: 'none',
+              color: '#333',
+              fontSize: '18px'
+            }}
+            title="合并效果：Metaball 交互 + Mochi 质感"
+          >
+            ✨
+          </a>
+          
+          
+          {/* 隐藏/显示开关 */}
+          <button
+            onClick={()=>setShowChat(v=>!v)}
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '50%',
+              border: '1px solid rgba(0,0,0,0.15)',
+              background: 'rgba(255,255,255,0.9)',
+              boxShadow: '0 6px 20px rgba(0,0,0,0.18)',
+              cursor: 'pointer'
+            }}
+            title={showChat ? '隐藏聊天' : '显示聊天'}
+          >
+            {showChat ? '×' : '💬'}
+          </button>
+        </div>
       </div>
     </ErrorBoundary>
   );

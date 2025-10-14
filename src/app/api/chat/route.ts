@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import { NextRequest, NextResponse } from "next/server";
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY || "dummy-key-for-build",
   baseURL: process.env.OPENAI_BASE_URL || undefined
 });
 
@@ -29,12 +29,10 @@ export async function POST(req: NextRequest) {
       max_output_tokens: 1024
     });
 
-    // 兼容解析不同 SDK 响应结构，提取文本
-    const text = res.output_parsed
-      ? String(res.output_parsed)
-      : (res.output && Array.isArray(res.output)
-          ? (res.output[0]?.content?.[0]?.text || "")
-          : "");
+    // 简化响应处理，直接使用 output 字段
+    const text = res.output && Array.isArray(res.output) && res.output.length > 0
+      ? String(res.output[0])
+      : "抱歉，无法生成回复";
 
     // 基于文本生成一个简易单行摘要（≤30 字），用于前端写回节点 meta
     // 说明：这里与客户端的 normalizeSummary 逻辑保持一致性（去除末尾符号），避免服务端引入路径别名带来的耦合

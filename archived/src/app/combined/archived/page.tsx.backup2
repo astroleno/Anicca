@@ -1,0 +1,237 @@
+'use client';
+
+import React, { useEffect, useRef, useState } from 'react';
+
+// 合并的 Shader Park 代码 - 结合 Mochi 质感和 Metaball 效果
+const spCode = `
+  setMaxIterations(8);
+  
+  // 输入参数
+  let click = input();
+  let buttonHover = input();
+  let offset = .1;
+  
+  function fbm(p) {
+    return vec3(
+      noise(p),
+      noise(p+offset),
+      noise(p+offset*2),
+    )
+  }
+  
+  // 应用 Mochi 质感 - 参考 MochiCanvas.tsx
+  let s = getRayDirection();
+  let n = sin(fbm(s+vec3(0, 0, -time*.1))*2)*.5+.75;
+  n = pow(n, vec3(8));
+  color(n);
+  let scale = .5+n.x*.05;
+  
+  // 创建多个 Metaball - 参考 ref/metaball.js
+  sphere(0.3);
+  displace(mouse.x, mouse.y, 0);
+  blend(0.2);
+  sphere(0.3);
+  
+  // 添加更多球体形成 Metaball 效果
+  displace(mouse.x * 0.5, mouse.y * 0.5, 0);
+  sphere(0.2);
+  blend(0.1);
+  
+  // 第三个球体
+  displace(mouse.x * -0.3, mouse.y * -0.3, 0);
+  sphere(0.25);
+  blend(0.15);
+  
+  // 第四个球体
+  displace(mouse.x * 0.8, mouse.y * -0.2, 0);
+  sphere(0.18);
+  blend(0.12);
+  
+  // 第五个球体
+  displace(mouse.x * -0.6, mouse.y * 0.4, 0);
+  sphere(0.22);
+  blend(0.1);
+`;
+
+export default function CombinedPage() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // 交互状态管理
+  const [state, setState] = useState({
+    buttonHover: 0.0,
+    currButtonHover: 0.0,
+    click: 0.0,
+    currClick: 0.0,
+    ballCount: 8.0,
+    blendStrength: 0.4,
+    mochiIntensity: 0.6
+  });
+
+  useEffect(() => {
+    let cleanup: (() => void) | undefined;
+
+    const initShaderPark = async () => {
+      try {
+        console.log('🎨 初始化合并页面 Shader Park...');
+        
+        // 等待全局 Shader Park 加载完成
+        let attempts = 0;
+        while (!(window as any).shaderParkReady && attempts < 100) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          attempts++;
+        }
+        
+        if (!(window as any).shaderParkReady) {
+          throw new Error('Shader Park 全局加载超时');
+        }
+        
+        const sculptToMinimalRenderer = (window as any).sculptToMinimalRenderer;
+        
+        if (typeof sculptToMinimalRenderer !== 'function') {
+          throw new Error(`sculptToMinimalRenderer is not a function, got: ${typeof sculptToMinimalRenderer}`);
+        }
+        
+        if (!canvasRef.current) {
+          setError('Canvas element not found');
+          return;
+        }
+
+        const canvas = canvasRef.current;
+
+        // 设置画布尺寸
+        const resizeCanvas = () => {
+          const rect = canvas.getBoundingClientRect();
+          const dpr = Math.min(window.devicePixelRatio, 2);
+          canvas.width = rect.width * dpr;
+          canvas.height = rect.height * dpr;
+          canvas.style.width = rect.width + 'px';
+          canvas.style.height = rect.height + 'px';
+        };
+
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // 鼠标事件处理
+        const handleMouseOver = () => {
+          setState(prev => ({ ...prev, buttonHover: 5 }));
+        };
+
+        const handleMouseOut = () => {
+          setState(prev => ({ ...prev, buttonHover: 0.0 }));
+        };
+
+        const handleMouseDown = (e: MouseEvent) => {
+          e.preventDefault();
+          setState(prev => ({ ...prev, click: 1.0 }));
+        };
+
+        const handleMouseUp = (e: MouseEvent) => {
+          e.preventDefault();
+          setState(prev => ({ ...prev, click: 0.0 }));
+        };
+
+        // 添加事件监听器
+        canvas.addEventListener('mouseover', handleMouseOver, false);
+        canvas.addEventListener('mouseout', handleMouseOut, false);
+        canvas.addEventListener('mousedown', handleMouseDown, false);
+        canvas.addEventListener('mouseup', handleMouseUp, false);
+
+        // 启动 Shader Park 渲染器
+        sculptToMinimalRenderer(canvas, spCode, () => {
+          setState(prev => ({
+            ...prev,
+            currButtonHover: prev.currButtonHover * 0.999 + prev.buttonHover * 0.001,
+            currClick: prev.currClick * 0.92 + prev.click * 0.08
+          }));
+          
+          return {
+            'buttonHover': state.currButtonHover,
+            'click': state.currClick,
+            'ballCount': state.ballCount,
+            'blendStrength': state.blendStrength,
+            'mochiIntensity': state.mochiIntensity
+          };
+        });
+
+        setIsLoaded(true);
+
+        // 清理函数
+        cleanup = () => {
+          window.removeEventListener('resize', resizeCanvas);
+          canvas.removeEventListener('mouseover', handleMouseOver);
+          canvas.removeEventListener('mouseout', handleMouseOut);
+          canvas.removeEventListener('mousedown', handleMouseDown);
+          canvas.removeEventListener('mouseup', handleMouseUp);
+        };
+
+      } catch (err) {
+        console.error('❌ 合并页面 Shader Park 初始化失败:', err);
+        setError(`Failed to load Combined Shader Park: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      }
+    };
+
+    initShaderPark();
+
+    return () => {
+      if (cleanup) {
+        cleanup();
+      }
+    };
+  }, []);
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center bg-gray-900 text-red-400 min-h-screen">
+        <div className="text-center">
+          <h3 className="text-lg font-semibold mb-2">渲染错误</h3>
+          <p className="text-sm">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-black">
+      {/* 简化的标题 */}
+      <div className="absolute top-4 left-4 z-10 text-white">
+        <div className="bg-gray-900/80 backdrop-blur-sm rounded-xl p-4">
+          <h1 className="text-xl font-bold text-purple-200">合并效果</h1>
+          <p className="text-xs text-gray-300">Metaball 交互 + Mochi 质感</p>
+        </div>
+      </div>
+
+      {/* 返回按钮 */}
+      <div className="absolute bottom-4 right-4 z-10">
+        <a 
+          href="/"
+          className="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-lg transition-colors text-sm"
+        >
+          返回首页
+        </a>
+      </div>
+
+      {/* 主画布 */}
+      <div className="relative bg-black w-full h-screen">
+        <canvas 
+          ref={canvasRef}
+          className="w-full h-full cursor-pointer"
+          style={{ 
+            width: '100%', 
+            height: '100%',
+            minHeight: '400px'
+          }}
+        />
+        {!isLoaded && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-900 text-white">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+              <p>加载中...</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
