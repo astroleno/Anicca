@@ -6,10 +6,10 @@ const MetaballCanvas = dynamic(() => import('@/components/MetaballCanvas'), { ss
 
 export default function Page() {
   return (
-    <main style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: '#f5f5f5' }}>
+    <div style={{ width: '100vw', height: '100vh', overflow: 'hidden' }}>
       <Suspense fallback={<div style={{padding:20}}>Loading WebGPU…</div>}>
         <MetaballCanvas />
       </Suspense>
-    </main>
+    </div>
   )
 }
