@@ -15,6 +15,7 @@ out/
 build/
 dist/
 coverage/
+artifacts/
 
 # Logs
 npm-debug.log*
