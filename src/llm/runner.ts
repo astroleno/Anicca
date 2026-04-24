@@ -20,6 +20,7 @@ export async function runNode(providerName: string, nodeId: string, model: strin
   const target = g.nodes[nodeId];
   if (!target) throw new Error("node not found");
   if (target.kind !== "assistant") throw new Error("runNode requires assistant node");
+  if (target.branchType === "合") throw new Error("runNode does not support synthesis assistants");
 
   // 构建系统提示
   let systemPrelude = '';
@@ -64,11 +65,11 @@ export async function runNode(providerName: string, nodeId: string, model: strin
   })();
   let summary = normalizeSummary(text.slice(0, 30)); // 简易截断
   const ok = isValidSummary(summary, parentText);
-  const meta = g.nodes[nodeId].meta || (g.nodes[nodeId].meta = {});
-  meta.summary = ok ? summary : '';
-  meta.summaryStatus = ok ? 'ok' : 'invalid';
+  branchGraphStore.patchNodeMeta(nodeId, {
+    summary: ok ? summary : "",
+    summaryStatus: ok ? "ok" : "invalid"
+  });
 
   return text;
 }
-
 

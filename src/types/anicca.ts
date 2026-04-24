@@ -1,7 +1,9 @@
 // Anicca 对话域核心类型定义
-// 说明：仅定义最小 MVP 所需字段，后续可按需扩展。
+// 说明：Dialectic V2 以 local-first graph 作为主线真相源。
 
-export type BranchType = "正" | "反";
+export const ANICCA_GRAPH_VERSION = "anicca-dialectic-v2";
+
+export type BranchType = "正" | "反" | "合";
 
 export type NodeKind = "user" | "assistant" | "merge";
 
@@ -13,6 +15,9 @@ export interface AniccaNodeMeta {
   promptHash?: string; // 上下文哈希，追踪变更
   summary?: string; // 单行摘要（≤30字，不复述用户原文）
   summaryStatus?: "ok" | "missing" | "invalid"; // 用于补摘要流程
+  label?: string; // UI 短标签
+  sourceNodeIds?: string[]; // 合节点的双来源 assistant
+  lineageParentId?: string; // 合节点共享的上游 user anchor
 }
 
 export interface AniccaNode {
@@ -34,14 +39,13 @@ export interface Edge {
 }
 
 export interface Graph {
-  version: "anicca-mvp-1";
+  version: typeof ANICCA_GRAPH_VERSION;
   nodes: Record<string, AniccaNode>;
   edges: Record<string, Edge>;
   entryIds: string[]; // 入口 user 节点（支持多主题）
 }
 
 export function createEmptyGraph(): Graph {
-  return { version: "anicca-mvp-1", nodes: {}, edges: {}, entryIds: [] };
+  return { version: ANICCA_GRAPH_VERSION, nodes: {}, edges: {}, entryIds: [] };
 }
-
 

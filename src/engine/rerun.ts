@@ -16,6 +16,10 @@ export async function rerunBranch(providerName: string, fromNodeId: string, mode
     if (!node) continue;
 
     if (node.kind === "assistant") {
+      if (node.branchType === "合") {
+        console.warn("rerunBranch skipped synthesis assistant", { nodeId: id });
+        continue;
+      }
       await runNode(providerName, id, model);
     }
 
@@ -24,5 +28,4 @@ export async function rerunBranch(providerName: string, fromNodeId: string, mode
     }
   }
 }
-
 
