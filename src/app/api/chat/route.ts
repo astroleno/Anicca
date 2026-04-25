@@ -38,7 +38,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ text, summary });
   } catch (error: any) {
     console.error("/api/chat error", { message: error?.message, stack: error?.stack });
-    return NextResponse.json({ error: "chat_failed" }, { status: 500 });
+    const details =
+      !process.env.OPENAI_API_KEY ? "openai_api_key_missing" :
+      /401|unauthorized|incorrect api key|invalid api key/i.test(error?.message || "") ? "provider_auth_failed" :
+      /fetch failed|network|timeout|econnrefused|enotfound|connection/i.test(error?.message || "") ? "provider_unreachable" :
+      "provider_runtime_error";
+    return NextResponse.json({ error: "chat_failed", details }, { status: 500 });
   }
 }
-

@@ -26,8 +26,9 @@ export type DialogueStageNode = {
   kind: AniccaNode["kind"];
   branchType?: BranchType;
   relation: "focus" | "ancestor" | "child" | "source";
-  x: number;
-  y: number;
+  // Seed coordinates define the default composition before per-snapshot drag state takes over.
+  seedX: number;
+  seedY: number;
 };
 
 export type DialogueSourceNode = {
@@ -308,6 +309,108 @@ function buildSynthesisActions(graph: Graph): DialogueSynthesisAction[] {
     .sort((left, right) => graph.nodes[left.lineageParentId].createdAt.localeCompare(graph.nodes[right.lineageParentId].createdAt));
 }
 
+type StageSeed = {
+  x: number;
+  y: number;
+};
+
+type StageLayoutPreset = {
+  focus: StageSeed;
+  sourcePositions: StageSeed[];
+  childPositions: StageSeed[];
+  ancestorStartY: number;
+  ancestorStepY: number;
+};
+
+function getStageLayoutPreset(focusNode: AniccaNode): StageLayoutPreset {
+  if (focusNode.kind === "assistant" && focusNode.branchType === "合") {
+    return {
+      focus: { x: 50, y: 56 },
+      sourcePositions: [
+        { x: 30, y: 34 },
+        { x: 70, y: 34 }
+      ],
+      childPositions: [
+        { x: 50, y: 90 },
+        { x: 36, y: 88 },
+        { x: 64, y: 88 }
+      ],
+      ancestorStartY: 22,
+      ancestorStepY: 10
+    };
+  }
+
+  if (focusNode.kind === "assistant" && focusNode.branchType === "正") {
+    return {
+      focus: { x: 34, y: 49 },
+      sourcePositions: [],
+      childPositions: [
+        { x: 34, y: 78 },
+        { x: 50, y: 84 },
+        { x: 24, y: 84 }
+      ],
+      ancestorStartY: 18,
+      ancestorStepY: 10
+    };
+  }
+
+  if (focusNode.kind === "assistant" && focusNode.branchType === "反") {
+    return {
+      focus: { x: 66, y: 49 },
+      sourcePositions: [],
+      childPositions: [
+        { x: 66, y: 78 },
+        { x: 50, y: 84 },
+        { x: 76, y: 84 }
+      ],
+      ancestorStartY: 18,
+      ancestorStepY: 10
+    };
+  }
+
+  if (focusNode.kind === "user") {
+    return {
+      focus: { x: 50, y: 40 },
+      sourcePositions: [],
+      childPositions: [
+        { x: 28, y: 70 },
+        { x: 72, y: 70 },
+        { x: 50, y: 82 }
+      ],
+      ancestorStartY: 16,
+      ancestorStepY: 10
+    };
+  }
+
+  return {
+    focus: { x: 50, y: 50 },
+    sourcePositions: [],
+    childPositions: [
+      { x: 50, y: 80 },
+      { x: 34, y: 84 },
+      { x: 66, y: 84 }
+    ],
+    ancestorStartY: 18,
+    ancestorStepY: 10
+  };
+}
+
+function getFallbackChildPosition(index: number, count: number): StageSeed {
+  if (count <= 1) {
+    return { x: 50, y: 82 };
+  }
+
+  if (count === 2) {
+    return index === 0 ? { x: 38, y: 82 } : { x: 62, y: 82 };
+  }
+
+  const spread = count - 1;
+  return {
+    x: 22 + (56 / spread) * index,
+    y: 84
+  };
+}
+
 function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStageNode[] {
   if (!focusNodeId || !graph.nodes[focusNodeId]) {
     return [];
@@ -315,20 +418,20 @@ function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStag
 
   const nodes: DialogueStageNode[] = [];
   const focusNode = graph.nodes[focusNodeId];
+  const preset = getStageLayoutPreset(focusNode);
   const breadcrumbIds = getBreadcrumbIds(graph, focusNodeId);
   const ancestorIds = breadcrumbIds.slice(0, -1);
 
   ancestorIds.forEach((ancestorId, index) => {
     const ancestor = graph.nodes[ancestorId];
-    const step = ancestorIds.length - index;
     nodes.push({
       id: ancestor.id,
       label: getNodeLabel(ancestor),
       kind: ancestor.kind,
       branchType: ancestor.branchType,
       relation: "ancestor",
-      x: 50,
-      y: Math.max(12, 50 - step * 14)
+      seedX: 50,
+      seedY: preset.ancestorStartY + index * preset.ancestorStepY
     });
   });
 
@@ -338,8 +441,8 @@ function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStag
     kind: focusNode.kind,
     branchType: focusNode.branchType,
     relation: "focus",
-    x: 50,
-    y: 50
+    seedX: preset.focus.x,
+    seedY: preset.focus.y
   });
 
   if (focusNode.kind === "assistant" && focusNode.branchType === "合" && focusNode.meta?.sourceNodeIds?.length) {
@@ -349,51 +452,45 @@ function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStag
       .sort((left, right) => branchOrder(left.branchType) - branchOrder(right.branchType));
 
     sourceNodes.forEach((source, index) => {
+      const sourcePosition = preset.sourcePositions[index] || getFallbackChildPosition(index, sourceNodes.length);
       nodes.push({
         id: source.id,
         label: getNodeLabel(source),
         kind: source.kind,
         branchType: source.branchType,
         relation: "source",
-        x: index === 0 ? 28 : 72,
-        y: 26
+        seedX: sourcePosition.x,
+        seedY: sourcePosition.y
       });
     });
   }
 
   const childIds = getDisplayChildren(graph, focusNode);
-  if (focusNode.kind === "user") {
-    childIds.forEach((childId) => {
-      const child = graph.nodes[childId];
-      const position =
-        child.branchType === "正" ? { x: 26, y: 72 } :
-        child.branchType === "反" ? { x: 74, y: 72 } :
-        { x: 50, y: 82 };
+  childIds.forEach((childId, index) => {
+    const child = graph.nodes[childId];
+    let position: StageSeed | null = null;
 
-      nodes.push({
-        id: child.id,
-        label: getNodeLabel(child),
-        kind: child.kind,
-        branchType: child.branchType,
-        relation: "child",
-        x: position.x,
-        y: position.y
-      });
+    if (focusNode.kind === "user") {
+      position =
+        child.branchType === "正" ? preset.childPositions[0] :
+        child.branchType === "反" ? preset.childPositions[1] :
+        preset.childPositions[2] || null;
+    }
+
+    if (!position) {
+      position = preset.childPositions[index] || getFallbackChildPosition(index, childIds.length);
+    }
+
+    nodes.push({
+      id: child.id,
+      label: getNodeLabel(child),
+      kind: child.kind,
+      branchType: child.branchType,
+      relation: "child",
+      seedX: position.x,
+      seedY: position.y
     });
-  } else {
-    childIds.forEach((childId, index) => {
-      const child = graph.nodes[childId];
-      nodes.push({
-        id: child.id,
-        label: getNodeLabel(child),
-        kind: child.kind,
-        branchType: child.branchType,
-        relation: "child",
-        x: childIds.length === 1 ? 50 : index === 0 ? 34 : 66,
-        y: 80
-      });
-    });
-  }
+  });
 
   return nodes;
 }

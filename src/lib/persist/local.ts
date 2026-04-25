@@ -1,4 +1,4 @@
-import { ANICCA_GRAPH_VERSION, Graph } from "@/types/anicca";
+import { ANICCA_GRAPH_VERSION, Graph, StageLayouts } from "@/types/anicca";
 
 const KEY = "anicca_workspace_v2";
 export const ANICCA_WORKSPACE_SCHEMA_VERSION = "anicca-workspace-v2";
@@ -9,6 +9,7 @@ export interface WorkspaceSnapshot {
   graph: Graph;
   focusedNodeId: string | null;
   composerParentId: string | null;
+  stageLayouts?: StageLayouts;
 }
 
 export function saveGraphLocal(snapshot: WorkspaceSnapshot) {
@@ -27,10 +28,13 @@ export function loadGraphLocal(): WorkspaceSnapshot | null {
     if (parsed?.schemaVersion !== ANICCA_WORKSPACE_SCHEMA_VERSION) return null;
     if (parsed?.graph?.version !== ANICCA_GRAPH_VERSION) return null;
     if (typeof parsed?.workspaceSessionId !== "string") return null;
-    return parsed as WorkspaceSnapshot;
+    return {
+      ...parsed,
+      stageLayouts:
+        parsed?.stageLayouts && typeof parsed.stageLayouts === "object" ? parsed.stageLayouts : {}
+    } as WorkspaceSnapshot;
   } catch (e) {
     console.error("loadGraphLocal error", e);
     return null;
   }
 }
-

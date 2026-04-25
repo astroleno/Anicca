@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { StageLayouts, StagePan, StagePoint } from "@/types/anicca";
 
 export type PendingSlot = "branches" | "synthesis";
 
@@ -15,22 +16,32 @@ export type HydratedWorkspaceState = {
   workspaceSessionId: string;
   focusedNodeId: string | null;
   composerParentId: string | null;
+  stageLayouts?: StageLayouts;
+};
+
+export type DialogueErrorState = {
+  title: string;
+  detail: string;
+  recovery?: string;
 };
 
 type DialogueUiState = {
   workspaceSessionId: string;
   focusedNodeId: string | null;
   composerParentId: string | null;
-  errorMessage: string | null;
+  stageLayouts: StageLayouts;
+  errorState: DialogueErrorState | null;
   pendingAction: PendingSlot | null;
   pending: PendingState;
   hydrateWorkspace: (state: HydratedWorkspaceState) => void;
   setFocusedNodeId: (nodeId: string | null) => void;
   setComposerParentId: (nodeId: string | null) => void;
+  setStageNodePosition: (layoutKey: string, nodeId: string, position: StagePoint) => void;
+  setStagePan: (layoutKey: string, pan: StagePan) => void;
   beginPending: (slot: PendingSlot, pending: PendingRequest) => void;
   clearPending: (slot: PendingSlot) => void;
   cancelPendingRequests: () => void;
-  setErrorMessage: (message: string | null) => void;
+  setErrorState: (error: DialogueErrorState | null) => void;
   resetTransientState: () => void;
 };
 
@@ -49,11 +60,19 @@ function getInitialPending(): PendingState {
   };
 }
 
+function getStageLayoutView(stageLayouts: StageLayouts, layoutKey: string) {
+  return stageLayouts[layoutKey] || {
+    pan: { x: 0, y: 0 },
+    nodePositions: {}
+  };
+}
+
 export const useDialogueUiStore = create<DialogueUiState>((set, get) => ({
   workspaceSessionId: createClientId("ws"),
   focusedNodeId: null,
   composerParentId: null,
-  errorMessage: null,
+  stageLayouts: {},
+  errorState: null,
   pendingAction: null,
   pending: getInitialPending(),
   hydrateWorkspace: (state) =>
@@ -61,7 +80,8 @@ export const useDialogueUiStore = create<DialogueUiState>((set, get) => ({
       workspaceSessionId: state.workspaceSessionId,
       focusedNodeId: state.focusedNodeId,
       composerParentId: state.composerParentId,
-      errorMessage: null,
+      stageLayouts: state.stageLayouts || {},
+      errorState: null,
       pendingAction: null,
       pending: getInitialPending()
     }),
@@ -72,6 +92,35 @@ export const useDialogueUiStore = create<DialogueUiState>((set, get) => ({
       pending: getInitialPending()
     }),
   setComposerParentId: (nodeId) => set({ composerParentId: nodeId }),
+  setStageNodePosition: (layoutKey, nodeId, position) =>
+    set((state) => {
+      const currentView = getStageLayoutView(state.stageLayouts, layoutKey);
+      return {
+        stageLayouts: {
+          ...state.stageLayouts,
+          [layoutKey]: {
+            ...currentView,
+            nodePositions: {
+              ...currentView.nodePositions,
+              [nodeId]: position
+            }
+          }
+        }
+      };
+    }),
+  setStagePan: (layoutKey, pan) =>
+    set((state) => {
+      const currentView = getStageLayoutView(state.stageLayouts, layoutKey);
+      return {
+        stageLayouts: {
+          ...state.stageLayouts,
+          [layoutKey]: {
+            ...currentView,
+            pan
+          }
+        }
+      };
+    }),
   beginPending: (slot, pending) =>
     set({
       pendingAction: slot,
@@ -79,7 +128,7 @@ export const useDialogueUiStore = create<DialogueUiState>((set, get) => ({
         ...getInitialPending(),
         [slot]: pending
       },
-      errorMessage: null
+      errorState: null
     }),
   clearPending: (slot) =>
     set((state) => {
@@ -97,12 +146,14 @@ export const useDialogueUiStore = create<DialogueUiState>((set, get) => ({
       pendingAction: null,
       pending: getInitialPending()
     }),
-  setErrorMessage: (message) => set({ errorMessage: message }),
+  setErrorState: (error) => set({ errorState: error }),
   resetTransientState: () => {
     const workspaceSessionId = get().workspaceSessionId;
+    const stageLayouts = get().stageLayouts;
     set({
       workspaceSessionId,
-      errorMessage: null,
+      stageLayouts,
+      errorState: null,
       pendingAction: null,
       pending: getInitialPending()
     });

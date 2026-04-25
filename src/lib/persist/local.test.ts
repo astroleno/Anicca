@@ -27,7 +27,15 @@ describe("workspace persistence", () => {
       workspaceSessionId: "ws_1",
       graph,
       focusedNodeId: "user_1",
-      composerParentId: null
+      composerParentId: null,
+      stageLayouts: {
+        "focus:user_1": {
+          pan: { x: 16, y: -12 },
+          nodePositions: {
+            user_1: { x: 48, y: 52 }
+          }
+        }
+      }
     });
 
     expect(loadGraphLocal()).toEqual({
@@ -35,7 +43,15 @@ describe("workspace persistence", () => {
       workspaceSessionId: "ws_1",
       graph,
       focusedNodeId: "user_1",
-      composerParentId: null
+      composerParentId: null,
+      stageLayouts: {
+        "focus:user_1": {
+          pan: { x: 16, y: -12 },
+          nodePositions: {
+            user_1: { x: 48, y: 52 }
+          }
+        }
+      }
     });
   });
 

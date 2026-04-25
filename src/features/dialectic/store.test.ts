@@ -6,7 +6,8 @@ describe("useDialogueUiStore", () => {
       workspaceSessionId: "ws_test",
       focusedNodeId: null,
       composerParentId: null,
-      errorMessage: null,
+      stageLayouts: {},
+      errorState: null,
       pendingAction: null,
       pending: {
         branches: null,
@@ -33,5 +34,17 @@ describe("useDialogueUiStore", () => {
     expect(useDialogueUiStore.getState().pending.branches).toBeNull();
     expect(useDialogueUiStore.getState().pending.synthesis?.composerTargetId).toBe("node_b");
     expect(useDialogueUiStore.getState().pendingAction).toBe("synthesis");
+  });
+
+  it("stores stage node positions and pan per focus snapshot", () => {
+    useDialogueUiStore.getState().setStageNodePosition("focus:root", "node_a", { x: 44, y: 57 });
+    useDialogueUiStore.getState().setStagePan("focus:root", { x: 24, y: -18 });
+
+    expect(useDialogueUiStore.getState().stageLayouts["focus:root"]).toEqual({
+      pan: { x: 24, y: -18 },
+      nodePositions: {
+        node_a: { x: 44, y: 57 }
+      }
+    });
   });
 });

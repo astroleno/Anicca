@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { DialogueShell } from "@/components/dialogue/DialogueShell";
+import { DialogueShell, isDialogueDemoWorkspaceEnabled } from "@/components/dialogue/DialogueShell";
 import { useDialogueUiStore } from "@/features/dialectic/store";
 import { branchGraphStore } from "@/store/branchGraph";
 import { createEmptyGraph } from "@/types/anicca";
@@ -11,7 +11,8 @@ function resetWorkspace(focusedNodeId: string | null = null) {
     workspaceSessionId: "ws_test",
     focusedNodeId,
     composerParentId: null,
-    errorMessage: null,
+    stageLayouts: {},
+    errorState: null,
     pendingAction: null,
     pending: {
       branches: null,
@@ -34,6 +35,7 @@ describe("DialogueShell", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    window.history.replaceState({}, "", "/dialogue");
     resetWorkspace();
   });
 
@@ -49,6 +51,25 @@ describe("DialogueShell", () => {
     expect(screen.getByText("新的主题")).toBeInTheDocument();
   });
 
+  it("loads a demo workspace from the empty-state action", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: "载入示例谱系" }));
+
+    expect(await screen.findByTestId("dialogue-stage-node-asst_synthesis_1")).toBeInTheDocument();
+    expect(screen.getAllByText("收束").length).toBeGreaterThan(0);
+    expect(branchGraphStore.getGraph().entryIds).toEqual(["user_root_1"]);
+  });
+
+  it("limits the demo workspace action to localhost or explicit demo query", () => {
+    expect(isDialogueDemoWorkspaceEnabled({ hostname: "localhost", search: "" })).toBe(true);
+    expect(isDialogueDemoWorkspaceEnabled({ hostname: "anicca.app", search: "?demo=1" })).toBe(true);
+    expect(isDialogueDemoWorkspaceEnabled({ hostname: "anicca.app", search: "" })).toBe(false);
+  });
+
   it("does not leave orphan child users behind on branch failure", async () => {
     const user = userEvent.setup();
     const { thesisId } = seedPair();
@@ -56,7 +77,7 @@ describe("DialogueShell", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ error: "invalid_model_output" }), {
+        new Response(JSON.stringify({ error: "branches_failed", details: "openai_api_key_missing" }), {
           status: 502,
           headers: { "Content-Type": "application/json" }
         })
@@ -69,7 +90,10 @@ describe("DialogueShell", () => {
     await user.click(screen.getByRole("button", { name: "生成正 / 反" }));
 
     await waitFor(() => {
-      expect(screen.getByRole("alert")).toHaveTextContent("这轮生成没能收束成可用结果，请再试一次。");
+      expect(screen.getByRole("alert")).toHaveTextContent("模型服务还没接好");
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "当前环境没有配置 OpenAI API key，所以这轮请求没有真正发出去。"
+      );
     });
 
     const graph = branchGraphStore.getGraph();

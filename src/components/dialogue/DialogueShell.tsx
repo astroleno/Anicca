@@ -11,7 +11,8 @@ import { BranchSidebar } from "@/components/dialogue/BranchSidebar";
 import { BubbleStage } from "@/components/dialogue/BubbleStage";
 import { ConversationPanel } from "@/components/dialogue/ConversationPanel";
 import { DialogueComposer } from "@/components/dialogue/DialogueComposer";
-import { createClientId, useDialogueUiStore } from "@/features/dialectic/store";
+import { createDialogueDemoWorkspace } from "@/features/dialectic/demoWorkspace";
+import { createClientId, DialogueErrorState, useDialogueUiStore } from "@/features/dialectic/store";
 import {
   DialogueSynthesisAction,
   deriveDialogueView
@@ -49,7 +50,15 @@ type SynthesisResponse = {
   };
 };
 
-function formatDialogueError(error: unknown): string {
+type DialogueLocationLike = Pick<Location, "hostname" | "search">;
+
+export function isDialogueDemoWorkspaceEnabled(locationLike: DialogueLocationLike) {
+  const params = new URLSearchParams(locationLike.search);
+  const isLocalHost = ["localhost", "127.0.0.1", "::1"].includes(locationLike.hostname);
+  return isLocalHost || params.get("demo") === "1";
+}
+
+function formatDialogueError(error: unknown): DialogueErrorState {
   const message =
     typeof error === "string"
       ? error
@@ -58,18 +67,58 @@ function formatDialogueError(error: unknown): string {
         : "";
 
   if (message.startsWith("invalid_model_output")) {
-    return "这轮生成没能收束成可用结果，请再试一次。";
+    return {
+      title: "模型这轮没按约定返回",
+      detail: "结果结构不完整，所以这次没有写进图里。",
+      recovery: "换个更具体的问法，或稍后再试。"
+    };
+  }
+
+  if (message.includes("openai_api_key_missing")) {
+    return {
+      title: "模型服务还没接好",
+      detail: "当前环境没有配置 OpenAI API key，所以这轮请求没有真正发出去。",
+      recovery: "先补上 OPENAI_API_KEY，再重新生成。"
+    };
+  }
+
+  if (message.includes("provider_auth_failed")) {
+    return {
+      title: "模型服务认证失败",
+      detail: "当前 API key 或代理配置没有通过校验。",
+      recovery: "检查 OPENAI_API_KEY 和 baseURL 后再试。"
+    };
+  }
+
+  if (message.includes("provider_unreachable")) {
+    return {
+      title: "模型服务暂时不可达",
+      detail: "这轮请求没有连到模型服务。",
+      recovery: "检查网络、代理或 baseURL，再重新生成。"
+    };
   }
 
   if (message.startsWith("branches_failed")) {
-    return "这一轮正反生成失败了，请稍后再试。";
+    return {
+      title: "这一轮正反没有生成出来",
+      detail: "主线图保持了原样，没有留下半截节点。",
+      recovery: "稍后重试，或先检查模型服务配置。"
+    };
   }
 
   if (message.startsWith("synthesis_failed")) {
-    return "这一轮收束失败了，请稍后再试。";
+    return {
+      title: "这一轮收束没有完成",
+      detail: "正与反还在原处，图状态没有被破坏。",
+      recovery: "稍后重试，或先检查模型服务配置。"
+    };
   }
 
-  return "这轮生成出了点问题，请再试一次。";
+  return {
+    title: "这轮生成出了点问题",
+    detail: "当前图状态没有被改坏，你可以直接再试一次。",
+    recovery: "如果反复失败，先检查模型服务配置。"
+  };
 }
 
 function serializeContextMessages(messages: Message[]) {
@@ -136,18 +185,20 @@ export function DialogueShell() {
     branchGraphStore.getSnapshot.bind(branchGraphStore)
   );
   const [draft, setDraft] = useState("");
+  const [demoWorkspaceEnabled, setDemoWorkspaceEnabled] = useState(false);
   const workspaceSessionId = useDialogueUiStore((state) => state.workspaceSessionId);
   const focusedNodeId = useDialogueUiStore((state) => state.focusedNodeId);
   const composerParentId = useDialogueUiStore((state) => state.composerParentId);
+  const stageLayouts = useDialogueUiStore((state) => state.stageLayouts);
   const pendingAction = useDialogueUiStore((state) => state.pendingAction);
   const pending = useDialogueUiStore((state) => state.pending);
-  const errorMessage = useDialogueUiStore((state) => state.errorMessage);
+  const errorState = useDialogueUiStore((state) => state.errorState);
   const hydrateWorkspace = useDialogueUiStore((state) => state.hydrateWorkspace);
   const setFocusedNodeId = useDialogueUiStore((state) => state.setFocusedNodeId);
   const setComposerParentId = useDialogueUiStore((state) => state.setComposerParentId);
   const beginPending = useDialogueUiStore((state) => state.beginPending);
   const clearPending = useDialogueUiStore((state) => state.clearPending);
-  const setErrorMessage = useDialogueUiStore((state) => state.setErrorMessage);
+  const setErrorState = useDialogueUiStore((state) => state.setErrorState);
 
   useEffect(() => {
     const snapshot = loadGraphLocal();
@@ -159,9 +210,18 @@ export function DialogueShell() {
     hydrateWorkspace({
       workspaceSessionId: snapshot.workspaceSessionId,
       focusedNodeId: snapshot.focusedNodeId,
-      composerParentId: snapshot.composerParentId
+      composerParentId: snapshot.composerParentId,
+      stageLayouts: snapshot.stageLayouts
     });
   }, [hydrateWorkspace]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    setDemoWorkspaceEnabled(isDialogueDemoWorkspaceEnabled(window.location));
+  }, []);
 
   const view = deriveDialogueView(graphSnapshot.graph, focusedNodeId);
   const isBranchPending = pending.branches !== null;
@@ -186,15 +246,30 @@ export function DialogueShell() {
       workspaceSessionId,
       graph: graphSnapshot.graph,
       focusedNodeId: view.focusNodeId,
-      composerParentId: view.composerTarget.nodeId
+      composerParentId: view.composerTarget.nodeId,
+      stageLayouts
     });
-  }, [graphSnapshot, view.focusNodeId, view.composerTarget.nodeId, workspaceSessionId]);
+  }, [graphSnapshot, stageLayouts, view.focusNodeId, view.composerTarget.nodeId, workspaceSessionId]);
 
   const handleSelectNode = (nodeId: string) => {
     startTransition(() => {
       setFocusedNodeId(nodeId);
-      setErrorMessage(null);
+      setErrorState(null);
     });
+  };
+
+  const handleLoadDemoWorkspace = () => {
+    const snapshot = createDialogueDemoWorkspace();
+    branchGraphStore.setGraph(snapshot.graph);
+    hydrateWorkspace({
+      workspaceSessionId: snapshot.workspaceSessionId,
+      focusedNodeId: snapshot.focusedNodeId,
+      composerParentId: snapshot.composerParentId,
+      stageLayouts: snapshot.stageLayouts
+    });
+    saveGraphLocal(snapshot);
+    setDraft("");
+    setErrorState(null);
   };
 
   const handleSubmit = async () => {
@@ -242,7 +317,7 @@ export function DialogueShell() {
       setDraft("");
       startTransition(() => {
         setFocusedNodeId(userNodeId);
-        setErrorMessage(null);
+        setErrorState(null);
       });
     } catch (error: unknown) {
       const activePending = useDialogueUiStore.getState().pending.branches;
@@ -251,7 +326,7 @@ export function DialogueShell() {
       }
 
       clearPending("branches");
-      setErrorMessage(formatDialogueError(error));
+      setErrorState(formatDialogueError(error));
     }
   };
 
@@ -311,7 +386,7 @@ export function DialogueShell() {
       clearPending("synthesis");
       startTransition(() => {
         setFocusedNodeId(synthesisId);
-        setErrorMessage(null);
+        setErrorState(null);
       });
     } catch (error: unknown) {
       const activePending = useDialogueUiStore.getState().pending.synthesis;
@@ -320,7 +395,7 @@ export function DialogueShell() {
       }
 
       clearPending("synthesis");
-      setErrorMessage(formatDialogueError(error));
+      setErrorState(formatDialogueError(error));
     }
   };
 
@@ -338,15 +413,28 @@ export function DialogueShell() {
 
       <header className={styles.hero}>
         <p className={styles.eyebrow}>Anicca 对话场</p>
-        <h1>让一个问题，同时向两边生长。</h1>
+        <h1>让一个问题，先分岔，再收束。</h1>
         <p className={styles.heroCopy}>
-          先听正，也听反；等你愿意，再让它们在同一条谱系里慢慢收束成合。
+          把它放进场里，先长出正与反；等张力清楚了，再决定要不要把它们收成合。
         </p>
       </header>
 
       <div className={styles.workspace}>
         <BranchSidebar breadcrumb={view.breadcrumb} items={view.sidebarItems} onSelect={handleSelectNode} />
-        <BubbleStage nodes={view.stageNodes} focusNodeId={view.focusNodeId} onSelect={handleSelectNode} />
+        <BubbleStage
+          layoutKey={view.focusSnapshotId}
+          nodes={view.stageNodes}
+          focusNodeId={view.focusNodeId}
+          onSelect={handleSelectNode}
+          emptyAction={
+            demoWorkspaceEnabled && graphSnapshot.graph.entryIds.length === 0
+              ? {
+                  label: "载入示例谱系",
+                  onTrigger: handleLoadDemoWorkspace
+                }
+              : null
+          }
+        />
         <ConversationPanel
           node={view.currentNode}
           synthesisAction={relevantSynthesisAction}
@@ -361,7 +449,7 @@ export function DialogueShell() {
         value={draft}
         disabled={hasPendingRequest}
         pendingAction={pendingAction}
-        errorMessage={errorMessage}
+        errorState={errorState}
         onChange={setDraft}
         onSubmit={handleSubmit}
       />

@@ -46,6 +46,27 @@ function invalidModelOutput(requestId: string, details: string) {
   return NextResponse.json({ requestId, error: "invalid_model_output", details }, { status: 502 });
 }
 
+function describeProviderFailure(error: unknown): string {
+  const message =
+    typeof error === "object" && error && "message" in error && typeof error.message === "string"
+      ? error.message
+      : "";
+
+  if (!process.env.OPENAI_API_KEY) {
+    return "openai_api_key_missing";
+  }
+
+  if (/401|unauthorized|incorrect api key|invalid api key/i.test(message)) {
+    return "provider_auth_failed";
+  }
+
+  if (/fetch failed|network|timeout|econnrefused|enotfound|connection/i.test(message)) {
+    return "provider_unreachable";
+  }
+
+  return "provider_runtime_error";
+}
+
 function hasRequiredBranch(value: unknown, stance: "正" | "反"): value is Required<SynthesisInput> {
   if (!value || typeof value !== "object") {
     return false;
@@ -137,6 +158,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ requestId, synthesis });
   } catch (error: any) {
     console.error("/api/synthesis error", { requestId, message: error?.message, stack: error?.stack });
-    return NextResponse.json({ requestId, error: "synthesis_failed" }, { status: 500 });
+    return NextResponse.json(
+      {
+        requestId,
+        error: "synthesis_failed",
+        details: describeProviderFailure(error)
+      },
+      { status: 500 }
+    );
   }
 }

@@ -59,4 +59,26 @@ describe("deriveDialogueView", () => {
       }
     ]);
   });
+
+  it("uses a non-overlapping preset for synthesis focus layouts", () => {
+    const store = new BranchGraphStore();
+    const rootUserId = store.createUserNode("要不要继续");
+    const { thesisId, antithesisId } = store.createAssistantPair(rootUserId, {
+      thesis: { text: "继续", summary: "继续推进", label: "继续" },
+      antithesis: { text: "暂停", summary: "暂停重构", label: "暂停" }
+    });
+    const synthesisId = store.createSynthesisAssistant([thesisId, antithesisId], {
+      text: "主线收束",
+      summary: "主线收束",
+      label: "收束"
+    });
+
+    const view = deriveDialogueView(store.getGraph(), synthesisId);
+    const byId = Object.fromEntries(view.stageNodes.map((node) => [node.id, node]));
+
+    expect(byId[rootUserId]).toMatchObject({ relation: "ancestor", seedX: 50, seedY: 22 });
+    expect(byId[thesisId]).toMatchObject({ relation: "source", seedX: 30, seedY: 34 });
+    expect(byId[antithesisId]).toMatchObject({ relation: "source", seedX: 70, seedY: 34 });
+    expect(byId[synthesisId]).toMatchObject({ relation: "focus", seedX: 50, seedY: 56 });
+  });
 });

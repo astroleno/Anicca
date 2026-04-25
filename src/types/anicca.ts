@@ -45,7 +45,23 @@ export interface Graph {
   entryIds: string[]; // 入口 user 节点（支持多主题）
 }
 
+export interface StagePoint {
+  x: number;
+  y: number;
+}
+
+export interface StagePan {
+  x: number;
+  y: number;
+}
+
+export interface StageLayoutView {
+  pan: StagePan;
+  nodePositions: Record<string, StagePoint>;
+}
+
+export type StageLayouts = Record<string, StageLayoutView>;
+
 export function createEmptyGraph(): Graph {
   return { version: ANICCA_GRAPH_VERSION, nodes: {}, edges: {}, entryIds: [] };
 }
-

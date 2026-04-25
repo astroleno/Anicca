@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent } from "react";
+import { DialogueErrorState } from "@/features/dialectic/store";
 import { DialogueComposerTarget } from "@/features/dialectic/viewModel";
 import styles from "./DialogueShell.module.css";
 
@@ -9,7 +10,7 @@ type DialogueComposerProps = {
   value: string;
   disabled: boolean;
   pendingAction: string | null;
-  errorMessage: string | null;
+  errorState: DialogueErrorState | null;
   onChange: (value: string) => void;
   onSubmit: () => void;
 };
@@ -19,7 +20,7 @@ export function DialogueComposer({
   value,
   disabled,
   pendingAction,
-  errorMessage,
+  errorState,
   onChange,
   onSubmit
 }: DialogueComposerProps) {
@@ -59,12 +60,15 @@ export function DialogueComposer({
         <button type="submit" className={styles.primaryButton} disabled={disabled || !value.trim()}>
           {pendingAction === "branches" ? "生成中..." : pendingAction === "synthesis" ? "等待收束完成" : "生成正 / 反"}
         </button>
-        {errorMessage ? (
-          <p className={styles.errorMessage} role="alert">
-            {errorMessage}
-          </p>
-        ) : null}
       </div>
+
+      {errorState ? (
+        <div className={styles.errorPanel} role="alert">
+          <strong className={styles.errorTitle}>{errorState.title}</strong>
+          <span>{errorState.detail}</span>
+          {errorState.recovery ? <small className={styles.errorRecovery}>{errorState.recovery}</small> : null}
+        </div>
+      ) : null}
     </form>
   );
 }
