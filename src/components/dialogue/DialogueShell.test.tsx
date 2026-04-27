@@ -1,11 +1,16 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { DialogueShell, isDialogueDemoWorkspaceEnabled } from "@/components/dialogue/DialogueShell";
 import { useDialogueUiStore } from "@/features/dialectic/store";
+import { serializeWorkspaceBundle } from "@/lib/io/workspaceBundle";
+import { ANICCA_WORKSPACE_SCHEMA_VERSION } from "@/lib/persist/local";
 import {
   ACTIVE_WORKSPACE_KEY,
+  loadWorkspaceRegistry,
   REGISTRY_KEY,
-  SNAPSHOT_KEY_PREFIX
+  SNAPSHOT_KEY_PREFIX,
+  saveWorkspaceRecord,
+  setActiveWorkspaceId
 } from "@/lib/persist/workspaces";
 import { branchGraphStore } from "@/store/branchGraph";
 import { createEmptyGraph } from "@/types/anicca";
@@ -28,17 +33,22 @@ function resetWorkspace(focusedNodeId: string | null = null) {
   localStorage.clear();
 }
 
-function seedRegistryWorkspace() {
+function buildRegistryGraph(nodeId: string, text: string) {
   const graph = createEmptyGraph();
-  graph.nodes.user_registry = {
-    id: "user_registry",
+  graph.nodes[nodeId] = {
+    id: nodeId,
     kind: "user",
-    text: "从 registry 恢复",
+    text,
     createdAt: "2026-04-29T00:00:00.000Z",
     parents: [],
     children: []
   };
-  graph.entryIds.push("user_registry");
+  graph.entryIds.push(nodeId);
+  return graph;
+}
+
+function seedRegistryWorkspace() {
+  const graph = buildRegistryGraph("user_registry", "从 registry 恢复");
 
   localStorage.setItem(
     REGISTRY_KEY,
@@ -80,6 +90,23 @@ function seedPair() {
     antithesis: { text: "暂停", summary: "暂停重构", label: "暂停" }
   });
   return { rootUserId, thesisId, antithesisId };
+}
+
+function seedActiveWorkspaceFromCurrentGraph() {
+  const state = useDialogueUiStore.getState();
+  saveWorkspaceRecord({
+    id: "workspace_test",
+    title: "Workspace Test Boot",
+    snapshot: {
+      schemaVersion: ANICCA_WORKSPACE_SCHEMA_VERSION,
+      workspaceId: "workspace_test",
+      graph: branchGraphStore.getGraph(),
+      focusedNodeId: state.focusedNodeId,
+      composerParentId: state.composerParentId,
+      stageLayouts: state.stageLayouts
+    }
+  });
+  setActiveWorkspaceId("workspace_test");
 }
 
 describe("DialogueShell", () => {
@@ -144,6 +171,108 @@ describe("DialogueShell", () => {
     expect(isDialogueDemoWorkspaceEnabled({ hostname: "anicca.app", search: "" })).toBe(false);
   });
 
+  it("exports the active workspace through a shell-level action", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    vi.stubGlobal("fetch", vi.fn());
+
+    const createObjectURL = vi.fn(() => "blob:workspace");
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal("URL", {
+      createObjectURL,
+      revokeObjectURL
+    });
+    const clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => {});
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: "导出工作区" }));
+
+    expect(createObjectURL).toHaveBeenCalledTimes(1);
+    const bundleBlob = createObjectURL.mock.calls[0][0] as Blob;
+    const bundleText = await bundleBlob.text();
+    expect(JSON.parse(bundleText).metadata.title).toBe("Workspace Test Boot");
+    expect(clickSpy).toHaveBeenCalled();
+  });
+
+  it("imports a valid workspace bundle into a new local workspace", async () => {
+    vi.stubGlobal("fetch", vi.fn());
+
+    saveWorkspaceRecord({
+      id: "workspace_export_source",
+      title: "Imported Workspace Source",
+      snapshot: {
+        schemaVersion: ANICCA_WORKSPACE_SCHEMA_VERSION,
+        workspaceId: "workspace_export_source",
+        graph: buildRegistryGraph("user_import_source", "imported workspace root"),
+        focusedNodeId: "user_import_source",
+        composerParentId: "user_import_source",
+        stageLayouts: {}
+      }
+    });
+
+    const sourceRegistry = loadWorkspaceRegistry();
+    const sourceEntry = sourceRegistry.entries.find((entry) => entry.id === "workspace_export_source")!;
+    const sourceSnapshot = {
+      schemaVersion: ANICCA_WORKSPACE_SCHEMA_VERSION,
+      workspaceId: "workspace_export_source",
+      graph: buildRegistryGraph("user_import_source", "imported workspace root"),
+      focusedNodeId: "user_import_source",
+      composerParentId: "user_import_source",
+      stageLayouts: {}
+    };
+    const file = new File(
+      [serializeWorkspaceBundle({ entry: sourceEntry, snapshot: sourceSnapshot })],
+      "workspace.json",
+      { type: "application/json" }
+    );
+
+    render(<DialogueShell />);
+
+    const importInput = await screen.findByTestId("dialogue-import-input");
+    fireEvent.change(importInput, {
+      target: {
+        files: [file]
+      }
+    });
+
+    await waitFor(() => {
+      expect((useDialogueUiStore.getState() as any).workspaceId).not.toBe(
+        "workspace_export_source"
+      );
+    });
+
+    expect(branchGraphStore.getGraph().nodes.user_import_source?.text).toBe(
+      "imported workspace root"
+    );
+    expect((useDialogueUiStore.getState() as any).workspaceSessionId).not.toBe(
+      "ws_export_source"
+    );
+  });
+
+  it("shows recoverable copy when an imported bundle is malformed", async () => {
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    const importInput = await screen.findByTestId("dialogue-import-input");
+    fireEvent.change(importInput, {
+      target: {
+        files: [new File(["{bad-json"], "broken.json", { type: "application/json" })]
+      }
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent("导入文件不是有效 JSON");
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "文件内容没有被解析成工作区 bundle。"
+      );
+    });
+  });
   it("does not leave orphan child users behind on branch failure", async () => {
     const user = userEvent.setup();
     const { thesisId } = seedPair();

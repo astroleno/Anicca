@@ -1,8 +1,10 @@
 "use client";
 
 import {
+  ChangeEvent,
   startTransition,
   useEffect,
+  useRef,
   useState,
   useSyncExternalStore
 } from "react";
@@ -18,10 +20,18 @@ import {
   deriveDialogueView
 } from "@/features/dialectic/viewModel";
 import {
+  exportWorkspaceBundle,
+  importWorkspaceBundleFile
+} from "@/lib/io/workspaceBundle";
+import {
   activateWorkspace,
   createWorkspaceRecord,
   initializeActiveWorkspace,
-  saveActiveWorkspaceSnapshot
+  loadActiveWorkspace,
+  loadWorkspaceRecord,
+  saveActiveWorkspaceSnapshot,
+  saveWorkspaceRecord,
+  setActiveWorkspaceId
 } from "@/lib/persist/workspaces";
 import { branchGraphStore } from "@/store/branchGraph";
 import { Message } from "@/types/chat";
@@ -122,6 +132,56 @@ function formatDialogueError(error: unknown): DialogueErrorState {
   };
 }
 
+function formatWorkspaceBundleError(error: unknown): DialogueErrorState {
+  const message =
+    typeof error === "string"
+      ? error
+      : typeof error === "object" && error && "message" in error && typeof error.message === "string"
+        ? error.message
+        : "";
+
+  if (message === "invalid_workspace_bundle_json") {
+    return {
+      title: "导入文件不是有效 JSON",
+      detail: "文件内容没有被解析成工作区 bundle。",
+      recovery: "重新导出一次，或检查文件内容后再试。"
+    };
+  }
+
+  if (message === "invalid_workspace_bundle_version") {
+    return {
+      title: "导入文件版本不兼容",
+      detail: "这份工作区 bundle 不是当前主线认识的格式。",
+      recovery: "换一份由当前 `/dialogue` 导出的文件再试。"
+    };
+  }
+
+  if (message === "invalid_workspace_bundle_graph_version") {
+    return {
+      title: "导入文件里的图版本不兼容",
+      detail: "bundle 里带的是旧图结构，当前主线不会直接写入。",
+      recovery: "先用当前主线重新导出，或升级来源工作区。"
+    };
+  }
+
+  if (
+    message === "invalid_workspace_bundle_snapshot" ||
+    message === "invalid_workspace_bundle_metadata"
+  ) {
+    return {
+      title: "导入文件缺少必要工作区信息",
+      detail: "bundle 没有通过主线校验，所以本地 registry 没有被改写。",
+      recovery: "确认文件来自当前主线导出，再重新导入。"
+    };
+  }
+
+  return {
+    title: "导入工作区失败",
+    detail: "现有本地工作区没有被改坏。",
+    recovery: "稍后重试，或检查导入文件是否完整。"
+  };
+}
+
 function serializeContextMessages(messages: Message[]) {
   return messages
     .filter((message) => message.role === "system" || message.role === "user" || message.role === "assistant")
@@ -188,6 +248,7 @@ export function DialogueShell() {
   const [draft, setDraft] = useState("");
   const [demoWorkspaceEnabled, setDemoWorkspaceEnabled] = useState(false);
   const [workspaceReady, setWorkspaceReady] = useState(() => branchGraphStore.getGraph().entryIds.length > 0);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
   const workspaceId = useDialogueUiStore((state) => state.workspaceId);
   const workspaceSessionId = useDialogueUiStore((state) => state.workspaceSessionId);
   const focusedNodeId = useDialogueUiStore((state) => state.focusedNodeId);
@@ -285,6 +346,78 @@ export function DialogueShell() {
     });
     setDraft("");
     setErrorState(null);
+  };
+
+  const handleExportWorkspace = () => {
+    if (!workspaceId) {
+      setErrorState({
+        title: "当前还没有可导出的工作区",
+        detail: "先进入一个工作区，再导出 bundle。",
+        recovery: "可以先载入示例谱系，或生成一轮正反。"
+      });
+      return;
+    }
+
+    try {
+      const record = loadWorkspaceRecord(workspaceId);
+      if (!record) {
+        throw new Error("workspace_export_unavailable");
+      }
+
+      const blob = exportWorkspaceBundle(record);
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = `${record.entry.title || workspaceId}.workspace.json`;
+      anchor.click();
+      URL.revokeObjectURL(objectUrl);
+      setErrorState(null);
+    } catch {
+      setErrorState({
+        title: "导出工作区失败",
+        detail: "当前工作区没有被序列化成 bundle。",
+        recovery: "稍后重试；如果反复失败，先检查本地存储状态。"
+      });
+    }
+  };
+
+  const handleImportWorkspace = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) {
+      return;
+    }
+
+    try {
+      const imported = await importWorkspaceBundleFile(file);
+      saveWorkspaceRecord({
+        id: imported.id,
+        title: imported.title,
+        snapshot: imported.snapshot,
+        createdAt: imported.createdAt,
+        updatedAt: imported.updatedAt,
+        lastOpenedAt: imported.lastOpenedAt
+      });
+      setActiveWorkspaceId(imported.id);
+
+      const activeWorkspace = loadActiveWorkspace();
+      if (!activeWorkspace) {
+        throw new Error("workspace_import_activation_failed");
+      }
+
+      branchGraphStore.setGraph(activeWorkspace.snapshot.graph);
+      hydrateWorkspace({
+        workspaceId: activeWorkspace.snapshot.workspaceId,
+        workspaceSessionId: activeWorkspace.snapshot.workspaceSessionId,
+        focusedNodeId: activeWorkspace.snapshot.focusedNodeId,
+        composerParentId: activeWorkspace.snapshot.composerParentId,
+        stageLayouts: activeWorkspace.snapshot.stageLayouts
+      });
+      setDraft("");
+      setErrorState(null);
+    } catch (error: unknown) {
+      setErrorState(formatWorkspaceBundleError(error));
+    }
   };
 
   const handleSubmit = async () => {
@@ -432,9 +565,33 @@ export function DialogueShell() {
         <p className={styles.heroCopy}>
           把它放进场里，先长出正与反；等张力清楚了，再决定要不要把它们收成合。
         </p>
-        <a className={styles.heroLink} href="/roundtable">
-          进入圆桌
-        </a>
+        <div className={styles.heroActions}>
+          <a className={`${styles.heroActionButton} ${styles.heroActionLink}`} href="/roundtable">
+            进入圆桌
+          </a>
+          <button
+            type="button"
+            className={styles.heroActionButton}
+            onClick={handleExportWorkspace}
+          >
+            导出工作区
+          </button>
+          <button
+            type="button"
+            className={styles.heroActionButton}
+            onClick={() => importInputRef.current?.click()}
+          >
+            导入工作区
+          </button>
+          <input
+            ref={importInputRef}
+            data-testid="dialogue-import-input"
+            type="file"
+            accept="application/json"
+            className={styles.hiddenFileInput}
+            onChange={handleImportWorkspace}
+          />
+        </div>
       </header>
 
       <div className={styles.workspace}>
