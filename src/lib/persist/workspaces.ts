@@ -2,12 +2,15 @@ import { ANICCA_WORKSPACE_SCHEMA_VERSION, loadGraphLocal } from "@/lib/persist/l
 import { createClientId } from "@/features/dialectic/store";
 import { createEmptyGraph, Graph, StageLayouts } from "@/types/anicca";
 import {
+  ActiveWorkspaceRecord,
   ActivatedWorkspaceSnapshot,
   ANICCA_WORKSPACE_REGISTRY_SCHEMA_VERSION,
   PersistedWorkspaceSnapshot,
   WorkspaceId,
   WorkspaceRegistry,
-  WorkspaceRegistryEntry
+  WorkspaceRecord,
+  WorkspaceRegistryEntry,
+  WorkspaceTitleSource
 } from "@/types/workspace";
 
 export const LEGACY_WORKSPACE_KEY = "anicca_workspace_v2";
@@ -15,6 +18,9 @@ export const MIGRATION_MARKER_KEY = "anicca_workspace_legacy_migrated_v1";
 export const REGISTRY_KEY = "anicca_workspace_registry_v1";
 export const ACTIVE_WORKSPACE_KEY = "anicca_workspace_active_v1";
 export const SNAPSHOT_KEY_PREFIX = "anicca_workspace_snapshot_v1:";
+export const LEGACY_WORKSPACE_MIGRATED_KEY = MIGRATION_MARKER_KEY;
+export const WORKSPACE_REGISTRY_STORAGE_KEY = REGISTRY_KEY;
+export const ACTIVE_WORKSPACE_STORAGE_KEY = ACTIVE_WORKSPACE_KEY;
 
 type WorkspacePersistenceOptions = {
   now?: () => string;
@@ -24,10 +30,25 @@ type WorkspacePersistenceOptions = {
 
 type WorkspaceRecordInput = {
   workspaceId: WorkspaceId;
+  title?: string;
+  titleSource?: WorkspaceTitleSource;
+  createdAt?: string;
+  updatedAt?: string;
+  lastOpenedAt?: string;
   graph: Graph;
   focusedNodeId: string | null;
   composerParentId: string | null;
   stageLayouts?: StageLayouts;
+};
+
+type SaveWorkspaceRecordInput = {
+  id: WorkspaceId;
+  title?: string;
+  titleSource?: WorkspaceTitleSource;
+  createdAt?: string;
+  updatedAt?: string;
+  lastOpenedAt?: string;
+  snapshot: PersistedWorkspaceSnapshot;
 };
 
 function nowIso(options?: WorkspacePersistenceOptions) {
@@ -44,6 +65,10 @@ function createWorkspaceSessionId(options?: WorkspacePersistenceOptions): string
 
 function snapshotKey(workspaceId: WorkspaceId) {
   return `${SNAPSHOT_KEY_PREFIX}${workspaceId}`;
+}
+
+export function getWorkspaceSnapshotStorageKey(workspaceId: WorkspaceId) {
+  return snapshotKey(workspaceId);
 }
 
 function readJson<T>(key: string): T | null {
@@ -83,22 +108,52 @@ function saveWorkspaceRegistry(registry: WorkspaceRegistry) {
 function deriveWorkspaceTitle(graph: Graph) {
   const firstEntryId = graph.entryIds[0];
   const text = firstEntryId ? graph.nodes[firstEntryId]?.text?.trim() : "";
-  return text || "未命名工作区";
+  return text.slice(0, 48) || "未命名工作区";
+}
+
+function normalizeWorkspaceTitle(title: string | undefined | null) {
+  return title?.trim() || "";
+}
+
+function inferTitleSource(existing?: WorkspaceRegistryEntry | null): WorkspaceTitleSource {
+  if (existing?.titleSource === "manual" || existing?.titleSource === "derived") {
+    return existing.titleSource;
+  }
+
+  return "derived";
 }
 
 function buildRegistryEntry(
   snapshot: PersistedWorkspaceSnapshot,
   timestamp: string,
-  existing?: WorkspaceRegistryEntry
+  existing?: WorkspaceRegistryEntry | null,
+  overrides?: {
+    title?: string;
+    titleSource?: WorkspaceTitleSource;
+    createdAt?: string;
+    updatedAt?: string;
+    lastOpenedAt?: string;
+  }
 ): WorkspaceRegistryEntry {
+  const explicitTitle = normalizeWorkspaceTitle(overrides?.title);
+  const titleSource =
+    overrides?.titleSource ||
+    (explicitTitle ? "manual" : inferTitleSource(existing));
+  const title =
+    explicitTitle ||
+    (titleSource === "derived" ? deriveWorkspaceTitle(snapshot.graph) : existing?.title) ||
+    deriveWorkspaceTitle(snapshot.graph);
+
   return {
     id: snapshot.workspaceId,
-    title: existing?.title || deriveWorkspaceTitle(snapshot.graph),
-    createdAt: existing?.createdAt || timestamp,
-    updatedAt: timestamp,
-    lastOpenedAt: existing?.lastOpenedAt || timestamp,
+    title,
+    titleSource,
+    createdAt: overrides?.createdAt || existing?.createdAt || timestamp,
+    updatedAt: overrides?.updatedAt || timestamp,
+    lastOpenedAt: overrides?.lastOpenedAt || existing?.lastOpenedAt || timestamp,
     entryCount: snapshot.graph.entryIds.length,
-    nodeCount: Object.keys(snapshot.graph.nodes).length
+    nodeCount: Object.keys(snapshot.graph.nodes).length,
+    focusedNodeId: snapshot.focusedNodeId
   };
 }
 
@@ -113,7 +168,7 @@ function normalizeSnapshot(input: WorkspaceRecordInput): PersistedWorkspaceSnaps
   };
 }
 
-function loadWorkspaceSnapshot(workspaceId: WorkspaceId): PersistedWorkspaceSnapshot | null {
+export function loadWorkspaceSnapshot(workspaceId: WorkspaceId): PersistedWorkspaceSnapshot | null {
   const parsed = readJson<PersistedWorkspaceSnapshot>(snapshotKey(workspaceId));
   if (parsed?.schemaVersion !== ANICCA_WORKSPACE_SCHEMA_VERSION) {
     return null;
@@ -128,6 +183,25 @@ function loadWorkspaceSnapshot(workspaceId: WorkspaceId): PersistedWorkspaceSnap
   };
 }
 
+export function loadWorkspaceRecord(workspaceId: WorkspaceId): WorkspaceRecord | null {
+  const registry = loadWorkspaceRegistry();
+  const entry = registry.entries.find((candidate) => candidate.id === workspaceId) || null;
+  if (!entry) {
+    return null;
+  }
+
+  const snapshot = loadWorkspaceSnapshot(workspaceId);
+  if (!snapshot) {
+    return null;
+  }
+
+  return {
+    entry,
+    snapshot,
+    registry
+  };
+}
+
 export function createWorkspaceRecord(
   input: WorkspaceRecordInput,
   options?: WorkspacePersistenceOptions
@@ -138,7 +212,13 @@ export function createWorkspaceRecord(
 
   const registry = loadWorkspaceRegistry();
   const existing = registry.entries.find((entry) => entry.id === snapshot.workspaceId);
-  const nextEntry = buildRegistryEntry(snapshot, timestamp, existing);
+  const nextEntry = buildRegistryEntry(snapshot, timestamp, existing, {
+    title: input.title,
+    titleSource: input.titleSource,
+    createdAt: input.createdAt,
+    updatedAt: input.updatedAt,
+    lastOpenedAt: input.lastOpenedAt
+  });
   saveWorkspaceRegistry({
     schemaVersion: ANICCA_WORKSPACE_REGISTRY_SCHEMA_VERSION,
     entries: [
@@ -148,6 +228,28 @@ export function createWorkspaceRecord(
   });
 
   return snapshot;
+}
+
+export function saveWorkspaceRecord(
+  input: SaveWorkspaceRecordInput,
+  options?: WorkspacePersistenceOptions
+) {
+  const snapshot = createWorkspaceRecord(
+    {
+      workspaceId: input.id,
+      title: input.title,
+      titleSource: input.titleSource,
+      createdAt: input.createdAt,
+      updatedAt: input.updatedAt,
+      lastOpenedAt: input.lastOpenedAt,
+      graph: input.snapshot.graph,
+      focusedNodeId: input.snapshot.focusedNodeId,
+      composerParentId: input.snapshot.composerParentId,
+      stageLayouts: input.snapshot.stageLayouts
+    },
+    options
+  );
+  return loadWorkspaceRecord(snapshot.workspaceId);
 }
 
 export function saveActiveWorkspaceSnapshot(input: WorkspaceRecordInput, options?: WorkspacePersistenceOptions) {
@@ -182,6 +284,62 @@ export function activateWorkspace(
     ...snapshot,
     workspaceSessionId: createWorkspaceSessionId(options)
   };
+}
+
+export function setActiveWorkspaceId(workspaceId: WorkspaceId) {
+  localStorage.setItem(ACTIVE_WORKSPACE_KEY, workspaceId);
+}
+
+export function listRecentWorkspaces() {
+  return [...loadWorkspaceRegistry().entries].sort((left, right) => {
+    const byLastOpened =
+      new Date(right.lastOpenedAt).getTime() - new Date(left.lastOpenedAt).getTime();
+    if (byLastOpened !== 0) {
+      return byLastOpened;
+    }
+
+    return new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime();
+  });
+}
+
+export function renameWorkspace(workspaceId: WorkspaceId, title: string, options?: WorkspacePersistenceOptions) {
+  const record = loadWorkspaceRecord(workspaceId);
+  if (!record) {
+    return null;
+  }
+
+  const timestamp = nowIso(options);
+  const nextEntry = buildRegistryEntry(record.snapshot, timestamp, record.entry, {
+    title,
+    titleSource: normalizeWorkspaceTitle(title) ? "manual" : "derived",
+    createdAt: record.entry.createdAt,
+    updatedAt: timestamp,
+    lastOpenedAt: record.entry.lastOpenedAt
+  });
+  const nextRegistry: WorkspaceRegistry = {
+    schemaVersion: ANICCA_WORKSPACE_REGISTRY_SCHEMA_VERSION,
+    entries: record.registry.entries.map((entry) =>
+      entry.id === workspaceId ? nextEntry : entry
+    )
+  };
+  saveWorkspaceRegistry(nextRegistry);
+  return nextEntry;
+}
+
+export function createWorkspace(options?: { title?: string } & WorkspacePersistenceOptions): ActiveWorkspaceRecord | null {
+  const workspaceId = createWorkspaceId(options);
+  createWorkspaceRecord(
+    {
+      workspaceId,
+      title: options?.title,
+      graph: createEmptyGraph(),
+      focusedNodeId: null,
+      composerParentId: null,
+      stageLayouts: {}
+    },
+    options
+  );
+  return loadActiveWorkspace(options);
 }
 
 function migrateLegacyWorkspace(options?: WorkspacePersistenceOptions): ActivatedWorkspaceSnapshot | null {
@@ -246,4 +404,19 @@ export function initializeActiveWorkspace(options?: WorkspacePersistenceOptions)
   }
 
   return createEmptyWorkspace(options);
+}
+
+export function loadActiveWorkspace(options?: WorkspacePersistenceOptions): ActiveWorkspaceRecord | null {
+  const snapshot = initializeActiveWorkspace(options);
+  const registry = loadWorkspaceRegistry();
+  const entry =
+    registry.entries.find((candidate) => candidate.id === snapshot.workspaceId) ||
+    buildRegistryEntry(snapshot, nowIso(options), null);
+
+  return {
+    activeWorkspaceId: snapshot.workspaceId,
+    entry,
+    snapshot,
+    registry
+  };
 }

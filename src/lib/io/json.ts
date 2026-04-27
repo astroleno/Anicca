@@ -1,6 +1,6 @@
-import { Graph } from "@/types/anicca";
+import { ANICCA_GRAPH_VERSION, Graph } from "@/types/anicca";
 
-// 简易 JSON 导入/导出（最小实现）。生产可引入 Zod 校验。
+// Deprecated raw graph helper. `/dialogue` 主线应优先走 workspace bundle import/export。
 
 export function exportGraph(graph: Graph): Blob {
   try {
@@ -16,8 +16,7 @@ export async function importGraph(file: File): Promise<Graph> {
   try {
     const text = await file.text();
     const parsed = JSON.parse(text);
-    // 轻校验
-    if (!parsed || parsed.version !== "anicca-mvp-1" || !parsed.nodes || !parsed.edges) {
+    if (!parsed || parsed.version !== ANICCA_GRAPH_VERSION || !parsed.nodes || !parsed.edges) {
       throw new Error("invalid graph json");
     }
     return parsed as Graph;
@@ -26,5 +25,4 @@ export async function importGraph(file: File): Promise<Graph> {
     throw e;
   }
 }
-
 
