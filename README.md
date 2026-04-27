@@ -13,6 +13,7 @@
 - `codex/dialectic-v2-mainline` 已包含 Phase 1 gate、roundtable、visual/ref/docs 和 OS metadata cleanup 相关提交，当前基点是 `2c294fe`。
 - Phase 2 Unit 1 已落在隔离分支 `codex/workspace-registry-unit1`，提交为 `7a992bb feat(workspaces): add registry migration foundation`。
 - Unit 1 分支已推送到 `origin/codex/workspace-registry-unit1`，但尚未并入 `codex/dialectic-v2-mainline`。
+- `codex/workspace-phase2-continuation` 是基于 Unit 1 的 stacked continuation，用来回放并整理上一轮已完成的 workspace Unit 2+ 能力。
 
 ---
 
@@ -82,9 +83,9 @@
 
 ---
 
-## 四、数据模型（当前 Unit 1 contract）
+## 四、数据模型（当前 stacked branch contract）
 
-Phase 2 Unit 1 分支持久化的是一个 local-first workspace registry。`workspaceId` 是稳定的本地持久化身份；`workspaceSessionId` 只在运行时生成，用于网络请求 ownership 和 stale-response 防护，不写入 workspace snapshot。合并到 `codex/dialectic-v2-mainline` 后，这一段成为主线 workspace persistence contract。
+Phase 2 stacked 分支持久化的是一个 local-first workspace registry。`workspaceId` 是稳定的本地持久化身份；`workspaceSessionId` 只在运行时生成，用于网络请求 ownership 和 stale-response 防护，不写入 workspace snapshot。合并到 `codex/dialectic-v2-mainline` 后，这一段成为主线 workspace persistence contract。
 
 持久化拆成三层：
 
@@ -190,7 +191,7 @@ active workspace key 单独保存：
 }
 ```
 
-Unit 1 contract 里最关键的字段：
+当前 workspace contract 里最关键的字段：
 
 - `workspaceId`：稳定本地 workspace 身份，用于 registry、active id、per-workspace snapshot 和后续导入导出
 - `workspaceSessionId`：运行时 session ownership token；hydrate、创建、导入、切换时重新生成，不跨 reload 持久化
@@ -224,6 +225,7 @@ Unit 1 contract 里最关键的字段：
 - 中央：bubble stage，用于展示当前节点及其 lineage / source 关系
 - 右侧：当前节点详情、来源节点、显式 synthesis affordance
 - 底部：persistent composer，可从 root 或当前 assistant 继续展开
+- 顶部：最小 workspace actions，支持导出当前工作区 bundle 与导入本地 bundle
 
 核心交互：
 
@@ -256,12 +258,14 @@ Unit 1 contract 里最关键的字段：
 - per-workspace snapshot
 - active workspace id
 - legacy `anicca_workspace_v2` snapshot migration
+- validated workspace bundle export / import
+- imported workspaces receive a fresh local `workspaceId`
+- imported workspaces reset local `lastOpenedAt` to import time
 - graph version 校验
 - runtime-only workspace session regeneration
 
 仍在后续计划中的能力：
 
-- 显式导出 / 导入 workspace
 - workspace 管理与命名
 - workspace 列表、创建、切换 UI
 
@@ -301,9 +305,11 @@ npm run dev
 ## 十一、路线图
 
 - 阶段一：稳定 `/dialogue` 主线，包括 graph、request matching、workspace restore、ports rollout
-- 阶段二：workspace 能力增强，包括导出 / 导入、管理、恢复体验打磨（see `docs/superpowers/plans/2026-04-25-anicca-dialectic-v2-workspace-phase-implement-plan.md`）
-- 阶段三：在不破坏主线 contract 的前提下评估是否把更强的视觉层重新接回 `/dialogue`
-- 阶段四：可选云同步、分享与部署能力
+- 阶段二：workspace registry foundation，包括 stable `workspaceId`、migration、active workspace boot
+- 阶段三：workspace bundle import / export，保持 local-first 且不引入云同步
+- 阶段四：workspace 管理与命名、recent list / create / switch UI、最小 telemetry
+- 阶段五：在不破坏主线 contract 的前提下评估是否把更强的视觉层重新接回 `/dialogue`
+- 阶段六：可选云同步、分享与部署能力
 
 ---
 

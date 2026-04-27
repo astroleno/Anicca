@@ -12,7 +12,8 @@
 - Unit 1 implementation commit: `7a992bb feat(workspaces): add registry migration foundation`.
 - The branch is pushed to `origin/codex/workspace-registry-unit1`.
 - Unit 1 is not yet merged into `codex/dialectic-v2-mainline`; mainline is still at `2c294fe` for this workstream.
-- Unit 2 must not begin until the Unit 1 PR lands and the post-merge migration smoke passes.
+- `codex/workspace-phase2-continuation` is a stacked continuation branch based on Unit 1, used to port the previous round's Unit 2+ work without expanding the Unit 1 review branch.
+- Merge order remains Unit 1 first, then continuation work after migration smoke.
 
 ---
 
@@ -28,9 +29,9 @@
 
 - [x] Confirm the clean release branch records the `/dialogue` release checklist as complete, including manual checks.
 - [x] Confirm a live provider smoke pass with `OPENAI_API_KEY` has been run and recorded.
-- [x] Do not start Unit 2, Unit 3, or Unit 4 until Unit 1 lands and the registry contract is the active persistence path.
+- [x] Keep Unit 2, Unit 3, and Unit 4 off the Unit 1 review branch until Unit 1 lands and the registry contract is the active persistence path.
 
-This phase was unblocked for Unit 1 only. Unit 1 is implemented on `codex/workspace-registry-unit1`, but Unit 2 remains blocked until Unit 1 is merged into `codex/dialectic-v2-mainline` and the browser migration smoke passes.
+This phase was unblocked for Unit 1 only on `codex/workspace-registry-unit1`. Follow-up units may be staged on `codex/workspace-phase2-continuation`, but merge/release remains blocked until Unit 1 is merged into `codex/dialectic-v2-mainline` and the browser migration smoke passes.
 
 ---
 
@@ -265,16 +266,90 @@ Unit 1 verification record:
 
 ### Unit 2: Add validated workspace export and import
 
-- [ ] Define a versioned workspace bundle JSON shape
-- [ ] Replace graph-only MVP import/export with workspace-aware import/export
-- [ ] Validate bundle format, graph version, and metadata before import
-- [ ] Reject malformed or incompatible bundles with recoverable UI copy
-- [ ] Assign a fresh local `workspaceId` on import, even when the incoming bundle already contains one
-- [ ] Preserve safe user-facing metadata such as title and timestamps when valid
-- [ ] Preserve source-history timestamps separately from local recency semantics
-- [ ] Set local `lastOpenedAt` to import time so imported workspaces sort as newly opened locally
-- [ ] Strip transient request/session state from imported payloads
-- [ ] Add UI entry points for export current workspace and import into local registry
+- [x] Define a versioned workspace bundle JSON shape
+- [x] Replace graph-only MVP import/export with workspace-aware import/export
+- [x] Validate bundle format, graph version, and metadata before import
+- [x] Reject malformed or incompatible bundles with recoverable UI copy
+- [x] Assign a fresh local `workspaceId` on import, even when the incoming bundle already contains one
+- [x] Preserve safe user-facing metadata such as title and timestamps when valid
+- [x] Preserve source-history timestamps separately from local recency semantics
+- [x] Set local `lastOpenedAt` to import time so imported workspaces sort as newly opened locally
+- [x] Strip transient request/session state from imported payloads
+- [x] Add UI entry points for export current workspace and import into local registry
+
+#### Unit 2 Expanded Task Slice
+
+##### Step 1: Write the failing export/import tests first
+
+- [x] Create `src/lib/io/workspaceBundle.test.ts` with failing tests for:
+  - exporting the current active workspace as a versioned bundle
+  - rejecting malformed JSON payloads
+  - rejecting incompatible graph versions
+  - assigning a fresh local `workspaceId` on import
+  - resetting local `lastOpenedAt` to import time instead of the bundle value
+  - clearing transient runtime session ownership on import
+- [x] Extend `src/components/dialogue/DialogueShell.test.tsx` with failing tests for:
+  - exporting the active workspace through a shell-level action
+  - importing a valid bundle into a new local workspace
+  - preserving graph/focus content while regenerating runtime ownership
+- [x] `src/lib/io/json.ts` no longer defines the `/dialogue` mainline path; it remains only as a deprecated raw-graph helper with current graph-version validation.
+- [x] Verification command:
+  - `npm test -- src/lib/io/workspaceBundle.test.ts src/components/dialogue/DialogueShell.test.tsx`
+
+##### Step 2: Define the workspace bundle contract before wiring UI
+
+- [x] Extend `src/types/workspace.ts` or `src/lib/io/workspaceBundle.ts` with exact bundle concepts:
+  - `ANICCA_WORKSPACE_BUNDLE_VERSION`
+  - `WorkspaceBundle`
+  - `WorkspaceBundleMetadata`
+  - import result shape that distinguishes source-history timestamps from local recency metadata
+- [x] The bundle contract makes this distinction explicit:
+  - `createdAt` / `updatedAt` may be preserved when valid
+  - `lastOpenedAt` is never trusted as source-of-truth local recency
+
+##### Step 3: Implement serializer, validator, and import path
+
+- [x] Create `src/lib/io/workspaceBundle.ts`.
+- [x] Implement exact responsibilities:
+  - serialize the active workspace into a versioned bundle
+  - parse JSON safely
+  - validate bundle format version
+  - validate snapshot shape and graph version compatibility
+  - sanitize malformed metadata
+  - assign a fresh local `workspaceId`
+  - keep `workspaceSessionId` out of persisted/imported snapshots
+  - rely on workspace activation to regenerate runtime `workspaceSessionId`
+  - write imported workspaces into the existing registry path
+- [x] `src/lib/io/json.ts` has been reduced to a deprecated raw-graph helper and no longer defines the mainline `/dialogue` import/export contract.
+
+##### Step 4: Wire import/export through the dialogue shell
+
+- [x] Modify `src/components/dialogue/DialogueShell.tsx` to expose export/import entry points without introducing cloud or auth flows.
+- [x] Export operates on the current active workspace.
+- [x] Import:
+  - write a new local workspace record
+  - set it active
+  - hydrate graph, focus, composer target, and stage layouts from the imported snapshot
+  - clear transient pending/error state
+  - regenerate runtime `workspaceSessionId`
+- [x] Keep the UI recoverable:
+  - invalid bundles must show user-facing validation copy
+  - failed imports must not corrupt existing registry state
+
+##### Step 5: Align docs and verification before closing Unit 2
+
+- [x] Update `README.md` to describe workspace bundle export/import rather than raw graph export/import.
+- [x] Explicitly document that imported workspaces get a fresh local `workspaceId` and a new local `lastOpenedAt`.
+- [x] Verification commands:
+  - `npm test -- src/lib/io/workspaceBundle.test.ts src/components/dialogue/DialogueShell.test.tsx`
+  - `npm test`
+  - `npm run build`
+- [x] `npm run test:visual-dialogue`
+- [x] Preferred commit slices:
+  - `test(workspaces): characterize workspace bundle import export`
+  - `feat(workspaces): add validated workspace bundle io`
+  - `feat(dialogue): wire workspace import export actions`
+  - `docs(workspaces): document bundle import export semantics`
 
 ### Unit 3: Add workspace naming, listing, creation, and switching
 
