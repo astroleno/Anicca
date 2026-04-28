@@ -225,7 +225,7 @@ active workspace key 单独保存：
 - 中央：bubble stage，用于展示当前节点及其 lineage / source 关系
 - 右侧：当前节点详情、来源节点、显式 synthesis affordance
 - 底部：persistent composer，可从 root 或当前 assistant 继续展开
-- 顶部：最小 workspace actions，支持导出当前工作区 bundle 与导入本地 bundle
+- 顶部：workspace bar，支持新建、重命名、切换最近工作区，以及导出/导入当前 bundle
 
 核心交互：
 
@@ -259,6 +259,8 @@ active workspace key 单独保存：
 - active workspace id
 - legacy `anicca_workspace_v2` snapshot migration
 - validated workspace bundle export / import
+- workspace bar：create / rename / switch recent workspaces
+- derived title 会跟随 root topic 更新，直到用户手动重命名
 - imported workspaces receive a fresh local `workspaceId`
 - imported workspaces reset local `lastOpenedAt` to import time
 - graph version 校验
@@ -266,8 +268,7 @@ active workspace key 单独保存：
 
 仍在后续计划中的能力：
 
-- workspace 管理与命名
-- workspace 列表、创建、切换 UI
+- 最小 adoption telemetry
 
 ---
 
@@ -307,7 +308,7 @@ npm run dev
 - 阶段一：稳定 `/dialogue` 主线，包括 graph、request matching、workspace restore、ports rollout
 - 阶段二：workspace registry foundation，包括 stable `workspaceId`、migration、active workspace boot
 - 阶段三：workspace bundle import / export，保持 local-first 且不引入云同步
-- 阶段四：workspace 管理与命名、recent list / create / switch UI、最小 telemetry
+- 阶段四：最小 telemetry
 - 阶段五：在不破坏主线 contract 的前提下评估是否把更强的视觉层重新接回 `/dialogue`
 - 阶段六：可选云同步、分享与部署能力
 

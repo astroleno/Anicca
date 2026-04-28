@@ -353,16 +353,23 @@ Unit 1 verification record:
 
 ### Unit 3: Add workspace naming, listing, creation, and switching
 
-- [ ] Add a workspace bar or equivalent shell-level control for current workspace operations
-- [ ] Create a new empty workspace without mutating the currently active graph
-- [ ] Derive a default workspace title from the earliest/root topic until the user renames it
-- [ ] Support explicit rename of the current workspace
-- [ ] Render a recent-workspace list from registry metadata
-- [ ] Switching workspaces must:
+- [x] Add a workspace bar or equivalent shell-level control for current workspace operations
+- [x] Create a new empty workspace without mutating the currently active graph
+- [x] Derive a default workspace title from the earliest/root topic until the user renames it
+- [x] Support explicit rename of the current workspace
+- [x] Render a recent-workspace list from registry metadata
+- [x] Switching workspaces must:
   - cancel transient pending state
   - hydrate graph, focus, composer target, and stage layout from the selected snapshot
   - issue a fresh `workspaceSessionId`
-- [ ] Keep active workspace metadata in sync when graph content changes materially
+- [x] Keep active workspace metadata in sync when graph content changes materially
+
+#### Unit 3 Verification
+
+- 2026-04-28: targeted `npx vitest run src/lib/persist/workspaces.test.ts src/components/dialogue/WorkspaceBar.test.tsx src/components/dialogue/DialogueShell.test.tsx` passed with 3 test files / 26 tests
+- 2026-04-28: default `npm test` passed with 14 test files / 69 tests
+- 2026-04-28: `npm run build` passed
+- 2026-04-28: `npm run test:visual-dialogue` passed
 
 ### Unit 4: Add minimal adoption telemetry
 
