@@ -194,6 +194,17 @@ async function assertRegionWidth(locator, viewportWidth, name) {
   }
 }
 
+async function assertRegionMinWidth(locator, minWidth, name) {
+  const box = await locator.boundingBox();
+  if (!box) {
+    throw new Error(`${name} did not render`);
+  }
+
+  if (box.width < minWidth) {
+    throw new Error(`${name} is too narrow: ${JSON.stringify(box)}`);
+  }
+}
+
 async function runViewport(browser, viewport) {
   const context = await browser.newContext({
     viewport: {
@@ -214,18 +225,27 @@ async function runViewport(browser, viewport) {
   const panel = page.getByTestId("dialogue-panel");
   const composer = page.getByTestId("dialogue-composer");
   const sidebar = page.getByTestId("dialogue-sidebar");
+  const workspaceBar = page.getByTestId("dialogue-workspace-bar");
 
   await stage.waitFor();
   await panel.waitFor();
   await composer.waitFor();
   await sidebar.waitFor();
+  await workspaceBar.waitFor();
 
   await ensureNoHorizontalOverflow(page, viewport.name);
   await assertRegionWidth(stage, viewport.width, `${viewport.name} stage`);
   await assertRegionWidth(panel, viewport.width, `${viewport.name} panel`);
   await assertRegionWidth(composer, viewport.width, `${viewport.name} composer`);
+  await assertRegionWidth(workspaceBar, viewport.width, `${viewport.name} workspace bar`);
 
   if (viewport.name.startsWith("mobile")) {
+    await assertRegionMinWidth(
+      workspaceBar,
+      viewport.width - 28,
+      `${viewport.name} workspace bar`
+    );
+
     const mobileMetrics = await page.evaluate(() => {
       const shell = document.querySelector('[data-testid="dialogue-shell"]');
       if (!(shell instanceof HTMLElement)) {

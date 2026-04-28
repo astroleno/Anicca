@@ -957,6 +957,7 @@
     overflow-y: auto;
   }
 
+  .workspaceBar,
   .hero,
   .sidebar,
   .panel {
@@ -967,6 +968,45 @@
     width: auto;
     max-height: none;
     margin: 16px 18px 0;
+  }
+
+  .workspaceBar {
+    left: auto;
+    transform: none;
+    padding: 12px 14px;
+  }
+
+  .workspaceBarHeader {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .workspaceBarActions {
+    width: 100%;
+  }
+
+  .workspaceBarButton,
+  .workspaceBarGhostButton {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+
+  .workspaceRecentList {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 0 24px 4px 0;
+    scroll-padding-inline: 0 24px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(90deg, black, black calc(100% - 24px), transparent);
+    mask-image: linear-gradient(90deg, black, black calc(100% - 24px), transparent);
+  }
+
+  .workspaceRecentItem {
+    flex: 0 0 auto;
+    min-width: max-content;
+    scroll-snap-align: start;
   }
 
   .workspace {
@@ -1089,6 +1129,7 @@
 }
 
 @media (max-width: 680px) {
+  .workspaceBar,
   .hero,
   .sidebar,
   .panel,
@@ -1104,6 +1145,26 @@
     background: none;
     box-shadow: none;
     backdrop-filter: none;
+  }
+
+  .workspaceBar {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 20px;
+  }
+
+  .workspaceBarActions,
+  .workspaceRenameActions {
+    width: 100%;
+  }
+
+  .workspaceBarButton,
+  .workspaceBarGhostButton {
+    flex: 1 1 calc(50% - 4px);
+  }
+
+  .workspaceRecent {
+    margin-top: 10px;
   }
 
   .stagePanel {
@@ -1139,7 +1200,8 @@
 }
 
 .breadcrumb::-webkit-scrollbar,
-.sidebarTree::-webkit-scrollbar {
+.sidebarTree::-webkit-scrollbar,
+.workspaceRecentList::-webkit-scrollbar {
   display: none;
 }
 

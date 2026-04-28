@@ -37,7 +37,11 @@ export function WorkspaceBar({
   };
 
   return (
-    <section className={styles.workspaceBar} aria-label="工作区管理">
+    <section
+      className={styles.workspaceBar}
+      aria-label="工作区管理"
+      data-testid="dialogue-workspace-bar"
+    >
       <div className={styles.workspaceBarHeader}>
         <div className={styles.workspaceBarCurrent}>
           <p className={styles.eyebrow}>工作区</p>
