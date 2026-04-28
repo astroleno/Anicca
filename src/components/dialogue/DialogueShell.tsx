@@ -13,6 +13,7 @@ import { BranchSidebar } from "@/components/dialogue/BranchSidebar";
 import { BubbleStage } from "@/components/dialogue/BubbleStage";
 import { ConversationPanel } from "@/components/dialogue/ConversationPanel";
 import { DialogueComposer } from "@/components/dialogue/DialogueComposer";
+import { WorkspaceBar } from "@/components/dialogue/WorkspaceBar";
 import { createDialogueDemoWorkspace } from "@/features/dialectic/demoWorkspace";
 import { createClientId, DialogueErrorState, useDialogueUiStore } from "@/features/dialectic/store";
 import {
@@ -25,10 +26,13 @@ import {
 } from "@/lib/io/workspaceBundle";
 import {
   activateWorkspace,
+  createWorkspace,
   createWorkspaceRecord,
   initializeActiveWorkspace,
+  listRecentWorkspaces,
   loadActiveWorkspace,
   loadWorkspaceRecord,
+  renameWorkspace,
   saveActiveWorkspaceSnapshot,
   saveWorkspaceRecord,
   setActiveWorkspaceId
@@ -36,6 +40,7 @@ import {
 import { branchGraphStore } from "@/store/branchGraph";
 import { Message } from "@/types/chat";
 import { Graph } from "@/types/anicca";
+import { WorkspaceRegistryEntry } from "@/types/workspace";
 import styles from "./DialogueShell.module.css";
 
 type BranchPayload = {
@@ -248,6 +253,7 @@ export function DialogueShell() {
   const [draft, setDraft] = useState("");
   const [demoWorkspaceEnabled, setDemoWorkspaceEnabled] = useState(false);
   const [workspaceReady, setWorkspaceReady] = useState(() => branchGraphStore.getGraph().entryIds.length > 0);
+  const [workspaceEntries, setWorkspaceEntries] = useState<WorkspaceRegistryEntry[]>([]);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const workspaceId = useDialogueUiStore((state) => state.workspaceId);
   const workspaceSessionId = useDialogueUiStore((state) => state.workspaceSessionId);
@@ -263,6 +269,17 @@ export function DialogueShell() {
   const beginPending = useDialogueUiStore((state) => state.beginPending);
   const clearPending = useDialogueUiStore((state) => state.clearPending);
   const setErrorState = useDialogueUiStore((state) => state.setErrorState);
+
+  const refreshWorkspaceRegistryView = (preferredWorkspaceId?: string | null) => {
+    const entries = listRecentWorkspaces();
+    setWorkspaceEntries(entries);
+    const nextCurrentId = preferredWorkspaceId || workspaceId || entries[0]?.id || null;
+    return {
+      entries,
+      currentEntry:
+        entries.find((entry) => entry.id === nextCurrentId) || entries[0] || null
+    };
+  };
 
   useEffect(() => {
     if (branchGraphStore.getGraph().entryIds.length > 0) {
@@ -280,6 +297,7 @@ export function DialogueShell() {
       stageLayouts: snapshot.stageLayouts
     });
     setWorkspaceReady(true);
+    refreshWorkspaceRegistryView(snapshot.workspaceId);
   }, [hydrateWorkspace]);
 
   useEffect(() => {
@@ -319,6 +337,7 @@ export function DialogueShell() {
       composerParentId: view.composerTarget.nodeId,
       stageLayouts
     });
+    refreshWorkspaceRegistryView(workspaceId);
   }, [graphSnapshot, stageLayouts, view.focusNodeId, view.composerTarget.nodeId, workspaceId, workspaceReady]);
 
   const handleSelectNode = (nodeId: string) => {
@@ -344,7 +363,79 @@ export function DialogueShell() {
       composerParentId: activatedSnapshot.composerParentId,
       stageLayouts: activatedSnapshot.stageLayouts
     });
+    refreshWorkspaceRegistryView(activatedSnapshot.workspaceId);
     setDraft("");
+    setErrorState(null);
+  };
+
+  const handleCreateWorkspace = () => {
+    const activeWorkspace = createWorkspace();
+    if (!activeWorkspace) {
+      setErrorState({
+        title: "新建工作区失败",
+        detail: "本地 registry 没有写入新的空工作区。",
+        recovery: "稍后重试；如果反复失败，先检查 localStorage 是否可写。"
+      });
+      return;
+    }
+
+    branchGraphStore.setGraph(activeWorkspace.snapshot.graph);
+    hydrateWorkspace({
+      workspaceId: activeWorkspace.snapshot.workspaceId,
+      workspaceSessionId: activeWorkspace.snapshot.workspaceSessionId,
+      focusedNodeId: activeWorkspace.snapshot.focusedNodeId,
+      composerParentId: activeWorkspace.snapshot.composerParentId,
+      stageLayouts: activeWorkspace.snapshot.stageLayouts
+    });
+    refreshWorkspaceRegistryView(activeWorkspace.snapshot.workspaceId);
+    setDraft("");
+    setErrorState(null);
+  };
+
+  const handleSwitchWorkspace = (nextWorkspaceId: string) => {
+    if (!nextWorkspaceId || nextWorkspaceId === workspaceId) {
+      return;
+    }
+
+    const activatedSnapshot = activateWorkspace(nextWorkspaceId);
+    if (!activatedSnapshot) {
+      setErrorState({
+        title: "切换工作区失败",
+        detail: "目标工作区没有被恢复出来。",
+        recovery: "稍后重试；如果反复失败，先检查本地 registry 是否完整。"
+      });
+      return;
+    }
+
+    branchGraphStore.setGraph(activatedSnapshot.graph);
+    hydrateWorkspace({
+      workspaceId: activatedSnapshot.workspaceId,
+      workspaceSessionId: activatedSnapshot.workspaceSessionId,
+      focusedNodeId: activatedSnapshot.focusedNodeId,
+      composerParentId: activatedSnapshot.composerParentId,
+      stageLayouts: activatedSnapshot.stageLayouts
+    });
+    refreshWorkspaceRegistryView(activatedSnapshot.workspaceId);
+    setDraft("");
+    setErrorState(null);
+  };
+
+  const handleRenameWorkspace = (title: string) => {
+    if (!workspaceId) {
+      return;
+    }
+
+    const renamed = renameWorkspace(workspaceId, title);
+    if (!renamed) {
+      setErrorState({
+        title: "重命名工作区失败",
+        detail: "registry metadata 没有更新成功。",
+        recovery: "稍后重试；如果反复失败，先检查本地存储状态。"
+      });
+      return;
+    }
+
+    refreshWorkspaceRegistryView(workspaceId);
     setErrorState(null);
   };
 
@@ -593,6 +684,17 @@ export function DialogueShell() {
           />
         </div>
       </header>
+
+      <WorkspaceBar
+        currentWorkspaceId={workspaceId}
+        currentTitle={
+          workspaceEntries.find((entry) => entry.id === workspaceId)?.title || "未命名工作区"
+        }
+        items={workspaceEntries}
+        onCreate={handleCreateWorkspace}
+        onSelect={handleSwitchWorkspace}
+        onRename={handleRenameWorkspace}
+      />
 
       <div className={styles.workspace}>
         <BranchSidebar breadcrumb={view.breadcrumb} items={view.sidebarItems} onSelect={handleSelectNode} />

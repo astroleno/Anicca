@@ -1,5 +1,5 @@
-import { ANICCA_WORKSPACE_SCHEMA_VERSION, loadGraphLocal } from "@/lib/persist/local";
 import { createClientId } from "@/features/dialectic/store";
+import { ANICCA_WORKSPACE_SCHEMA_VERSION, loadGraphLocal } from "@/lib/persist/local";
 import { createEmptyGraph, Graph, StageLayouts } from "@/types/anicca";
 import {
   ActiveWorkspaceRecord,
@@ -7,8 +7,8 @@ import {
   ANICCA_WORKSPACE_REGISTRY_SCHEMA_VERSION,
   PersistedWorkspaceSnapshot,
   WorkspaceId,
-  WorkspaceRegistry,
   WorkspaceRecord,
+  WorkspaceRegistry,
   WorkspaceRegistryEntry,
   WorkspaceTitleSource
 } from "@/types/workspace";
@@ -18,6 +18,7 @@ export const MIGRATION_MARKER_KEY = "anicca_workspace_legacy_migrated_v1";
 export const REGISTRY_KEY = "anicca_workspace_registry_v1";
 export const ACTIVE_WORKSPACE_KEY = "anicca_workspace_active_v1";
 export const SNAPSHOT_KEY_PREFIX = "anicca_workspace_snapshot_v1:";
+
 export const LEGACY_WORKSPACE_MIGRATED_KEY = MIGRATION_MARKER_KEY;
 export const WORKSPACE_REGISTRY_STORAGE_KEY = REGISTRY_KEY;
 export const ACTIVE_WORKSPACE_STORAGE_KEY = ACTIVE_WORKSPACE_KEY;
@@ -59,16 +60,12 @@ function createWorkspaceId(options?: WorkspacePersistenceOptions): WorkspaceId {
   return options?.createWorkspaceId?.() || createClientId("workspace");
 }
 
-function createWorkspaceSessionId(options?: WorkspacePersistenceOptions): string {
+function createWorkspaceSessionId(options?: WorkspacePersistenceOptions) {
   return options?.createWorkspaceSessionId?.() || createClientId("ws");
 }
 
-function snapshotKey(workspaceId: WorkspaceId) {
-  return `${SNAPSHOT_KEY_PREFIX}${workspaceId}`;
-}
-
 export function getWorkspaceSnapshotStorageKey(workspaceId: WorkspaceId) {
-  return snapshotKey(workspaceId);
+  return `${SNAPSHOT_KEY_PREFIX}${workspaceId}`;
 }
 
 function readJson<T>(key: string): T | null {
@@ -85,6 +82,20 @@ function writeJson(key: string, value: unknown) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+function normalizeWorkspaceTitle(title: string | undefined | null) {
+  return title?.trim() || "";
+}
+
+function normalizeStageLayouts(stageLayouts: unknown): StageLayouts {
+  return stageLayouts && typeof stageLayouts === "object" ? (stageLayouts as StageLayouts) : {};
+}
+
+function deriveWorkspaceTitle(graph: Graph) {
+  const firstEntryId = graph.entryIds[0];
+  const text = firstEntryId ? graph.nodes[firstEntryId]?.text?.trim() : "";
+  return text.slice(0, 48) || "未命名工作区";
+}
+
 function getEmptyRegistry(): WorkspaceRegistry {
   return {
     schemaVersion: ANICCA_WORKSPACE_REGISTRY_SCHEMA_VERSION,
@@ -98,29 +109,31 @@ export function loadWorkspaceRegistry(): WorkspaceRegistry {
     return getEmptyRegistry();
   }
 
-  return parsed;
+  return {
+    schemaVersion: ANICCA_WORKSPACE_REGISTRY_SCHEMA_VERSION,
+    entries: parsed.entries.filter(
+      (entry): entry is WorkspaceRegistryEntry =>
+        Boolean(entry) &&
+        typeof entry.id === "string" &&
+        typeof entry.title === "string" &&
+        typeof entry.createdAt === "string" &&
+        typeof entry.updatedAt === "string" &&
+        typeof entry.lastOpenedAt === "string"
+    ).map((entry) => ({
+      ...entry,
+      titleSource: entry.titleSource === "manual" ? "manual" : "derived",
+      entryCount: Number.isFinite(entry.entryCount) ? entry.entryCount : 0,
+      nodeCount: Number.isFinite(entry.nodeCount) ? entry.nodeCount : 0
+    }))
+  };
 }
 
 function saveWorkspaceRegistry(registry: WorkspaceRegistry) {
   writeJson(REGISTRY_KEY, registry);
 }
 
-function deriveWorkspaceTitle(graph: Graph) {
-  const firstEntryId = graph.entryIds[0];
-  const text = firstEntryId ? graph.nodes[firstEntryId]?.text?.trim() : "";
-  return text.slice(0, 48) || "未命名工作区";
-}
-
-function normalizeWorkspaceTitle(title: string | undefined | null) {
-  return title?.trim() || "";
-}
-
-function inferTitleSource(existing?: WorkspaceRegistryEntry | null): WorkspaceTitleSource {
-  if (existing?.titleSource === "manual" || existing?.titleSource === "derived") {
-    return existing.titleSource;
-  }
-
-  return "derived";
+function inferTitleSource(existing: WorkspaceRegistryEntry | null | undefined): WorkspaceTitleSource {
+  return existing?.titleSource === "manual" ? "manual" : "derived";
 }
 
 function buildRegistryEntry(
@@ -136,9 +149,7 @@ function buildRegistryEntry(
   }
 ): WorkspaceRegistryEntry {
   const explicitTitle = normalizeWorkspaceTitle(overrides?.title);
-  const titleSource =
-    overrides?.titleSource ||
-    (explicitTitle ? "manual" : inferTitleSource(existing));
+  const titleSource = overrides?.titleSource || (explicitTitle ? "manual" : inferTitleSource(existing));
   const title =
     explicitTitle ||
     (titleSource === "derived" ? deriveWorkspaceTitle(snapshot.graph) : existing?.title) ||
@@ -164,12 +175,12 @@ function normalizeSnapshot(input: WorkspaceRecordInput): PersistedWorkspaceSnaps
     graph: input.graph,
     focusedNodeId: input.focusedNodeId,
     composerParentId: input.composerParentId,
-    stageLayouts: input.stageLayouts || {}
+    stageLayouts: normalizeStageLayouts(input.stageLayouts)
   };
 }
 
 export function loadWorkspaceSnapshot(workspaceId: WorkspaceId): PersistedWorkspaceSnapshot | null {
-  const parsed = readJson<PersistedWorkspaceSnapshot>(snapshotKey(workspaceId));
+  const parsed = readJson<PersistedWorkspaceSnapshot>(getWorkspaceSnapshotStorageKey(workspaceId));
   if (parsed?.schemaVersion !== ANICCA_WORKSPACE_SCHEMA_VERSION) {
     return null;
   }
@@ -179,19 +190,15 @@ export function loadWorkspaceSnapshot(workspaceId: WorkspaceId): PersistedWorksp
 
   return {
     ...parsed,
-    stageLayouts: parsed.stageLayouts && typeof parsed.stageLayouts === "object" ? parsed.stageLayouts : {}
+    stageLayouts: normalizeStageLayouts(parsed.stageLayouts)
   };
 }
 
 export function loadWorkspaceRecord(workspaceId: WorkspaceId): WorkspaceRecord | null {
   const registry = loadWorkspaceRegistry();
   const entry = registry.entries.find((candidate) => candidate.id === workspaceId) || null;
-  if (!entry) {
-    return null;
-  }
-
   const snapshot = loadWorkspaceSnapshot(workspaceId);
-  if (!snapshot) {
+  if (!entry || !snapshot) {
     return null;
   }
 
@@ -208,10 +215,10 @@ export function createWorkspaceRecord(
 ): PersistedWorkspaceSnapshot {
   const timestamp = nowIso(options);
   const snapshot = normalizeSnapshot(input);
-  writeJson(snapshotKey(snapshot.workspaceId), snapshot);
+  writeJson(getWorkspaceSnapshotStorageKey(snapshot.workspaceId), snapshot);
 
   const registry = loadWorkspaceRegistry();
-  const existing = registry.entries.find((entry) => entry.id === snapshot.workspaceId);
+  const existing = registry.entries.find((entry) => entry.id === snapshot.workspaceId) || null;
   const nextEntry = buildRegistryEntry(snapshot, timestamp, existing, {
     title: input.title,
     titleSource: input.titleSource,
@@ -260,6 +267,10 @@ export function saveActiveWorkspaceSnapshot(input: WorkspaceRecordInput, options
   createWorkspaceRecord(input, options);
 }
 
+export function setActiveWorkspaceId(workspaceId: WorkspaceId) {
+  localStorage.setItem(ACTIVE_WORKSPACE_KEY, workspaceId);
+}
+
 export function activateWorkspace(
   workspaceId: WorkspaceId,
   options?: WorkspacePersistenceOptions
@@ -278,16 +289,12 @@ export function activateWorkspace(
     schemaVersion: ANICCA_WORKSPACE_REGISTRY_SCHEMA_VERSION,
     entries: nextEntries
   });
-  localStorage.setItem(ACTIVE_WORKSPACE_KEY, workspaceId);
+  setActiveWorkspaceId(workspaceId);
 
   return {
     ...snapshot,
     workspaceSessionId: createWorkspaceSessionId(options)
   };
-}
-
-export function setActiveWorkspaceId(workspaceId: WorkspaceId) {
-  localStorage.setItem(ACTIVE_WORKSPACE_KEY, workspaceId);
 }
 
 export function listRecentWorkspaces() {
@@ -309,20 +316,20 @@ export function renameWorkspace(workspaceId: WorkspaceId, title: string, options
   }
 
   const timestamp = nowIso(options);
+  const normalizedTitle = normalizeWorkspaceTitle(title);
   const nextEntry = buildRegistryEntry(record.snapshot, timestamp, record.entry, {
-    title,
-    titleSource: normalizeWorkspaceTitle(title) ? "manual" : "derived",
+    title: normalizedTitle || undefined,
+    titleSource: normalizedTitle ? "manual" : "derived",
     createdAt: record.entry.createdAt,
     updatedAt: timestamp,
     lastOpenedAt: record.entry.lastOpenedAt
   });
-  const nextRegistry: WorkspaceRegistry = {
+  saveWorkspaceRegistry({
     schemaVersion: ANICCA_WORKSPACE_REGISTRY_SCHEMA_VERSION,
     entries: record.registry.entries.map((entry) =>
       entry.id === workspaceId ? nextEntry : entry
     )
-  };
-  saveWorkspaceRegistry(nextRegistry);
+  });
   return nextEntry;
 }
 
@@ -339,6 +346,7 @@ export function createWorkspace(options?: { title?: string } & WorkspacePersiste
     },
     options
   );
+  setActiveWorkspaceId(workspaceId);
   return loadActiveWorkspace(options);
 }
 
@@ -363,7 +371,7 @@ function migrateLegacyWorkspace(options?: WorkspacePersistenceOptions): Activate
     },
     options
   );
-  localStorage.setItem(ACTIVE_WORKSPACE_KEY, workspaceId);
+  setActiveWorkspaceId(workspaceId);
   localStorage.setItem(MIGRATION_MARKER_KEY, "consumed");
   localStorage.removeItem(LEGACY_WORKSPACE_KEY);
 

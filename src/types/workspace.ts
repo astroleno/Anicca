@@ -2,12 +2,11 @@ import { Graph, StageLayouts } from "@/types/anicca";
 import { ANICCA_WORKSPACE_SCHEMA_VERSION } from "@/lib/persist/local";
 
 export type WorkspaceId = string;
+export type WorkspaceTitleSource = "derived" | "manual";
 
 export const ANICCA_WORKSPACE_REGISTRY_SCHEMA_VERSION = "anicca-workspace-registry-v1";
 export const ANICCA_WORKSPACE_BUNDLE_VERSION = "anicca-workspace-bundle-v1";
 export const ANICCA_WORKSPACE_REGISTRY_VERSION = ANICCA_WORKSPACE_REGISTRY_SCHEMA_VERSION;
-
-export type WorkspaceTitleSource = "derived" | "manual";
 
 export type WorkspaceRegistryEntry = {
   id: WorkspaceId;

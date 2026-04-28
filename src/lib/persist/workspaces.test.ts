@@ -1,4 +1,3 @@
-import { createEmptyGraph } from "@/types/anicca";
 import { ANICCA_WORKSPACE_SCHEMA_VERSION } from "@/lib/persist/local";
 import {
   ACTIVE_WORKSPACE_KEY,
@@ -7,22 +6,42 @@ import {
   REGISTRY_KEY,
   SNAPSHOT_KEY_PREFIX,
   activateWorkspace,
+  createWorkspace,
   createWorkspaceRecord,
-  initializeActiveWorkspace
+  getWorkspaceSnapshotStorageKey,
+  initializeActiveWorkspace,
+  listRecentWorkspaces,
+  loadWorkspaceRecord,
+  loadWorkspaceRegistry,
+  renameWorkspace,
+  saveWorkspaceRecord
 } from "@/lib/persist/workspaces";
+import { createEmptyGraph } from "@/types/anicca";
+import { PersistedWorkspaceSnapshot } from "@/types/workspace";
 
-function createGraphWithRoot(text = "root") {
+function createGraphWithRoot(text = "root", id = "user_1") {
   const graph = createEmptyGraph();
-  graph.nodes.user_1 = {
-    id: "user_1",
+  graph.nodes[id] = {
+    id,
     kind: "user",
     text,
     createdAt: "2026-04-24T03:00:00.000Z",
     parents: [],
     children: []
   };
-  graph.entryIds.push("user_1");
+  graph.entryIds.push(id);
   return graph;
+}
+
+function buildSnapshot(workspaceId: string, text = "root"): PersistedWorkspaceSnapshot {
+  return {
+    schemaVersion: ANICCA_WORKSPACE_SCHEMA_VERSION,
+    workspaceId,
+    graph: createGraphWithRoot(text),
+    focusedNodeId: "user_1",
+    composerParentId: null,
+    stageLayouts: {}
+  };
 }
 
 function parseStorage<T>(key: string): T | null {
@@ -69,7 +88,7 @@ describe("workspace registry persistence", () => {
       focusedNodeId: "user_1",
       composerParentId: null
     });
-    expect(activated?.workspaceSessionId).not.toBe("legacy_ws_session");
+    expect(activated.workspaceSessionId).not.toBe("legacy_ws_session");
 
     expect(parseStorage(REGISTRY_KEY)).toMatchObject({
       entries: [
@@ -132,8 +151,8 @@ describe("workspace registry persistence", () => {
       now: () => "2026-04-29T01:00:00.000Z"
     });
 
-    expect(activated?.workspaceId).toBe("workspace_existing");
-    expect(activated?.workspaceSessionId).toBe("ws_runtime_2");
+    expect(activated.workspaceId).toBe("workspace_existing");
+    expect(activated.workspaceSessionId).toBe("ws_runtime_2");
     expect(parseStorage<{ entries: unknown[] }>(REGISTRY_KEY)?.entries).toHaveLength(1);
   });
 
@@ -157,11 +176,10 @@ describe("workspace registry persistence", () => {
   });
 
   it("regenerates runtime session ids every time a workspace is activated", () => {
-    const graph = createGraphWithRoot("切换工作区");
     createWorkspaceRecord(
       {
         workspaceId: "workspace_switch",
-        graph,
+        graph: createGraphWithRoot("切换工作区"),
         focusedNodeId: "user_1",
         composerParentId: null,
         stageLayouts: {}
@@ -183,5 +201,110 @@ describe("workspace registry persistence", () => {
         now: () => "2026-04-29T03:01:00.000Z"
       })?.workspaceSessionId
     ).toBe("ws_runtime_b");
+  });
+
+  it("creates a new empty workspace without mutating the current active snapshot", () => {
+    createWorkspaceRecord(
+      {
+        workspaceId: "workspace_existing",
+        graph: createGraphWithRoot("existing"),
+        focusedNodeId: "user_1",
+        composerParentId: null,
+        stageLayouts: {}
+      },
+      { now: () => "2026-04-29T00:00:00.000Z" }
+    );
+    localStorage.setItem(ACTIVE_WORKSPACE_KEY, "workspace_existing");
+
+    const created = createWorkspace({
+      createWorkspaceId: () => "workspace_created",
+      createWorkspaceSessionId: () => "ws_created",
+      now: () => "2026-04-29T04:00:00.000Z"
+    });
+
+    expect(created?.activeWorkspaceId).toBe("workspace_created");
+    expect(created?.snapshot.graph.entryIds).toEqual([]);
+    expect(loadWorkspaceRegistry().entries).toHaveLength(2);
+    expect(loadWorkspaceRecord("workspace_existing")?.snapshot.graph.entryIds).toEqual(["user_1"]);
+  });
+
+  it("lists recent workspaces by local recency metadata", () => {
+    saveWorkspaceRecord({
+      id: "workspace_old",
+      title: "Old Workspace",
+      snapshot: buildSnapshot("workspace_old", "old"),
+      lastOpenedAt: "2026-04-25T09:00:00.000Z"
+    });
+    saveWorkspaceRecord({
+      id: "workspace_new",
+      title: "New Workspace",
+      snapshot: buildSnapshot("workspace_new", "new"),
+      lastOpenedAt: "2026-04-27T09:00:00.000Z"
+    });
+
+    expect(listRecentWorkspaces().map((entry) => entry.id)).toEqual([
+      "workspace_new",
+      "workspace_old"
+    ]);
+  });
+
+  it("derives a title from the root topic until the workspace is explicitly renamed", () => {
+    const created = createWorkspace({
+      createWorkspaceId: () => "workspace_title",
+      createWorkspaceSessionId: () => "ws_title"
+    })!;
+
+    saveWorkspaceRecord({
+      id: created.activeWorkspaceId,
+      snapshot: buildSnapshot(created.activeWorkspaceId, "derived root")
+    });
+
+    expect(loadWorkspaceRecord(created.activeWorkspaceId)?.entry.title).toBe("derived root");
+
+    renameWorkspace(created.activeWorkspaceId, "Manual Title");
+    saveWorkspaceRecord({
+      id: created.activeWorkspaceId,
+      snapshot: buildSnapshot(created.activeWorkspaceId, "changed root title")
+    });
+
+    expect(loadWorkspaceRecord(created.activeWorkspaceId)?.entry.title).toBe("Manual Title");
+  });
+
+  it("activates a selected workspace and rotates runtime session ownership", () => {
+    saveWorkspaceRecord({
+      id: "workspace_one",
+      title: "Workspace One",
+      snapshot: buildSnapshot("workspace_one", "one")
+    });
+    saveWorkspaceRecord({
+      id: "workspace_two",
+      title: "Workspace Two",
+      snapshot: buildSnapshot("workspace_two", "two")
+    });
+
+    const activated = activateWorkspace("workspace_two", {
+      createWorkspaceSessionId: () => "ws_runtime_two"
+    });
+
+    expect(activated?.workspaceId).toBe("workspace_two");
+    expect(activated?.workspaceSessionId).toBe("ws_runtime_two");
+    expect(localStorage.getItem(ACTIVE_WORKSPACE_KEY)).toBe("workspace_two");
+  });
+
+  it("renames workspace metadata without rewriting the stored graph snapshot", () => {
+    saveWorkspaceRecord({
+      id: "workspace_rename",
+      title: "Before Rename",
+      snapshot: buildSnapshot("workspace_rename", "rename")
+    });
+
+    const snapshotBeforeRename = localStorage.getItem(
+      getWorkspaceSnapshotStorageKey("workspace_rename")
+    );
+
+    renameWorkspace("workspace_rename", "After Rename");
+
+    expect(loadWorkspaceRecord("workspace_rename")?.entry.title).toBe("After Rename");
+    expect(localStorage.getItem(getWorkspaceSnapshotStorageKey("workspace_rename"))).toBe(snapshotBeforeRename);
   });
 });

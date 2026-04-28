@@ -148,7 +148,7 @@ describe("DialogueShell", () => {
 
     render(<DialogueShell />);
 
-    expect(await screen.findByText("从 registry 恢复")).toBeInTheDocument();
+    expect((await screen.findAllByText("从 registry 恢复")).length).toBeGreaterThan(0);
     expect(branchGraphStore.getGraph()).toEqual(graph);
     expect(useDialogueUiStore.getState().workspaceId).toBe("workspace_registry");
     expect(useDialogueUiStore.getState().workspaceSessionId).not.toBe("workspace_registry");
@@ -272,6 +272,90 @@ describe("DialogueShell", () => {
         "文件内容没有被解析成工作区 bundle。"
       );
     });
+  });
+
+  it("creates a new empty workspace without mutating the previous active graph", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    vi.stubGlobal("fetch", vi.fn());
+    const previousWorkspaceId = "workspace_test";
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: "新建工作区" }));
+
+    await waitFor(() => {
+      expect((useDialogueUiStore.getState() as any).workspaceId).not.toBe(previousWorkspaceId);
+    });
+
+    expect(branchGraphStore.getGraph().entryIds).toEqual([]);
+    expect(
+      loadWorkspaceRegistry()?.entries.some((entry) => entry.id === previousWorkspaceId)
+    ).toBe(true);
+  });
+
+  it("switches to another workspace and clears pending runtime state", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    saveWorkspaceRecord({
+      id: "workspace_other",
+      title: "Other Workspace",
+      snapshot: {
+        schemaVersion: ANICCA_WORKSPACE_SCHEMA_VERSION,
+        workspaceId: "workspace_other",
+        graph: buildRegistryGraph("user_other_root", "other workspace root"),
+        focusedNodeId: "user_other_root",
+        composerParentId: "user_other_root",
+        stageLayouts: {}
+      }
+    });
+    const priorSessionId = useDialogueUiStore.getState().workspaceSessionId;
+    useDialogueUiStore.getState().beginPending("branches", {
+      requestId: "req_pending",
+      workspaceSessionId: priorSessionId,
+      focusSnapshotId: "focus:root",
+      composerTargetId: rootUserId
+    });
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: "Other Workspace" }));
+
+    await waitFor(() => {
+      expect((useDialogueUiStore.getState() as any).workspaceId).toBe("workspace_other");
+    });
+
+    expect(branchGraphStore.getGraph().nodes.user_other_root?.text).toBe("other workspace root");
+    expect(useDialogueUiStore.getState().pending.branches).toBeNull();
+    expect(useDialogueUiStore.getState().workspaceSessionId).not.toBe(priorSessionId);
+  });
+
+  it("renames the active workspace through shell controls", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: "重命名工作区" }));
+    await user.clear(screen.getByLabelText("工作区名称"));
+    await user.type(screen.getByLabelText("工作区名称"), "Renamed Workspace");
+    await user.click(screen.getByRole("button", { name: "保存工作区名称" }));
+
+    await waitFor(() => {
+      expect(loadWorkspaceRegistry().entries.find((entry) => entry.id === "workspace_test")?.title).toBe(
+        "Renamed Workspace"
+      );
+    });
+
+    expect(screen.getAllByText("Renamed Workspace").length).toBeGreaterThan(0);
   });
   it("does not leave orphan child users behind on branch failure", async () => {
     const user = userEvent.setup();
