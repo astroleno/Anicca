@@ -261,6 +261,10 @@ active workspace key 单独保存：
 - validated workspace bundle export / import
 - workspace bar：create / rename / switch recent workspaces
 - derived title 会跟随 root topic 更新，直到用户手动重命名
+- no-op telemetry adapter + success-only adoption events:
+  - `workspace_resumed`
+  - `continuation_created`
+  - `synthesis_created`
 - imported workspaces receive a fresh local `workspaceId`
 - imported workspaces reset local `lastOpenedAt` to import time
 - graph version 校验
@@ -268,7 +272,8 @@ active workspace key 单独保存：
 
 仍在后续计划中的能力：
 
-- 最小 adoption telemetry
+- 更强视觉层回接评估
+- 可选云同步、分享与部署能力
 
 ---
 
@@ -308,9 +313,8 @@ npm run dev
 - 阶段一：稳定 `/dialogue` 主线，包括 graph、request matching、workspace restore、ports rollout
 - 阶段二：workspace registry foundation，包括 stable `workspaceId`、migration、active workspace boot
 - 阶段三：workspace bundle import / export，保持 local-first 且不引入云同步
-- 阶段四：最小 telemetry
-- 阶段五：在不破坏主线 contract 的前提下评估是否把更强的视觉层重新接回 `/dialogue`
-- 阶段六：可选云同步、分享与部署能力
+- 阶段四：在不破坏主线 contract 的前提下评估是否把更强的视觉层重新接回 `/dialogue`
+- 阶段五：可选云同步、分享与部署能力
 
 ---
 

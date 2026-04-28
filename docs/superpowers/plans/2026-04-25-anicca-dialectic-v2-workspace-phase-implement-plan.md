@@ -373,12 +373,19 @@ Unit 1 verification record:
 
 ### Unit 4: Add minimal adoption telemetry
 
-- [ ] Add an adapter-based telemetry module with a no-op default sink
-- [ ] Emit `workspace_resumed` when a workspace is restored or switched into active use
-- [ ] Emit `continuation_created` only after a branch generation succeeds and graph writes land
-- [ ] Emit `synthesis_created` only after synthesis succeeds and graph writes land
-- [ ] Keep payloads privacy-safe and low-cardinality
-- [ ] Ensure telemetry failures never block UI, persistence, or request flows
+- [x] Add an adapter-based telemetry module with a no-op default sink
+- [x] Emit `workspace_resumed` when a workspace is restored or switched into active use
+- [x] Emit `continuation_created` only after a branch generation succeeds and graph writes land
+- [x] Emit `synthesis_created` only after synthesis succeeds and graph writes land
+- [x] Keep payloads privacy-safe and low-cardinality
+- [x] Ensure telemetry failures never block UI, persistence, or request flows
+
+#### Unit 4 Verification
+
+- 2026-04-28: targeted `npx vitest run src/lib/analytics/dialogue.test.ts src/components/dialogue/DialogueShell.test.tsx` passed with 2 test files / 21 tests
+- 2026-04-28: default `npm test` passed with 15 test files / 77 tests
+- 2026-04-28: `npm run build` passed
+- 2026-04-28: `npm run test:visual-dialogue` passed
 
 ---
 
