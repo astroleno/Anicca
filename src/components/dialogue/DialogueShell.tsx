@@ -8,6 +8,12 @@ import {
   useState,
   useSyncExternalStore
 } from "react";
+import {
+  buildContinuationCreatedEvent,
+  buildSynthesisCreatedEvent,
+  buildWorkspaceResumedEvent,
+  emitDialogueTelemetry
+} from "@/lib/analytics/dialogue";
 import { buildParentContext } from "@/chat/context";
 import { BranchSidebar } from "@/components/dialogue/BranchSidebar";
 import { BubbleStage } from "@/components/dialogue/BubbleStage";
@@ -28,7 +34,6 @@ import {
   activateWorkspace,
   createWorkspace,
   createWorkspaceRecord,
-  initializeActiveWorkspace,
   listRecentWorkspaces,
   loadActiveWorkspace,
   loadWorkspaceRecord,
@@ -287,17 +292,22 @@ export function DialogueShell() {
       return;
     }
 
-    const snapshot = initializeActiveWorkspace();
-    branchGraphStore.setGraph(snapshot.graph);
+    const activeWorkspace = loadActiveWorkspace();
+    if (!activeWorkspace) {
+      return;
+    }
+
+    branchGraphStore.setGraph(activeWorkspace.snapshot.graph);
     hydrateWorkspace({
-      workspaceId: snapshot.workspaceId,
-      workspaceSessionId: snapshot.workspaceSessionId,
-      focusedNodeId: snapshot.focusedNodeId,
-      composerParentId: snapshot.composerParentId,
-      stageLayouts: snapshot.stageLayouts
+      workspaceId: activeWorkspace.snapshot.workspaceId,
+      workspaceSessionId: activeWorkspace.snapshot.workspaceSessionId,
+      focusedNodeId: activeWorkspace.snapshot.focusedNodeId,
+      composerParentId: activeWorkspace.snapshot.composerParentId,
+      stageLayouts: activeWorkspace.snapshot.stageLayouts
     });
     setWorkspaceReady(true);
-    refreshWorkspaceRegistryView(snapshot.workspaceId);
+    refreshWorkspaceRegistryView(activeWorkspace.snapshot.workspaceId);
+    void emitDialogueTelemetry(buildWorkspaceResumedEvent(activeWorkspace, "boot"));
   }, [hydrateWorkspace]);
 
   useEffect(() => {
@@ -364,6 +374,20 @@ export function DialogueShell() {
       stageLayouts: activatedSnapshot.stageLayouts
     });
     refreshWorkspaceRegistryView(activatedSnapshot.workspaceId);
+    const record = loadWorkspaceRecord(activatedSnapshot.workspaceId);
+    if (record) {
+      void emitDialogueTelemetry(
+        buildWorkspaceResumedEvent(
+          {
+            activeWorkspaceId: activatedSnapshot.workspaceId,
+            entry: record.entry,
+            snapshot: activatedSnapshot,
+            registry: record.registry
+          },
+          "switch"
+        )
+      );
+    }
     setDraft("");
     setErrorState(null);
   };
@@ -416,6 +440,20 @@ export function DialogueShell() {
       stageLayouts: activatedSnapshot.stageLayouts
     });
     refreshWorkspaceRegistryView(activatedSnapshot.workspaceId);
+    const record = loadWorkspaceRecord(activatedSnapshot.workspaceId);
+    if (record) {
+      void emitDialogueTelemetry(
+        buildWorkspaceResumedEvent(
+          {
+            activeWorkspaceId: activatedSnapshot.workspaceId,
+            entry: record.entry,
+            snapshot: activatedSnapshot,
+            registry: record.registry
+          },
+          "switch"
+        )
+      );
+    }
     setDraft("");
     setErrorState(null);
   };
@@ -551,9 +589,13 @@ export function DialogueShell() {
         thesis: response.thesis,
         antithesis: response.antithesis
       });
+      const updatedGraph = branchGraphStore.getGraph();
 
       clearPending("branches");
       setDraft("");
+      void emitDialogueTelemetry(
+        buildContinuationCreatedEvent(updatedGraph, targetId)
+      );
       startTransition(() => {
         setFocusedNodeId(userNodeId);
         setErrorState(null);
@@ -621,8 +663,10 @@ export function DialogueShell() {
         summary: response.synthesis.summary,
         label: response.synthesis.label
       });
+      const updatedGraph = branchGraphStore.getGraph();
 
       clearPending("synthesis");
+      void emitDialogueTelemetry(buildSynthesisCreatedEvent(updatedGraph, synthesisId));
       startTransition(() => {
         setFocusedNodeId(synthesisId);
         setErrorState(null);

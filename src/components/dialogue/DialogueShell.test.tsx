@@ -2,6 +2,11 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { DialogueShell, isDialogueDemoWorkspaceEnabled } from "@/components/dialogue/DialogueShell";
 import { useDialogueUiStore } from "@/features/dialectic/store";
+import {
+  DialogueTelemetryEvent,
+  resetDialogueTelemetrySinkForTests,
+  setDialogueTelemetrySink
+} from "@/lib/analytics/dialogue";
 import { serializeWorkspaceBundle } from "@/lib/io/workspaceBundle";
 import { ANICCA_WORKSPACE_SCHEMA_VERSION } from "@/lib/persist/local";
 import {
@@ -113,6 +118,7 @@ describe("DialogueShell", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    resetDialogueTelemetrySinkForTests();
     window.history.replaceState({}, "", "/dialogue");
     resetWorkspace();
   });
@@ -335,6 +341,73 @@ describe("DialogueShell", () => {
     expect(useDialogueUiStore.getState().workspaceSessionId).not.toBe(priorSessionId);
   });
 
+  it("emits workspace_resumed on boot restore and explicit workspace switch", async () => {
+    const user = userEvent.setup();
+    const events: DialogueTelemetryEvent[] = [];
+    setDialogueTelemetrySink({
+      track(event) {
+        events.push(event);
+      }
+    });
+
+    saveWorkspaceRecord({
+      id: "workspace_test",
+      title: "Workspace Test Boot",
+      snapshot: {
+        schemaVersion: ANICCA_WORKSPACE_SCHEMA_VERSION,
+        workspaceId: "workspace_test",
+        graph: buildRegistryGraph("user_boot_root", "boot workspace root"),
+        focusedNodeId: "user_boot_root",
+        composerParentId: "user_boot_root",
+        stageLayouts: {}
+      }
+    });
+    setActiveWorkspaceId("workspace_test");
+    saveWorkspaceRecord({
+      id: "workspace_other",
+      title: "Other Workspace",
+      snapshot: {
+        schemaVersion: ANICCA_WORKSPACE_SCHEMA_VERSION,
+        workspaceId: "workspace_other",
+        graph: buildRegistryGraph("user_other_root", "other workspace root"),
+        focusedNodeId: "user_other_root",
+        composerParentId: "user_other_root",
+        stageLayouts: {}
+      }
+    });
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    await waitFor(() => {
+      expect(events[0]).toEqual({
+        name: "workspace_resumed",
+        payload: {
+          source: "boot",
+          nodeCount: 1,
+          entryCount: 1,
+          hasFocus: true,
+          hasComposerTarget: true
+        }
+      });
+    });
+
+    await user.click(await screen.findByRole("button", { name: "Other Workspace" }));
+
+    await waitFor(() => {
+      expect(events[1]).toEqual({
+        name: "workspace_resumed",
+        payload: {
+          source: "switch",
+          nodeCount: 1,
+          entryCount: 1,
+          hasFocus: true,
+          hasComposerTarget: true
+        }
+      });
+    });
+  });
+
   it("renames the active workspace through shell controls", async () => {
     const user = userEvent.setup();
     const { rootUserId } = seedPair();
@@ -357,8 +430,130 @@ describe("DialogueShell", () => {
 
     expect(screen.getAllByText("Renamed Workspace").length).toBeGreaterThan(0);
   });
+
+  it("emits continuation_created only after branch generation succeeds and lands", async () => {
+    const user = userEvent.setup();
+    const events: DialogueTelemetryEvent[] = [];
+    setDialogueTelemetrySink({
+      track(event) {
+        events.push(event);
+      }
+    });
+
+    const { thesisId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: thesisId });
+    seedActiveWorkspaceFromCurrentGraph();
+    let resolveFetch: ((value: Response) => void) | null = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(
+        () =>
+          new Promise<Response>((resolve) => {
+            resolveFetch = resolve;
+          })
+      )
+    );
+
+    render(<DialogueShell />);
+
+    await user.type(screen.getByLabelText("输入"), "继续的话下一步做什么");
+    await user.click(screen.getByRole("button", { name: "生成正 / 反" }));
+
+    resolveFetch?.(
+      new Response(
+        JSON.stringify({
+          requestId: useDialogueUiStore.getState().pending.branches?.requestId,
+          thesis: { text: "拆小目标", summary: "拆小推进", label: "拆小", stance: "正" },
+          antithesis: { text: "暂停一周", summary: "先停一周", label: "停一周", stance: "反" }
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
+      )
+    );
+
+    await waitFor(() => {
+      expect(events.some((event) => event.name === "continuation_created")).toBe(true);
+    });
+
+    expect(events.at(-1)).toEqual({
+      name: "continuation_created",
+      payload: {
+        source: "continuation",
+        parentKind: "assistant",
+        nodeCount: 6,
+        entryCount: 1
+      }
+    });
+  });
+
+  it("emits synthesis_created only after synthesis succeeds and lands", async () => {
+    const user = userEvent.setup();
+    const events: DialogueTelemetryEvent[] = [];
+    setDialogueTelemetrySink({
+      track(event) {
+        events.push(event);
+      }
+    });
+
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    let resolveFetch: ((value: Response) => void) | null = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(
+        () =>
+          new Promise<Response>((resolve) => {
+            resolveFetch = resolve;
+          })
+      )
+    );
+
+    render(<DialogueShell />);
+
+    await user.click(screen.getByRole("button", { name: "生成合" }));
+    resolveFetch?.(
+      new Response(
+        JSON.stringify({
+          requestId: useDialogueUiStore.getState().pending.synthesis?.requestId,
+          synthesis: {
+            text: "保留主线，但拆开节奏。",
+            summary: "主线收束",
+            label: "收束",
+            stance: "合"
+          }
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
+      )
+    );
+
+    await waitFor(() => {
+      expect(events.some((event) => event.name === "synthesis_created")).toBe(true);
+    });
+
+    expect(events.at(-1)).toEqual({
+      name: "synthesis_created",
+      payload: {
+        nodeCount: 4,
+        entryCount: 1,
+        sourceCount: 2,
+        hasLineageParent: true
+      }
+    });
+  });
   it("does not leave orphan child users behind on branch failure", async () => {
     const user = userEvent.setup();
+    const events: DialogueTelemetryEvent[] = [];
+    setDialogueTelemetrySink({
+      track(event) {
+        events.push(event);
+      }
+    });
     const { thesisId } = seedPair();
     useDialogueUiStore.setState({ focusedNodeId: thesisId });
     vi.stubGlobal(
@@ -386,10 +581,17 @@ describe("DialogueShell", () => {
     const graph = branchGraphStore.getGraph();
     expect(graph.nodes[thesisId].children).toEqual([]);
     expect(Object.keys(graph.nodes)).toHaveLength(3);
+    expect(events.some((event) => event.name === "continuation_created")).toBe(false);
   });
 
   it("discards stale branch responses after focus changes", async () => {
     const user = userEvent.setup();
+    const events: DialogueTelemetryEvent[] = [];
+    setDialogueTelemetrySink({
+      track(event) {
+        events.push(event);
+      }
+    });
     const { thesisId } = seedPair();
     useDialogueUiStore.setState({ focusedNodeId: thesisId });
 
@@ -427,6 +629,8 @@ describe("DialogueShell", () => {
     await waitFor(() => {
       expect(branchGraphStore.getGraph().nodes[thesisId].children).toEqual([]);
     });
+
+    expect(events.some((event) => event.name === "continuation_created")).toBe(false);
   });
 
   it("makes pending states exclusive and exposes synthesis busy feedback", async () => {
