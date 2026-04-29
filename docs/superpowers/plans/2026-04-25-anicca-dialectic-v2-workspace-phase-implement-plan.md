@@ -8,12 +8,12 @@
 
 **Current integration status (2026-04-29):**
 
-- Phase 2 Unit 1 is implemented on isolated branch `codex/workspace-registry-unit1`.
-- Unit 1 implementation commit: `7a992bb feat(workspaces): add registry migration foundation`.
-- The branch is pushed to `origin/codex/workspace-registry-unit1`.
-- Unit 1 is not yet merged into `codex/dialectic-v2-mainline`; mainline is still at `2c294fe` for this workstream.
-- `codex/workspace-phase2-continuation` is a stacked continuation branch based on Unit 1, used to port the previous round's Unit 2+ work without expanding the Unit 1 review branch.
-- Merge order remains Unit 1 first, then continuation work after migration smoke.
+- Unit 1 branch `codex/workspace-registry-unit1` was merged into `codex/dialectic-v2-mainline` first (fast-forward to `cb55f90`).
+- Legacy `anicca_workspace_v2` migration browser smoke passed on mainline before continuation merge.
+- Continuation branch `codex/workspace-phase2-continuation` was merged after QA (fast-forward to `18ee162`).
+- Mainline verification passed: `npm run lint`, `npm test`, `npm run build`, `npm run test:visual-dialogue`, `git diff --check`.
+- Manual workspace QA passed on mainline path: create / rename / switch / export / import / malformed import / mobile.
+- Phase 2 status: `closed` on 2026-04-29.
 
 ---
 
@@ -31,7 +31,7 @@
 - [x] Confirm a live provider smoke pass with `OPENAI_API_KEY` has been run and recorded.
 - [x] Keep Unit 2, Unit 3, and Unit 4 off the Unit 1 review branch until Unit 1 lands and the registry contract is the active persistence path.
 
-This phase was unblocked for Unit 1 only on `codex/workspace-registry-unit1`. Follow-up units may be staged on `codex/workspace-phase2-continuation`, but merge/release remains blocked until Unit 1 is merged into `codex/dialectic-v2-mainline` and the browser migration smoke passes.
+This phase is closed. Merge sequencing gate was satisfied in order: Unit 1 merge -> migration smoke -> continuation review + QA -> continuation merge.
 
 ---
 

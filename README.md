@@ -10,10 +10,10 @@
 
 当前集成状态（2026-04-29）：
 
-- `codex/dialectic-v2-mainline` 已包含 Phase 1 gate、roundtable、visual/ref/docs 和 OS metadata cleanup 相关提交，当前基点是 `2c294fe`。
-- Phase 2 Unit 1 已落在隔离分支 `codex/workspace-registry-unit1`，提交为 `7a992bb feat(workspaces): add registry migration foundation`。
-- Unit 1 分支已推送到 `origin/codex/workspace-registry-unit1`，但尚未并入 `codex/dialectic-v2-mainline`。
-- `codex/workspace-phase2-continuation` 是基于 Unit 1 的 stacked continuation，用来回放并整理上一轮已完成的 workspace Unit 2+ 能力。
+- `codex/dialectic-v2-mainline` 已 fast-forward 合入 Unit 1（`cb55f90`）与 continuation（`18ee162`）。
+- Phase 2 workspace registry + import/export + create/rename/switch + telemetry 已完成并并入 mainline。
+- mainline 已完成 legacy `anicca_workspace_v2` migration browser smoke 与 workspace manual QA（create / rename / switch / export / import / malformed import / mobile）。
+- Phase 2 状态：`closed`（2026-04-29）。
 
 ---
 
@@ -45,7 +45,7 @@
 - 状态：`zustand`
 - API：`/api/branches`、`/api/synthesis`、`/api/chat`
 - 模型接入：OpenAI Responses API
-- 本地持久化：`localStorage` workspace registry（Phase 2 Unit 1 分支）；主线合并前仍以 PR 分支状态为准
+- 本地持久化：`localStorage` workspace registry（已在 mainline 生效）
 
 ### 3.2 主线分层
 
@@ -83,9 +83,9 @@
 
 ---
 
-## 四、数据模型（当前 stacked branch contract）
+## 四、数据模型（当前 mainline contract）
 
-Phase 2 stacked 分支持久化的是一个 local-first workspace registry。`workspaceId` 是稳定的本地持久化身份；`workspaceSessionId` 只在运行时生成，用于网络请求 ownership 和 stale-response 防护，不写入 workspace snapshot。合并到 `codex/dialectic-v2-mainline` 后，这一段成为主线 workspace persistence contract。
+当前主线持久化的是 local-first workspace registry。`workspaceId` 是稳定的本地持久化身份；`workspaceSessionId` 只在运行时生成，用于网络请求 ownership 和 stale-response 防护，不写入 workspace snapshot。
 
 持久化拆成三层：
 
@@ -311,8 +311,8 @@ npm run dev
 ## 十一、路线图
 
 - 阶段一：稳定 `/dialogue` 主线，包括 graph、request matching、workspace restore、ports rollout
-- 阶段二：workspace registry foundation，包括 stable `workspaceId`、migration、active workspace boot
-- 阶段三：workspace bundle import / export，保持 local-first 且不引入云同步
+- 阶段二：workspace registry foundation（`closed`，2026-04-29）
+- 阶段三：workspace bundle import / export（`closed`，2026-04-29）
 - 阶段四：在不破坏主线 contract 的前提下评估是否把更强的视觉层重新接回 `/dialogue`
 - 阶段五：可选云同步、分享与部署能力
 
