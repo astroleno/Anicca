@@ -5,6 +5,7 @@ import {
   ANICCA_WORKSPACE_BUNDLE_VERSION,
   ImportedWorkspaceRecord,
   PersistedWorkspaceSnapshot,
+  WorkspaceArtifacts,
   WorkspaceBundle,
   WorkspaceId,
   WorkspaceRegistryEntry
@@ -36,6 +37,13 @@ function normalizeStageLayouts(stageLayouts: unknown): StageLayouts {
   return stageLayouts && typeof stageLayouts === "object"
     ? (stageLayouts as StageLayouts)
     : {};
+}
+
+function normalizeArtifacts(artifacts: unknown): WorkspaceArtifacts | undefined {
+  if (!artifacts || typeof artifacts !== "object") {
+    return undefined;
+  }
+  return artifacts as WorkspaceArtifacts;
 }
 
 function deriveFallbackTitle(snapshot: PersistedWorkspaceSnapshot) {
@@ -127,7 +135,8 @@ export function serializeWorkspaceBundle(
     },
     snapshot: {
       ...record.snapshot,
-      stageLayouts: normalizeStageLayouts(record.snapshot.stageLayouts)
+      stageLayouts: normalizeStageLayouts(record.snapshot.stageLayouts),
+      artifacts: normalizeArtifacts(record.snapshot.artifacts)
     }
   };
 
@@ -178,7 +187,8 @@ export function importWorkspaceBundleText(
     snapshot: {
       ...bundle.snapshot,
       workspaceId,
-      stageLayouts: normalizeStageLayouts(bundle.snapshot.stageLayouts)
+      stageLayouts: normalizeStageLayouts(bundle.snapshot.stageLayouts),
+      artifacts: normalizeArtifacts(bundle.snapshot.artifacts)
     }
   };
 }

@@ -27,6 +27,7 @@ import {
   DialogueSynthesisAction,
   deriveDialogueView
 } from "@/features/dialectic/viewModel";
+import { RoundtableState } from "@/features/roundtable/types";
 import {
   exportWorkspaceBundle,
   importWorkspaceBundleFile
@@ -46,7 +47,7 @@ import {
 import { branchGraphStore } from "@/store/branchGraph";
 import { Message } from "@/types/chat";
 import { Graph } from "@/types/anicca";
-import { WorkspaceRegistryEntry } from "@/types/workspace";
+import { WorkspaceRegistryEntry, WorkspaceRoundtableArtifact } from "@/types/workspace";
 import styles from "./DialogueShell.module.css";
 
 type BranchPayload = {
@@ -73,6 +74,10 @@ type SynthesisResponse = {
 };
 
 type DialogueLocationLike = Pick<Location, "hostname" | "search">;
+type RoundtableResponse = {
+  requestId: string;
+  state: RoundtableState;
+};
 
 export function isDialogueDemoWorkspaceEnabled(locationLike: DialogueLocationLike) {
   const params = new URLSearchParams(locationLike.search);
@@ -260,6 +265,8 @@ export function DialogueShell() {
   const [demoWorkspaceEnabled, setDemoWorkspaceEnabled] = useState(false);
   const [workspaceReady, setWorkspaceReady] = useState(() => branchGraphStore.getGraph().entryIds.length > 0);
   const [workspaceEntries, setWorkspaceEntries] = useState<WorkspaceRegistryEntry[]>([]);
+  const [roundtableArtifact, setRoundtableArtifact] = useState<WorkspaceRoundtableArtifact | null>(null);
+  const [roundtablePending, setRoundtablePending] = useState(false);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const workspaceId = useDialogueUiStore((state) => state.workspaceId);
   const workspaceSessionId = useDialogueUiStore((state) => state.workspaceSessionId);
@@ -341,12 +348,14 @@ export function DialogueShell() {
       return;
     }
 
+    const existingRecord = loadWorkspaceRecord(workspaceId);
     saveActiveWorkspaceSnapshot({
       workspaceId,
       graph: graphSnapshot.graph,
       focusedNodeId: view.focusNodeId,
       composerParentId: view.composerTarget.nodeId,
-      stageLayouts
+      stageLayouts,
+      artifacts: existingRecord?.snapshot.artifacts
     });
     refreshWorkspaceRegistryView(workspaceId);
   }, [
@@ -398,6 +407,7 @@ export function DialogueShell() {
       );
     }
     setDraft("");
+    setRoundtableArtifact(null);
     setErrorState(null);
   };
 
@@ -422,6 +432,7 @@ export function DialogueShell() {
     });
     refreshWorkspaceRegistryView(activeWorkspace.snapshot.workspaceId);
     setDraft("");
+    setRoundtableArtifact(null);
     setErrorState(null);
   };
 
@@ -464,6 +475,7 @@ export function DialogueShell() {
       );
     }
     setDraft("");
+    setRoundtableArtifact(null);
     setErrorState(null);
   };
 
@@ -552,6 +564,7 @@ export function DialogueShell() {
         stageLayouts: activeWorkspace.snapshot.stageLayouts
       });
       setDraft("");
+      setRoundtableArtifact(null);
       setErrorState(null);
     } catch (error: unknown) {
       setErrorState(formatWorkspaceBundleError(error));
@@ -618,6 +631,100 @@ export function DialogueShell() {
       clearPending("branches");
       setErrorState(formatDialogueError(error));
     }
+  };
+
+  const handleSummonRoundtable = async () => {
+    if (!view.currentNode || roundtablePending || !workspaceId) {
+      return;
+    }
+
+    const requestId = createClientId("req");
+    const focusNode = branchGraphStore.getGraph().nodes[view.currentNode.id];
+    const topic = [view.currentNode.text, view.currentNode.summary, focusNode?.meta?.summary]
+      .filter((value): value is string => Boolean(value && value.trim()))
+      .join("\n")
+      .slice(0, 600);
+
+    if (!topic.trim()) {
+      setErrorState({
+        title: "当前节点缺少可讨论内容",
+        detail: "先选中有正文的节点，再召集圆桌。",
+        recovery: "你也可以先生成一轮正反，再回来召集圆桌。"
+      });
+      return;
+    }
+
+    const requestSessionId = workspaceSessionId;
+    setRoundtablePending(true);
+    try {
+      const response = await postJson<RoundtableResponse>("/api/roundtable", {
+        requestId,
+        command: "start",
+        topic
+      });
+      if (requestSessionId !== useDialogueUiStore.getState().workspaceSessionId) {
+        return;
+      }
+
+      const now = new Date().toISOString();
+      const artifactId = createClientId("roundtable");
+      const artifact: WorkspaceRoundtableArtifact = {
+        id: artifactId,
+        topic,
+        sourceNodeId: view.currentNode.id,
+        createdAt: now,
+        updatedAt: now,
+        state: response.state
+      };
+
+      const record = loadWorkspaceRecord(workspaceId);
+      if (!record) {
+        throw new Error("workspace_roundtable_save_failed");
+      }
+      saveWorkspaceRecord({
+        id: workspaceId,
+        title: record.entry.title,
+        titleSource: record.entry.titleSource,
+        createdAt: record.entry.createdAt,
+        updatedAt: now,
+        lastOpenedAt: record.entry.lastOpenedAt,
+        snapshot: {
+          ...record.snapshot,
+          artifacts: {
+            ...(record.snapshot.artifacts || {}),
+            roundtables: {
+              ...(record.snapshot.artifacts?.roundtables || {}),
+              [artifactId]: artifact
+            }
+          }
+        }
+      });
+      setRoundtableArtifact(artifact);
+      setErrorState(null);
+    } catch (error: unknown) {
+      setErrorState(formatDialogueError(error));
+    } finally {
+      setRoundtablePending(false);
+    }
+  };
+
+  const handlePromoteRoundtableAsQuestion = () => {
+    if (!roundtableArtifact) {
+      return;
+    }
+    const nextQuestion = roundtableArtifact.state.nextQuestion?.trim();
+    if (!nextQuestion) {
+      return;
+    }
+    if (roundtableArtifact.sourceNodeId) {
+      startTransition(() => {
+        setFocusedNodeId(roundtableArtifact.sourceNodeId);
+        setComposerParentId(roundtableArtifact.sourceNodeId);
+      });
+    }
+    setDraft(nextQuestion);
+    setRoundtableArtifact(null);
+    setErrorState(null);
   };
 
   const handleGenerateSynthesis = async (action: DialogueSynthesisAction) => {
@@ -711,7 +818,7 @@ export function DialogueShell() {
         </p>
         <div className={styles.heroActions}>
           <a className={`${styles.heroActionButton} ${styles.heroActionLink}`} href="/roundtable">
-            进入圆桌
+            圆桌实验页
           </a>
           <button
             type="button"
@@ -771,8 +878,42 @@ export function DialogueShell() {
           synthesisPending={isSynthesisPending}
           onGenerateSynthesis={handleGenerateSynthesis}
           onSelectSource={handleSelectNode}
+          onSummonRoundtable={handleSummonRoundtable}
         />
       </div>
+
+      {roundtableArtifact ? (
+        <aside className={styles.roundtableDrawer} data-testid="dialogue-roundtable-drawer">
+          <header className={styles.roundtableDrawerHeader}>
+            <p className={styles.eyebrow}>Roundtable Artifact</p>
+            <strong>圆桌已保存</strong>
+          </header>
+          <p className={styles.roundtableDrawerTopic}>{roundtableArtifact.topic}</p>
+          <p className={styles.roundtableDrawerSummary}>
+            核心争议：{roundtableArtifact.state.lastCoreTension || "（无）"}
+          </p>
+          <p className={styles.roundtableDrawerSummary}>
+            下一问：{roundtableArtifact.state.nextQuestion || "（无）"}
+          </p>
+          <div className={styles.roundtableDrawerActions}>
+            <button
+              type="button"
+              className={styles.primaryButton}
+              onClick={handlePromoteRoundtableAsQuestion}
+              disabled={!roundtableArtifact.state.nextQuestion?.trim()}
+            >
+              作为追问继续
+            </button>
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              onClick={() => setRoundtableArtifact(null)}
+            >
+              收起
+            </button>
+          </div>
+        </aside>
+      ) : null}
 
       <DialogueComposer
         target={view.composerTarget}

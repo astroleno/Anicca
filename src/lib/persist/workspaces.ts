@@ -10,7 +10,8 @@ import {
   WorkspaceRecord,
   WorkspaceRegistry,
   WorkspaceRegistryEntry,
-  WorkspaceTitleSource
+  WorkspaceTitleSource,
+  WorkspaceArtifacts
 } from "@/types/workspace";
 
 export const LEGACY_WORKSPACE_KEY = "anicca_workspace_v2";
@@ -40,6 +41,7 @@ type WorkspaceRecordInput = {
   focusedNodeId: string | null;
   composerParentId: string | null;
   stageLayouts?: StageLayouts;
+  artifacts?: WorkspaceArtifacts;
 };
 
 type SaveWorkspaceRecordInput = {
@@ -88,6 +90,13 @@ function normalizeWorkspaceTitle(title: string | undefined | null) {
 
 function normalizeStageLayouts(stageLayouts: unknown): StageLayouts {
   return stageLayouts && typeof stageLayouts === "object" ? (stageLayouts as StageLayouts) : {};
+}
+
+function normalizeArtifacts(artifacts: unknown): WorkspaceArtifacts | undefined {
+  if (!artifacts || typeof artifacts !== "object") {
+    return undefined;
+  }
+  return artifacts as WorkspaceArtifacts;
 }
 
 function deriveWorkspaceTitle(graph: Graph) {
@@ -175,7 +184,8 @@ function normalizeSnapshot(input: WorkspaceRecordInput): PersistedWorkspaceSnaps
     graph: input.graph,
     focusedNodeId: input.focusedNodeId,
     composerParentId: input.composerParentId,
-    stageLayouts: normalizeStageLayouts(input.stageLayouts)
+    stageLayouts: normalizeStageLayouts(input.stageLayouts),
+    artifacts: normalizeArtifacts(input.artifacts)
   };
 }
 
@@ -190,7 +200,8 @@ export function loadWorkspaceSnapshot(workspaceId: WorkspaceId): PersistedWorksp
 
   return {
     ...parsed,
-    stageLayouts: normalizeStageLayouts(parsed.stageLayouts)
+    stageLayouts: normalizeStageLayouts(parsed.stageLayouts),
+    artifacts: normalizeArtifacts(parsed.artifacts)
   };
 }
 
@@ -252,7 +263,8 @@ export function saveWorkspaceRecord(
       graph: input.snapshot.graph,
       focusedNodeId: input.snapshot.focusedNodeId,
       composerParentId: input.snapshot.composerParentId,
-      stageLayouts: input.snapshot.stageLayouts
+      stageLayouts: input.snapshot.stageLayouts,
+      artifacts: input.snapshot.artifacts
     },
     options
   );

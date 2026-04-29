@@ -28,7 +28,27 @@ function buildWorkspaceRecord() {
     graph,
     focusedNodeId: "user_root_1",
     composerParentId: "user_root_1",
-    stageLayouts: {}
+    stageLayouts: {},
+    artifacts: {
+      roundtables: {
+        roundtable_1: {
+          id: "roundtable_1",
+          topic: "导出当前工作区",
+          sourceNodeId: "user_root_1",
+          createdAt: "2026-04-25T12:10:00.000Z",
+          updatedAt: "2026-04-25T12:10:00.000Z",
+          state: {
+            topic: "导出当前工作区",
+            participants: [],
+            rounds: [],
+            currentQuestion: "下一问是什么？",
+            nextQuestion: "下一问是什么？",
+            lastCoreTension: "暂未形成",
+            status: "active"
+          }
+        }
+      }
+    }
   };
   const entry: WorkspaceRegistryEntry = {
     id: "workspace_source_1",
@@ -55,6 +75,7 @@ describe("workspace bundle io", () => {
     expect(bundle.metadata.title).toBe("导出当前工作区");
     expect(bundle.metadata.exportedAt).toBe("2026-04-27T10:00:00.000Z");
     expect(bundle.snapshot.workspaceId).toBe("workspace_source_1");
+    expect(bundle.snapshot.artifacts.roundtables.roundtable_1.state.nextQuestion).toBe("下一问是什么？");
   });
 
   it("rejects malformed JSON payloads", () => {
@@ -83,6 +104,7 @@ describe("workspace bundle io", () => {
     expect(imported.createdAt).toBe("2026-04-25T12:00:00.000Z");
     expect(imported.updatedAt).toBe("2026-04-25T12:05:00.000Z");
     expect(imported.lastOpenedAt).toBe("2026-04-27T11:00:00.000Z");
+    expect(imported.snapshot.artifacts?.roundtables?.roundtable_1.topic).toBe("导出当前工作区");
   });
 
   it("keeps runtime session ownership out of imported snapshots", () => {

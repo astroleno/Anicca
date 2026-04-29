@@ -387,15 +387,24 @@
 @media (max-width: 900px) {
   .layout {
     grid-template-columns: 1fr;
-    width: min(100vw - 24px, 720px);
-    padding: 12px 0 18px;
+    width: min(100vw - 20px, 720px);
+    min-height: auto;
+    padding: 12px 0 calc(20px + env(safe-area-inset-bottom, 0px));
   }
 
   .main {
-    min-height: 62vh;
+    min-height: auto;
+    grid-template-rows: auto auto auto;
   }
 
   .statusBar {
     grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .transcript {
+    max-height: 56dvh;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }

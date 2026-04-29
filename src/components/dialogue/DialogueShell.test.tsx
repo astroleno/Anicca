@@ -11,6 +11,7 @@ import { serializeWorkspaceBundle } from "@/lib/io/workspaceBundle";
 import { ANICCA_WORKSPACE_SCHEMA_VERSION } from "@/lib/persist/local";
 import {
   ACTIVE_WORKSPACE_KEY,
+  loadWorkspaceRecord,
   loadWorkspaceRegistry,
   REGISTRY_KEY,
   SNAPSHOT_KEY_PREFIX,
@@ -280,6 +281,53 @@ describe("DialogueShell", () => {
     });
   });
 
+  it("stores roundtable artifact durably across autosave and promotes against source lineage", async () => {
+    const user = userEvent.setup();
+    const { rootUserId, thesisId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            requestId: "req_roundtable_1",
+            state: {
+              topic: "roundtable topic",
+              participants: [],
+              rounds: [],
+              currentQuestion: "q1",
+              nextQuestion: "作为追问继续的问题",
+              lastCoreTension: "核心张力",
+              status: "active"
+            }
+          }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          }
+        )
+      )
+    );
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: "召集圆桌讨论此节点" }));
+    expect(await screen.findByTestId("dialogue-roundtable-drawer")).toBeInTheDocument();
+    // Trigger autosave on a graph/focus change and ensure artifact survives.
+    await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
+    await waitFor(() => {
+      expect(loadWorkspaceRecord("workspace_test")?.snapshot.artifacts?.roundtables).toBeTruthy();
+    });
+    // Change focus away from source to validate promotion rebinds to source lineage.
+    await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
+    await user.click(screen.getByRole("button", { name: "作为追问继续" }));
+
+    expect(screen.getByPlaceholderText("把当前母题推进到下一轮。")).toHaveValue("作为追问继续的问题");
+    expect(useDialogueUiStore.getState().focusedNodeId).toBe(rootUserId);
+    expect(loadWorkspaceRecord("workspace_test")?.snapshot.artifacts?.roundtables).toBeTruthy();
+  });
+
   it("creates a new empty workspace without mutating the previous active graph", async () => {
     const user = userEvent.setup();
     const { rootUserId } = seedPair();
@@ -339,6 +387,67 @@ describe("DialogueShell", () => {
     expect(branchGraphStore.getGraph().nodes.user_other_root?.text).toBe("other workspace root");
     expect(useDialogueUiStore.getState().pending.branches).toBeNull();
     expect(useDialogueUiStore.getState().workspaceSessionId).not.toBe(priorSessionId);
+  });
+
+  it("ignores stale roundtable responses after workspace switch", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    saveWorkspaceRecord({
+      id: "workspace_other",
+      title: "Other Workspace",
+      snapshot: {
+        schemaVersion: ANICCA_WORKSPACE_SCHEMA_VERSION,
+        workspaceId: "workspace_other",
+        graph: buildRegistryGraph("user_other_root", "other workspace root"),
+        focusedNodeId: "user_other_root",
+        composerParentId: "user_other_root",
+        stageLayouts: {}
+      }
+    });
+
+    let resolveRoundtable: ((value: Response) => void) | null = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>((resolve) => {
+        resolveRoundtable = resolve;
+      }))
+    );
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: "召集圆桌讨论此节点" }));
+    await user.click(await screen.findByRole("button", { name: "Other Workspace" }));
+
+    resolveRoundtable?.(
+      new Response(
+        JSON.stringify({
+          requestId: "req_roundtable",
+          state: {
+            topic: "stale roundtable",
+            participants: [],
+            rounds: [],
+            currentQuestion: "q1",
+            nextQuestion: "q2",
+            lastCoreTension: "t",
+            status: "active"
+          }
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
+      )
+    );
+
+    await waitFor(() => {
+      expect(useDialogueUiStore.getState().workspaceId).toBe("workspace_other");
+    });
+
+    expect(screen.queryByTestId("dialogue-roundtable-drawer")).not.toBeInTheDocument();
+    expect(loadWorkspaceRecord("workspace_test")?.snapshot.artifacts).toBeUndefined();
+    expect(loadWorkspaceRecord("workspace_other")?.snapshot.artifacts).toBeUndefined();
   });
 
   it("emits workspace_resumed on boot restore and explicit workspace switch", async () => {

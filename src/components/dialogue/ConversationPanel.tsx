@@ -9,6 +9,7 @@ type ConversationPanelProps = {
   synthesisPending: boolean;
   onGenerateSynthesis: (action: DialogueSynthesisAction) => void;
   onSelectSource: (nodeId: string) => void;
+  onSummonRoundtable: () => void;
 };
 
 export function ConversationPanel({
@@ -16,7 +17,8 @@ export function ConversationPanel({
   synthesisAction,
   synthesisPending,
   onGenerateSynthesis,
-  onSelectSource
+  onSelectSource,
+  onSummonRoundtable
 }: ConversationPanelProps) {
   return (
     <section className={styles.panel} aria-labelledby="conversation-panel-heading" data-testid="dialogue-panel">
@@ -73,6 +75,19 @@ export function ConversationPanel({
           <span className={styles.panelActionHint}>
             {synthesisPending ? "正在沿当前谱系收束正与反" : synthesisAction.label}
           </span>
+        </div>
+      ) : null}
+
+      {node ? (
+        <div className={styles.panelActionRow}>
+          <button
+            type="button"
+            className={styles.secondaryButton}
+            onClick={onSummonRoundtable}
+          >
+            召集圆桌讨论此节点
+          </button>
+          <span className={styles.panelActionHint}>作为 sidecar artifact 保存，不直接写入主图。</span>
         </div>
       ) : null}
     </section>

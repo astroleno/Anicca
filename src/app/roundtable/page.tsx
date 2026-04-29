@@ -272,7 +272,7 @@ export default function RoundtablePage() {
                 onClick={() => void runCommand("deepen")}
                 disabled={!active || Boolean(pending)}
               >
-                {pending === "deepen" ? "深挖中..." : "深入此节"}
+                {pending === "deepen" ? "深挖中..." : "深挖一轮"}
               </button>
               <button
                 className={styles.dangerButton}
@@ -280,7 +280,7 @@ export default function RoundtablePage() {
                 onClick={() => void runCommand("conclude")}
                 disabled={!active || Boolean(pending)}
               >
-                {pending === "conclude" ? "总结中..." : "止"}
+                {pending === "conclude" ? "总结中..." : "结束并总结"}
               </button>
             </div>
           </div>

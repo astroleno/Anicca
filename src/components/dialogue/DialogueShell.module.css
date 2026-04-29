@@ -802,6 +802,45 @@
   margin-top: 18px;
 }
 
+.roundtableDrawer {
+  position: absolute;
+  right: calc(24px + var(--safe-right));
+  bottom: calc(112px + var(--safe-bottom));
+  z-index: 6;
+  width: min(360px, calc(100vw - 32px));
+  max-height: min(52dvh, 420px);
+  overflow: auto;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(10, 24, 30, 0.92), rgba(7, 19, 25, 0.76));
+  backdrop-filter: blur(18px);
+}
+
+.roundtableDrawerHeader {
+  display: grid;
+  gap: 4px;
+}
+
+.roundtableDrawerTopic {
+  margin: 12px 0 0;
+  white-space: pre-wrap;
+  color: rgba(243, 248, 250, 0.92);
+}
+
+.roundtableDrawerSummary {
+  margin: 8px 0 0;
+  color: rgba(226, 239, 244, 0.72);
+  font-size: 0.9rem;
+}
+
+.roundtableDrawerActions {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .composer {
   position: absolute;
   left: 50%;
@@ -902,6 +941,7 @@
 }
 
 .primaryButton,
+.secondaryButton,
 .breadcrumbButton,
 .sidebarItem,
 .panelSourceCard,
@@ -926,7 +966,21 @@
   font-weight: 700;
 }
 
+.secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 10px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  font-weight: 600;
+}
+
 .primaryButton:hover:not(:disabled),
+.secondaryButton:hover:not(:disabled),
 .breadcrumbButton:hover,
 .sidebarItem:hover,
 .panelSourceCard:hover {
@@ -939,10 +993,16 @@
   cursor: not-allowed;
 }
 
+.secondaryButton:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+}
+
 .breadcrumbButton:focus-visible,
 .sidebarItem:focus-visible,
 .panelSourceCard:focus-visible,
 .primaryButton:focus-visible,
+.secondaryButton:focus-visible,
 .composer textarea:focus-visible,
 .stageNode:focus-visible {
   outline: none;
@@ -960,7 +1020,8 @@
   .workspaceBar,
   .hero,
   .sidebar,
-  .panel {
+  .panel,
+  .roundtableDrawer {
     position: relative;
     top: auto;
     left: auto;
@@ -1133,7 +1194,8 @@
   .hero,
   .sidebar,
   .panel,
-  .composer {
+  .composer,
+  .roundtableDrawer {
     margin-left: 12px;
     margin-right: 12px;
   }
@@ -1197,6 +1259,11 @@
     max-height: none;
     overflow: visible;
   }
+
+  .roundtableDrawer {
+    max-height: none;
+    overflow: visible;
+  }
 }
 
 .breadcrumb::-webkit-scrollbar,
@@ -1223,6 +1290,7 @@
   }
 
   .primaryButton,
+  .secondaryButton,
   .breadcrumbButton,
   .sidebarItem,
   .panelSourceCard,
