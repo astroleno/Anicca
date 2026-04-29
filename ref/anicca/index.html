@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>anicca</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body, html {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background-color: #0f172a; /* Slate 900 */
+        background-image: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 100%, hsla(225,39%,30%,1) 0, transparent 50%);
+        color: #e2e8f0;
+      }
+
+      /* The Gooey Effect Filter */
+      .gooey-layer {
+        filter: url('#goo');
+        transform: translateZ(0); /* Hardware acceleration */
+        will-change: transform;
+      }
+
+      /* Custom Scrollbar hide */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+
+      @keyframes spin-slow {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      .animate-spin-slow {
+        animation: spin-slow 8s linear infinite;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "nanoid": "https://aistudiocdn.com/nanoid@^5.1.6"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+
+    <!-- SVG Filter for Metaball effect -->
+    <svg style="position: absolute; width: 0; height: 0;">
+      <defs>
+        <filter id="goo">
+          <!-- Blur the input image -->
+          <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur" />
+          <!-- Contrast to sharpen the edges -->
+          <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9" result="goo" />
+          <!-- Composite with original -->
+          <feComposite in="SourceGraphic" in2="goo" operator="atop"/>
+        </filter>
+      </defs>
+    </svg>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
