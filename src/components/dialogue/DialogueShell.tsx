@@ -417,6 +417,9 @@ export function DialogueShell() {
         <p className={styles.heroCopy}>
           把它放进场里，先长出正与反；等张力清楚了，再决定要不要把它们收成合。
         </p>
+        <a className={styles.heroLink} href="/roundtable">
+          进入圆桌
+        </a>
       </header>
 
       <div className={styles.workspace}>
