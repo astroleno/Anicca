@@ -5,6 +5,8 @@ struct Ball { pos: vec2<f32>, radius: f32, level: f32 };
 @group(0) @binding(1) var outTex: texture_storage_2d<rgba16float, write>;
 @group(0) @binding(2) var<uniform> uSize: vec2<f32>;  // canvas size (w,h)
 @group(0) @binding(3) var<uniform> uCount: u32;       // ball count
+@group(0) @binding(4) var<uniform> uFusionRange: f32;  // 融合范围参数
+@group(0) @binding(5) var<uniform> uAdaptiveScale: f32;  // 自适应缩放参数
 
 fn ndcFromPixel(pix: vec2<f32>, size: vec2<f32>) -> vec2<f32> {
   // 像素坐标 -> NDC[-1,1]
@@ -16,6 +18,7 @@ fn ndcFromPixel(pix: vec2<f32>, size: vec2<f32>) -> vec2<f32> {
 // 同时累计梯度近似（对 |p-c| 的偏导）
 fn accumulate(p: vec2<f32>, count: u32) -> f32 {
   // 使用有界核 w = r^2 / (|p-c|^2 + r^2)，避免中心奇异导致的尖点
+  // 调整融合范围：缩小到半径的1/4
   var t: f32 = 0.0;
   // 纠正长宽比，使屏幕像素度量保持圆形
   let aspect = uSize.x / uSize.y;
@@ -23,9 +26,11 @@ fn accumulate(p: vec2<f32>, count: u32) -> f32 {
   for (var i: u32 = 0u; i < count; i = i + 1u) {
     let c = balls[i].pos;
     let c2 = vec2<f32>(c.x * aspect, c.y);
-    let r = balls[i].radius;
+    let r = balls[i].radius * uAdaptiveScale;  // 应用自适应缩放
     let d2 = distance(p2, c2) * distance(p2, c2);
-    let w = (r*r) / (d2 + r*r);
+    // 使用可调节的融合范围参数
+    let r_fusion = r * uFusionRange;  // 融合半径 = 缩放后半径 * 融合范围
+    let w = (r_fusion*r_fusion) / (d2 + r_fusion*r_fusion);
     t = t + w;
   }
   return t;

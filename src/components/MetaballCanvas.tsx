@@ -4,19 +4,22 @@ import { useMetaballStore } from '@/store/metaballStore'
 import { initWebGPU } from '@/utils/webgpuInit'
 import computeWGSL from '@/shaders/metaball_compute.wgsl'
 import shadeWGSL from '@/shaders/shade_fullscreen.wgsl'
+import GSAPChatInput from './GSAPChatInput'
 
 // 为了通过类型检查，声明 WebGPU 用到的常量命名空间（运行时由浏览器提供）
 declare const GPUBufferUsage: any
 declare const GPUTextureUsage: any
 
-const K_MERGE = 0.95
-const K_UNMERGE = 1.10
+const K_MERGE = 1.3
+const K_UNMERGE = 1.6
 const DWELL_MS = 1000
 
 export default function MetaballCanvas() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const balls = useMetaballStore(s => s.balls)
+  const fusionRange = useMetaballStore(s => s.fusionRange)
+  const adaptiveScale = useMetaballStore(s => s.adaptiveScale)
   const setPos = useMetaballStore(s => s.setPos)
   const split = useMetaballStore(s => s.split)
   const merge = useMetaballStore(s => s.merge)
@@ -24,10 +27,15 @@ export default function MetaballCanvas() {
   // 拖拽时的靠近候选与高亮
   const [hoverMergeCandidate, setHoverMergeCandidate] = useState<number | null>(null)
 
+  // Chat UI状态
+  const [isChatOpen, setIsChatOpen] = useState(false)
+  const [selectedBallId, setSelectedBallId] = useState<number | null>(null)
+
+
   useEffect(() => {
     if (!canvasRef.current) return
     let cleanup: (() => void) | undefined
-    run(canvasRef.current, balls, setPos, setHoverMergeCandidate, () => hoverMergeCandidate, merge).then(stop => (cleanup = stop)).catch(console.error)
+    run(canvasRef.current, balls, fusionRange, adaptiveScale, setPos, setHoverMergeCandidate, () => hoverMergeCandidate, merge).then(stop => (cleanup = stop)).catch(console.error)
     return () => { if (cleanup) cleanup() }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -41,20 +49,39 @@ export default function MetaballCanvas() {
     return [x, y]
   }
 
+  // 强制重新渲染序号标签
+  const [forceUpdate, setForceUpdate] = useState(0)
+  const triggerUpdate = () => setForceUpdate(prev => prev + 1)
+
+  // 容器挂载后强制更新序号标签
+  useEffect(() => {
+    if (containerRef.current) {
+      const timer = setTimeout(() => {
+        triggerUpdate()
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [containerRef.current])
+
   return (
     <div ref={containerRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
       <canvas ref={canvasRef} style={{ width: '100%', height: '100%', touchAction: 'none' }} />
-      
-      {/* 标签与就地操作（标签本身不拦截指针，按钮可点击） */}
+
+
+      {/* 球体序号标签（可点击触发chat） */}
       {balls.filter(b=>b.active!==false).map((ball) => {
         const [x, y] = ndcToPixel(ball.pos)
         const isHoverMerge = hoverMergeCandidate === ball.id
-        
-        // 如果球在屏幕边缘区域，完全隐藏标签
-        if (x < 100 || y < 100 || x > window.innerWidth - 100 || y > window.innerHeight - 100) {
-          return null
-        }
-        
+
+        // 调试信息
+        console.log(`球体${ball.id}: NDC=${ball.pos}, 像素=${[x, y]}, 容器=${containerRef.current?.getBoundingClientRect()}`)
+
+        // 暂时不隐藏任何标签，先让所有序号都显示
+        // if (typeof window !== 'undefined' && (x < 20 || y < 20 || x > window.innerWidth - 20 || y > window.innerHeight - 20)) {
+        //   console.log(`球体${ball.id}被隐藏: x=${x}, y=${y}, 窗口=${window.innerWidth}x${window.innerHeight}`)
+        //   return null
+        // }
+
         return (
           <div key={ball.id} style={{ position: 'absolute', left: x - 20, top: y - 10, zIndex: 1000 }}>
             <div
@@ -74,67 +101,31 @@ export default function MetaballCanvas() {
                 WebkitUserSelect: 'none',
                 MozUserSelect: 'none',
                 msUserSelect: 'none',
-                pointerEvents: 'none',
+                pointerEvents: 'auto', // 恢复点击功能
+                cursor: 'pointer',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+              }}
+              onClick={(e) => {
+                e.stopPropagation()
+                setSelectedBallId(ball.id)
+                setIsChatOpen(true)
               }}
             >
               {ball.id}
             </div>
-            {/* Split/Merge 按钮 */}
-            <div style={{ display: 'flex', gap: 4, marginTop: 4, pointerEvents: 'auto' }}>
-              <button
-                style={{ 
-                  padding: '2px 6px', 
-                  fontSize: 11, 
-                  borderRadius: 4, 
-                  border: '1px solid #333', 
-                  background: '#111', 
-                  color: '#fff', 
-                  cursor: 'pointer',
-                  userSelect: 'none',
-                  WebkitUserSelect: 'none',
-                  MozUserSelect: 'none',
-                  msUserSelect: 'none'
-                }}
-                onClick={(e) => { e.stopPropagation(); split(ball.id) }}
-              >Split</button>
-              <button
-                style={{ 
-                  padding: '2px 6px', 
-                  fontSize: 11, 
-                  borderRadius: 4, 
-                  border: '1px solid #333', 
-                  background: '#111', 
-                  color: '#fff', 
-                  cursor: 'pointer',
-                  userSelect: 'none',
-                  WebkitUserSelect: 'none',
-                  MozUserSelect: 'none',
-                  msUserSelect: 'none'
-                }}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  // 简单的点击合并：找到最近的球进行合并
-                  const state = useMetaballStore.getState()
-                  let nearest: number | null = null
-                  let nearestDist = Infinity
-                  for (const b of state.balls) {
-                    if (b.id === ball.id || b.active === false) continue
-                    const dx = b.pos[0] - ball.pos[0]
-                    const dy = b.pos[1] - ball.pos[1]
-                    const d = Math.sqrt(dx*dx + dy*dy)
-                    if (d < nearestDist) { nearestDist = d; nearest = b.id }
-                  }
-                  if (nearest !== null) {
-                    console.log(`点击合并: ${ball.id} + ${nearest}`)
-                    merge(ball.id, nearest)
-                  }
-                }}
-              >Merge</button>
-            </div>
           </div>
         )
       })}
+
+      {/* GSAP Chat Input */}
+      <GSAPChatInput
+        isOpen={isChatOpen}
+        onClose={() => {
+          setIsChatOpen(false)
+          setSelectedBallId(null)
+        }}
+        selectedBallId={selectedBallId}
+      />
     </div>
   )
 }
@@ -143,6 +134,8 @@ export default function MetaballCanvas() {
 async function run(
   canvas: HTMLCanvasElement,
   ballsInit: any[],
+  fusionRangeInit: number,
+  adaptiveScaleInit: number,
   setPos: (id: number, p: [number, number]) => void,
   setHoverMergeCandidate: (id: number | null) => void,
   getHoverMergeCandidate: () => number | null,
@@ -243,11 +236,15 @@ async function run(
 
   const sizeBuffer = device.createBuffer({ size: 8, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST })
   const countBuffer = device.createBuffer({ size: 4, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST })
+  const fusionRangeBuffer = device.createBuffer({ size: 4, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST })
+  const adaptiveScaleBuffer = device.createBuffer({ size: 4, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST })
   const updateSize = () => {
     device.queue.writeBuffer(sizeBuffer, 0, new Float32Array([texWidth(), texHeight()]))
   }
   countRef = ballsInit.length
   device.queue.writeBuffer(countBuffer, 0, new Uint32Array([countRef]).buffer)
+  device.queue.writeBuffer(fusionRangeBuffer, 0, new Float32Array([fusionRangeInit]))
+  device.queue.writeBuffer(adaptiveScaleBuffer, 0, new Float32Array([adaptiveScaleInit]))
   updateSize()
 
   // 输出纹理（compute 写 / fragment 读）
@@ -275,7 +272,9 @@ async function run(
         { binding: 0, resource: { buffer: ballsBuffer } },
         { binding: 1, resource: outTex.createView() },
         { binding: 2, resource: { buffer: sizeBuffer } },
-        { binding: 3, resource: { buffer: countBuffer } }
+        { binding: 3, resource: { buffer: countBuffer } },
+        { binding: 4, resource: { buffer: fusionRangeBuffer } },
+        { binding: 5, resource: { buffer: adaptiveScaleBuffer } }
       ]
     })
   let computeBind = getComputeBind()
@@ -289,12 +288,20 @@ async function run(
     })
   let renderBind = getRenderBind()
 
-  // 订阅 store：当球数量变化时重建 buffer / uCount
+  // 订阅 store：当球数量变化时重建 buffer / uCount，融合范围和自适应缩放变化时更新
   const unsubscribe = useMetaballStore.subscribe((state, prev) => {
     const currActive = state.balls.filter(b => b.active !== false).length
     const prevActive = prev?.balls ? prev.balls.filter(b => b.active !== false).length : currActive
     if (currActive !== prevActive) {
       rebuildFromStore()
+    }
+    // 融合范围变化时更新uniform
+    if (prev && state.fusionRange !== prev.fusionRange) {
+      device.queue.writeBuffer(fusionRangeBuffer, 0, new Float32Array([state.fusionRange]))
+    }
+    // 自适应缩放变化时更新uniform
+    if (prev && state.adaptiveScale !== prev.adaptiveScale) {
+      device.queue.writeBuffer(adaptiveScaleBuffer, 0, new Float32Array([state.adaptiveScale]))
     }
   })
 
@@ -334,48 +341,70 @@ async function run(
     const state = useMetaballStore.getState()
     const draggingBall = state.balls.find(b => b.id === draggingId)
     if (!draggingBall) { setHoverMergeCandidate(null); mergeTargetId = null; clearDwell(); return }
+
+    console.log(`检查合并候选: 拖拽球${draggingId} (半径=${draggingBall.radius.toFixed(3)})`)
+
+    // 如果已经在合并计时中，检查是否还在范围内
+    if (mergeTargetId !== null) {
+      const targetBall = state.balls.find(b => b.id === mergeTargetId)
+      if (targetBall) {
+        const dx = targetBall.pos[0] - draggingBall.pos[0]
+        const dy = targetBall.pos[1] - draggingBall.pos[1]
+        const d = Math.sqrt(dx*dx + dy*dy)
+        const currentAdaptiveScale = state.adaptiveScale
+        const thrOut = K_UNMERGE * (targetBall.radius * currentAdaptiveScale + draggingBall.radius * currentAdaptiveScale)
+
+        if (d > thrOut) {
+          console.log(`退出合并范围: 距离=${d.toFixed(3)}, 退出阈值=${thrOut.toFixed(3)}`)
+          mergeTargetId = null
+          setHoverMergeCandidate(null)
+          clearDwell()
+        } else {
+          console.log(`继续合并计时: 距离=${d.toFixed(3)}, 退出阈值=${thrOut.toFixed(3)}`)
+        }
+        return
+      }
+    }
+
+    // 寻找新的合并候选
     let nearest: number | null = null
     let nearestDist = Infinity
-    console.log(`检查合并候选: 拖拽球${draggingId} (半径=${draggingBall.radius.toFixed(3)})`)
+    let bestCandidate: number | null = null
+
     for (const b of state.balls) {
       if (b.id === draggingId || b.active === false) continue
       const dx = b.pos[0] - draggingBall.pos[0]
       const dy = b.pos[1] - draggingBall.pos[1]
       const d = Math.sqrt(dx*dx + dy*dy)
-      const thrIn = K_MERGE * (b.radius * currentScale + draggingBall.radius * currentScale)
-      console.log(`  候选球${b.id}: 距离=${d.toFixed(3)}, 阈值=${thrIn.toFixed(3)}, 半径=${b.radius.toFixed(3)}`)
+      const currentAdaptiveScale = state.adaptiveScale
+      const thrIn = K_MERGE * (b.radius * currentAdaptiveScale + draggingBall.radius * currentAdaptiveScale)
+
+      console.log(`  候选球${b.id}: 距离=${d.toFixed(3)}, 阈值=${thrIn.toFixed(3)}, 半径=${b.radius.toFixed(3)}, 缩放=${currentAdaptiveScale.toFixed(3)}`)
+
       if (d < nearestDist) { nearestDist = d; nearest = b.id }
-      // 判定是否在阈值内
-      if (b.id === mergeTargetId) {
-        // 迟滞：退出条件
-        const thrOut = K_UNMERGE * (b.radius * currentScale + draggingBall.radius * currentScale)
-        if (d > thrOut) { 
-          mergeTargetId = null; 
-          setHoverMergeCandidate(null); 
-          clearDwell() 
-        }
-      }
+
       if (d <= thrIn) {
-        if (mergeTargetId !== b.id) {
-          mergeTargetId = b.id
-          setHoverMergeCandidate(b.id)
-          clearDwell()
-          console.log(`开始合并计时: 拖拽球${draggingId} 靠近球${b.id}, 距离=${d.toFixed(3)}, 阈值=${thrIn.toFixed(3)}, 等待${DWELL_MS}ms`)
-          dwellTimer = setTimeout(() => { 
-            if (mergeTargetId === b.id) { 
-              console.log(`合并执行: ${draggingId} + ${b.id}`)
-              merge(draggingId, b.id); 
-              clearDwell() 
-            } 
-          }, DWELL_MS)
-        } else {
-          // 已经在计时中，不需要重复设置
-          console.log(`继续等待合并: 拖拽球${draggingId} 与球${b.id} 距离=${d.toFixed(3)}`)
-        }
+        bestCandidate = b.id
+        break // 找到第一个符合条件的就停止
       }
     }
-    // 若没有候选
-    if (mergeTargetId === null && nearest !== null) setHoverMergeCandidate(nearest)
+
+    // 如果找到新的合并候选
+    if (bestCandidate !== null && mergeTargetId !== bestCandidate) {
+      mergeTargetId = bestCandidate
+      setHoverMergeCandidate(bestCandidate)
+      clearDwell()
+      console.log(`开始合并计时: 拖拽球${draggingId} 靠近球${bestCandidate}, 等待${DWELL_MS}ms`)
+      dwellTimer = setTimeout(() => {
+        if (mergeTargetId === bestCandidate) {
+          console.log(`合并执行: ${draggingId} + ${bestCandidate}`)
+          merge(draggingId, bestCandidate)
+          clearDwell()
+        }
+      }, DWELL_MS)
+    } else if (mergeTargetId === null && nearest !== null) {
+      setHoverMergeCandidate(nearest)
+    }
   }
 
   const stopDrag = () => { dragging = false; clearDwell(); mergeTargetId = null; setHoverMergeCandidate(null) }
@@ -448,6 +477,6 @@ async function run(
     canvas.removeEventListener('pointercancel', onUp)
     window.removeEventListener('pointerup', onWindowUp)
     window.removeEventListener('blur', onWindowUp)
-    outTex.destroy(); ballsBuffer.destroy(); sizeBuffer.destroy(); countBuffer.destroy()
+    outTex.destroy(); ballsBuffer.destroy(); sizeBuffer.destroy(); countBuffer.destroy(); fusionRangeBuffer.destroy(); adaptiveScaleBuffer.destroy()
   }
 }

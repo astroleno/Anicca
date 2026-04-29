@@ -15,8 +15,14 @@ export type Ball2D = {
 type State = {
   balls: Ball2D[]
   nextId: number
+  // 融合范围参数：0.1=很紧实，0.5=中等，1.0=原始范围
+  fusionRange: number
+  // 自适应缩放参数
+  adaptiveScale: number
   setPos: (id: number, pos: [number, number]) => void
   setLabel: (id: number, label: string) => void
+  setFusionRange: (range: number) => void
+  updateAdaptiveScale: () => void
   createBall: (pos: [number, number], radius: number, label?: string) => number
   removeBall: (id: number) => void
   split: (id: number) => void
@@ -26,11 +32,11 @@ type State = {
 // 初始化为"中心 + 6 个子球"的简单布局
 function makeInitialBalls(): Ball2D[] {
   const balls: Ball2D[] = []
-  const root: Ball2D = { id: 0, parent: -1, pos: [0, 0], radius: 0.35, level: 0, label: 'Root', active: true }
+  const root: Ball2D = { id: 0, parent: -1, pos: [0, 0], radius: 0.35 * 6, level: 0, label: 'Root', active: true }
   balls.push(root)
 
   const alpha = 0.7
-  const ringRadius = 0.15  // 减小半径，确保球都在中心区域
+  const ringRadius = 0.15 * 6  // 放大6倍，确保球都在中心区域
   for (let i = 1; i <= 6; i++) {
     const theta = (i / 6) * Math.PI * 2
     balls.push({
@@ -47,10 +53,30 @@ function makeInitialBalls(): Ball2D[] {
   return balls
 }
 
+// 自适应缩放计算函数
+function calculateAdaptiveScale(ballCount: number): number {
+  // 基于球体数量的填充率映射
+  // 1-3个球：1/3填充率 (scale ≈ 0.6)
+  // 4-8个球：1/2填充率 (scale ≈ 0.8)
+  // 9+个球：3/4填充率 (scale ≈ 1.2)
+
+  if (ballCount <= 3) {
+    return 0.6;  // 1/3填充率
+  } else if (ballCount <= 8) {
+    // 线性插值：3个球时0.6，8个球时0.8
+    return 0.6 + (ballCount - 3) * (0.2 / 5);
+  } else {
+    // 9+个球：线性增长到1.2
+    return Math.min(1.2, 0.8 + (ballCount - 8) * 0.1);
+  }
+}
+
 // 导出可用的 Zustand store（向下兼容 balls / setPos）
 export const useMetaballStore = create<State>((set, get) => ({
   balls: makeInitialBalls(),
   nextId: 7,
+  fusionRange: 0.20,  // 固定融合范围：半径的20%
+  adaptiveScale: 1.0, // 初始自适应缩放
 
   setPos: (id, pos) => set((s) => ({
     balls: s.balls.map(b => (b.id === id ? { ...b, pos } : b))
@@ -60,18 +86,33 @@ export const useMetaballStore = create<State>((set, get) => ({
     balls: s.balls.map(b => (b.id === id ? { ...b, label } : b))
   })),
 
+  setFusionRange: (range) => set({ fusionRange: range }),
+
+  updateAdaptiveScale: () => {
+    const state = get();
+    const activeCount = state.balls.filter(b => b.active !== false).length;
+    const newScale = calculateAdaptiveScale(activeCount);
+    set({ adaptiveScale: newScale });
+  },
+
   createBall: (pos, radius, label) => {
     const id = get().nextId
     set((s) => ({
       balls: [...s.balls, { id, parent: -1, pos, radius, level: 0, label: label || `Ball${id}`, active: true }],
       nextId: s.nextId + 1
     }))
+    // 创建球后更新自适应缩放
+    get().updateAdaptiveScale()
     return id
   },
 
-  removeBall: (id) => set((s) => ({
-    balls: s.balls.filter(b => b.id !== id)
-  })),
+  removeBall: (id) => {
+    set((s) => ({
+      balls: s.balls.filter(b => b.id !== id)
+    }))
+    // 删除球后更新自适应缩放
+    get().updateAdaptiveScale()
+  },
 
   split: (id) => {
     const s = get()
@@ -87,6 +128,8 @@ export const useMetaballStore = create<State>((set, get) => ({
     const child1: Ball2D = { id: id1, parent: id, pos: [b.pos[0] + dir[0]*dist, b.pos[1] + dir[1]*dist], radius: r1, level: b.level+1, label: 'Pos', active: true }
     const child2: Ball2D = { id: id2, parent: id, pos: [b.pos[0] - dir[0]*dist, b.pos[1] - dir[1]*dist], radius: r2, level: b.level+1, label: 'Neg', active: true }
     set({ balls: [...s.balls, child1, child2], nextId: s.nextId + 2 })
+    // 分裂后更新自适应缩放
+    get().updateAdaptiveScale()
   },
 
   merge: (a, b) => {
@@ -106,5 +149,7 @@ export const useMetaballStore = create<State>((set, get) => ({
     const newBalls = s.balls.filter(x => x.id !== a && x.id !== b).concat([C])
     console.log('合并后:', newBalls.length, '个球', { 新球: C })
     set({ balls: newBalls, nextId: s.nextId + 1 })
+    // 合并后更新自适应缩放
+    get().updateAdaptiveScale()
   }
 }))
