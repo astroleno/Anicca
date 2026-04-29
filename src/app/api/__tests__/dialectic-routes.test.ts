@@ -3,22 +3,36 @@ import { POST as branchesPost } from "@/app/api/branches/route";
 import { POST as chatPost } from "@/app/api/chat/route";
 import { POST as synthesisPost } from "@/app/api/synthesis/route";
 
-const { createResponse } = vi.hoisted(() => ({
-  createResponse: vi.fn()
-}));
+const { createResponse, createChatCompletion, openAiMock } = vi.hoisted(() => {
+  const createResponse = vi.fn();
+  const createChatCompletion = vi.fn();
+
+  return {
+    createResponse,
+    createChatCompletion,
+    openAiMock: {
+      responses: {
+        create: createResponse
+      },
+      chat: {
+        completions: {
+          create: createChatCompletion
+        }
+      }
+    }
+  };
+});
 
 vi.mock("@/lib/openai/client", () => ({
   getDefaultModel: (model?: string) => model || "gpt-4o-mini",
-  openai: {
-    responses: {
-      create: createResponse
-    }
-  }
+  getOpenAiClient: () => openAiMock,
+  openai: openAiMock
 }));
 
 describe("dialectic routes", () => {
   beforeEach(() => {
     createResponse.mockReset();
+    createChatCompletion.mockReset();
   });
 
   it("returns structured thesis and antithesis with echoed requestId", async () => {

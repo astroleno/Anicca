@@ -63,7 +63,7 @@ export async function runNode(providerName: string, nodeId: string, model: strin
     const p = pid ? g.nodes[pid] : undefined;
     return p?.kind === 'user' ? (p.text || '') : '';
   })();
-  let summary = normalizeSummary(text.slice(0, 30)); // 简易截断
+  const summary = normalizeSummary(text.slice(0, 30)); // 简易截断
   const ok = isValidSummary(summary, parentText);
   branchGraphStore.patchNodeMeta(nodeId, {
     summary: ok ? summary : "",
@@ -72,4 +72,3 @@ export async function runNode(providerName: string, nodeId: string, model: strin
 
   return text;
 }
-

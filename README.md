@@ -257,7 +257,7 @@ npm run dev
 ## 十一、路线图
 
 - 阶段一：稳定 `/dialogue` 主线，包括 graph、request matching、workspace restore、ports rollout
-- 阶段二：workspace 能力增强，包括导出 / 导入、管理、恢复体验打磨
+- 阶段二：workspace 能力增强，包括导出 / 导入、管理、恢复体验打磨（see `docs/superpowers/plans/2026-04-25-anicca-dialectic-v2-workspace-phase-implement-plan.md`）
 - 阶段三：在不破坏主线 contract 的前提下评估是否把更强的视觉层重新接回 `/dialogue`
 - 阶段四：可选云同步、分享与部署能力
 
@@ -270,6 +270,7 @@ npm run dev
 - `docs/superpowers/plans/2026-04-24-anicca-dialectic-v2-backend-implement-plan.md`
 - `docs/superpowers/plans/2026-04-24-anicca-dialectic-v2-frontend-implement-plan.md`
 - `docs/superpowers/plans/2026-04-24-anicca-dialectic-v2-ports-rollout-implement-plan.md`
+- `docs/superpowers/plans/2026-04-25-anicca-dialectic-v2-workspace-phase-implement-plan.md`
 - `ref/mochi.ts`
 
 ---

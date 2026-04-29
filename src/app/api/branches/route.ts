@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDefaultModel, openai } from "@/lib/openai/client";
+import { getDefaultModel } from "@/lib/openai/client";
+import { generateText } from "@/lib/openai/generateText";
 import { parseFirstJsonObject } from "@/lib/openai/parseFirstJsonObject";
-import { readOutputText } from "@/lib/openai/readOutputText";
 
 type ContextMessage = {
   role?: string;
@@ -114,13 +114,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ requestId, error: "userText required" }, { status: 400 });
     }
 
-    const response = await openai.responses.create({
+    const { text: outputText } = await generateText({
       model,
       input: buildBranchesPrompt(userText, body?.contextMessages),
-      max_output_tokens: 1200
+      maxOutputTokens: 1200
     });
 
-    const outputText = readOutputText(response);
     const parsed = outputText ? parseFirstJsonObject(outputText) : null;
     if (!parsed) {
       console.warn("/api/branches invalid model output", { requestId, outputText: outputText.slice(0, 500) });
