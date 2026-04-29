@@ -3,6 +3,7 @@ import { createClientId, useDialogueUiStore } from "@/features/dialectic/store";
 describe("useDialogueUiStore", () => {
   beforeEach(() => {
     useDialogueUiStore.setState({
+      workspaceId: "workspace_test",
       workspaceSessionId: "ws_test",
       focusedNodeId: null,
       composerParentId: null,
@@ -44,6 +45,40 @@ describe("useDialogueUiStore", () => {
       pan: { x: 24, y: -18 },
       nodePositions: {
         node_a: { x: 44, y: 57 }
+      }
+    });
+  });
+
+  it("hydrates persisted workspace identity and clears transient pending state", () => {
+    useDialogueUiStore.getState().beginPending("branches", {
+      requestId: createClientId("req"),
+      workspaceSessionId: "ws_test",
+      focusSnapshotId: "focus:a",
+      composerTargetId: "node_a"
+    });
+
+    useDialogueUiStore.getState().hydrateWorkspace({
+      workspaceId: "workspace_2",
+      workspaceSessionId: "ws_runtime_2",
+      focusedNodeId: "node_focus",
+      composerParentId: "node_parent",
+      stageLayouts: {
+        "focus:node_focus": {
+          pan: { x: 1, y: 2 },
+          nodePositions: {}
+        }
+      }
+    });
+
+    expect(useDialogueUiStore.getState()).toMatchObject({
+      workspaceId: "workspace_2",
+      workspaceSessionId: "ws_runtime_2",
+      focusedNodeId: "node_focus",
+      composerParentId: "node_parent",
+      pendingAction: null,
+      pending: {
+        branches: null,
+        synthesis: null
       }
     });
   });

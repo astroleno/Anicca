@@ -18,10 +18,11 @@ import {
   deriveDialogueView
 } from "@/features/dialectic/viewModel";
 import {
-  ANICCA_WORKSPACE_SCHEMA_VERSION,
-  loadGraphLocal,
-  saveGraphLocal
-} from "@/lib/persist/local";
+  activateWorkspace,
+  createWorkspaceRecord,
+  initializeActiveWorkspace,
+  saveActiveWorkspaceSnapshot
+} from "@/lib/persist/workspaces";
 import { branchGraphStore } from "@/store/branchGraph";
 import { Message } from "@/types/chat";
 import { Graph } from "@/types/anicca";
@@ -186,6 +187,8 @@ export function DialogueShell() {
   );
   const [draft, setDraft] = useState("");
   const [demoWorkspaceEnabled, setDemoWorkspaceEnabled] = useState(false);
+  const [workspaceReady, setWorkspaceReady] = useState(() => branchGraphStore.getGraph().entryIds.length > 0);
+  const workspaceId = useDialogueUiStore((state) => state.workspaceId);
   const workspaceSessionId = useDialogueUiStore((state) => state.workspaceSessionId);
   const focusedNodeId = useDialogueUiStore((state) => state.focusedNodeId);
   const composerParentId = useDialogueUiStore((state) => state.composerParentId);
@@ -201,18 +204,21 @@ export function DialogueShell() {
   const setErrorState = useDialogueUiStore((state) => state.setErrorState);
 
   useEffect(() => {
-    const snapshot = loadGraphLocal();
-    if (!snapshot) {
+    if (branchGraphStore.getGraph().entryIds.length > 0) {
+      setWorkspaceReady(true);
       return;
     }
 
+    const snapshot = initializeActiveWorkspace();
     branchGraphStore.setGraph(snapshot.graph);
     hydrateWorkspace({
+      workspaceId: snapshot.workspaceId,
       workspaceSessionId: snapshot.workspaceSessionId,
       focusedNodeId: snapshot.focusedNodeId,
       composerParentId: snapshot.composerParentId,
       stageLayouts: snapshot.stageLayouts
     });
+    setWorkspaceReady(true);
   }, [hydrateWorkspace]);
 
   useEffect(() => {
@@ -241,15 +247,18 @@ export function DialogueShell() {
   }, [composerParentId, setComposerParentId, view.composerTarget.nodeId]);
 
   useEffect(() => {
-    saveGraphLocal({
-      schemaVersion: ANICCA_WORKSPACE_SCHEMA_VERSION,
-      workspaceSessionId,
+    if (!workspaceReady) {
+      return;
+    }
+
+    saveActiveWorkspaceSnapshot({
+      workspaceId,
       graph: graphSnapshot.graph,
       focusedNodeId: view.focusNodeId,
       composerParentId: view.composerTarget.nodeId,
       stageLayouts
     });
-  }, [graphSnapshot, stageLayouts, view.focusNodeId, view.composerTarget.nodeId, workspaceSessionId]);
+  }, [graphSnapshot, stageLayouts, view.focusNodeId, view.composerTarget.nodeId, workspaceId, workspaceReady]);
 
   const handleSelectNode = (nodeId: string) => {
     startTransition(() => {
@@ -260,14 +269,20 @@ export function DialogueShell() {
 
   const handleLoadDemoWorkspace = () => {
     const snapshot = createDialogueDemoWorkspace();
-    branchGraphStore.setGraph(snapshot.graph);
+    createWorkspaceRecord(snapshot);
+    const activatedSnapshot = activateWorkspace(snapshot.workspaceId);
+    if (!activatedSnapshot) {
+      return;
+    }
+
+    branchGraphStore.setGraph(activatedSnapshot.graph);
     hydrateWorkspace({
-      workspaceSessionId: snapshot.workspaceSessionId,
-      focusedNodeId: snapshot.focusedNodeId,
-      composerParentId: snapshot.composerParentId,
-      stageLayouts: snapshot.stageLayouts
+      workspaceId: activatedSnapshot.workspaceId,
+      workspaceSessionId: activatedSnapshot.workspaceSessionId,
+      focusedNodeId: activatedSnapshot.focusedNodeId,
+      composerParentId: activatedSnapshot.composerParentId,
+      stageLayouts: activatedSnapshot.stageLayouts
     });
-    saveGraphLocal(snapshot);
     setDraft("");
     setErrorState(null);
   };

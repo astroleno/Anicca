@@ -1,10 +1,11 @@
-import { ANICCA_WORKSPACE_SCHEMA_VERSION, WorkspaceSnapshot } from "@/lib/persist/local";
+import { ANICCA_WORKSPACE_SCHEMA_VERSION } from "@/lib/persist/local";
 import { ANICCA_GRAPH_VERSION } from "@/types/anicca";
+import { PersistedWorkspaceSnapshot } from "@/types/workspace";
 
-export function createDialogueDemoWorkspace(): WorkspaceSnapshot {
+export function createDialogueDemoWorkspace(): PersistedWorkspaceSnapshot {
   return {
     schemaVersion: ANICCA_WORKSPACE_SCHEMA_VERSION,
-    workspaceSessionId: "ws_dialogue_demo",
+    workspaceId: "workspace_dialogue_demo",
     focusedNodeId: "asst_synthesis_1",
     composerParentId: "asst_synthesis_1",
     stageLayouts: {},

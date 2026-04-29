@@ -56,8 +56,8 @@
 │               API Route Layer                │
 │  /api/branches -> 正 / 反   /api/synthesis -> 合 │
 ├──────────────────────────────────────────────┤
-│         Workspace Snapshot Persistence       │
-│  schemaVersion / workspaceSessionId / focus  │
+│          Workspace Registry Persistence      │
+│  workspaceId / active id / per-workspace snapshot │
 └──────────────────────────────────────────────┘
 ```
 
@@ -78,14 +78,48 @@
 
 ## 四、数据模型（当前 contract）
 
-当前主线持久化的是一个 versioned workspace snapshot：graph、focus 与 composer target 一起恢复。
+当前主线持久化的是一个 local-first workspace registry。`workspaceId` 是稳定的本地持久化身份；`workspaceSessionId` 只在运行时生成，用于网络请求 ownership 和 stale-response 防护，不写入 workspace snapshot。
+
+持久化拆成三层：
+
+- registry metadata：`anicca_workspace_registry_v1`
+- active workspace id：`anicca_workspace_active_v1`
+- per-workspace snapshot：`anicca_workspace_snapshot_v1:{workspaceId}`
+
+registry metadata 足够渲染最近工作区列表，不需要启动时读取每个完整 graph blob。
+
+```json
+{
+  "schemaVersion": "anicca-workspace-registry-v1",
+  "entries": [
+    {
+      "id": "workspace_01",
+      "title": "这个方向还值不值得继续投入？",
+      "createdAt": "2026-04-29T00:00:00.000Z",
+      "updatedAt": "2026-04-29T00:00:00.000Z",
+      "lastOpenedAt": "2026-04-29T00:00:00.000Z",
+      "entryCount": 1,
+      "nodeCount": 4
+    }
+  ]
+}
+```
+
+active workspace key 单独保存：
+
+```json
+"workspace_01"
+```
+
+每个 workspace snapshot 保存 graph、focus 与 composer target：
 
 ```json
 {
   "schemaVersion": "anicca-workspace-v2",
-  "workspaceSessionId": "ws_01",
+  "workspaceId": "workspace_01",
   "focusedNodeId": "asst_synthesis_1",
   "composerParentId": "asst_synthesis_1",
+  "stageLayouts": {},
   "graph": {
     "version": "anicca-dialectic-v2",
     "entryIds": ["user_root_1"],
@@ -152,9 +186,10 @@
 
 当前主线里最关键的字段：
 
-- `schemaVersion`：workspace snapshot 版本
-- `workspaceSessionId`：当前本地工作区身份
+- `workspaceId`：稳定本地 workspace 身份，用于 registry、active id、per-workspace snapshot 和后续导入导出
+- `workspaceSessionId`：运行时 session ownership token；hydrate、创建、导入、切换时重新生成，不跨 reload 持久化
 - `focusedNodeId` / `composerParentId`：恢复 UI 焦点与续写目标
+- `stageLayouts`：按 focus snapshot 保存 stage pan 和节点位置
 - `graph.entryIds`：多个主题入口
 - `node.branchType`：仅 assistant 节点使用，取值为 `正 | 反 | 合`
 - `meta.sourceNodeIds`：`合` 节点的双来源 assistant
@@ -169,7 +204,7 @@
 3. 前端在 graph 中创建一个新的 user 节点，并挂上同母题下的两条 assistant 分支。
 4. 当同一母题同时拥有 `正` 与 `反` 时，UI 才暴露“生成合”动作。
 5. `/api/synthesis` 返回 `合` 后，前端创建一个带 `sourceNodeIds + lineageParentId` 的 synthesis assistant。
-6. workspace snapshot 会把 graph、focus 和 composer target 一起持久化，刷新后恢复。
+6. active workspace snapshot 会把 graph、focus 和 composer target 一起持久化，刷新后通过 registry 恢复。
 
 这条主线的主产品 contract 就是 `正 / 反 / 合`。
 
@@ -211,15 +246,18 @@
 
 当前已经落地：
 
-- localStorage workspace snapshot
+- localStorage workspace registry
+- per-workspace snapshot
+- active workspace id
+- legacy `anicca_workspace_v2` snapshot migration
 - graph version 校验
-- workspace session 恢复
+- runtime-only workspace session regeneration
 
 仍在后续计划中的能力：
 
 - 显式导出 / 导入 workspace
 - workspace 管理与命名
-- 更完整的恢复体验与多工作区切换
+- workspace 列表、创建、切换 UI
 
 ---
 

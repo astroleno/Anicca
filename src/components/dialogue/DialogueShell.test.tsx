@@ -2,12 +2,18 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { DialogueShell, isDialogueDemoWorkspaceEnabled } from "@/components/dialogue/DialogueShell";
 import { useDialogueUiStore } from "@/features/dialectic/store";
+import {
+  ACTIVE_WORKSPACE_KEY,
+  REGISTRY_KEY,
+  SNAPSHOT_KEY_PREFIX
+} from "@/lib/persist/workspaces";
 import { branchGraphStore } from "@/store/branchGraph";
 import { createEmptyGraph } from "@/types/anicca";
 
 function resetWorkspace(focusedNodeId: string | null = null) {
   branchGraphStore.setGraph(createEmptyGraph());
   useDialogueUiStore.setState({
+    workspaceId: "workspace_test",
     workspaceSessionId: "ws_test",
     focusedNodeId,
     composerParentId: null,
@@ -20,6 +26,51 @@ function resetWorkspace(focusedNodeId: string | null = null) {
     }
   });
   localStorage.clear();
+}
+
+function seedRegistryWorkspace() {
+  const graph = createEmptyGraph();
+  graph.nodes.user_registry = {
+    id: "user_registry",
+    kind: "user",
+    text: "从 registry 恢复",
+    createdAt: "2026-04-29T00:00:00.000Z",
+    parents: [],
+    children: []
+  };
+  graph.entryIds.push("user_registry");
+
+  localStorage.setItem(
+    REGISTRY_KEY,
+    JSON.stringify({
+      schemaVersion: "anicca-workspace-registry-v1",
+      entries: [
+        {
+          id: "workspace_registry",
+          title: "从 registry 恢复",
+          createdAt: "2026-04-29T00:00:00.000Z",
+          updatedAt: "2026-04-29T00:00:00.000Z",
+          lastOpenedAt: "2026-04-29T00:00:00.000Z",
+          entryCount: 1,
+          nodeCount: 1
+        }
+      ]
+    })
+  );
+  localStorage.setItem(ACTIVE_WORKSPACE_KEY, "workspace_registry");
+  localStorage.setItem(
+    `${SNAPSHOT_KEY_PREFIX}workspace_registry`,
+    JSON.stringify({
+      schemaVersion: "anicca-workspace-v2",
+      workspaceId: "workspace_registry",
+      graph,
+      focusedNodeId: "user_registry",
+      composerParentId: null,
+      stageLayouts: {}
+    })
+  );
+
+  return graph;
 }
 
 function seedPair() {
@@ -62,6 +113,29 @@ describe("DialogueShell", () => {
     expect(await screen.findByTestId("dialogue-stage-node-asst_synthesis_1")).toBeInTheDocument();
     expect(screen.getAllByText("收束").length).toBeGreaterThan(0);
     expect(branchGraphStore.getGraph().entryIds).toEqual(["user_root_1"]);
+  });
+
+  it("boots from the active workspace registry instead of the legacy single snapshot key", async () => {
+    const graph = seedRegistryWorkspace();
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    expect(await screen.findByText("从 registry 恢复")).toBeInTheDocument();
+    expect(branchGraphStore.getGraph()).toEqual(graph);
+    expect(useDialogueUiStore.getState().workspaceId).toBe("workspace_registry");
+    expect(useDialogueUiStore.getState().workspaceSessionId).not.toBe("workspace_registry");
+    await waitFor(() => {
+      const persisted = JSON.parse(localStorage.getItem(`${SNAPSHOT_KEY_PREFIX}workspace_registry`) || "{}");
+      expect(persisted).toMatchObject({
+        workspaceId: "workspace_registry",
+        focusedNodeId: "user_registry"
+      });
+      expect(persisted).not.toHaveProperty("workspaceSessionId");
+    });
+    expect(JSON.parse(localStorage.getItem(REGISTRY_KEY) || "{}").entries).toHaveLength(1);
+    expect(localStorage.getItem(ACTIVE_WORKSPACE_KEY)).toBe("workspace_registry");
+    expect(localStorage.getItem("anicca_workspace_v2")).toBeNull();
   });
 
   it("limits the demo workspace action to localhost or explicit demo query", () => {

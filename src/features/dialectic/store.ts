@@ -13,6 +13,7 @@ export type PendingRequest = {
 type PendingState = Record<PendingSlot, PendingRequest | null>;
 
 export type HydratedWorkspaceState = {
+  workspaceId: string;
   workspaceSessionId: string;
   focusedNodeId: string | null;
   composerParentId: string | null;
@@ -26,6 +27,7 @@ export type DialogueErrorState = {
 };
 
 type DialogueUiState = {
+  workspaceId: string;
   workspaceSessionId: string;
   focusedNodeId: string | null;
   composerParentId: string | null;
@@ -68,6 +70,7 @@ function getStageLayoutView(stageLayouts: StageLayouts, layoutKey: string) {
 }
 
 export const useDialogueUiStore = create<DialogueUiState>((set, get) => ({
+  workspaceId: createClientId("workspace"),
   workspaceSessionId: createClientId("ws"),
   focusedNodeId: null,
   composerParentId: null,
@@ -77,6 +80,7 @@ export const useDialogueUiStore = create<DialogueUiState>((set, get) => ({
   pending: getInitialPending(),
   hydrateWorkspace: (state) =>
     set({
+      workspaceId: state.workspaceId,
       workspaceSessionId: state.workspaceSessionId,
       focusedNodeId: state.focusedNodeId,
       composerParentId: state.composerParentId,
@@ -148,9 +152,11 @@ export const useDialogueUiStore = create<DialogueUiState>((set, get) => ({
     }),
   setErrorState: (error) => set({ errorState: error }),
   resetTransientState: () => {
+    const workspaceId = get().workspaceId;
     const workspaceSessionId = get().workspaceSessionId;
     const stageLayouts = get().stageLayouts;
     set({
+      workspaceId,
       workspaceSessionId,
       stageLayouts,
       errorState: null,
