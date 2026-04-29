@@ -3,6 +3,7 @@
 import {
   ChangeEvent,
   startTransition,
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -275,7 +276,7 @@ export function DialogueShell() {
   const clearPending = useDialogueUiStore((state) => state.clearPending);
   const setErrorState = useDialogueUiStore((state) => state.setErrorState);
 
-  const refreshWorkspaceRegistryView = (preferredWorkspaceId?: string | null) => {
+  const refreshWorkspaceRegistryView = useCallback((preferredWorkspaceId?: string | null) => {
     const entries = listRecentWorkspaces();
     setWorkspaceEntries(entries);
     const nextCurrentId = preferredWorkspaceId || workspaceId || entries[0]?.id || null;
@@ -284,7 +285,7 @@ export function DialogueShell() {
       currentEntry:
         entries.find((entry) => entry.id === nextCurrentId) || entries[0] || null
     };
-  };
+  }, [workspaceId]);
 
   useEffect(() => {
     if (branchGraphStore.getGraph().entryIds.length > 0) {
@@ -308,7 +309,7 @@ export function DialogueShell() {
     setWorkspaceReady(true);
     refreshWorkspaceRegistryView(activeWorkspace.snapshot.workspaceId);
     void emitDialogueTelemetry(buildWorkspaceResumedEvent(activeWorkspace, "boot"));
-  }, [hydrateWorkspace]);
+  }, [hydrateWorkspace, refreshWorkspaceRegistryView]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -348,7 +349,15 @@ export function DialogueShell() {
       stageLayouts
     });
     refreshWorkspaceRegistryView(workspaceId);
-  }, [graphSnapshot, stageLayouts, view.focusNodeId, view.composerTarget.nodeId, workspaceId, workspaceReady]);
+  }, [
+    graphSnapshot,
+    refreshWorkspaceRegistryView,
+    stageLayouts,
+    view.focusNodeId,
+    view.composerTarget.nodeId,
+    workspaceId,
+    workspaceReady
+  ]);
 
   const handleSelectNode = (nodeId: string) => {
     startTransition(() => {

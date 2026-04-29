@@ -247,7 +247,7 @@ describe("DialogueShell", () => {
     });
 
     await waitFor(() => {
-      expect((useDialogueUiStore.getState() as any).workspaceId).not.toBe(
+      expect(useDialogueUiStore.getState().workspaceId).not.toBe(
         "workspace_export_source"
       );
     });
@@ -255,7 +255,7 @@ describe("DialogueShell", () => {
     expect(branchGraphStore.getGraph().nodes.user_import_source?.text).toBe(
       "imported workspace root"
     );
-    expect((useDialogueUiStore.getState() as any).workspaceSessionId).not.toBe(
+    expect(useDialogueUiStore.getState().workspaceSessionId).not.toBe(
       "ws_export_source"
     );
   });
@@ -293,7 +293,7 @@ describe("DialogueShell", () => {
     await user.click(await screen.findByRole("button", { name: "新建工作区" }));
 
     await waitFor(() => {
-      expect((useDialogueUiStore.getState() as any).workspaceId).not.toBe(previousWorkspaceId);
+      expect(useDialogueUiStore.getState().workspaceId).not.toBe(previousWorkspaceId);
     });
 
     expect(branchGraphStore.getGraph().entryIds).toEqual([]);
@@ -333,7 +333,7 @@ describe("DialogueShell", () => {
     await user.click(await screen.findByRole("button", { name: "Other Workspace" }));
 
     await waitFor(() => {
-      expect((useDialogueUiStore.getState() as any).workspaceId).toBe("workspace_other");
+      expect(useDialogueUiStore.getState().workspaceId).toBe("workspace_other");
     });
 
     expect(branchGraphStore.getGraph().nodes.user_other_root?.text).toBe("other workspace root");

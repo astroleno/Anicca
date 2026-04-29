@@ -92,7 +92,7 @@ function normalizeStageLayouts(stageLayouts: unknown): StageLayouts {
 
 function deriveWorkspaceTitle(graph: Graph) {
   const firstEntryId = graph.entryIds[0];
-  const text = firstEntryId ? graph.nodes[firstEntryId]?.text?.trim() : "";
+  const text = firstEntryId ? graph.nodes[firstEntryId]?.text?.trim() || "" : "";
   return text.slice(0, 48) || "未命名工作区";
 }
 
