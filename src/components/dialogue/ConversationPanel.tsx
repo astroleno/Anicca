@@ -7,6 +7,7 @@ type ConversationPanelProps = {
   node: DialogueNodeDetail | null;
   synthesisAction: DialogueSynthesisAction | null;
   synthesisPending: boolean;
+  roundtablePending: boolean;
   onGenerateSynthesis: (action: DialogueSynthesisAction) => void;
   onSelectSource: (nodeId: string) => void;
   onSummonRoundtable: () => void;
@@ -16,6 +17,7 @@ export function ConversationPanel({
   node,
   synthesisAction,
   synthesisPending,
+  roundtablePending,
   onGenerateSynthesis,
   onSelectSource,
   onSummonRoundtable
@@ -84,10 +86,14 @@ export function ConversationPanel({
             type="button"
             className={styles.secondaryButton}
             onClick={onSummonRoundtable}
+            disabled={roundtablePending}
+            aria-busy={roundtablePending ? "true" : undefined}
           >
-            召集圆桌讨论此节点
+            {roundtablePending ? "圆桌生成中..." : "召集圆桌讨论此节点"}
           </button>
-          <span className={styles.panelActionHint}>作为 sidecar artifact 保存，不直接写入主图。</span>
+          <span className={styles.panelActionHint}>
+            {roundtablePending ? "正在从当前节点召集圆桌" : "作为 sidecar artifact 保存，不直接写入主图。"}
+          </span>
         </div>
       ) : null}
     </section>

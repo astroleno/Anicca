@@ -109,4 +109,39 @@ describe("BubbleStage", () => {
 
     expect(useDialogueUiStore.getState().stageLayouts["focus:empty"]).toBeUndefined();
   });
+
+  it("describes dragging as stage organization rather than synthesis logic", () => {
+    const nodes: DialogueStageNode[] = [
+      {
+        id: "root",
+        label: "主题",
+        kind: "user",
+        relation: "focus",
+        seedX: 50,
+        seedY: 40
+      },
+      {
+        id: "thesis",
+        label: "继续",
+        kind: "assistant",
+        branchType: "正",
+        relation: "child",
+        seedX: 28,
+        seedY: 70
+      },
+      {
+        id: "antithesis",
+        label: "暂停",
+        kind: "assistant",
+        branchType: "反",
+        relation: "child",
+        seedX: 72,
+        seedY: 70
+      }
+    ];
+
+    render(<BubbleStage layoutKey="focus:root" nodes={nodes} focusNodeId="root" onSelect={vi.fn()} />);
+
+    expect(screen.getByText("拖动节点只是整理舞台；是否生成合由同一母题下的正反成对关系决定。")).toBeInTheDocument();
+  });
 });

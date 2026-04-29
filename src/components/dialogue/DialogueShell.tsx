@@ -876,6 +876,7 @@ export function DialogueShell() {
           node={view.currentNode}
           synthesisAction={relevantSynthesisAction}
           synthesisPending={isSynthesisPending}
+          roundtablePending={roundtablePending}
           onGenerateSynthesis={handleGenerateSynthesis}
           onSelectSource={handleSelectNode}
           onSummonRoundtable={handleSummonRoundtable}

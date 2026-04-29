@@ -49,6 +49,31 @@ describe("useDialogueUiStore", () => {
     });
   });
 
+  it("keeps in-flight pending state when focus changes", () => {
+    useDialogueUiStore.getState().beginPending("branches", {
+      requestId: "req_pending",
+      workspaceSessionId: "ws_test",
+      focusSnapshotId: "focus:a",
+      composerTargetId: "node_a"
+    });
+
+    useDialogueUiStore.getState().setFocusedNodeId("node_b");
+
+    expect(useDialogueUiStore.getState()).toMatchObject({
+      focusedNodeId: "node_b",
+      pendingAction: "branches",
+      pending: {
+        branches: {
+          requestId: "req_pending",
+          workspaceSessionId: "ws_test",
+          focusSnapshotId: "focus:a",
+          composerTargetId: "node_a"
+        },
+        synthesis: null
+      }
+    });
+  });
+
   it("hydrates persisted workspace identity and clears transient pending state", () => {
     useDialogueUiStore.getState().beginPending("branches", {
       requestId: createClientId("req"),

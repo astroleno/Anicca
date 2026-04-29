@@ -65,9 +65,9 @@ export function BubbleStage({ layoutKey, nodes, focusNodeId, onSelect, emptyActi
   const hasAntithesis = nodes.some((node) => node.branchType === "反");
   const hasSynthesis = nodes.some((node) => node.branchType === "合");
   const relationshipHint = hasSynthesis
-    ? "拖开它们之间的距离，合只会在同一条谱系里收束。"
+    ? "拖动节点只是整理舞台；合已作为这条谱系的收束记录保留。"
     : hasThesis && hasAntithesis
-      ? "先把正与反拖开一点，等张力清楚了，再决定要不要收成合。"
+      ? "拖动节点只是整理舞台；是否生成合由同一母题下的正反成对关系决定。"
       : null;
   const resolvedPan = stageLayout?.pan || DEFAULT_STAGE_PAN;
 
@@ -296,7 +296,7 @@ export function BubbleStage({ layoutKey, nodes, focusNodeId, onSelect, emptyActi
                     <span>反</span>
                   </div>
                   <p className={styles.emptyStageHint}>
-                    给它一个母题，它会先长出正与反；等它们真的出现后，你再拖开看看张力。
+                    给它一个母题，它会先长出正与反；节点可拖动整理舞台。
                   </p>
                 </div>
                 {emptyAction ? (

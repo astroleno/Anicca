@@ -328,6 +328,25 @@ describe("DialogueShell", () => {
     expect(loadWorkspaceRecord("workspace_test")?.snapshot.artifacts?.roundtables).toBeTruthy();
   });
 
+  it("exposes pending feedback while roundtable generation is running", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => {}))
+    );
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: "召集圆桌讨论此节点" }));
+
+    expect(screen.getByRole("button", { name: "圆桌生成中..." })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "圆桌生成中..." })).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByText("正在从当前节点召集圆桌")).toBeInTheDocument();
+  });
+
   it("creates a new empty workspace without mutating the previous active graph", async () => {
     const user = userEvent.setup();
     const { rootUserId } = seedPair();
@@ -693,7 +712,7 @@ describe("DialogueShell", () => {
     expect(events.some((event) => event.name === "continuation_created")).toBe(false);
   });
 
-  it("discards stale branch responses after focus changes", async () => {
+  it("keeps branch requests alive after focus changes and lands them on the original target", async () => {
     const user = userEvent.setup();
     const events: DialogueTelemetryEvent[] = [];
     setDialogueTelemetrySink({
@@ -736,10 +755,12 @@ describe("DialogueShell", () => {
     );
 
     await waitFor(() => {
-      expect(branchGraphStore.getGraph().nodes[thesisId].children).toEqual([]);
+      expect(branchGraphStore.getGraph().nodes[thesisId].children).toHaveLength(1);
     });
 
-    expect(events.some((event) => event.name === "continuation_created")).toBe(false);
+    const childUserId = branchGraphStore.getGraph().nodes[thesisId].children[0];
+    expect(branchGraphStore.getGraph().nodes[childUserId]?.text).toBe("继续的话下一步做什么");
+    expect(events.some((event) => event.name === "continuation_created")).toBe(true);
   });
 
   it("makes pending states exclusive and exposes synthesis busy feedback", async () => {

@@ -89,12 +89,7 @@ export const useDialogueUiStore = create<DialogueUiState>((set, get) => ({
       pendingAction: null,
       pending: getInitialPending()
     }),
-  setFocusedNodeId: (nodeId) =>
-    set({
-      focusedNodeId: nodeId,
-      pendingAction: null,
-      pending: getInitialPending()
-    }),
+  setFocusedNodeId: (nodeId) => set({ focusedNodeId: nodeId }),
   setComposerParentId: (nodeId) => set({ composerParentId: nodeId }),
   setStageNodePosition: (layoutKey, nodeId, position) =>
     set((state) => {

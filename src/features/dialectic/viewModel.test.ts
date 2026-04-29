@@ -81,4 +81,25 @@ describe("deriveDialogueView", () => {
     expect(byId[antithesisId]).toMatchObject({ relation: "source", seedX: 70, seedY: 34 });
     expect(byId[synthesisId]).toMatchObject({ relation: "focus", seedX: 50, seedY: 56 });
   });
+
+  it("does not render synthesis as a permanent third stage child when its parent user is focused", () => {
+    const store = new BranchGraphStore();
+    const rootUserId = store.createUserNode("要不要继续");
+    const { thesisId, antithesisId } = store.createAssistantPair(rootUserId, {
+      thesis: { text: "继续", summary: "继续推进", label: "继续" },
+      antithesis: { text: "暂停", summary: "暂停重构", label: "暂停" }
+    });
+    const synthesisId = store.createSynthesisAssistant([thesisId, antithesisId], {
+      text: "主线收束",
+      summary: "主线收束",
+      label: "收束"
+    });
+
+    const rootView = deriveDialogueView(store.getGraph(), rootUserId);
+    const synthesisView = deriveDialogueView(store.getGraph(), synthesisId);
+
+    expect(rootView.stageNodes.map((node) => node.id)).toEqual([rootUserId, thesisId, antithesisId]);
+    expect(rootView.sidebarItems.some((item) => item.id === synthesisId)).toBe(true);
+    expect(synthesisView.stageNodes.map((node) => node.id)).toContain(synthesisId);
+  });
 });

@@ -465,7 +465,10 @@ function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStag
     });
   }
 
-  const childIds = getDisplayChildren(graph, focusNode);
+  const childIds = getDisplayChildren(graph, focusNode).filter((childId) => {
+    const child = graph.nodes[childId];
+    return !(focusNode.kind === "user" && child?.branchType === "合");
+  });
   childIds.forEach((childId, index) => {
     const child = graph.nodes[childId];
     let position: StageSeed | null = null;
