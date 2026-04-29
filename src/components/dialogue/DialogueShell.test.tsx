@@ -1,0 +1,808 @@
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { DialogueShell, isDialogueDemoWorkspaceEnabled } from "@/components/dialogue/DialogueShell";
+import { useDialogueUiStore } from "@/features/dialectic/store";
+import {
+  DialogueTelemetryEvent,
+  resetDialogueTelemetrySinkForTests,
+  setDialogueTelemetrySink
+} from "@/lib/analytics/dialogue";
+import { serializeWorkspaceBundle } from "@/lib/io/workspaceBundle";
+import { ANICCA_WORKSPACE_SCHEMA_VERSION } from "@/lib/persist/local";
+import {
+  ACTIVE_WORKSPACE_KEY,
+  loadWorkspaceRecord,
+  loadWorkspaceRegistry,
+  REGISTRY_KEY,
+  SNAPSHOT_KEY_PREFIX,
+  saveWorkspaceRecord,
+  setActiveWorkspaceId
+} from "@/lib/persist/workspaces";
+import { branchGraphStore } from "@/store/branchGraph";
+import { createEmptyGraph } from "@/types/anicca";
+
+function resetWorkspace(focusedNodeId: string | null = null) {
+  branchGraphStore.setGraph(createEmptyGraph());
+  useDialogueUiStore.setState({
+    workspaceId: "workspace_test",
+    workspaceSessionId: "ws_test",
+    focusedNodeId,
+    composerParentId: null,
+    stageLayouts: {},
+    errorState: null,
+    pendingAction: null,
+    pending: {
+      branches: null,
+      synthesis: null
+    }
+  });
+  localStorage.clear();
+}
+
+function buildRegistryGraph(nodeId: string, text: string) {
+  const graph = createEmptyGraph();
+  graph.nodes[nodeId] = {
+    id: nodeId,
+    kind: "user",
+    text,
+    createdAt: "2026-04-29T00:00:00.000Z",
+    parents: [],
+    children: []
+  };
+  graph.entryIds.push(nodeId);
+  return graph;
+}
+
+function seedRegistryWorkspace() {
+  const graph = buildRegistryGraph("user_registry", "从 registry 恢复");
+
+  localStorage.setItem(
+    REGISTRY_KEY,
+    JSON.stringify({
+      schemaVersion: "anicca-workspace-registry-v1",
+      entries: [
+        {
+          id: "workspace_registry",
+          title: "从 registry 恢复",
+          createdAt: "2026-04-29T00:00:00.000Z",
+          updatedAt: "2026-04-29T00:00:00.000Z",
+          lastOpenedAt: "2026-04-29T00:00:00.000Z",
+          entryCount: 1,
+          nodeCount: 1
+        }
+      ]
+    })
+  );
+  localStorage.setItem(ACTIVE_WORKSPACE_KEY, "workspace_registry");
+  localStorage.setItem(
+    `${SNAPSHOT_KEY_PREFIX}workspace_registry`,
+    JSON.stringify({
+      schemaVersion: "anicca-workspace-v2",
+      workspaceId: "workspace_registry",
+      graph,
+      focusedNodeId: "user_registry",
+      composerParentId: null,
+      stageLayouts: {}
+    })
+  );
+
+  return graph;
+}
+
+function seedPair() {
+  const rootUserId = branchGraphStore.createUserNode("要不要继续这个项目");
+  const { thesisId, antithesisId } = branchGraphStore.createAssistantPair(rootUserId, {
+    thesis: { text: "继续", summary: "继续推进", label: "继续" },
+    antithesis: { text: "暂停", summary: "暂停重构", label: "暂停" }
+  });
+  return { rootUserId, thesisId, antithesisId };
+}
+
+function seedActiveWorkspaceFromCurrentGraph() {
+  const state = useDialogueUiStore.getState();
+  saveWorkspaceRecord({
+    id: "workspace_test",
+    title: "Workspace Test Boot",
+    snapshot: {
+      schemaVersion: ANICCA_WORKSPACE_SCHEMA_VERSION,
+      workspaceId: "workspace_test",
+      graph: branchGraphStore.getGraph(),
+      focusedNodeId: state.focusedNodeId,
+      composerParentId: state.composerParentId,
+      stageLayouts: state.stageLayouts
+    }
+  });
+  setActiveWorkspaceId("workspace_test");
+}
+
+describe("DialogueShell", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    resetDialogueTelemetrySinkForTests();
+    window.history.replaceState({}, "", "/dialogue");
+    resetWorkspace();
+  });
+
+  it("shows composer and synthesis affordance from the derived view model", async () => {
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    expect(await screen.findByText("生成合")).toBeInTheDocument();
+    expect(screen.getByText("将续写到")).toBeInTheDocument();
+    expect(screen.getByText("新的主题")).toBeInTheDocument();
+  });
+
+  it("loads a demo workspace from the empty-state action", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: "载入示例谱系" }));
+
+    expect(await screen.findByTestId("dialogue-stage-node-asst_synthesis_1")).toBeInTheDocument();
+    expect(screen.getAllByText("收束").length).toBeGreaterThan(0);
+    expect(branchGraphStore.getGraph().entryIds).toEqual(["user_root_1"]);
+  });
+
+  it("boots from the active workspace registry instead of the legacy single snapshot key", async () => {
+    const graph = seedRegistryWorkspace();
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    expect((await screen.findAllByText("从 registry 恢复")).length).toBeGreaterThan(0);
+    expect(branchGraphStore.getGraph()).toEqual(graph);
+    expect(useDialogueUiStore.getState().workspaceId).toBe("workspace_registry");
+    expect(useDialogueUiStore.getState().workspaceSessionId).not.toBe("workspace_registry");
+    await waitFor(() => {
+      const persisted = JSON.parse(localStorage.getItem(`${SNAPSHOT_KEY_PREFIX}workspace_registry`) || "{}");
+      expect(persisted).toMatchObject({
+        workspaceId: "workspace_registry",
+        focusedNodeId: "user_registry"
+      });
+      expect(persisted).not.toHaveProperty("workspaceSessionId");
+    });
+    expect(JSON.parse(localStorage.getItem(REGISTRY_KEY) || "{}").entries).toHaveLength(1);
+    expect(localStorage.getItem(ACTIVE_WORKSPACE_KEY)).toBe("workspace_registry");
+    expect(localStorage.getItem("anicca_workspace_v2")).toBeNull();
+  });
+
+  it("limits the demo workspace action to localhost or explicit demo query", () => {
+    expect(isDialogueDemoWorkspaceEnabled({ hostname: "localhost", search: "" })).toBe(true);
+    expect(isDialogueDemoWorkspaceEnabled({ hostname: "anicca.app", search: "?demo=1" })).toBe(true);
+    expect(isDialogueDemoWorkspaceEnabled({ hostname: "anicca.app", search: "" })).toBe(false);
+  });
+
+  it("exports the active workspace through a shell-level action", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    vi.stubGlobal("fetch", vi.fn());
+
+    const createObjectURL = vi.fn(() => "blob:workspace");
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal("URL", {
+      createObjectURL,
+      revokeObjectURL
+    });
+    const clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => {});
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: "导出工作区" }));
+
+    expect(createObjectURL).toHaveBeenCalledTimes(1);
+    const bundleBlob = createObjectURL.mock.calls[0][0] as Blob;
+    const bundleText = await bundleBlob.text();
+    expect(JSON.parse(bundleText).metadata.title).toBe("Workspace Test Boot");
+    expect(clickSpy).toHaveBeenCalled();
+  });
+
+  it("imports a valid workspace bundle into a new local workspace", async () => {
+    vi.stubGlobal("fetch", vi.fn());
+
+    saveWorkspaceRecord({
+      id: "workspace_export_source",
+      title: "Imported Workspace Source",
+      snapshot: {
+        schemaVersion: ANICCA_WORKSPACE_SCHEMA_VERSION,
+        workspaceId: "workspace_export_source",
+        graph: buildRegistryGraph("user_import_source", "imported workspace root"),
+        focusedNodeId: "user_import_source",
+        composerParentId: "user_import_source",
+        stageLayouts: {}
+      }
+    });
+
+    const sourceRegistry = loadWorkspaceRegistry();
+    const sourceEntry = sourceRegistry.entries.find((entry) => entry.id === "workspace_export_source")!;
+    const sourceSnapshot = {
+      schemaVersion: ANICCA_WORKSPACE_SCHEMA_VERSION,
+      workspaceId: "workspace_export_source",
+      graph: buildRegistryGraph("user_import_source", "imported workspace root"),
+      focusedNodeId: "user_import_source",
+      composerParentId: "user_import_source",
+      stageLayouts: {}
+    };
+    const file = new File(
+      [serializeWorkspaceBundle({ entry: sourceEntry, snapshot: sourceSnapshot })],
+      "workspace.json",
+      { type: "application/json" }
+    );
+
+    render(<DialogueShell />);
+
+    const importInput = await screen.findByTestId("dialogue-import-input");
+    fireEvent.change(importInput, {
+      target: {
+        files: [file]
+      }
+    });
+
+    await waitFor(() => {
+      expect(useDialogueUiStore.getState().workspaceId).not.toBe(
+        "workspace_export_source"
+      );
+    });
+
+    expect(branchGraphStore.getGraph().nodes.user_import_source?.text).toBe(
+      "imported workspace root"
+    );
+    expect(useDialogueUiStore.getState().workspaceSessionId).not.toBe(
+      "ws_export_source"
+    );
+  });
+
+  it("shows recoverable copy when an imported bundle is malformed", async () => {
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    const importInput = await screen.findByTestId("dialogue-import-input");
+    fireEvent.change(importInput, {
+      target: {
+        files: [new File(["{bad-json"], "broken.json", { type: "application/json" })]
+      }
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent("导入文件不是有效 JSON");
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "文件内容没有被解析成工作区 bundle。"
+      );
+    });
+  });
+
+  it("stores roundtable artifact durably across autosave and promotes against source lineage", async () => {
+    const user = userEvent.setup();
+    const { rootUserId, thesisId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            requestId: "req_roundtable_1",
+            state: {
+              topic: "roundtable topic",
+              participants: [],
+              rounds: [],
+              currentQuestion: "q1",
+              nextQuestion: "作为追问继续的问题",
+              lastCoreTension: "核心张力",
+              status: "active"
+            }
+          }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          }
+        )
+      )
+    );
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: "召集圆桌讨论此节点" }));
+    expect(await screen.findByTestId("dialogue-roundtable-drawer")).toBeInTheDocument();
+    // Trigger autosave on a graph/focus change and ensure artifact survives.
+    await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
+    await waitFor(() => {
+      expect(loadWorkspaceRecord("workspace_test")?.snapshot.artifacts?.roundtables).toBeTruthy();
+    });
+    // Change focus away from source to validate promotion rebinds to source lineage.
+    await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
+    await user.click(screen.getByRole("button", { name: "作为追问继续" }));
+
+    expect(screen.getByPlaceholderText("把当前母题推进到下一轮。")).toHaveValue("作为追问继续的问题");
+    expect(useDialogueUiStore.getState().focusedNodeId).toBe(rootUserId);
+    expect(loadWorkspaceRecord("workspace_test")?.snapshot.artifacts?.roundtables).toBeTruthy();
+  });
+
+  it("exposes pending feedback while roundtable generation is running", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => {}))
+    );
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: "召集圆桌讨论此节点" }));
+
+    expect(screen.getByRole("button", { name: "圆桌生成中..." })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "圆桌生成中..." })).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByText("正在从当前节点召集圆桌")).toBeInTheDocument();
+  });
+
+  it("creates a new empty workspace without mutating the previous active graph", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    vi.stubGlobal("fetch", vi.fn());
+    const previousWorkspaceId = "workspace_test";
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: "新建工作区" }));
+
+    await waitFor(() => {
+      expect(useDialogueUiStore.getState().workspaceId).not.toBe(previousWorkspaceId);
+    });
+
+    expect(branchGraphStore.getGraph().entryIds).toEqual([]);
+    expect(
+      loadWorkspaceRegistry()?.entries.some((entry) => entry.id === previousWorkspaceId)
+    ).toBe(true);
+  });
+
+  it("switches to another workspace and clears pending runtime state", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    saveWorkspaceRecord({
+      id: "workspace_other",
+      title: "Other Workspace",
+      snapshot: {
+        schemaVersion: ANICCA_WORKSPACE_SCHEMA_VERSION,
+        workspaceId: "workspace_other",
+        graph: buildRegistryGraph("user_other_root", "other workspace root"),
+        focusedNodeId: "user_other_root",
+        composerParentId: "user_other_root",
+        stageLayouts: {}
+      }
+    });
+    const priorSessionId = useDialogueUiStore.getState().workspaceSessionId;
+    useDialogueUiStore.getState().beginPending("branches", {
+      requestId: "req_pending",
+      workspaceSessionId: priorSessionId,
+      focusSnapshotId: "focus:root",
+      composerTargetId: rootUserId
+    });
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: "Other Workspace" }));
+
+    await waitFor(() => {
+      expect(useDialogueUiStore.getState().workspaceId).toBe("workspace_other");
+    });
+
+    expect(branchGraphStore.getGraph().nodes.user_other_root?.text).toBe("other workspace root");
+    expect(useDialogueUiStore.getState().pending.branches).toBeNull();
+    expect(useDialogueUiStore.getState().workspaceSessionId).not.toBe(priorSessionId);
+  });
+
+  it("ignores stale roundtable responses after workspace switch", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    saveWorkspaceRecord({
+      id: "workspace_other",
+      title: "Other Workspace",
+      snapshot: {
+        schemaVersion: ANICCA_WORKSPACE_SCHEMA_VERSION,
+        workspaceId: "workspace_other",
+        graph: buildRegistryGraph("user_other_root", "other workspace root"),
+        focusedNodeId: "user_other_root",
+        composerParentId: "user_other_root",
+        stageLayouts: {}
+      }
+    });
+
+    let resolveRoundtable: ((value: Response) => void) | null = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>((resolve) => {
+        resolveRoundtable = resolve;
+      }))
+    );
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: "召集圆桌讨论此节点" }));
+    await user.click(await screen.findByRole("button", { name: "Other Workspace" }));
+
+    resolveRoundtable?.(
+      new Response(
+        JSON.stringify({
+          requestId: "req_roundtable",
+          state: {
+            topic: "stale roundtable",
+            participants: [],
+            rounds: [],
+            currentQuestion: "q1",
+            nextQuestion: "q2",
+            lastCoreTension: "t",
+            status: "active"
+          }
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
+      )
+    );
+
+    await waitFor(() => {
+      expect(useDialogueUiStore.getState().workspaceId).toBe("workspace_other");
+    });
+
+    expect(screen.queryByTestId("dialogue-roundtable-drawer")).not.toBeInTheDocument();
+    expect(loadWorkspaceRecord("workspace_test")?.snapshot.artifacts).toBeUndefined();
+    expect(loadWorkspaceRecord("workspace_other")?.snapshot.artifacts).toBeUndefined();
+  });
+
+  it("emits workspace_resumed on boot restore and explicit workspace switch", async () => {
+    const user = userEvent.setup();
+    const events: DialogueTelemetryEvent[] = [];
+    setDialogueTelemetrySink({
+      track(event) {
+        events.push(event);
+      }
+    });
+
+    saveWorkspaceRecord({
+      id: "workspace_test",
+      title: "Workspace Test Boot",
+      snapshot: {
+        schemaVersion: ANICCA_WORKSPACE_SCHEMA_VERSION,
+        workspaceId: "workspace_test",
+        graph: buildRegistryGraph("user_boot_root", "boot workspace root"),
+        focusedNodeId: "user_boot_root",
+        composerParentId: "user_boot_root",
+        stageLayouts: {}
+      }
+    });
+    setActiveWorkspaceId("workspace_test");
+    saveWorkspaceRecord({
+      id: "workspace_other",
+      title: "Other Workspace",
+      snapshot: {
+        schemaVersion: ANICCA_WORKSPACE_SCHEMA_VERSION,
+        workspaceId: "workspace_other",
+        graph: buildRegistryGraph("user_other_root", "other workspace root"),
+        focusedNodeId: "user_other_root",
+        composerParentId: "user_other_root",
+        stageLayouts: {}
+      }
+    });
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    await waitFor(() => {
+      expect(events[0]).toEqual({
+        name: "workspace_resumed",
+        payload: {
+          source: "boot",
+          nodeCount: 1,
+          entryCount: 1,
+          hasFocus: true,
+          hasComposerTarget: true
+        }
+      });
+    });
+
+    await user.click(await screen.findByRole("button", { name: "Other Workspace" }));
+
+    await waitFor(() => {
+      expect(events[1]).toEqual({
+        name: "workspace_resumed",
+        payload: {
+          source: "switch",
+          nodeCount: 1,
+          entryCount: 1,
+          hasFocus: true,
+          hasComposerTarget: true
+        }
+      });
+    });
+  });
+
+  it("renames the active workspace through shell controls", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: "重命名工作区" }));
+    await user.clear(screen.getByLabelText("工作区名称"));
+    await user.type(screen.getByLabelText("工作区名称"), "Renamed Workspace");
+    await user.click(screen.getByRole("button", { name: "保存工作区名称" }));
+
+    await waitFor(() => {
+      expect(loadWorkspaceRegistry().entries.find((entry) => entry.id === "workspace_test")?.title).toBe(
+        "Renamed Workspace"
+      );
+    });
+
+    expect(screen.getAllByText("Renamed Workspace").length).toBeGreaterThan(0);
+  });
+
+  it("emits continuation_created only after branch generation succeeds and lands", async () => {
+    const user = userEvent.setup();
+    const events: DialogueTelemetryEvent[] = [];
+    setDialogueTelemetrySink({
+      track(event) {
+        events.push(event);
+      }
+    });
+
+    const { thesisId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: thesisId });
+    seedActiveWorkspaceFromCurrentGraph();
+    let resolveFetch: ((value: Response) => void) | null = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(
+        () =>
+          new Promise<Response>((resolve) => {
+            resolveFetch = resolve;
+          })
+      )
+    );
+
+    render(<DialogueShell />);
+
+    await user.type(screen.getByLabelText("输入"), "继续的话下一步做什么");
+    await user.click(screen.getByRole("button", { name: "生成正 / 反" }));
+
+    resolveFetch?.(
+      new Response(
+        JSON.stringify({
+          requestId: useDialogueUiStore.getState().pending.branches?.requestId,
+          thesis: { text: "拆小目标", summary: "拆小推进", label: "拆小", stance: "正" },
+          antithesis: { text: "暂停一周", summary: "先停一周", label: "停一周", stance: "反" }
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
+      )
+    );
+
+    await waitFor(() => {
+      expect(events.some((event) => event.name === "continuation_created")).toBe(true);
+    });
+
+    expect(events.at(-1)).toEqual({
+      name: "continuation_created",
+      payload: {
+        source: "continuation",
+        parentKind: "assistant",
+        nodeCount: 6,
+        entryCount: 1
+      }
+    });
+  });
+
+  it("emits synthesis_created only after synthesis succeeds and lands", async () => {
+    const user = userEvent.setup();
+    const events: DialogueTelemetryEvent[] = [];
+    setDialogueTelemetrySink({
+      track(event) {
+        events.push(event);
+      }
+    });
+
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    let resolveFetch: ((value: Response) => void) | null = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(
+        () =>
+          new Promise<Response>((resolve) => {
+            resolveFetch = resolve;
+          })
+      )
+    );
+
+    render(<DialogueShell />);
+
+    await user.click(screen.getByRole("button", { name: "生成合" }));
+    resolveFetch?.(
+      new Response(
+        JSON.stringify({
+          requestId: useDialogueUiStore.getState().pending.synthesis?.requestId,
+          synthesis: {
+            text: "保留主线，但拆开节奏。",
+            summary: "主线收束",
+            label: "收束",
+            stance: "合"
+          }
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
+      )
+    );
+
+    await waitFor(() => {
+      expect(events.some((event) => event.name === "synthesis_created")).toBe(true);
+    });
+
+    expect(events.at(-1)).toEqual({
+      name: "synthesis_created",
+      payload: {
+        nodeCount: 4,
+        entryCount: 1,
+        sourceCount: 2,
+        hasLineageParent: true
+      }
+    });
+  });
+  it("does not leave orphan child users behind on branch failure", async () => {
+    const user = userEvent.setup();
+    const events: DialogueTelemetryEvent[] = [];
+    setDialogueTelemetrySink({
+      track(event) {
+        events.push(event);
+      }
+    });
+    const { thesisId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: thesisId });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ error: "branches_failed", details: "openai_api_key_missing" }), {
+          status: 502,
+          headers: { "Content-Type": "application/json" }
+        })
+      )
+    );
+
+    render(<DialogueShell />);
+
+    await user.type(screen.getByLabelText("输入"), "继续的话下一步做什么");
+    await user.click(screen.getByRole("button", { name: "生成正 / 反" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent("模型服务还没接好");
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "当前环境没有配置 OpenAI API key，所以这轮请求没有真正发出去。"
+      );
+    });
+
+    const graph = branchGraphStore.getGraph();
+    expect(graph.nodes[thesisId].children).toEqual([]);
+    expect(Object.keys(graph.nodes)).toHaveLength(3);
+    expect(events.some((event) => event.name === "continuation_created")).toBe(false);
+  });
+
+  it("keeps branch requests alive after focus changes and lands them on the original target", async () => {
+    const user = userEvent.setup();
+    const events: DialogueTelemetryEvent[] = [];
+    setDialogueTelemetrySink({
+      track(event) {
+        events.push(event);
+      }
+    });
+    const { thesisId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: thesisId });
+
+    let resolveFetch: ((value: Response) => void) | null = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(
+        () =>
+          new Promise<Response>((resolve) => {
+            resolveFetch = resolve;
+          })
+      )
+    );
+
+    render(<DialogueShell />);
+
+    await user.type(screen.getByLabelText("输入"), "继续的话下一步做什么");
+    await user.click(screen.getByRole("button", { name: "生成正 / 反" }));
+    await user.click(screen.getByRole("button", { name: /暂停/ }));
+
+    resolveFetch?.(
+      new Response(
+        JSON.stringify({
+          requestId: useDialogueUiStore.getState().pending.branches?.requestId,
+          thesis: { text: "拆小目标", summary: "拆小推进", label: "拆小", stance: "正" },
+          antithesis: { text: "暂停一周", summary: "先停一周", label: "停一周", stance: "反" }
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
+      )
+    );
+
+    await waitFor(() => {
+      expect(branchGraphStore.getGraph().nodes[thesisId].children).toHaveLength(1);
+    });
+
+    const childUserId = branchGraphStore.getGraph().nodes[thesisId].children[0];
+    expect(branchGraphStore.getGraph().nodes[childUserId]?.text).toBe("继续的话下一步做什么");
+    expect(events.some((event) => event.name === "continuation_created")).toBe(true);
+  });
+
+  it("makes pending states exclusive and exposes synthesis busy feedback", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+
+    let resolveFetch: ((value: Response) => void) | null = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(
+        () =>
+          new Promise<Response>((resolve) => {
+            resolveFetch = resolve;
+          })
+      )
+    );
+
+    render(<DialogueShell />);
+
+    await user.click(screen.getByRole("button", { name: "生成合" }));
+
+    expect(useDialogueUiStore.getState().pending.branches).toBeNull();
+    expect(useDialogueUiStore.getState().pending.synthesis).not.toBeNull();
+    expect(screen.getByRole("button", { name: "收束中..." })).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByRole("button", { name: "等待收束完成" })).toBeDisabled();
+
+    resolveFetch?.(
+      new Response(
+        JSON.stringify({
+          requestId: useDialogueUiStore.getState().pending.synthesis?.requestId,
+          synthesis: { text: "保留主线，但拆开节奏。", summary: "主线收束", label: "收束", stance: "合" }
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
+      )
+    );
+
+    await waitFor(() => {
+      expect(useDialogueUiStore.getState().pending.synthesis).toBeNull();
+    });
+  });
+});

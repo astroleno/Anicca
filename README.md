@@ -1,23 +1,30 @@
 # 无相 Anicca
 
-> A Conversation that Breathes, Dissolves, and Begins Again.
+> 当前主线入口：`/dialogue`
 
-—— 一个“本地可复现的 AI 实验空间”。
+—— 一个 local-first 的“正 / 反 / 合”对话实验空间。
 
-本项目以 Next.js + p5.js + JSON 导出为核心，目标是在无后端依赖的前提下，提供“可分叉、可回放、可导出/导入”的冥想式 AI 体验：输入一句话，观察它如何分裂为三种“念头气泡”，并在持续的“生—灭—再生”中进行对话。
+当前主产品路径已经切到 `/dialogue`：输入一个母题，先生成 `正 / 反` 两条分叉，再在同一条谱系里决定是否收束成 `合`。workspace 会以 local-first graph 形式保存在本地，支持恢复焦点、续写父节点和追踪来源。
+
+`/newframe`、`/raymarching`、`/liquid`、`/mochi` 继续保留为视觉 / shader 实验入口，但不再承担主产品职责。
+
+当前集成状态（2026-04-29）：
+
+- `codex/dialectic-v2-mainline` 已 fast-forward 合入 Unit 1（`cb55f90`）与 continuation（`18ee162`）。
+- Phase 2 workspace registry + import/export + create/rename/switch + telemetry 已完成并并入 mainline。
+- mainline 已完成 legacy `anicca_workspace_v2` migration browser smoke 与 workspace manual QA（create / rename / switch / export / import / malformed import / mobile）。
+- Phase 2 状态：`closed`（2026-04-29）。
 
 ---
 
 ## 一、核心体验（What）
 
-- **气泡即念**：用户输入文字，被转化为一个半透明的“意识气泡”。
-- **三泡泡回应**：系统生成三颗弥散气泡：
-  - 顺流：延展原意。
-  - 逆流：反问/反向裂变。
-  - 止语：以呼吸/符号回应。
-- **呼吸的对话**：点击任意气泡，它成为新的“主念”，再裂变出三颗新的回应，形成无终点的呼吸式对话。
+- **母题进入谱系**：用户输入一句话，它成为一个可继续展开的主题节点。
+- **两分形响应**：系统围绕同一母题生成 `正` 与 `反` 两条 assistant 分支。
+- **显式收束为合**：只有当同一母题下的 `正 / 反` 都存在时，用户才决定是否生成 `合`。
+- **本地恢复工作区**：graph、焦点节点和续写目标会一起持久化，刷新后仍能回到之前的上下文。
 
-美学取向：深色渐变背景、柔和光晕、缓慢节奏、可感知的“消散”。
+美学取向：深色舞台、漂浮光晕、低噪音 chrome，以及把注意力尽量留给 graph 本身。
 
 ---
 
@@ -25,227 +32,310 @@
 
 - 不是效率工具，而是“思考本身”的再体验。
 - 强调“无常（Anicca）/ 无相（Formless）/ 无我（Anatta）”。
-- 目标是一个可以离线、本地运行、可导出复现的实验空间。
+- 目标是一个可以离线、本地运行、可恢复 workspace 的实验空间。
 
 ---
 
-## 三、技术栈与架构（How）
+## 三、当前架构（How）
 
-### 3.1 技术栈（MVP 建议版本）
+### 3.1 主线栈
 
-- 前端框架：`next@^15`（App Router, TypeScript）
-- 渲染层：`p5@^1.10`（WEBGL），可结合自定义 Shader/ShaderPark 思路
-- UI：`tailwindcss@^3`，`@shadcn/ui`
-- 状态：`zustand@^4.5`
-- 工具：`jszip`、`file-saver`、`uuid`
-- 模板：`mustache@^4.2`
-- 校验：`zod@^3.23`
+- 应用框架：`next@15`（App Router, TypeScript）
+- UI：React 18 + CSS Modules
+- 状态：`zustand`
+- API：`/api/branches`、`/api/synthesis`、`/api/chat`
+- 模型接入：OpenAI Responses API
+- 本地持久化：`localStorage` workspace registry（已在 mainline 生效）
 
-### 3.2 分层架构
+### 3.2 主线分层
 
 ```
-┌────────────────────────────────────┐
-│             UI 层                  │
-│  shadcn/ui + Tailwind + React Hooks │
-│   ├── 左栏：Branch 树 / 历史列表     │
-│   ├── 中栏：p5 Canvas               │
-│   └── 右栏：Prompt / 参数 / 日志    │
-├────────────────────────────────────┤
-│           状态与逻辑层              │
-│  Zustand store（nodes / branches）  │
-│   ├── commit() 生成新 node          │
-│   ├── fork() / merge() 分支操作     │
-│   └── exportJSON() / importJSON()   │
-├────────────────────────────────────┤
-│             渲染层                  │
-│  p5.js (WEBGL)                      │
-│   ├── 读取当前 node.params          │
-│   ├── 实时渲染弥散球               │
-│   └── 输出截图与性能指标            │
-├────────────────────────────────────┤
-│         存储与导出层                │
-│  内存 + JSON 文件 / JSZip 打包      │
-│   ├── 自动保存 localStorage (可选)  │
-│   └── 导入/导出 project.json/.zip   │
-└────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│                /dialogue 页面                │
+│  Hero / Sidebar / Bubble Stage / Panel / Composer │
+├──────────────────────────────────────────────┤
+│             Dialectic View Model             │
+│  breadcrumb / sidebar tree / synthesis affordance │
+├──────────────────────────────────────────────┤
+│          Local-First Branch Graph            │
+│  user / assistant nodes + edges + entryIds   │
+├──────────────────────────────────────────────┤
+│               API Route Layer                │
+│  /api/branches -> 正 / 反   /api/synthesis -> 合 │
+├──────────────────────────────────────────────┤
+│          Workspace Registry Persistence      │
+│  workspaceId / active id / per-workspace snapshot │
+└──────────────────────────────────────────────┘
 ```
 
-### 3.3 关键设计哲学
+### 3.3 实验入口
 
-- **无后端可复现性**：每个 Node 都是独立快照，导出 JSON 即可复现。
-- **事件溯源**：任何改动都生成新 Node（不可变），形成 DAG 分支树。
-- **轻量上下文**：只缓存 summary + diff；模板化 Prompt。
-- **渐进式演化**：如需上云，仅替换导出/导入逻辑为 API。
+- `/newframe`：旧 metaball / WebGPU 视觉实验
+- `/raymarching`、`/liquid`、`/mochi`：独立 shader / visual playground
+
+这些页面继续保留，但都不再定义主产品 contract。
+
+### 3.4 关键设计哲学
+
+- **local-first graph**：主线真相源是本地图结构，不是临时聊天 transcript。
+- **显式谱系**：`正`、`反`、`合` 都以节点和连边存在，`合` 必须保留双来源与 lineage anchor。
+- **主线与实验隔离**：`/dialogue` 负责产品路径，shader 页面负责视觉探索。
 
 ---
 
-## 四、数据模型（MVP）
+## 四、数据模型（当前 mainline contract）
 
-> 下述示例用于指导实现与导出格式。实际实现时请用 `zod` 做 Schema 验证，并保留向后兼容字段。
+当前主线持久化的是 local-first workspace registry。`workspaceId` 是稳定的本地持久化身份；`workspaceSessionId` 只在运行时生成，用于网络请求 ownership 和 stale-response 防护，不写入 workspace snapshot。
+
+持久化拆成三层：
+
+- registry metadata：`anicca_workspace_registry_v1`
+- active workspace id：`anicca_workspace_active_v1`
+- per-workspace snapshot：`anicca_workspace_snapshot_v1:{workspaceId}`
+
+registry metadata 足够渲染最近工作区列表，不需要启动时读取每个完整 graph blob。
 
 ```json
 {
-  "version": "0.1.0",
-  "projectId": "uuid",
-  "createdAt": 1730800000000,
-  "nodes": [
+  "schemaVersion": "anicca-workspace-registry-v1",
+  "entries": [
     {
-      "id": "uuid-node",
-      "parentIds": ["uuid-parent-1"],
-      "type": "thought", // thought | reply | system
-      "prompt": "输入的一句话",
-      "mode": "main",    // main | flow | anti | mute
-      "params": {
-        "seed": 123,
-        "render": { "noiseScale": 1.0, "mixStrength": 0.8 },
-        "template": "deep_think_v1",
-        "variables": { "topic": "无常" }
-      },
-      "summary": "简短概述",
-      "diff": { "from": "uuid-parent-1", "changes": ["param.update.noiseScale"] },
-      "thumb": "thumbs/uuid-node.png",
-      "metrics": { "fps": 55.2, "frameTimeMs": 18.1 }
+      "id": "workspace_01",
+      "title": "这个方向还值不值得继续投入？",
+      "createdAt": "2026-04-29T00:00:00.000Z",
+      "updatedAt": "2026-04-29T00:00:00.000Z",
+      "lastOpenedAt": "2026-04-29T00:00:00.000Z",
+      "entryCount": 1,
+      "nodeCount": 4
     }
-  ],
-  "branches": [
-    { "id": "uuid-branch-main", "name": "main", "headId": "uuid-node" }
   ]
 }
 ```
 
-建议最小字段校验（伪代码）：
+active workspace key 单独保存：
 
-```ts
-// 所有字段需有解释性注释，重要流程请加入 try/catch 并打印日志
-const ProjectSchema = z.object({
-  version: z.string(),
-  projectId: z.string(),
-  createdAt: z.number(),
-  nodes: z.array(z.object({
-    id: z.string(),
-    parentIds: z.array(z.string()).default([]),
-    type: z.enum(["thought","reply","system"]).default("thought"),
-    prompt: z.string().default(""),
-    mode: z.enum(["main","flow","anti","mute"]).default("main"),
-    params: z.record(z.any()).default({}),
-    summary: z.string().optional(),
-    diff: z.record(z.any()).optional(),
-    thumb: z.string().optional(),
-    metrics: z.record(z.number()).optional(),
-  })),
-  branches: z.array(z.object({ id: z.string(), name: z.string(), headId: z.string() }))
-});
+```json
+"workspace_01"
 ```
 
+每个 workspace snapshot 保存 graph、focus 与 composer target：
+
+```json
+{
+  "schemaVersion": "anicca-workspace-v2",
+  "workspaceId": "workspace_01",
+  "focusedNodeId": "asst_synthesis_1",
+  "composerParentId": "asst_synthesis_1",
+  "stageLayouts": {},
+  "graph": {
+    "version": "anicca-dialectic-v2",
+    "entryIds": ["user_root_1"],
+    "nodes": {
+      "user_root_1": {
+        "id": "user_root_1",
+        "kind": "user",
+        "text": "这个方向还值不值得继续投入？",
+        "createdAt": "2026-04-24T03:00:00.000Z",
+        "parents": [],
+        "children": ["asst_thesis_1", "asst_antithesis_1"]
+      },
+      "asst_thesis_1": {
+        "id": "asst_thesis_1",
+        "kind": "assistant",
+        "branchType": "正",
+        "text": "继续，但把范围切小。",
+        "createdAt": "2026-04-24T03:01:00.000Z",
+        "parents": ["user_root_1"],
+        "children": ["asst_synthesis_1"],
+        "meta": {
+          "label": "继续",
+          "summary": "先缩范围，再推进。"
+        }
+      },
+      "asst_antithesis_1": {
+        "id": "asst_antithesis_1",
+        "kind": "assistant",
+        "branchType": "反",
+        "text": "先停一下，别同时铺太开。",
+        "createdAt": "2026-04-24T03:02:00.000Z",
+        "parents": ["user_root_1"],
+        "children": ["asst_synthesis_1"],
+        "meta": {
+          "label": "暂停",
+          "summary": "把摊子收住，再判断。"
+        }
+      },
+      "asst_synthesis_1": {
+        "id": "asst_synthesis_1",
+        "kind": "assistant",
+        "branchType": "合",
+        "text": "保留主线，但拆开节奏。",
+        "createdAt": "2026-04-24T03:03:00.000Z",
+        "parents": ["asst_thesis_1", "asst_antithesis_1"],
+        "children": [],
+        "meta": {
+          "label": "收束",
+          "summary": "保留主线，拆开节奏。",
+          "sourceNodeIds": ["asst_thesis_1", "asst_antithesis_1"],
+          "lineageParentId": "user_root_1"
+        }
+      }
+    },
+    "edges": {
+      "e1": { "id": "e1", "from": "user_root_1", "to": "asst_thesis_1", "reason": "正" },
+      "e2": { "id": "e2", "from": "user_root_1", "to": "asst_antithesis_1", "reason": "反" },
+      "e3": { "id": "e3", "from": "asst_thesis_1", "to": "asst_synthesis_1", "reason": "synthesis" },
+      "e4": { "id": "e4", "from": "asst_antithesis_1", "to": "asst_synthesis_1", "reason": "synthesis" }
+    }
+  }
+}
+```
+
+当前 workspace contract 里最关键的字段：
+
+- `workspaceId`：稳定本地 workspace 身份，用于 registry、active id、per-workspace snapshot 和后续导入导出
+- `workspaceSessionId`：运行时 session ownership token；hydrate、创建、导入、切换时重新生成，不跨 reload 持久化
+- `focusedNodeId` / `composerParentId`：恢复 UI 焦点与续写目标
+- `stageLayouts`：按 focus snapshot 保存 stage pan 和节点位置
+- `graph.entryIds`：多个主题入口
+- `node.branchType`：仅 assistant 节点使用，取值为 `正 | 反 | 合`
+- `meta.sourceNodeIds`：`合` 节点的双来源 assistant
+- `meta.lineageParentId`：`合` 节点共享的上游 user anchor
+
 ---
 
-## 五、三泡泡回应生成（逻辑草案）
+## 五、正 / 反 / 合主线流程
 
-1. 输入 `prompt` → 归一化与去噪（可选停用词/情绪标签）。
-2. 模板化生成三类回应：
-   - 顺流（flow）：沿原意延展的 paraphrase/expansion；
-   - 逆流（anti）：反问/镜像/否定式重构；
-   - 止语（mute）：以呼吸/符号/留白回应；
-3. 每个回应即新 Node（不可变），写入 `nodes`，更新 `branches.headId`。
-4. 渲染层仅“读取”当前 Node 的 `params` → 生成视觉。
+1. 用户在 composer 输入母题。
+2. `/api/branches` 根据当前 focus 上下文返回结构化 `正 / 反`。
+3. 前端在 graph 中创建一个新的 user 节点，并挂上同母题下的两条 assistant 分支。
+4. 当同一母题同时拥有 `正` 与 `反` 时，UI 才暴露“生成合”动作。
+5. `/api/synthesis` 返回 `合` 后，前端创建一个带 `sourceNodeIds + lineageParentId` 的 synthesis assistant。
+6. active workspace snapshot 会把 graph、focus 和 composer target 一起持久化，刷新后通过 registry 恢复。
 
-提示词模板建议：`mustache` 模板 + 版本化，变量如 `{topic}`, `{tone}`, `{limit}`。
-
----
-
-## 六、渲染层（p5 + Shader 思路）
-
-参考 `ref/mochi.ts`（体积/噪声/色带/粒子）：
-
-- 提供统一接口：`applyUniforms(p, shader, audio, sensitivity, controls)` 与 `draw(p, shader)`。
-- 音频与交互打通：将点击/混合强度映射为 `uPulse`，与 `uLevel/uFlux` 共用一套驱动。
-- 性能建议：
-  - 控制 `uMaxSteps`/`uStepScale`/`uSurfEpsilon` 等，避免高配独占；
-  - 通过 `requestAnimationFrame` 节流与“只读渲染”，状态变更由 store 驱动；
-  - 必要时使用 OffscreenCanvas/Worker（可选增强）。
+这条主线的主产品 contract 就是 `正 / 反 / 合`。
 
 ---
 
-## 七、UI 结构与交互
+## 六、界面结构与交互
 
-- 左栏：分支树/历史列表（点击定位 node）。
-- 中央：Canvas（三泡泡的弥散/裂变/消隐）。
-- 右栏：输入区、参数面板（噪声/混合/色相/粒子强度等）、日志。
+`/dialogue` 当前是一个舞台优先的主线壳：
 
-基础交互：
+- 左侧：谱系树、breadcrumb、当前 focus path
+- 中央：bubble stage，用于展示当前节点及其 lineage / source 关系
+- 右侧：当前节点详情、来源节点、显式 synthesis affordance
+- 底部：persistent composer，可从 root 或当前 assistant 继续展开
+- 顶部：workspace bar，支持新建、重命名、切换最近工作区，以及导出/导入当前 bundle
 
-- 输入 → 生成三泡泡；
-- 点击任意泡泡 → 成为主念 → 继续裂变；
-- 悬浮显示摘要与参数；
-- 支持导出/导入（见下）。
+核心交互：
+
+- 输入一句话，生成下一轮 `正 / 反`
+- 点击任意节点，更新 focus、panel 和 composer target
+- 当 `正 / 反` 成对存在时，显式点击生成 `合`
+- 刷新页面后，恢复上一轮 workspace state
 
 ---
 
-## 八、导入/导出
+## 七、实验渲染与视觉探索
 
-- 导出：`project.json` 或 `.zip`（包含 `project.json` 与 `thumbs/*`），使用 `JSZip` 打包；
-- 导入：校验 Schema → 写入内存 store；
-- 可选：localStorage 自动保存最近一次状态。
+当前仓库仍然保留一组实验型视觉入口，用于继续探索液态气泡、raymarching 和 WebGPU 表现：
+
+- `ref/mochi.ts`
+- `/newframe`
+- `/raymarching`
+- `/liquid`
+- `/mochi`
+
+这些实验可以继续演化，但默认不直接改写 `/dialogue` 的主产品 contract。
+
+---
+
+## 八、持久化与后续能力
+
+当前已经落地：
+
+- localStorage workspace registry
+- per-workspace snapshot
+- active workspace id
+- legacy `anicca_workspace_v2` snapshot migration
+- validated workspace bundle export / import
+- workspace bar：create / rename / switch recent workspaces
+- derived title 会跟随 root topic 更新，直到用户手动重命名
+- no-op telemetry adapter + success-only adoption events:
+  - `workspace_resumed`
+  - `continuation_created`
+  - `synthesis_created`
+- imported workspaces receive a fresh local `workspaceId`
+- imported workspaces reset local `lastOpenedAt` to import time
+- graph version 校验
+- runtime-only workspace session regeneration
+
+仍在后续计划中的能力：
+
+- 更强视觉层回接评估
+- 可选云同步、分享与部署能力
 
 ---
 
 ## 九、本地开发与运行
 
-> 目前仓库处于“规划/设计稿 + 参考着色器”阶段，尚未初始化 Next.js 工程。建议按以下步骤启动：
-
 ```bash
-# 1) 初始化项目
-npm create next-app@latest anicca --ts --use-npm --eslint --app --src-dir --import-alias "@/*"
-
-# 2) 安装依赖
-cd anicca
-npm i p5 zustand tailwindcss @shadcn/ui class-variance-authority clsx tailwind-merge jszip file-saver uuid mustache zod
-
-# 3) 初始化 Tailwind
-npx tailwindcss init -p
-
-# 4) 运行
+npm install
 npm run dev
 ```
 
-落地时需要：
+默认入口：
 
-- 在 `app/` 中创建 `Canvas` 组件并封装 p5 生命周期；
-- 建立 `store`（Zustand）存储 nodes/branches，与导入/导出函数；
-- 将 `ref/mochi.ts` 的思路抽象为 `shaders/mochi.ts` 并对接控制面板；
-- 搭建三栏 UI（shadcn/ui）；
-- 加入 JSON 导出/导入与缩略图生成。
+- `http://localhost:3000/` -> 自动跳转到 `/dialogue`
+- `http://localhost:3000/dialogue` -> 正反合主线
+- `http://localhost:3000/newframe` -> 旧视觉实验入口
 
 ---
 
-## 十、质量与日志
+## 十、验证门
 
-- 重要流程均需 `try/catch` 并记录详细日志（包括数据与关键参数）。
-- 性能指标：FPS、渲染耗时、导出文件大小等需在 UI 中可见。
-- Schema 校验失败/导入异常必须给出清晰提示与修复建议。
+- `npm test`
+- `npm run build`
+- `npm run test:visual-dialogue`
+
+主线 rollout 关注的人工检查项：
+
+- `/` 是否正确跳到 `/dialogue`
+- `/newframe` 是否有清晰的 legacy handoff
+- tablet / mobile 下 shell 是否仍可操作
+- stale response 是否被丢弃
+- `合` 的 breadcrumb / sidebar / panel / composer 是否保持一致
 
 ---
 
-## 十一、路线图（对齐 docs/TODO.md）
+## 十一、路线图
 
-- 阶段一（MVP）：项目脚手架、弥散圆渲染、三泡泡基础链路、导入/导出。
-- 阶段二：完善动效与音频联动、实验管理（创建/分支/对比）。
-- 阶段三：视觉增强（体积、噪声、色相循环）、UX 优化、离线支持。
-- 阶段四：可选云同步、社区分享、部署与监控。
+- 阶段一：稳定 `/dialogue` 主线，包括 graph、request matching、workspace restore、ports rollout
+- 阶段二：workspace registry foundation（`closed`，2026-04-29）
+- 阶段三：workspace bundle import / export（`closed`，2026-04-29）
+- 阶段四：在不破坏主线 contract 的前提下评估是否把更强的视觉层重新接回 `/dialogue`
+- 阶段五：可选云同步、分享与部署能力
 
 ---
 
 ## 十二、参考与素材
 
-- `docs/项目介绍.md`：理念与体验设计
-- `docs/技术初探.md`：技术架构与选型
-- `docs/TODO.md`：开发任务拆解
-- `ref/mochi.ts`：渲染/着色器与音频驱动的可复用思路
+- `docs/superpowers/specs/2026-04-23-anicca-dialectic-v2-mainline-design.md`
+- `docs/superpowers/plans/2026-04-23-anicca-dialectic-v2-mainline.md`
+- `docs/superpowers/plans/2026-04-24-anicca-dialectic-v2-backend-implement-plan.md`
+- `docs/superpowers/plans/2026-04-24-anicca-dialectic-v2-frontend-implement-plan.md`
+- `docs/superpowers/plans/2026-04-24-anicca-dialectic-v2-ports-rollout-implement-plan.md`
+- `docs/superpowers/plans/2026-04-25-anicca-dialectic-v2-workspace-phase-implement-plan.md`
+- `ref/mochi.ts`
 
 ---
 
 ## 变更记录
 
 - 2025-10-05：创建 README（汇总项目目标、架构、数据模型、开发指引）。
-
-
+- 2025-10-12：修复 MetaCanvas 集成问题：
+  - 安装并配置 Tailwind CSS（解决样式类失效问题）
+  - 优化 WebGL 兼容性（支持 WebGL1/WebGL2 降级）
+  - 修复画布尺寸问题（设置固定高度，确保容器可见）
+  - 性能优化（降低分辨率、减少噪声计算、限制画布尺寸）
+  - 修复 PostCSS 配置错误（使用 @tailwindcss/postcss 插件）

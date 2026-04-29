@@ -1,0 +1,639 @@
+import React, { useEffect, useMemo, useRef, useState } from "react";
+
+/**
+ * MetaBallCanvas.tsx
+ *
+ * 目标：
+ * 1) 轻量 SDF + RayMarch（MAX_SOURCES=8, MAX_STEPS=44）
+ * 2) 屏幕空间彩色雾（FBM） + 包裹光 + 宽 rim + 薄处暖光
+ * 3) 可交互：拖动锚点、分裂/融合；
+ * 4) ChatUI 联动：通过 window.dispatchEvent(new CustomEvent("metaball:...")) 触发
+ *    - metaball:merge  detail: { fromId:number, toId:number }
+ *    - metaball:split  detail: { id:number, offset?:[number,number,number] }
+ *    - metaball:move   detail: { id:number, pos:[number,number,number] }
+ *
+ * 设计：
+ * - WebGL2 优先，回落 WebGL1。
+ * - 预乘 Alpha 输出 + 相应 blend。
+ * - DPR<=2，提高边缘质量。
+ * - 四面体法线（4 次 SDF）+ 厚度采样 2 次。
+ */
+
+export type MBNode = {
+  id: number;
+  pos: [number, number, number]; // world space (x,y,z)
+  r: number; // radius
+};
+
+export type MetaBallCanvasProps = {
+  className?: string;
+  initialNodes?: MBNode[];
+  background?: "studio" | "fog"; // 仅供风格切换
+  onNodesChange?: (nodes: MBNode[]) => void;
+};
+
+const VERT = `#version 300 es
+precision highp float;
+layout(location=0) in vec2 a_pos; // fullscreen quad
+out vec2 v_uv;
+void main(){
+  v_uv = a_pos * 0.5 + 0.5;
+  gl_Position = vec4(a_pos, 0.0, 1.0);
+}
+`;
+
+// WebGL1 兼容版本（若回落则用）
+const VERT_GL1 = `
+precision highp float;
+attribute vec2 a_pos;
+varying vec2 v_uv;
+void main(){
+  v_uv = a_pos * 0.5 + 0.5;
+  gl_Position = vec4(a_pos, 0.0, 1.0);
+}
+`;
+
+// 片元着色器（WebGL2）——路线A补丁已内置
+const FRAG = `#version 300 es
+precision highp float;
+out vec4 outColor;
+in vec2 v_uv;
+
+#define MAX_SOURCES 8
+#define MAX_STEPS 44
+#define HIT_EPS 1e-3
+#define FAR 20.0
+
+uniform float u_time;
+uniform vec2  u_resolution;
+uniform float u_aspect;
+uniform vec3  u_camPos;
+uniform mat3  u_camRot; // look rotation
+uniform int   u_count;
+uniform vec4  u_spheres[MAX_SOURCES]; // xyz=pos, w=radius
+uniform float u_blendK; // smooth-min k
+uniform vec3  u_lightDir;
+
+// ---------------- noise & fbm ----------------
+float hash(vec3 p){ return fract(sin(dot(p, vec3(127.1,311.7,74.7)))*43758.5453); }
+float noise(vec3 p){
+  vec3 i=floor(p), f=fract(p);
+  float n = mix(mix(mix(hash(i+vec3(0,0,0)), hash(i+vec3(1,0,0)), f.x),
+                      mix(hash(i+vec3(0,1,0)), hash(i+vec3(1,1,0)), f.x), f.y),
+                  mix(mix(hash(i+vec3(0,0,1)), hash(i+vec3(1,0,1)), f.x),
+                      mix(hash(i+vec3(0,1,1)), hash(i+vec3(1,1,1)), f.x), f.y), f.z);
+  return n;
+}
+float fbm(vec3 p){
+  float a=0.0, w=0.5; 
+  a += w*noise(p); p*=2.0; w*=0.5;
+  a += w*noise(p);
+  return a;
+}
+
+// -------------- sdf utils ----------------
+float smin(float a, float b, float k){
+  float h = clamp(0.5 + 0.5*(b-a)/k, 0.0, 1.0);
+  return mix(b, a, h) - k*h*(1.0-h);
+}
+
+float sdSphere(vec3 p, float r){ return length(p) - r; }
+
+float sdfScene(vec3 p){
+  float d = 1e9;
+  for(int i=0;i<MAX_SOURCES;i++){
+    if(i>=u_count) break; // WebGL2 可用
+    vec3 c = u_spheres[i].xyz;
+    float r = u_spheres[i].w;
+    float di = sdSphere(p - c, r);
+    d = smin(d, di, u_blendK);
+  }
+  return d;
+}
+
+vec3 tetraNormal(vec3 p){
+  float h = 0.001;
+  vec3 k1 = normalize(vec3( 1.0,-1.0,-1.0));
+  vec3 k2 = normalize(vec3(-1.0,-1.0, 1.0));
+  vec3 k3 = normalize(vec3(-1.0, 1.0,-1.0));
+  vec3 k4 = normalize(vec3( 1.0, 1.0, 1.0));
+  float d1 = sdfScene(p + k1*h);
+  float d2 = sdfScene(p + k2*h);
+  float d3 = sdfScene(p + k3*h);
+  float d4 = sdfScene(p + k4*h);
+  vec3 n = k1*d1 + k2*d2 + k3*d3 + k4*d4;
+  return normalize(n);
+}
+
+// raymarch
+float raymarch(vec3 ro, vec3 rd, out vec3 hit){
+  float t=0.0;
+  for(int i=0;i<MAX_STEPS;i++){
+    vec3 p = ro + rd*t;
+    float d = sdfScene(p);
+    if(d < HIT_EPS){ hit = p; return t; }
+    t += d; if(t>FAR) break;
+  }
+  return -1.0;
+}
+
+void main(){
+  // camera ray
+  vec2 uv = v_uv * 2.0 - 1.0; uv.x *= u_aspect;
+  vec3 rd = normalize(u_camRot * normalize(vec3(uv, 3.2))); // mild FOV
+  vec3 ro = u_camPos;
+
+  // background base (transparent)
+  vec3 bg = vec3(0.0);
+
+  // march
+  vec3 hitPos; 
+  float t = raymarch(ro, rd, hitPos);
+  vec3 color = bg;
+  float alpha = 1.0;
+
+  if(t>0.0){
+    vec3 N = tetraNormal(hitPos);
+    vec3 V = normalize(-rd);
+    vec3 L = normalize(u_lightDir);
+
+    // wrap diffuse
+    float ndotl = max(dot(N,L),0.0);
+    float wrap = 0.55;
+    float diff = clamp((ndotl + wrap)/(1.0+wrap), 0.0, 1.0);
+
+    // wide rim
+    float rim = pow(1.0 - max(dot(N,V),0.0), 2.0);
+
+    // thin thickness (2 samples)
+    float stepLen = 0.08;
+    float dIn = sdfScene(hitPos - N*stepLen);
+    float dOut= sdfScene(hitPos + N*stepLen);
+    float thickness = clamp(1.0 - 0.5*(dIn+dOut)/stepLen, 0.0, 1.0);
+
+    // base albedo
+    vec3 alb = vec3(0.98);
+
+    // warm translucency
+    vec3 warmA = vec3(1.05, 0.92, 0.85);
+    vec3 warmB = vec3(1.10, 0.80, 0.55);
+    vec3 warm  = mix(warmA, warmB, rim);
+
+    vec3 lit = alb * diff;                    // wrapped diffuse
+    lit += warm * thickness * 0.40;           // warm translucency
+    lit += 0.06 * rim;                        // subtle rim boost
+
+    // subtle surface grain (one noise -> two channels)
+    float g = noise(hitPos*1.2);
+    float grain = g*g;
+    float soft  = sqrt(max(g,0.0));
+    lit *= mix(0.98, 1.02, grain*0.5);
+    lit = mix(lit, lit*1.02, soft*0.2);
+
+    // 降低物理光占比、提高雾占比，减少"3D表面"感
+    lit = mix(lit, vec3(1.0), 0.10);      // 把表面光压 10%，增加空气感
+    color = lit;
+
+    // Fresnel transparency (premultiplied planning)
+    float F = pow(1.0 - max(dot(V,N),0.0), 3.0);
+    alpha = mix(0.92, 0.55, F);
+  }
+
+  // screen-space colored fog (pastel调色，避免发褐)
+  float n = fbm(normalize(rd)*2.2 + vec3(0.0,0.0,u_time*0.14));
+  // pastel 调色：避免发褐，更柔和的色彩
+  vec3 fogColor = 0.62 + 0.38 * sin(vec3(0.9, 1.7, 2.3)*n + vec3(0.0, 2.4, 4.2));
+  // 调整雾层权重：从 0.28 降到 0.22，减少过度混合
+  color = mix(color, fogColor, 0.22);
+  // 进一步把 rim 亮度改为加在雾色上而不是表面（只在有hit时添加rim效果）：
+  if(t > 0.0) {
+    vec3 N = tetraNormal(hitPos);
+    vec3 V = normalize(-rd);
+    float rim = pow(1.0 - max(dot(N, V), 0.0), 2.0);
+    color += fogColor * rim * 0.06;
+  }
+
+  // 添加蓝噪抖动，打散量化带
+  float dither = (hash(vec3(v_uv, u_time*0.5)) - 0.5) / 255.0; // ~1 LSB
+  color += dither;
+
+  // premultiplied output
+  outColor = vec4(color*alpha, alpha);
+}
+`;
+
+// 片元着色器（WebGL1 回落版，去掉 #version）
+const FRAG_GL1 = `
+precision highp float;
+varying vec2 v_uv;
+#define MAX_SOURCES 8
+#define MAX_STEPS 44
+#define HIT_EPS 1e-3
+#define FAR 20.0
+uniform float u_time;
+uniform vec2  u_resolution;
+uniform float u_aspect;
+uniform vec3  u_camPos;
+uniform mat3  u_camRot;
+uniform int   u_count;
+uniform vec4  u_spheres[MAX_SOURCES];
+uniform float u_blendK;
+uniform vec3  u_lightDir;
+float hash(vec3 p){ return fract(sin(dot(p, vec3(127.1,311.7,74.7)))*43758.5453); }
+float noise(vec3 p){ vec3 i=floor(p), f=fract(p); float n = mix(mix(mix(hash(i+vec3(0,0,0)), hash(i+vec3(1,0,0)), f.x), mix(hash(i+vec3(0,1,0)), hash(i+vec3(1,1,0)), f.x), f.y), mix(mix(hash(i+vec3(0,0,1)), hash(i+vec3(1,0,1)), f.x), mix(hash(i+vec3(0,1,1)), hash(i+vec3(1,1,1)), f.x), f.y), f.z); return n; }
+float fbm(vec3 p){ float a=0.0, w=0.5; a+=w*noise(p); p*=2.0; w*=0.5; a+=w*noise(p); return a; }
+float smin(float a,float b,float k){ float h=clamp(0.5+0.5*(b-a)/k,0.0,1.0); return mix(b,a,h)-k*h*(1.0-h);} 
+float sdSphere(vec3 p,float r){ return length(p)-r; }
+float sdfScene(vec3 p){ float d=1e9; for(int i=0;i<MAX_SOURCES;i++){ if(i>=u_count) break; vec3 c=u_spheres[i].xyz; float r=u_spheres[i].w; float di=sdSphere(p-c,r); d=smin(d,di,u_blendK);} return d; }
+vec3 tetraNormal(vec3 p){ float h=0.001; vec3 k1=normalize(vec3(1.0,-1.0,-1.0)); vec3 k2=normalize(vec3(-1.0,-1.0,1.0)); vec3 k3=normalize(vec3(-1.0,1.0,-1.0)); vec3 k4=normalize(vec3(1.0,1.0,1.0)); float d1=sdfScene(p+k1*h); float d2=sdfScene(p+k2*h); float d3=sdfScene(p+k3*h); float d4=sdfScene(p+k4*h); vec3 n=k1*d1+k2*d2+k3*d3+k4*d4; return normalize(n);} 
+float raymarch(vec3 ro,vec3 rd, out vec3 hit){ float t=0.0; for(int i=0;i<MAX_STEPS;i++){ vec3 p=ro+rd*t; float d=sdfScene(p); if(d<HIT_EPS){ hit=p; return t;} t+=d; if(t>FAR) break;} return -1.0; }
+void main(){ vec2 uv=v_uv*2.0-1.0; uv.x*=u_aspect; vec3 rd=normalize(u_camRot*normalize(vec3(uv,3.2))); vec3 ro=u_camPos; vec3 bg=vec3(0.0); vec3 hitPos; float t=raymarch(ro,rd,hitPos); vec3 color=bg; float alpha=1.0; if(t>0.0){ vec3 N=tetraNormal(hitPos); vec3 V=normalize(-rd); vec3 L=normalize(u_lightDir); float ndotl=max(dot(N,L),0.0); float wrap=0.55; float diff=clamp((ndotl+wrap)/(1.0+wrap),0.0,1.0); float rim=pow(1.0-max(dot(N,V),0.0),2.0); float stepLen=0.08; float dIn=sdfScene(hitPos-N*stepLen); float dOut=sdfScene(hitPos+N*stepLen); float thickness=clamp(1.0-0.5*(dIn+dOut)/stepLen,0.0,1.0); vec3 alb=vec3(0.98); vec3 warmA=vec3(1.05,0.92,0.85); vec3 warmB=vec3(1.10,0.80,0.55); vec3 warm=mix(warmA,warmB,rim); vec3 lit=alb*diff; lit+=warm*thickness*0.40; lit+=0.06*rim; float g=noise(hitPos*1.2); float grain=g*g; float soft=sqrt(max(g,0.0)); lit*=mix(0.98,1.02,grain*0.5); lit=mix(lit,lit*1.02,soft*0.2); lit=mix(lit,vec3(1.0),0.10); color=lit; float F=pow(1.0-max(dot(V,N),0.0),3.0); alpha=mix(0.92,0.55,F);} float n=fbm(normalize(rd)*2.2+vec3(0.0,0.0,u_time*0.14)); vec3 fogColor=0.62+0.38*sin(vec3(0.9,1.7,2.3)*n+vec3(0.0,2.4,4.2)); color=mix(color,fogColor,0.22); if(t>0.0){vec3 N=tetraNormal(hitPos); vec3 V=normalize(-rd); float rim=pow(1.0-max(dot(N,V),0.0),2.0); color+=fogColor*rim*0.06;} float dither=(hash(vec3(v_uv,u_time*0.5))-0.5)/255.0; color+=dither; gl_FragColor=vec4(color*alpha,alpha); }
+`;
+
+function createGL(canvas: HTMLCanvasElement){
+  const opts: WebGLContextAttributes = { alpha: true, premultipliedAlpha: true, antialias: false, preserveDrawingBuffer: false };
+  const gl2 = canvas.getContext("webgl2", opts) as WebGL2RenderingContext | null;
+  if (gl2) return { gl: gl2, isWebGL2: true } as const;
+  const gl1 = canvas.getContext("webgl", opts) as WebGLRenderingContext | null
+    || canvas.getContext("experimental-webgl", opts) as WebGLRenderingContext | null;
+  if (!gl1) throw new Error("WebGL not supported");
+  return { gl: gl1, isWebGL2: false } as const;
+}
+
+function compile(gl: WebGLRenderingContext | WebGL2RenderingContext, type: number, src: string){
+  const sh = gl.createShader(type)!;
+  gl.shaderSource(sh, src);
+  gl.compileShader(sh);
+  if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+    const info = gl.getShaderInfoLog(sh);
+    console.error("Shader compile error:", info);
+    console.error("Shader source:", src);
+    gl.deleteShader(sh); 
+    throw new Error("Shader compile error: " + info);
+  }
+  console.log(`Shader compiled successfully (${type === gl.VERTEX_SHADER ? 'vertex' : 'fragment'})`);
+  return sh;
+}
+
+function link(gl: WebGLRenderingContext | WebGL2RenderingContext, vs: WebGLShader, fs: WebGLShader){
+  const prg = gl.createProgram()!;
+  gl.attachShader(prg, vs); gl.attachShader(prg, fs);
+  if ((gl as WebGL2RenderingContext).bindAttribLocation) {
+    gl.bindAttribLocation(prg, 0, "a_pos");
+  }
+  gl.linkProgram(prg);
+  if (!gl.getProgramParameter(prg, gl.LINK_STATUS)) {
+    const info = gl.getProgramInfoLog(prg);
+    console.error("Program link error:", info);
+    gl.deleteProgram(prg); 
+    throw new Error("Program link error: " + info);
+  }
+  console.log("WebGL program linked successfully");
+  return prg;
+}
+
+const quad = new Float32Array([
+  -1, -1,
+   1, -1,
+  -1,  1,
+   1,  1,
+]);
+
+export default function MetaBallCanvas({ className, initialNodes, background = "fog", onNodesChange }: MetaBallCanvasProps){
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [nodes, setNodes] = useState<MBNode[]>(() => {
+    const defaultNodes: MBNode[] = [
+      { id:0, pos:[ 0.00, 0.00, 0.0] as [number, number, number], r:0.55 },
+      { id:1, pos:[-0.45,-0.20, 0.0] as [number, number, number], r:0.58 },
+      { id:2, pos:[ 0.35, 0.40, 0.0] as [number, number, number], r:0.48 },
+    ];
+    console.log("MetaCanvas initial nodes:", initialNodes || defaultNodes);
+    console.log("MetaCanvas nodes count:", (initialNodes || defaultNodes).length);
+    return initialNodes ?? defaultNodes;
+  });
+  
+  // 用 nodesRef 存当前节点，避免闭包问题
+  const nodesRef = useRef<MBNode[]>([]);
+  useEffect(() => { nodesRef.current = nodes; }, [nodes]);
+  
+  const dpr = Math.min(2, typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1);
+  const rafRef = useRef<number | null>(null);
+  const programRef = useRef<WebGLProgram | null>(null);
+  const glRef = useRef< (WebGLRenderingContext | WebGL2RenderingContext) | null >(null);
+  const isWebGL2Ref = useRef<boolean>(true);
+  const locRef = useRef<Record<string, any>>({});
+  const startRef = useRef<number>(performance.now());
+
+  // pointer drag state
+  const dragRef = useRef<{ id: number; dx: number; dy: number } | null>(null);
+
+  // chat-ui linkage: listen custom events
+  useEffect(() => {
+    function onMerge(e: Event){
+      const detail = (e as CustomEvent).detail as { fromId:number; toId:number };
+      setNodes(prev => {
+        const a = prev.find(n=>n.id===detail.fromId);
+        const b = prev.find(n=>n.id===detail.toId);
+        if(!a||!b) return prev;
+        // merge: new radius ~ (r^3 + r^3)^(1/3) ; position weighted
+        const r = Math.cbrt(a.r*a.r*a.r + b.r*b.r*b.r);
+        const wA = a.r*a.r*a.r, wB = b.r*b.r*b.r;
+        const p: [number,number,number] = [
+          (a.pos[0]*wA + b.pos[0]*wB)/(wA+wB),
+          (a.pos[1]*wA + b.pos[1]*wB)/(wA+wB),
+          (a.pos[2]*wA + b.pos[2]*wB)/(wA+wB),
+        ];
+        const keep = prev.filter(n=> n.id!==a.id && n.id!==b.id);
+        const id = Math.max(...prev.map(n=>n.id))+1;
+        const next = [...keep, { id, pos:p, r }];
+        onNodesChange?.(next); return next;
+      });
+    }
+    function onSplit(e: Event){
+      const detail = (e as CustomEvent).detail as { id:number; offset?:[number,number,number] };
+      setNodes(prev => {
+        const nd = prev.find(n=>n.id===detail.id); if(!nd) return prev;
+        const r2 = nd.r/Math.cbrt(2);
+        const off = detail.offset ?? [0.60,0.0,0.0]; // 由 0.25 -> 0.60
+        const idA = Math.max(...prev.map(n=>n.id))+1;
+        const idB = idA+1;
+        const a: MBNode = { id:idA, pos:[nd.pos[0]-off[0], nd.pos[1]-off[1], nd.pos[2]-off[2]], r:r2 };
+        const b: MBNode = { id:idB, pos:[nd.pos[0]+off[0], nd.pos[1]+off[1], nd.pos[2]+off[2]], r:r2 };
+        const next = [...prev.filter(n=>n.id!==nd.id), a, b];
+        onNodesChange?.(next); return next;
+      });
+    }
+    function onMove(e: Event){
+      const detail = (e as CustomEvent).detail as { id:number; pos:[number,number,number] };
+      setNodes(prev => prev.map(n=> n.id===detail.id ? { ...n, pos:detail.pos } : n));
+    }
+    window.addEventListener("metaball:merge", onMerge as EventListener);
+    window.addEventListener("metaball:split", onSplit as EventListener);
+    window.addEventListener("metaball:move",  onMove  as EventListener);
+    return () => {
+      window.removeEventListener("metaball:merge", onMerge as EventListener);
+      window.removeEventListener("metaball:split", onSplit as EventListener);
+      window.removeEventListener("metaball:move",  onMove  as EventListener);
+    };
+  }, [onNodesChange]);
+
+  // init GL
+  useEffect(() => {
+    const canvas = canvasRef.current!;
+    console.log("Initializing MetaCanvas WebGL...");
+    console.log("Canvas element:", canvas);
+    console.log("Canvas dimensions:", canvas.clientWidth, "x", canvas.clientHeight);
+    
+    let gl: WebGLRenderingContext | WebGL2RenderingContext;
+    let isWebGL2: boolean;
+    
+    try {
+      const result = createGL(canvas);
+      gl = result.gl;
+      isWebGL2 = result.isWebGL2;
+      glRef.current = gl; 
+      isWebGL2Ref.current = isWebGL2;
+      
+      console.log("WebGL context created:", { isWebGL2, gl });
+      
+      // 发送组件加载成功事件
+      window.dispatchEvent(new CustomEvent('component-load', { 
+        detail: { component: 'metaCanvas', loaded: true } 
+      }));
+    } catch (error) {
+      console.error("MetaCanvas WebGL initialization failed:", error);
+      // 发送组件加载失败事件
+      window.dispatchEvent(new CustomEvent('component-load', { 
+        detail: { component: 'metaCanvas', loaded: false } 
+      }));
+      return;
+    }
+
+    // DPR & viewport
+    let lastWidth = 0, lastHeight = 0;
+    function resize(){
+      const ratio = Math.min(2, window.devicePixelRatio || 1);
+      const w = Math.floor(canvas.clientWidth * ratio);
+      const h = Math.floor(canvas.clientHeight* ratio);
+      
+      // 防止无限循环：检查尺寸是否真的改变了
+      if (w === lastWidth && h === lastHeight) return;
+      if (w <= 0 || h <= 0) return; // 防止无效尺寸
+      if (w > 4096 || h > 4096) return; // 防止过大的尺寸
+      
+      lastWidth = w; lastHeight = h;
+      canvas.width = w; canvas.height = h; 
+      gl.viewport(0,0,w,h);
+      console.log(`Canvas resized to ${w}x${h}, DPR: ${ratio}`);
+    }
+    resize();
+    
+    const ro = new ResizeObserver((entries) => {
+      // 使用requestAnimationFrame来避免ResizeObserver错误
+      requestAnimationFrame(() => {
+        resize();
+      });
+    }); 
+    ro.observe(canvas);
+
+    // compile
+    const vs = compile(gl, gl.VERTEX_SHADER, isWebGL2? VERT: VERT_GL1);
+    const fs = compile(gl, gl.FRAGMENT_SHADER, isWebGL2? FRAG: FRAG_GL1);
+    const prg = link(gl, vs, fs); programRef.current = prg;
+    gl.useProgram(prg);
+
+    // buffer
+    const buf = gl.createBuffer()!; gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, quad, gl.STATIC_DRAW);
+    const loc = isWebGL2? 0 : (gl as WebGLRenderingContext).getAttribLocation(prg, "a_pos");
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+    // uniforms
+    const getLoc = (name:string)=> gl.getUniformLocation(prg, name);
+    locRef.current = {
+      u_time: getLoc("u_time"),
+      u_resolution: getLoc("u_resolution"),
+      u_aspect: getLoc("u_aspect"),
+      u_camPos: getLoc("u_camPos"),
+      u_camRot: getLoc("u_camRot"),
+      u_count: getLoc("u_count"),
+      u_spheres: getLoc("u_spheres"),
+      u_blendK: getLoc("u_blendK"),
+      u_lightDir: getLoc("u_lightDir"),
+    };
+
+    // blending: premultiplied output
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+
+    // main loop
+    const draw = () => {
+      const now = performance.now();
+      const t = (now - startRef.current)/1000;
+      const w = canvas.width, h = canvas.height;
+      const aspect = w/h;
+
+      gl.useProgram(prg);
+      
+      // 每帧读取最新 nodes
+      const liveNodes = nodesRef.current;
+      const count = Math.min(liveNodes.length, 8);
+      
+      // 调试信息：每5秒打印一次状态
+      if (Math.floor(t) % 5 === 0 && Math.floor(t) !== Math.floor(t-0.016)) {
+        console.log(`MetaCanvas render: ${w}x${h}, aspect: ${aspect.toFixed(2)}, nodes: ${count}, time: ${t.toFixed(2)}s`);
+        console.log('Nodes data:', liveNodes.map(n => ({ id: n.id, pos: n.pos, r: n.r })));
+      }
+      // uniforms
+      gl.uniform1f(locRef.current.u_time, t);
+      gl.uniform2f(locRef.current.u_resolution, w, h);
+      gl.uniform1f(locRef.current.u_aspect, aspect);
+
+      // camera （简单正看）
+      const camPos: [number,number,number] = [0,0,-3.4];
+      const camRot = new Float32Array([
+        1,0,0,
+        0,1,0,
+        0,0,1,
+      ]);
+      gl.uniform3f(locRef.current.u_camPos, camPos[0], camPos[1], camPos[2]);
+      gl.uniformMatrix3fv(locRef.current.u_camRot, false, camRot);
+
+      // light
+      const L: [number,number,number] = [0.6, 0.6, 0.5];
+      gl.uniform3f(locRef.current.u_lightDir, L[0], L[1], L[2]);
+
+      // spheres
+      gl.uniform1i(locRef.current.u_count, count);
+      const arr = new Float32Array(4*8);
+      for (let i=0;i<8;i++){
+        if (i<count){
+          const n = liveNodes[i];
+          arr[i*4+0] = n.pos[0];
+          arr[i*4+1] = n.pos[1];
+          arr[i*4+2] = n.pos[2];
+          arr[i*4+3] = n.r;
+        } else {
+          arr[i*4+0]=10; arr[i*4+1]=10; arr[i*4+2]=10; arr[i*4+3]=0.001;
+        }
+      }
+      // WebGL 对数组 uniform 的传递（std140 风格）——直接 uniform4fv 连续写入
+      gl.uniform4fv(locRef.current.u_spheres, arr);
+      gl.uniform1f(locRef.current.u_blendK, 0.22); // 平滑并集 k 从 0.45 -> 0.22 更容易分出两个形体
+
+      // clear
+      gl.viewport(0,0,w,h);
+      gl.clearColor(0.96, 0.97, 0.98, 1.0); // 浅色背景，避免偏褐，与雾层协调
+      gl.clear(gl.COLOR_BUFFER_BIT);
+
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      rafRef.current = requestAnimationFrame(draw);
+    };
+    rafRef.current = requestAnimationFrame(draw);
+    console.log("MetaCanvas render loop started");
+
+    return () => {
+      console.log("MetaCanvas cleanup");
+      ro.disconnect();
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (programRef.current) { gl.deleteProgram(programRef.current); programRef.current=null; }
+    };
+  }, []); // 重要：空依赖，避免重建GL管线
+
+  // pointer drag in NDC-ish plane (z fixed)
+  useEffect(() => {
+    const canvas = canvasRef.current!;
+    function pickIdAtClient(x:number,y:number){
+      // 简单几何拾取：把 node 的屏幕投影近似映射到 [-1,1] 平面判断
+      const rect = canvas.getBoundingClientRect();
+      const nx = ((x - rect.left)/rect.width )*2-1;
+      const ny = ((y - rect.top )/rect.height)*2-1;
+      // 假设相机正看，z=-3，投影到 z=0 平面：x≈nx*aspect, y≈ny
+      const aspect = canvas.width/canvas.height;
+      const px = nx*aspect; const py = -ny;
+      let minD=1e9, pick=-1;
+      nodes.forEach(n=>{ const dx = px - n.pos[0]; const dy = py - n.pos[1]; const d2 = dx*dx+dy*dy; if(d2<minD && d2 < (n.r*0.6)*(n.r*0.6)) { minD=d2; pick=n.id; } });
+      return pick;
+    }
+    const onDown = (e:PointerEvent)=>{
+      const id = pickIdAtClient(e.clientX, e.clientY);
+      if (id>=0){
+        const rect = canvas.getBoundingClientRect();
+        const aspect = canvas.width/canvas.height;
+        const nx = ((e.clientX - rect.left)/rect.width )*2-1;
+        const ny = ((e.clientY - rect.top )/rect.height)*2-1;
+        const px = nx*aspect; const py = -ny;
+        const nd = nodes.find(n=>n.id===id)!;
+        dragRef.current = { id, dx: px-nd.pos[0], dy: py-nd.pos[1] };
+        (e.target as Element).setPointerCapture(e.pointerId);
+      }
+    };
+    const onMove = (e:PointerEvent)=>{
+      if (!dragRef.current) return;
+      const rect = canvas.getBoundingClientRect();
+      const aspect = canvas.width/canvas.height;
+      const nx = ((e.clientX - rect.left)/rect.width )*2-1;
+      const ny = ((e.clientY - rect.top )/rect.height)*2-1;
+      const px = nx*aspect; const py = -ny;
+      setNodes(prev => prev.map(n => n.id===dragRef.current!.id ? { ...n, pos:[px - dragRef.current!.dx, py - dragRef.current!.dy, n.pos[2]] } : n));
+    };
+    const onUp = (e:PointerEvent)=>{ dragRef.current=null; };
+    canvas.addEventListener("pointerdown", onDown);
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return () => { canvas.removeEventListener("pointerdown", onDown); window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp); };
+  }, [nodes]);
+
+  // expose nodes to parent
+  useEffect(()=>{ onNodesChange?.(nodes); }, [nodes, onNodesChange]);
+
+  return (
+    <div className={"relative w-full h-full " + (className??"") }>
+      <canvas 
+        ref={canvasRef} 
+        className="w-full h-full rounded-2xl shadow-lg"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          zIndex: 5,
+          pointerEvents: 'auto'
+        }}
+      />
+
+      {/* overlay control points - 确保标记点可见，考虑aspect比例 */}
+      <div className="pointer-events-none absolute inset-0 z-20">
+        {nodes.map((n) => {
+          const canvas = canvasRef.current;
+          const cw = canvas?.width ?? 1;
+          const ch = canvas?.height ?? 1;
+          const aspect = cw / ch;
+          return (
+            <div key={n.id} className="absolute" style={{
+              // 统一坐标映射：与拾取逻辑完全一致
+              left: `${50 + (n.pos[0] / aspect) * 50}%`,
+              top:  `${50 + (-n.pos[1]) * 50}%`,
+              transform: 'translate(-50%, -50%)',
+              zIndex: 20
+            }}>
+              <div className="pointer-events-none select-none text-sm px-3 py-1 rounded-full bg-red-500/90 text-white border-2 border-white shadow-lg font-bold">
+                {n.id}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* demo buttons (可删；ChatUI 用事件驱动） */}
+      <div className="absolute left-3 top-3 flex gap-2 p-2 bg-white/70 backdrop-blur rounded-xl shadow">
+        <button className="px-3 py-1 rounded-lg bg-black text-white" onClick={()=>{
+          if(nodes.length>=2){ window.dispatchEvent(new CustomEvent('metaball:merge', { detail:{ fromId:nodes[0].id, toId:nodes[1].id } })); }
+        }}>融合</button>
+        <button className="px-3 py-1 rounded-lg bg-neutral-800 text-white" onClick={()=>{
+          if(nodes.length){ window.dispatchEvent(new CustomEvent('metaball:split', { detail:{ id:nodes[0].id } })); }
+        }}>分裂</button>
+      </div>
+    </div>
+  );
+}
