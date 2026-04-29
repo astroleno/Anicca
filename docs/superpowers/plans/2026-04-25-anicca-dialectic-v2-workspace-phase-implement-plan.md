@@ -6,6 +6,14 @@
 
 **Origin docs:** `README.md`, `docs/superpowers/plans/2026-04-23-anicca-dialectic-v2-mainline.md`
 
+**Current integration status (2026-04-29):**
+
+- Phase 2 Unit 1 is implemented on isolated branch `codex/workspace-registry-unit1`.
+- Unit 1 implementation commit: `7a992bb feat(workspaces): add registry migration foundation`.
+- The branch is pushed to `origin/codex/workspace-registry-unit1`.
+- Unit 1 is not yet merged into `codex/dialectic-v2-mainline`; mainline is still at `2c294fe` for this workstream.
+- Unit 2 must not begin until the Unit 1 PR lands and the post-merge migration smoke passes.
+
 ---
 
 ## Preconditions
@@ -18,11 +26,11 @@
 
 ## Phase Entry Gate
 
-- [ ] Confirm the clean release branch records the `/dialogue` release checklist as complete, including manual checks.
-- [ ] Confirm a live provider smoke pass with `OPENAI_API_KEY` has been run and recorded.
-- [ ] Do not start Unit 2, Unit 3, or Unit 4 until Unit 1 lands and the registry contract is the active persistence path.
+- [x] Confirm the clean release branch records the `/dialogue` release checklist as complete, including manual checks.
+- [x] Confirm a live provider smoke pass with `OPENAI_API_KEY` has been run and recorded.
+- [x] Do not start Unit 2, Unit 3, or Unit 4 until Unit 1 lands and the registry contract is the active persistence path.
 
-This phase is blocked until the first two checks are true. Once unblocked, execution starts with Unit 1 only.
+This phase was unblocked for Unit 1 only. Unit 1 is implemented on `codex/workspace-registry-unit1`, but Unit 2 remains blocked until Unit 1 is merged into `codex/dialectic-v2-mainline` and the browser migration smoke passes.
 
 ---
 
@@ -138,85 +146,92 @@ This plan does **not** own:
 
 ### Unit 1: Land the workspace registry and migration foundation
 
-- [ ] Introduce `workspaceId` as a stable persisted identifier distinct from `workspaceSessionId`
-- [ ] Define registry metadata with at least:
+- [x] Introduce `workspaceId` as a stable persisted identifier distinct from `workspaceSessionId`
+- [x] Define registry metadata with at least:
   - `id`
   - `title`
   - `createdAt`
   - `updatedAt`
   - `lastOpenedAt`
   - lightweight summary fields needed for recent-workspace UI
-- [ ] Add explicit `activeWorkspaceId`
-- [ ] Store registry metadata separately from full workspace snapshots
-- [ ] Migrate the current single-key `anicca_workspace_v2` snapshot into the new registry on first load
-- [ ] Regenerate `workspaceSessionId` on hydrate, create, import, and switch
-- [ ] Keep pending requests and transient errors out of persisted workspace records
-- [ ] Ensure demo workspace creation goes through the same registry contract as real workspaces
-- [ ] Update `README.md` data-model and persistence sections so `workspaceId` is the persisted identity and `workspaceSessionId` is documented as runtime-only session ownership
+- [x] Add explicit `activeWorkspaceId`
+- [x] Store registry metadata separately from full workspace snapshots
+- [x] Migrate the current single-key `anicca_workspace_v2` snapshot into the new registry on first load
+- [x] Regenerate `workspaceSessionId` on hydrate, create, and workspace activation; later import/switch UI must use the same activation path
+- [x] Keep pending requests and transient errors out of persisted workspace records
+- [x] Ensure demo workspace creation goes through the same registry contract as real workspaces
+- [x] Update `README.md` data-model and persistence sections so `workspaceId` is the persisted identity and `workspaceSessionId` is documented as runtime-only session ownership
+
+Unit 1 closeout:
+
+- Implementation branch: `codex/workspace-registry-unit1`
+- Implementation commit: `7a992bb feat(workspaces): add registry migration foundation`
+- Integration state: pushed, not merged
+- Deferred by scope: export/import, workspace naming, recent workspace UI, create/switch UI, telemetry
 
 #### Unit 1 Expanded Task Slice
 
 ##### Step 1: Write the failing migration and boot-path tests first
 
-- [ ] Create `src/lib/persist/workspaces.test.ts` with failing tests for:
+- [x] Create `src/lib/persist/workspaces.test.ts` with failing tests for:
   - migration from legacy `anicca_workspace_v2`
   - idempotent re-boot after migration does not create a duplicate workspace
   - creation of registry metadata
   - creation of `activeWorkspaceId`
   - regeneration of `workspaceSessionId` on hydrate/switch
-- [ ] Extend `src/features/dialectic/store.test.ts` with failing tests for `workspaceId`-aware hydration and runtime session regeneration.
-- [ ] Extend `src/components/dialogue/DialogueShell.test.tsx` with a failing boot-path test that expects `/dialogue` to load through the active workspace registry instead of the legacy single snapshot key.
-- [ ] Verification command:
+- [x] Extend `src/features/dialectic/store.test.ts` with failing tests for `workspaceId`-aware hydration and runtime session regeneration.
+- [x] Extend `src/components/dialogue/DialogueShell.test.tsx` with a failing boot-path test that expects `/dialogue` to load through the active workspace registry instead of the legacy single snapshot key.
+- [x] Verification command:
   - `npm test -- src/lib/persist/workspaces.test.ts src/features/dialectic/store.test.ts src/components/dialogue/DialogueShell.test.tsx`
-- [ ] Expected result before implementation:
+- [x] Expected result before implementation:
   - missing module failures for `src/lib/persist/workspaces.ts`
   - state-shape failures for missing `workspaceId`
   - boot-path failures because `DialogueShell` still reads the legacy single snapshot directly
 
 ##### Step 2: Define the registry contract in types first
 
-- [ ] Create `src/types/workspace.ts`.
-- [ ] Define exact persisted concepts:
+- [x] Create `src/types/workspace.ts`.
+- [x] Define exact persisted concepts:
   - `WorkspaceId`
   - `WorkspaceRegistryEntry`
   - `WorkspaceRegistry`
   - `PersistedWorkspaceSnapshot`
-- [ ] Keep `workspaceId` stable and persisted.
-- [ ] Keep `workspaceSessionId` runtime-only and outside exported bundle identity.
+- [x] Keep `workspaceId` stable and persisted.
+- [x] Keep `workspaceSessionId` runtime-only and outside exported bundle identity.
 
 ##### Step 3: Implement storage keys and migration path
 
-- [ ] Create `src/lib/persist/workspaces.ts`.
-- [ ] Use exact storage keys:
+- [x] Create `src/lib/persist/workspaces.ts`.
+- [x] Use exact storage keys:
   - legacy source key: `anicca_workspace_v2`
   - migration marker key: `anicca_workspace_legacy_migrated_v1`
   - registry key: `anicca_workspace_registry_v1`
   - active workspace key: `anicca_workspace_active_v1`
   - snapshot key prefix: `anicca_workspace_snapshot_v1:`
-- [ ] Implement exact responsibilities:
+- [x] Implement exact responsibilities:
   - migrate legacy single snapshot if needed
   - create/read/update registry metadata
   - create/read/update per-workspace snapshots
   - read/write `activeWorkspaceId`
   - read/write the legacy migration-consumed marker
   - regenerate `workspaceSessionId` when activating a workspace
-- [ ] Migration must write the new snapshot, registry, active workspace id, and migration marker successfully before treating the legacy shape as consumed.
-- [ ] Boot must not create a second migrated workspace when the marker exists, even if the legacy key still remains.
+- [x] Migration must write the new snapshot, registry, active workspace id, and migration marker successfully before treating the legacy shape as consumed.
+- [x] Boot must not create a second migrated workspace when the marker exists, even if the legacy key still remains.
 
 ##### Step 4: Convert the legacy persistence module into a compatibility bridge
 
-- [ ] Modify `src/lib/persist/local.ts` so it no longer represents the long-term active persistence model.
-- [ ] Keep it only as:
+- [x] Modify `src/lib/persist/local.ts` so it no longer represents the long-term active persistence model.
+- [x] Keep it only as:
   - legacy snapshot reader for migration source data
   - compatibility bridge if other mainline code still imports it during Unit 1
-- [ ] Do not leave two independent active persistence paths in the codebase.
+- [x] Do not leave two independent active persistence paths in the codebase.
 
 ##### Step 5: Move store and boot logic onto the new registry path
 
-- [ ] Modify `src/features/dialectic/store.ts` so hydrated state includes persisted `workspaceId`.
-- [ ] Ensure create/switch/hydrate paths regenerate runtime `workspaceSessionId`.
-- [ ] Modify `src/features/dialectic/demoWorkspace.ts` to produce data compatible with the new workspace snapshot contract.
-- [ ] Modify `src/components/dialogue/DialogueShell.tsx` boot flow to:
+- [x] Modify `src/features/dialectic/store.ts` so hydrated state includes persisted `workspaceId`.
+- [x] Ensure create/hydrate/activation paths regenerate runtime `workspaceSessionId`.
+- [x] Modify `src/features/dialectic/demoWorkspace.ts` to produce data compatible with the new workspace snapshot contract.
+- [x] Modify `src/components/dialogue/DialogueShell.tsx` boot flow to:
   - migrate legacy data if needed
   - load the active workspace by `activeWorkspaceId`
   - hydrate graph, focus, composer target, and stage layout from that workspace
@@ -224,24 +239,29 @@ This plan does **not** own:
 
 ##### Step 6: Align docs before closing Unit 1
 
-- [ ] Update `README.md` section `四、数据模型（当前 contract）` so it no longer documents `workspaceSessionId` as the persisted workspace identity.
-- [ ] Update `README.md` persistence and roadmap text to describe:
+- [x] Update `README.md` section `四、数据模型（当前 contract）` so it no longer documents `workspaceSessionId` as the persisted workspace identity.
+- [x] Update `README.md` persistence and roadmap text to describe:
   - stable `workspaceId`
   - runtime-only `workspaceSessionId`
   - registry + active workspace + per-workspace snapshot shape
-- [ ] Do not leave stale JSON examples or field descriptions that reflect the Phase 1 single-workspace model after Unit 1 lands.
+- [x] Do not leave stale JSON examples or field descriptions that reflect the Phase 1 single-workspace model after Unit 1 lands.
 
 ##### Step 7: Verification and commit slices
 
-- [ ] Targeted verification command:
+- [x] Targeted verification command:
   - `npm test -- src/lib/persist/workspaces.test.ts src/features/dialectic/store.test.ts src/components/dialogue/DialogueShell.test.tsx`
-- [ ] Broader verification command after Unit 1 stabilizes:
+- [x] Broader verification command after Unit 1 stabilizes:
   - `npm test`
-- [ ] Preferred commit slices:
-  - `test(workspaces): characterize registry migration and boot flow`
-  - `feat(workspaces): add registry persistence foundation`
-  - `feat(dialogue): hydrate mainline through active workspace registry`
-  - `docs(workspaces): align README persistence contract`
+- [x] Actual Unit 1 commit:
+  - `7a992bb feat(workspaces): add registry migration foundation`
+
+Unit 1 verification record:
+
+- `npm run lint`: passed, 0 errors / 38 warnings
+- `npm test`: passed, 13 files / 51 tests
+- `npm run build`: passed
+- `npm run test:visual-dialogue`: passed
+- `git diff --check`: passed
 
 ### Unit 2: Add validated workspace export and import
 
