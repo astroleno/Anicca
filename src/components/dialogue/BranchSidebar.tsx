@@ -30,35 +30,80 @@ export function BranchSidebar({ breadcrumb, items, onSelect }: BranchSidebarProp
       </div>
 
       <nav className={styles.sidebarTree} aria-label="分支列表">
-        {items.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            aria-current={item.isFocused ? "true" : undefined}
-            className={[
-              styles.sidebarItem,
-              item.isFocused ? styles.sidebarItemFocused : "",
-              item.isOnFocusedPath ? styles.sidebarItemPath : ""
-            ].join(" ")}
-            style={{ paddingInlineStart: `${16 + item.depth * 18}px` }}
-            onClick={() => onSelect(item.id)}
-          >
-            <span className={styles.sidebarItemMain}>
-              <span className={styles.sidebarItemLabel}>{item.label}</span>
-              {item.branchType ? <small>{item.branchType}</small> : null}
-            </span>
-            {item.summary ? <span className={styles.sidebarItemSummary}>{item.summary}</span> : null}
-            {item.sourceLabels.length ? (
-              <span className={styles.sourceBadgeRow} aria-label="合的来源">
-                {item.sourceLabels.map((label) => (
-                  <span key={`${item.id}-${label}`} className={styles.sourceBadge}>
-                    {label}
+        {items.map((item) => {
+          const isSynthesisEvent = item.displayRole === "synthesis-event";
+
+          if (isSynthesisEvent) {
+            const sourceDescription = item.sourceLabels.length
+              ? `，来源：${item.sourceLabels.join(" / ")}`
+              : "";
+            return (
+              <button
+                key={item.id}
+                type="button"
+                aria-label={`合流记录：${item.label}${sourceDescription}`}
+                aria-current={item.isFocused ? "true" : undefined}
+                className={[
+                  styles.sidebarSynthesisEvent,
+                  item.isFocused ? styles.sidebarItemFocused : "",
+                  item.isOnFocusedPath ? styles.sidebarItemPath : ""
+                ].join(" ")}
+                style={{ paddingInlineStart: `${16 + item.depth * 18}px` }}
+                onClick={() => onSelect(item.id)}
+              >
+                <span className={styles.sidebarSynthesisRail} aria-hidden="true" />
+                <span className={styles.sidebarSynthesisBody}>
+                  <span className={styles.sidebarSynthesisMeta}>
+                    <span className={styles.sidebarItemEventMarker}>已合流</span>
+                    <span className={styles.sidebarSynthesisTitle}>{item.label}</span>
                   </span>
-                ))}
+                  {item.sourceLabels.length ? (
+                    <span className={styles.sourceBadgeRow} aria-label="合流来源">
+                      {item.sourceLabels.map((label) => (
+                        <span key={`${item.id}-${label}`} className={styles.sourceBadge}>
+                          {label}
+                        </span>
+                      ))}
+                    </span>
+                  ) : null}
+                </span>
+              </button>
+            );
+          }
+
+          return (
+            <button
+              key={item.id}
+              type="button"
+              aria-current={item.isFocused ? "true" : undefined}
+              className={[
+                styles.sidebarItem,
+                isSynthesisEvent ? styles.sidebarItemSynthesis : "",
+                item.isFocused ? styles.sidebarItemFocused : "",
+                item.isOnFocusedPath ? styles.sidebarItemPath : ""
+              ].join(" ")}
+              style={{ paddingInlineStart: `${16 + item.depth * 18}px` }}
+              onClick={() => onSelect(item.id)}
+            >
+              <span className={styles.sidebarItemMain}>
+                <span className={styles.sidebarItemLabelGroup}>
+                  <span className={styles.sidebarItemLabel}>{item.label}</span>
+                </span>
+                {item.branchType ? <small>{item.branchType}</small> : null}
               </span>
-            ) : null}
-          </button>
-        ))}
+              {item.summary ? <span className={styles.sidebarItemSummary}>{item.summary}</span> : null}
+              {item.sourceLabels.length ? (
+                <span className={styles.sourceBadgeRow} aria-label="合的来源">
+                  {item.sourceLabels.map((label) => (
+                    <span key={`${item.id}-${label}`} className={styles.sourceBadge}>
+                      {label}
+                    </span>
+                  ))}
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
       </nav>
     </aside>
   );

@@ -14,6 +14,7 @@ export type DialogueSidebarItem = {
   label: string;
   kind: AniccaNode["kind"];
   branchType?: BranchType;
+  displayRole: "node" | "synthesis-event";
   summary?: string;
   isFocused: boolean;
   isOnFocusedPath: boolean;
@@ -25,6 +26,7 @@ export type DialogueStageNode = {
   label: string;
   kind: AniccaNode["kind"];
   branchType?: BranchType;
+  displayRole?: "node" | "synthesis-record";
   relation: "focus" | "ancestor" | "child" | "source";
   // Seed coordinates define the default composition before per-snapshot drag state takes over.
   seedX: number;
@@ -123,26 +125,27 @@ function getBreadcrumbIds(graph: Graph, focusNodeId: string | null): string[] {
 }
 
 function getUserDisplayChildren(graph: Graph, userNode: AniccaNode): string[] {
-  const directAssistants = userNode.children
+  return userNode.children
     .filter((childId) => graph.nodes[childId]?.kind === "assistant")
+    .filter((childId) => graph.nodes[childId]?.branchType !== "合")
     .sort((leftId, rightId) => {
       const left = graph.nodes[leftId];
       const right = graph.nodes[rightId];
       const branchDelta = branchOrder(left.branchType) - branchOrder(right.branchType);
       return branchDelta || byCreatedAt(graph, leftId, rightId);
     });
+}
 
-  const synthesisIds = Object.values(graph.nodes)
+function getSynthesisEventIdsByLineageParent(graph: Graph, lineageParentId: string): string[] {
+  return Object.values(graph.nodes)
     .filter(
       (node) =>
         node.kind === "assistant" &&
         node.branchType === "合" &&
-        node.meta?.lineageParentId === userNode.id
+        node.meta?.lineageParentId === lineageParentId
     )
     .map((node) => node.id)
     .sort((leftId, rightId) => byCreatedAt(graph, leftId, rightId));
-
-  return [...directAssistants, ...synthesisIds.filter((id) => !directAssistants.includes(id))];
 }
 
 function getAssistantDisplayChildren(graph: Graph, assistantNode: AniccaNode): string[] {
@@ -189,6 +192,7 @@ function buildSidebarItems(graph: Graph, focusNodeId: string | null, breadcrumbI
       label: getNodeLabel(node),
       kind: node.kind,
       branchType: node.branchType,
+      displayRole: "node",
       summary: node.meta?.summary,
       isFocused: node.id === focusNodeId,
       isOnFocusedPath: focusPath.has(node.id),
@@ -197,6 +201,41 @@ function buildSidebarItems(graph: Graph, focusNodeId: string | null, breadcrumbI
 
     for (const childId of getDisplayChildren(graph, node)) {
       walk(childId, depth + 1, node.id);
+    }
+
+    if (node.kind === "user") {
+      for (const eventId of getSynthesisEventIdsByLineageParent(graph, node.id)) {
+        if (visited.has(eventId)) {
+          continue;
+        }
+
+        visited.add(eventId);
+        const eventNode = graph.nodes[eventId];
+        const eventSourceLabels = eventNode.meta?.sourceNodeIds?.length
+          ? eventNode.meta.sourceNodeIds
+              .map((sourceId) => graph.nodes[sourceId])
+              .filter((source): source is AniccaNode => Boolean(source))
+              .map((source) => getNodeLabel(source))
+          : [];
+
+        items.push({
+          id: eventNode.id,
+          parentId: node.id,
+          depth: depth + 1,
+          label: getNodeLabel(eventNode),
+          kind: eventNode.kind,
+          branchType: eventNode.branchType,
+          displayRole: "synthesis-event",
+          summary: eventNode.meta?.summary,
+          isFocused: eventNode.id === focusNodeId,
+          isOnFocusedPath: focusPath.has(eventNode.id),
+          sourceLabels: eventSourceLabels
+        });
+
+        for (const childId of getAssistantDisplayChildren(graph, eventNode)) {
+          walk(childId, depth + 2, eventNode.id);
+        }
+      }
     }
   };
 
@@ -325,17 +364,17 @@ type StageLayoutPreset = {
 function getStageLayoutPreset(focusNode: AniccaNode): StageLayoutPreset {
   if (focusNode.kind === "assistant" && focusNode.branchType === "合") {
     return {
-      focus: { x: 50, y: 56 },
+      focus: { x: 50, y: 62 },
       sourcePositions: [
         { x: 30, y: 34 },
         { x: 70, y: 34 }
       ],
       childPositions: [
-        { x: 50, y: 90 },
-        { x: 36, y: 88 },
-        { x: 64, y: 88 }
+        { x: 50, y: 82 },
+        { x: 36, y: 80 },
+        { x: 64, y: 80 }
       ],
-      ancestorStartY: 22,
+      ancestorStartY: 18,
       ancestorStepY: 10
     };
   }
@@ -440,6 +479,7 @@ function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStag
     label: getNodeLabel(focusNode),
     kind: focusNode.kind,
     branchType: focusNode.branchType,
+    displayRole: focusNode.kind === "assistant" && focusNode.branchType === "合" ? "synthesis-record" : "node",
     relation: "focus",
     seedX: preset.focus.x,
     seedY: preset.focus.y
@@ -465,10 +505,7 @@ function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStag
     });
   }
 
-  const childIds = getDisplayChildren(graph, focusNode).filter((childId) => {
-    const child = graph.nodes[childId];
-    return !(focusNode.kind === "user" && child?.branchType === "合");
-  });
+  const childIds = getDisplayChildren(graph, focusNode);
   childIds.forEach((childId, index) => {
     const child = graph.nodes[childId];
     let position: StageSeed | null = null;

@@ -30,9 +30,12 @@ describe("WorkspaceBar", () => {
             focusedNodeId: "node_other"
           }
         ]}
+        statusMessage={null}
         onCreate={vi.fn()}
         onSelect={vi.fn()}
         onRename={vi.fn()}
+        onExport={vi.fn()}
+        onImport={vi.fn()}
       />
     );
 
@@ -51,9 +54,12 @@ describe("WorkspaceBar", () => {
         currentWorkspaceId="workspace_current"
         currentTitle="Current Workspace"
         items={[]}
+        statusMessage={null}
         onCreate={onCreate}
         onSelect={vi.fn()}
         onRename={vi.fn()}
+        onExport={vi.fn()}
+        onImport={vi.fn()}
       />
     );
 
@@ -82,9 +88,12 @@ describe("WorkspaceBar", () => {
             focusedNodeId: "node_other"
           }
         ]}
+        statusMessage={null}
         onCreate={vi.fn()}
         onSelect={onSelect}
         onRename={vi.fn()}
+        onExport={vi.fn()}
+        onImport={vi.fn()}
       />
     );
 
@@ -102,12 +111,17 @@ describe("WorkspaceBar", () => {
         currentWorkspaceId="workspace_current"
         currentTitle="Current Workspace"
         items={[]}
+        statusMessage={null}
         onCreate={vi.fn()}
         onSelect={vi.fn()}
         onRename={onRename}
+        onExport={vi.fn()}
+        onImport={vi.fn()}
       />
     );
 
+    await user.click(screen.getByRole("button", { name: "更多" }));
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "重命名工作区" }));
     await user.clear(screen.getByLabelText("工作区名称"));
     await user.type(screen.getByLabelText("工作区名称"), "Renamed Workspace");

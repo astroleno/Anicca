@@ -11,6 +11,8 @@ type BubbleStageProps = {
   nodes: DialogueStageNode[];
   focusNodeId: string | null;
   onSelect: (nodeId: string) => void;
+  convergenceEventId?: string | null;
+  eventNodeId?: string | null;
   emptyAction?: {
     label: string;
     onTrigger: () => void;
@@ -35,7 +37,10 @@ type ActiveStageGesture =
     };
 
 const DEFAULT_STAGE_PAN: StagePan = { x: 0, y: 0 };
-const NODE_PADDING_PERCENT = 10;
+const NODE_MIN_X_PERCENT = 12;
+const NODE_MAX_X_PERCENT = 88;
+const NODE_MIN_Y_PERCENT = 12;
+const NODE_MAX_Y_PERCENT = 84;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -43,12 +48,29 @@ function clamp(value: number, min: number, max: number) {
 
 function clampNodePosition(position: StagePoint) {
   return {
-    x: clamp(position.x, NODE_PADDING_PERCENT, 100 - NODE_PADDING_PERCENT),
-    y: clamp(position.y, NODE_PADDING_PERCENT, 100 - NODE_PADDING_PERCENT)
+    x: clamp(position.x, NODE_MIN_X_PERCENT, NODE_MAX_X_PERCENT),
+    y: clamp(position.y, NODE_MIN_Y_PERCENT, NODE_MAX_Y_PERCENT)
   };
 }
 
-export function BubbleStage({ layoutKey, nodes, focusNodeId, onSelect, emptyAction = null }: BubbleStageProps) {
+function buildStageCurve(from: StagePoint, to: StagePoint) {
+  const midX = (from.x + to.x) / 2;
+  const midY = (from.y + to.y) / 2;
+  const bend = clamp(Math.abs(from.x - to.x) * 0.18 + Math.abs(from.y - to.y) * 0.08, 4, 10);
+  const controlY = from.y <= to.y ? midY - bend : midY + bend;
+
+  return `M ${from.x} ${from.y} Q ${midX} ${controlY} ${to.x} ${to.y}`;
+}
+
+export function BubbleStage({
+  layoutKey,
+  nodes,
+  focusNodeId,
+  onSelect,
+  convergenceEventId = null,
+  eventNodeId = null,
+  emptyAction = null
+}: BubbleStageProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const nodeRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -57,6 +79,7 @@ export function BubbleStage({ layoutKey, nodes, focusNodeId, onSelect, emptyActi
   const setStageNodePosition = useDialogueUiStore((state) => state.setStageNodePosition);
   const setStagePan = useDialogueUiStore((state) => state.setStagePan);
   const [gesture, setGesture] = useState<ActiveStageGesture | null>(null);
+  const [isCoarsePointer, setIsCoarsePointer] = useState(false);
   const livePanRef = useRef<StagePan | null>(null);
   const didDragRef = useRef(false);
   const suppressClickUntilRef = useRef(0);
@@ -64,15 +87,45 @@ export function BubbleStage({ layoutKey, nodes, focusNodeId, onSelect, emptyActi
   const hasThesis = nodes.some((node) => node.branchType === "正");
   const hasAntithesis = nodes.some((node) => node.branchType === "反");
   const hasSynthesis = nodes.some((node) => node.branchType === "合");
-  const relationshipHint = hasSynthesis
-    ? "拖动节点只是整理舞台；合已作为这条谱系的收束记录保留。"
-    : hasThesis && hasAntithesis
-      ? "拖动节点只是整理舞台；是否生成合由同一母题下的正反成对关系决定。"
-      : null;
+  const relationshipHint = isCoarsePointer
+    ? hasSynthesis
+      ? "点选节点查看谱系；合已作为这条谱系的收束记录保留。"
+      : hasThesis && hasAntithesis
+        ? "点选节点查看正与反。"
+        : null
+    : hasSynthesis
+      ? "整理舞台只影响布局；合已作为这条谱系的收束记录保留。"
+      : hasThesis && hasAntithesis
+        ? "整理舞台只影响布局；是否记录合流由同一母题下的正反成对关系决定。"
+        : null;
+  const emptyStageHint = isCoarsePointer
+    ? "给它一个母题，它会先长出正与反；点选节点查看谱系。"
+    : "给它一个母题，它会先长出正与反；生成后可整理舞台布局。";
   const resolvedPan = stageLayout?.pan || DEFAULT_STAGE_PAN;
 
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia("(pointer: coarse)");
+    const updatePointerMode = () => {
+      setIsCoarsePointer(mediaQuery.matches);
+    };
+
+    updatePointerMode();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", updatePointerMode);
+      return () => mediaQuery.removeEventListener("change", updatePointerMode);
+    }
+
+    mediaQuery.addListener(updatePointerMode);
+    return () => mediaQuery.removeListener(updatePointerMode);
+  }, []);
+
   const getNodePosition = (node: DialogueStageNode): StagePoint =>
-    stageLayout?.nodePositions[node.id] || { x: node.seedX, y: node.seedY };
+    clampNodePosition(stageLayout?.nodePositions[node.id] || { x: node.seedX, y: node.seedY });
 
   const setTrackPanPreview = (pan: StagePan) => {
     const track = trackRef.current;
@@ -200,6 +253,9 @@ export function BubbleStage({ layoutKey, nodes, focusNodeId, onSelect, emptyActi
     if (!canPanStage || event.button !== 0 || event.target !== event.currentTarget) {
       return;
     }
+    if (event.pointerType === "touch") {
+      return;
+    }
 
     event.preventDefault();
     if (typeof event.currentTarget.setPointerCapture === "function") {
@@ -218,6 +274,9 @@ export function BubbleStage({ layoutKey, nodes, focusNodeId, onSelect, emptyActi
 
   const handleNodePointerDown = (event: ReactPointerEvent<HTMLButtonElement>, node: DialogueStageNode) => {
     if (event.button !== 0) {
+      return;
+    }
+    if (event.pointerType === "touch") {
       return;
     }
 
@@ -245,6 +304,54 @@ export function BubbleStage({ layoutKey, nodes, focusNodeId, onSelect, emptyActi
     onSelect(nodeId);
   };
 
+  const positionedNodes = nodes.map((node) => ({
+    node,
+    position: getNodePosition(node)
+  }));
+  const focusStageNode = positionedNodes.find(({ node }) => node.relation === "focus") || null;
+  const relationshipLinks = focusStageNode
+    ? positionedNodes
+        .filter(({ node }) => node.id !== focusStageNode.node.id && ["ancestor", "child", "source"].includes(node.relation))
+        .map(({ node, position }) => {
+          const sourceFirst = node.relation === "source";
+          const from = sourceFirst ? position : focusStageNode.position;
+          const to = sourceFirst ? focusStageNode.position : position;
+          return {
+            fromId: sourceFirst ? node.id : focusStageNode.node.id,
+            toId: sourceFirst ? focusStageNode.node.id : node.id,
+            d: buildStageCurve(from, to),
+            relation: node.relation,
+            branchType: node.branchType,
+            lineRole: node.relation,
+            eventState: eventNodeId && (node.id === eventNodeId || focusStageNode.node.id === eventNodeId)
+              ? "synthesis-reveal"
+              : undefined
+          };
+        })
+    : [];
+  const hasVisibleConvergenceNode = Boolean(
+    convergenceEventId && positionedNodes.some(({ node }) => node.id === convergenceEventId)
+  );
+  const convergenceSources = convergenceEventId && !hasVisibleConvergenceNode
+    ? [
+        positionedNodes.find(({ node }) => node.branchType === "正" && ["child", "source"].includes(node.relation)),
+        positionedNodes.find(({ node }) => node.branchType === "反" && ["child", "source"].includes(node.relation))
+      ]
+    : [];
+  const convergenceCenter = convergenceSources[0] && convergenceSources[1]
+    ? {
+        x: (convergenceSources[0].position.x + convergenceSources[1].position.x) / 2,
+        y: (convergenceSources[0].position.y + convergenceSources[1].position.y) / 2
+      }
+    : null;
+  const convergenceMark = convergenceCenter && convergenceSources[0] && convergenceSources[1]
+    ? {
+        ...convergenceCenter,
+        thesisPath: buildStageCurve(convergenceSources[0].position, convergenceCenter),
+        antithesisPath: buildStageCurve(convergenceSources[1].position, convergenceCenter)
+      }
+    : null;
+
   return (
     <section
       className={styles.stagePanel}
@@ -266,7 +373,11 @@ export function BubbleStage({ layoutKey, nodes, focusNodeId, onSelect, emptyActi
           ].join(" ")}
           data-testid="dialogue-stage-viewport"
         >
-          {relationshipHint ? <p className={styles.stageRelationshipHint}>{relationshipHint}</p> : null}
+          {relationshipHint ? (
+            <p className={styles.stageRelationshipHint} data-testid="dialogue-stage-hint">
+              {relationshipHint}
+            </p>
+          ) : null}
           <div
             ref={trackRef}
             className={[
@@ -283,6 +394,60 @@ export function BubbleStage({ layoutKey, nodes, focusNodeId, onSelect, emptyActi
             onPointerDown={handleStagePointerDown}
             data-testid="dialogue-stage-track"
           >
+            {relationshipLinks.length ? (
+              <svg
+                className={styles.stageRelations}
+                viewBox="0 0 100 100"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+                data-testid="dialogue-stage-relations"
+              >
+                {relationshipLinks.map((link) => (
+                  <path
+                    key={`${link.fromId}-${link.toId}`}
+                    data-testid={`dialogue-stage-relation-${link.fromId}-${link.toId}`}
+                    className={[
+                      styles.stageRelationPath,
+                      link.relation === "source" ? styles.stageRelationSource : "",
+                      link.relation === "ancestor" ? styles.stageRelationLineage : "",
+                      link.eventState ? styles.stageRelationEvent : "",
+                      link.branchType === "正" ? styles.stageRelationThesis : "",
+                      link.branchType === "反" ? styles.stageRelationAntithesis : "",
+                      link.branchType === "合" ? styles.stageRelationSynthesis : ""
+                    ].join(" ")}
+                    data-event-state={link.eventState}
+                    data-line-role={link.lineRole}
+                    data-branch-type={link.branchType}
+                    d={link.d}
+                    vectorEffect="non-scaling-stroke"
+                  />
+                ))}
+                {convergenceMark ? (
+                  <>
+                    <path
+                      className={[styles.stageConvergenceMark, styles.stageConvergenceMarkThesis].join(" ")}
+                      data-testid="dialogue-stage-convergence-mark-thesis"
+                      d={convergenceMark.thesisPath}
+                      vectorEffect="non-scaling-stroke"
+                    />
+                    <path
+                      className={[styles.stageConvergenceMark, styles.stageConvergenceMarkAntithesis].join(" ")}
+                      data-testid="dialogue-stage-convergence-mark-antithesis"
+                      d={convergenceMark.antithesisPath}
+                      vectorEffect="non-scaling-stroke"
+                    />
+                    <circle
+                      className={styles.stageConvergenceDot}
+                      data-testid="dialogue-stage-convergence-dot"
+                      cx={convergenceMark.x}
+                      cy={convergenceMark.y}
+                      r="1.65"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  </>
+                ) : null}
+              </svg>
+            ) : null}
             {!nodes.length ? (
               <>
                 <div className={styles.emptyStageCluster} aria-hidden="true">
@@ -295,8 +460,8 @@ export function BubbleStage({ layoutKey, nodes, focusNodeId, onSelect, emptyActi
                   <div className={[styles.emptyStageBlob, styles.emptyStageAntithesis].join(" ")}>
                     <span>反</span>
                   </div>
-                  <p className={styles.emptyStageHint}>
-                    给它一个母题，它会先长出正与反；节点可拖动整理舞台。
+                  <p className={styles.emptyStageHint} data-testid="dialogue-empty-stage-hint">
+                    {emptyStageHint}
                   </p>
                 </div>
                 {emptyAction ? (
@@ -310,8 +475,7 @@ export function BubbleStage({ layoutKey, nodes, focusNodeId, onSelect, emptyActi
                 ) : null}
               </>
             ) : null}
-            {nodes.map((node) => {
-              const position = getNodePosition(node);
+            {positionedNodes.map(({ node, position }) => {
               const isDragging = gesture?.kind === "node" && gesture.nodeId === node.id;
 
               return (
@@ -326,6 +490,8 @@ export function BubbleStage({ layoutKey, nodes, focusNodeId, onSelect, emptyActi
                     node.branchType === "正" ? styles.stageNodeThesis : "",
                     node.branchType === "反" ? styles.stageNodeAntithesis : "",
                     node.branchType === "合" ? styles.stageNodeSynthesis : "",
+                    node.displayRole === "synthesis-record" ? styles.stageNodeSynthesisRecord : "",
+                    node.id === eventNodeId ? styles.stageNodeSynthesisEvent : "",
                     node.kind === "user" ? styles.stageNodeUser : "",
                     node.id === focusNodeId ? styles.stageNodeFocused : "",
                     node.relation === "ancestor" ? styles.stageNodeAncestor : "",
@@ -333,6 +499,8 @@ export function BubbleStage({ layoutKey, nodes, focusNodeId, onSelect, emptyActi
                     isDragging ? styles.stageNodeDragging : ""
                   ].join(" ")}
                   data-testid={`dialogue-stage-node-${node.id}`}
+                  data-event-state={node.id === eventNodeId ? "synthesis-reveal" : undefined}
+                  data-display-role={node.displayRole}
                   style={
                     {
                       left: `${position.x}%`,

@@ -20,6 +20,7 @@ describe("deriveDialogueView", () => {
     expect(view.breadcrumb.map((item) => item.id)).toEqual([rootUserId, synthesisId]);
     expect(view.currentNode?.sourceNodes.map((node) => node.id)).toEqual([thesisId, antithesisId]);
     expect(view.sidebarItems.find((item) => item.id === synthesisId)?.parentId).toBe(rootUserId);
+    expect(view.sidebarItems.find((item) => item.id === synthesisId)?.displayRole).toBe("synthesis-event");
   });
 
   it("derives composer target from non-root user parent assistant", () => {
@@ -76,10 +77,15 @@ describe("deriveDialogueView", () => {
     const view = deriveDialogueView(store.getGraph(), synthesisId);
     const byId = Object.fromEntries(view.stageNodes.map((node) => [node.id, node]));
 
-    expect(byId[rootUserId]).toMatchObject({ relation: "ancestor", seedX: 50, seedY: 22 });
+    expect(byId[rootUserId]).toMatchObject({ relation: "ancestor", seedX: 50, seedY: 18 });
     expect(byId[thesisId]).toMatchObject({ relation: "source", seedX: 30, seedY: 34 });
     expect(byId[antithesisId]).toMatchObject({ relation: "source", seedX: 70, seedY: 34 });
-    expect(byId[synthesisId]).toMatchObject({ relation: "focus", seedX: 50, seedY: 56 });
+    expect(byId[synthesisId]).toMatchObject({
+      relation: "focus",
+      displayRole: "synthesis-record",
+      seedX: 50,
+      seedY: 62
+    });
   });
 
   it("does not render synthesis as a permanent third stage child when its parent user is focused", () => {
@@ -100,6 +106,38 @@ describe("deriveDialogueView", () => {
 
     expect(rootView.stageNodes.map((node) => node.id)).toEqual([rootUserId, thesisId, antithesisId]);
     expect(rootView.sidebarItems.some((item) => item.id === synthesisId)).toBe(true);
+    expect(
+      rootView.sidebarItems
+        .filter((item) => item.parentId === rootUserId && item.displayRole === "node")
+        .map((item) => item.id)
+    ).toEqual([thesisId, antithesisId]);
+    expect(rootView.sidebarItems.find((item) => item.id === synthesisId)).toMatchObject({
+      parentId: rootUserId,
+      displayRole: "synthesis-event"
+    });
     expect(synthesisView.stageNodes.map((node) => node.id)).toContain(synthesisId);
+  });
+
+  it("keeps continuations created from synthesis records visible in the sidebar", () => {
+    const store = new BranchGraphStore();
+    const rootUserId = store.createUserNode("要不要继续");
+    const { thesisId, antithesisId } = store.createAssistantPair(rootUserId, {
+      thesis: { text: "继续", summary: "继续推进", label: "继续" },
+      antithesis: { text: "暂停", summary: "暂停重构", label: "暂停" }
+    });
+    const synthesisId = store.createSynthesisAssistant([thesisId, antithesisId], {
+      text: "主线收束",
+      summary: "主线收束",
+      label: "收束"
+    });
+    const followupId = store.createChildUserNode(synthesisId, "如果按这个节奏推进，第一周只做什么？");
+
+    const rootView = deriveDialogueView(store.getGraph(), rootUserId);
+
+    expect(rootView.sidebarItems.map((item) => item.id)).toContain(followupId);
+    expect(rootView.sidebarItems.find((item) => item.id === followupId)).toMatchObject({
+      parentId: synthesisId,
+      displayRole: "node"
+    });
   });
 });

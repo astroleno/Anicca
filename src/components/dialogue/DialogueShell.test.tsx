@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { DialogueShell, isDialogueDemoWorkspaceEnabled } from "@/components/dialogue/DialogueShell";
 import { useDialogueUiStore } from "@/features/dialectic/store";
@@ -131,7 +131,7 @@ describe("DialogueShell", () => {
 
     render(<DialogueShell />);
 
-    expect(await screen.findByText("生成合")).toBeInTheDocument();
+    expect(await screen.findByText("记录合流")).toBeInTheDocument();
     expect(screen.getByText("将续写到")).toBeInTheDocument();
     expect(screen.getByText("新的主题")).toBeInTheDocument();
   });
@@ -144,8 +144,9 @@ describe("DialogueShell", () => {
 
     await user.click(await screen.findByRole("button", { name: "载入示例谱系" }));
 
-    expect(await screen.findByTestId("dialogue-stage-node-asst_synthesis_1")).toBeInTheDocument();
-    expect(screen.getAllByText("收束").length).toBeGreaterThan(0);
+    expect(await screen.findByTestId("dialogue-stage-node-user_root_1")).toBeInTheDocument();
+    expect(screen.queryByTestId("dialogue-stage-node-asst_synthesis_1")).not.toBeInTheDocument();
+    expect(useDialogueUiStore.getState().focusedNodeId).toBe("user_root_1");
     expect(branchGraphStore.getGraph().entryIds).toEqual(["user_root_1"]);
   });
 
@@ -178,6 +179,24 @@ describe("DialogueShell", () => {
     expect(isDialogueDemoWorkspaceEnabled({ hostname: "anicca.app", search: "" })).toBe(false);
   });
 
+  it("keeps mobile reading and keyboard order aligned as stage, lineage, panel, then composer", async () => {
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    const stage = await screen.findByTestId("dialogue-stage");
+    const sidebar = screen.getByTestId("dialogue-sidebar");
+    const panel = screen.getByTestId("dialogue-panel");
+    const composer = screen.getByTestId("dialogue-composer");
+
+    expect(stage.compareDocumentPosition(sidebar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(sidebar.compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(panel.compareDocumentPosition(composer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("exports the active workspace through a shell-level action", async () => {
     const user = userEvent.setup();
     const { rootUserId } = seedPair();
@@ -197,13 +216,15 @@ describe("DialogueShell", () => {
 
     render(<DialogueShell />);
 
-    await user.click(await screen.findByRole("button", { name: "导出工作区" }));
+    await user.click(await screen.findByRole("button", { name: "更多" }));
+    await user.click(screen.getByRole("button", { name: "导出工作区" }));
 
     expect(createObjectURL).toHaveBeenCalledTimes(1);
     const bundleBlob = createObjectURL.mock.calls[0][0] as Blob;
     const bundleText = await bundleBlob.text();
     expect(JSON.parse(bundleText).metadata.title).toBe("Workspace Test Boot");
     expect(clickSpy).toHaveBeenCalled();
+    expect(screen.getByRole("status")).toHaveTextContent("工作区已导出：Workspace Test Boot");
   });
 
   it("imports a valid workspace bundle into a new local workspace", async () => {
@@ -241,6 +262,8 @@ describe("DialogueShell", () => {
     render(<DialogueShell />);
 
     const importInput = await screen.findByTestId("dialogue-import-input");
+    expect(importInput).toHaveAttribute("tabindex", "-1");
+    expect(importInput).toHaveAttribute("aria-hidden", "true");
     fireEvent.change(importInput, {
       target: {
         files: [file]
@@ -259,6 +282,7 @@ describe("DialogueShell", () => {
     expect(useDialogueUiStore.getState().workspaceSessionId).not.toBe(
       "ws_export_source"
     );
+    expect(screen.getByRole("status")).toHaveTextContent("工作区已导入：Imported Workspace Source");
   });
 
   it("shows recoverable copy when an imported bundle is malformed", async () => {
@@ -288,10 +312,11 @@ describe("DialogueShell", () => {
     seedActiveWorkspaceFromCurrentGraph();
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () =>
-        new Response(
+      vi.fn(async (_url, init) => {
+        const body = JSON.parse(String((init as RequestInit).body || "{}"));
+        return new Response(
           JSON.stringify({
-            requestId: "req_roundtable_1",
+            requestId: body.requestId,
             state: {
               topic: "roundtable topic",
               participants: [],
@@ -306,8 +331,8 @@ describe("DialogueShell", () => {
             status: 200,
             headers: { "Content-Type": "application/json" }
           }
-        )
-      )
+        );
+      })
     );
 
     render(<DialogueShell />);
@@ -323,9 +348,145 @@ describe("DialogueShell", () => {
     await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
     await user.click(screen.getByRole("button", { name: "作为追问继续" }));
 
-    expect(screen.getByPlaceholderText("把当前母题推进到下一轮。")).toHaveValue("作为追问继续的问题");
+    const composerInput = screen.getByPlaceholderText("把当前母题推进到下一轮。");
+    expect(composerInput).toHaveValue("作为追问继续的问题");
+    await waitFor(() => {
+      expect(composerInput).toHaveFocus();
+    });
     expect(useDialogueUiStore.getState().focusedNodeId).toBe(rootUserId);
+    expect(screen.getByRole("status")).toHaveTextContent("已填入圆桌追问，可以继续生成正 / 反。");
     expect(loadWorkspaceRecord("workspace_test")?.snapshot.artifacts?.roundtables).toBeTruthy();
+  });
+
+  it("can reopen the latest saved roundtable artifact for the current node", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    const record = loadWorkspaceRecord("workspace_test")!;
+    saveWorkspaceRecord({
+      id: "workspace_test",
+      title: record.entry.title,
+      snapshot: {
+        ...record.snapshot,
+        artifacts: {
+          roundtables: {
+            roundtable_saved: {
+              id: "roundtable_saved",
+              topic: "saved topic",
+              sourceNodeId: rootUserId,
+              createdAt: "2026-04-29T00:00:00.000Z",
+              updatedAt: "2026-04-29T00:01:00.000Z",
+              state: {
+                topic: "saved topic",
+                participants: [],
+                rounds: [],
+                currentQuestion: "q1",
+                nextQuestion: "从保存记录继续追问",
+                lastCoreTension: "保存下来的张力",
+                status: "active"
+              }
+            }
+          }
+        }
+      }
+    });
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    const trigger = await screen.findByRole("button", { name: "查看最近圆桌记录" });
+    await user.click(trigger);
+
+    const drawer = await screen.findByTestId("dialogue-roundtable-drawer");
+    const heading = screen.getByRole("heading", { name: "圆桌已保存" });
+
+    expect(screen.getByRole("region", { name: "圆桌已保存" })).toBe(drawer);
+    expect(drawer).not.toHaveAttribute("aria-modal");
+    expect(drawer).toHaveAttribute("aria-labelledby", "dialogue-roundtable-drawer-title");
+    expect(drawer).toHaveAttribute("tabindex", "-1");
+    expect(drawer).toHaveFocus();
+    expect(heading).toBeInTheDocument();
+    expect(drawer).toHaveTextContent("saved topic");
+    expect(screen.getByText("核心争议：保存下来的张力")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "作为追问继续" })).toBeEnabled();
+
+    await user.keyboard("{Escape}");
+    await waitFor(() => {
+      expect(screen.queryByTestId("dialogue-roundtable-drawer")).not.toBeInTheDocument();
+    });
+    expect(trigger).toHaveFocus();
+  });
+
+  it("falls back to the visible roundtable action when drawer return target unmounts", async () => {
+    const user = userEvent.setup();
+    const { rootUserId, thesisId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    const record = loadWorkspaceRecord("workspace_test")!;
+    saveWorkspaceRecord({
+      id: "workspace_test",
+      title: record.entry.title,
+      snapshot: {
+        ...record.snapshot,
+        artifacts: {
+          roundtables: {
+            roundtable_saved: {
+              id: "roundtable_saved",
+              topic: "saved topic",
+              sourceNodeId: rootUserId,
+              createdAt: "2026-04-29T00:00:00.000Z",
+              updatedAt: "2026-04-29T00:01:00.000Z",
+              state: {
+                topic: "saved topic",
+                participants: [],
+                rounds: [],
+                currentQuestion: "q1",
+                nextQuestion: "从保存记录继续追问",
+                lastCoreTension: "保存下来的张力",
+                status: "active"
+              }
+            }
+          }
+        }
+      }
+    });
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: "查看最近圆桌记录" }));
+    await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
+    await user.keyboard("{Escape}");
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("dialogue-roundtable-drawer")).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: "召集圆桌讨论此节点" })).toHaveFocus();
+  });
+
+  it("renders synthesis history as a convergence record in the sidebar", async () => {
+    const { thesisId, antithesisId } = seedPair();
+    const synthesisId = branchGraphStore.createSynthesisAssistant([thesisId, antithesisId], {
+      text: "保留主线，但拆开节奏。",
+      summary: "收束成一次事件记录。",
+      label: "收束"
+    });
+    useDialogueUiStore.setState({ focusedNodeId: synthesisId });
+    seedActiveWorkspaceFromCurrentGraph();
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    const sidebar = await screen.findByTestId("dialogue-sidebar");
+
+    expect(within(sidebar).getByText("已合流")).toBeInTheDocument();
+    expect(within(sidebar).getByRole("button", { name: "合流记录：收束，来源：继续 / 暂停" })).toBeInTheDocument();
+    expect(within(sidebar).getAllByText("收束").length).toBeGreaterThan(0);
+    expect(screen.getByText("已发生一次合流")).toBeInTheDocument();
+    expect(screen.getByText("来源：继续 / 暂停")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "查看记录" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "合流过" })).not.toBeInTheDocument();
   });
 
   it("exposes pending feedback while roundtable generation is running", async () => {
@@ -342,9 +503,92 @@ describe("DialogueShell", () => {
 
     await user.click(await screen.findByRole("button", { name: "召集圆桌讨论此节点" }));
 
-    expect(screen.getByRole("button", { name: "圆桌生成中..." })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "圆桌生成中..." })).toHaveAttribute("aria-busy", "true");
-    expect(screen.getByText("正在从当前节点召集圆桌")).toBeInTheDocument();
+    const pendingButton = screen.getByRole("button", { name: "圆桌生成中..." });
+    const pendingHint = screen.getByText("正在从「主题」召集圆桌");
+
+    expect(pendingButton).toBeDisabled();
+    expect(pendingButton).toHaveAttribute("aria-busy", "true");
+    expect(pendingButton).toHaveAttribute("aria-describedby", pendingHint.id);
+    expect(pendingHint).toHaveAttribute("role", "status");
+    expect(pendingHint).toHaveAttribute("aria-live", "polite");
+  });
+
+  it("keeps the roundtable pending hint bound to the source node after focus changes", async () => {
+    const user = userEvent.setup();
+    const { rootUserId, thesisId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => {}))
+    );
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: "召集圆桌讨论此节点" }));
+    await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
+
+    const pendingButton = screen.getByRole("button", { name: "圆桌生成中..." });
+    const pendingHint = screen.getByText("正在从「主题」召集圆桌");
+
+    expect(pendingButton).toBeDisabled();
+    expect(pendingButton).toHaveAttribute("aria-busy", "true");
+    expect(pendingButton).toHaveAttribute("aria-describedby", pendingHint.id);
+    expect(screen.getByRole("heading", { name: "继续" })).toBeInTheDocument();
+    expect(pendingHint).toHaveAttribute("role", "status");
+  });
+
+  it("saves roundtable results without opening the drawer after focus moves away", async () => {
+    const user = userEvent.setup();
+    const { rootUserId, thesisId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    let resolveRoundtable: (() => void) | null = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        (_url, init) =>
+          new Promise<Response>((resolve) => {
+            resolveRoundtable = () => {
+              const body = JSON.parse(String((init as RequestInit).body || "{}"));
+              resolve(
+                new Response(
+                  JSON.stringify({
+                    requestId: body.requestId,
+                    state: {
+                      topic: "roundtable topic",
+                      participants: [],
+                      rounds: [],
+                      currentQuestion: "q1",
+                      nextQuestion: "q2",
+                      lastCoreTension: "t",
+                      status: "active"
+                    }
+                  }),
+                  {
+                    status: 200,
+                    headers: { "Content-Type": "application/json" }
+                  }
+                )
+              );
+            };
+          })
+      )
+    );
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: "召集圆桌讨论此节点" }));
+    await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
+    resolveRoundtable?.();
+
+    await waitFor(() => {
+      expect(loadWorkspaceRecord("workspace_test")?.snapshot.artifacts?.roundtables).toBeTruthy();
+    });
+
+    expect(screen.queryByTestId("dialogue-roundtable-drawer")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("圆桌已保存：主题");
+    expect(useDialogueUiStore.getState().focusedNodeId).toBe(thesisId);
   });
 
   it("creates a new empty workspace without mutating the previous active graph", async () => {
@@ -438,6 +682,11 @@ describe("DialogueShell", () => {
 
     await user.click(await screen.findByRole("button", { name: "召集圆桌讨论此节点" }));
     await user.click(await screen.findByRole("button", { name: "Other Workspace" }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "圆桌生成中..." })).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: "召集圆桌讨论此节点" })).toBeEnabled();
 
     resolveRoundtable?.(
       new Response(
@@ -545,7 +794,8 @@ describe("DialogueShell", () => {
 
     render(<DialogueShell />);
 
-    await user.click(await screen.findByRole("button", { name: "重命名工作区" }));
+    await user.click(await screen.findByRole("button", { name: "更多" }));
+    await user.click(screen.getByRole("button", { name: "重命名工作区" }));
     await user.clear(screen.getByLabelText("工作区名称"));
     await user.type(screen.getByLabelText("工作区名称"), "Renamed Workspace");
     await user.click(screen.getByRole("button", { name: "保存工作区名称" }));
@@ -641,7 +891,7 @@ describe("DialogueShell", () => {
 
     render(<DialogueShell />);
 
-    await user.click(screen.getByRole("button", { name: "生成合" }));
+    await user.click(screen.getByRole("button", { name: "记录合流" }));
     resolveFetch?.(
       new Response(
         JSON.stringify({
@@ -674,6 +924,58 @@ describe("DialogueShell", () => {
       }
     });
   });
+
+  it("keeps focus on the generated synthesis after the reveal settles", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    let resolveFetch: ((value: Response) => void) | null = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(
+        () =>
+          new Promise<Response>((resolve) => {
+            resolveFetch = resolve;
+          })
+      )
+    );
+
+    render(<DialogueShell />);
+
+    await user.click(screen.getByRole("button", { name: "记录合流" }));
+    resolveFetch?.(
+      new Response(
+        JSON.stringify({
+          requestId: useDialogueUiStore.getState().pending.synthesis?.requestId,
+          synthesis: {
+            text: "保留主线，但拆开节奏。",
+            summary: "主线收束",
+            label: "收束",
+            stance: "合"
+          }
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
+      )
+    );
+
+    let synthesisId: string | undefined;
+    await waitFor(() => {
+      synthesisId = Object.values(branchGraphStore.getGraph().nodes).find(
+        (node) => node.branchType === "合"
+      )?.id;
+      expect(synthesisId).toBeTruthy();
+      expect(useDialogueUiStore.getState().focusedNodeId).toBe(synthesisId);
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 2400));
+    expect(useDialogueUiStore.getState().focusedNodeId).toBe(synthesisId);
+    expect(within(screen.getByTestId("dialogue-composer")).getByText("收束")).toBeInTheDocument();
+  }, 9000);
+
   it("does not leave orphan child users behind on branch failure", async () => {
     const user = userEvent.setup();
     const events: DialogueTelemetryEvent[] = [];
@@ -720,7 +1022,7 @@ describe("DialogueShell", () => {
         events.push(event);
       }
     });
-    const { thesisId } = seedPair();
+    const { thesisId, antithesisId } = seedPair();
     useDialogueUiStore.setState({ focusedNodeId: thesisId });
 
     let resolveFetch: ((value: Response) => void) | null = null;
@@ -739,6 +1041,11 @@ describe("DialogueShell", () => {
     await user.type(screen.getByLabelText("输入"), "继续的话下一步做什么");
     await user.click(screen.getByRole("button", { name: "生成正 / 反" }));
     await user.click(screen.getByRole("button", { name: /暂停/ }));
+
+    const composer = screen.getByTestId("dialogue-composer");
+    expect(within(composer).getByText("正在续写到")).toBeInTheDocument();
+    expect(within(composer).getByText("继续")).toBeInTheDocument();
+    expect(within(composer).queryByText("暂停")).not.toBeInTheDocument();
 
     resolveFetch?.(
       new Response(
@@ -760,7 +1067,56 @@ describe("DialogueShell", () => {
 
     const childUserId = branchGraphStore.getGraph().nodes[thesisId].children[0];
     expect(branchGraphStore.getGraph().nodes[childUserId]?.text).toBe("继续的话下一步做什么");
+    expect(useDialogueUiStore.getState().focusedNodeId).toBe(antithesisId);
+    expect(screen.getByRole("status")).toHaveTextContent("正反已生成，当前焦点保持不变。");
     expect(events.some((event) => event.name === "continuation_created")).toBe(true);
+  });
+
+  it("does not steal focus when synthesis finishes after the user moves away", async () => {
+    const user = userEvent.setup();
+    const { rootUserId, thesisId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    let resolveFetch: ((value: Response) => void) | null = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(
+        () =>
+          new Promise<Response>((resolve) => {
+            resolveFetch = resolve;
+          })
+      )
+    );
+
+    render(<DialogueShell />);
+
+    await user.click(screen.getByRole("button", { name: "记录合流" }));
+    await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
+
+    resolveFetch?.(
+      new Response(
+        JSON.stringify({
+          requestId: useDialogueUiStore.getState().pending.synthesis?.requestId,
+          synthesis: {
+            text: "保留主线，但拆开节奏。",
+            summary: "主线收束",
+            label: "收束",
+            stance: "合"
+          }
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
+      )
+    );
+
+    await waitFor(() => {
+      expect(Object.values(branchGraphStore.getGraph().nodes).some((node) => node.branchType === "合")).toBe(true);
+    });
+
+    expect(useDialogueUiStore.getState().focusedNodeId).toBe(thesisId);
+    expect(screen.getByRole("status")).toHaveTextContent("合流已生成，当前焦点保持不变。");
   });
 
   it("makes pending states exclusive and exposes synthesis busy feedback", async () => {
@@ -781,12 +1137,12 @@ describe("DialogueShell", () => {
 
     render(<DialogueShell />);
 
-    await user.click(screen.getByRole("button", { name: "生成合" }));
+    await user.click(screen.getByRole("button", { name: "记录合流" }));
 
     expect(useDialogueUiStore.getState().pending.branches).toBeNull();
     expect(useDialogueUiStore.getState().pending.synthesis).not.toBeNull();
     expect(screen.getByRole("button", { name: "收束中..." })).toHaveAttribute("aria-busy", "true");
-    expect(screen.getByRole("button", { name: "等待收束完成" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "收束中" })).toBeDisabled();
 
     resolveFetch?.(
       new Response(
