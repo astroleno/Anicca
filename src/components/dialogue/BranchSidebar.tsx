@@ -93,7 +93,7 @@ export function BranchSidebar({ breadcrumb, items, onSelect }: BranchSidebarProp
               </span>
               {item.summary ? <span className={styles.sidebarItemSummary}>{item.summary}</span> : null}
               {item.sourceLabels.length ? (
-                <span className={styles.sourceBadgeRow} aria-label="合的来源">
+                <span className={styles.sourceBadgeRow} aria-label="合流来源">
                   {item.sourceLabels.map((label) => (
                     <span key={`${item.id}-${label}`} className={styles.sourceBadge}>
                       {label}

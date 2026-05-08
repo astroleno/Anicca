@@ -18,6 +18,17 @@ describe("deriveDialogueView", () => {
     const view = deriveDialogueView(store.getGraph(), synthesisId);
 
     expect(view.breadcrumb.map((item) => item.id)).toEqual([rootUserId, synthesisId]);
+    expect(view.currentNode).toMatchObject({
+      id: synthesisId,
+      displayRole: "synthesis-record",
+      branchType: "合"
+    });
+    expect(view.composerTarget).toMatchObject({
+      nodeId: synthesisId,
+      label: "重开",
+      displayRole: "synthesis-record"
+    });
+    expect(view.composerTarget.branchType).toBeUndefined();
     expect(view.currentNode?.sourceNodes.map((node) => node.id)).toEqual([thesisId, antithesisId]);
     expect(view.sidebarItems.find((item) => item.id === synthesisId)?.parentId).toBe(rootUserId);
     expect(view.sidebarItems.find((item) => item.id === synthesisId)?.displayRole).toBe("synthesis-event");

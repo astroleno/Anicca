@@ -64,35 +64,32 @@
 
 .hero {
   position: absolute;
-  top: calc(24px + var(--safe-top));
+  top: calc(18px + var(--safe-top));
   left: calc(24px + var(--safe-left));
   z-index: 4;
-  max-width: 348px;
-  padding: 13px 15px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 24px;
-  background: linear-gradient(180deg, rgba(9, 24, 30, 0.54), rgba(7, 19, 25, 0.14));
-  backdrop-filter: blur(18px);
-  box-shadow:
-    0 18px 44px rgba(0, 0, 0, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  max-width: 320px;
+  padding: 0;
+  border: 0;
+  background: none;
+  backdrop-filter: none;
+  box-shadow: none;
 }
 
 .workspaceBar {
   position: absolute;
-  top: calc(24px + var(--safe-top));
+  top: calc(18px + var(--safe-top));
   left: 50%;
   z-index: 4;
-  width: min(460px, calc(100vw - 420px));
+  width: min(430px, calc(100vw - 430px));
   transform: translateX(-50%);
-  padding: 13px 15px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 24px;
-  background: linear-gradient(180deg, rgba(9, 24, 30, 0.6), rgba(7, 19, 25, 0.18));
-  backdrop-filter: blur(18px);
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(9, 24, 30, 0.38), rgba(7, 19, 25, 0.08));
+  backdrop-filter: blur(12px);
   box-shadow:
-    0 18px 44px rgba(0, 0, 0, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    0 12px 32px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .workspaceBarHeader {
@@ -109,7 +106,7 @@
 .workspaceBarCurrent strong {
   display: block;
   margin-top: 2px;
-  font-size: 0.98rem;
+  font-size: 0.88rem;
   line-height: 1.3;
 }
 
@@ -158,6 +155,21 @@
   outline: none;
   background: rgba(255, 255, 255, 0.07);
   color: rgba(243, 248, 250, 0.96);
+}
+
+.workspaceOverflowRecent {
+  display: grid;
+  gap: 4px;
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.workspaceOverflowLabel {
+  padding: 2px 10px 4px;
+  color: rgba(226, 239, 244, 0.5);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
 }
 
 .workspaceBarButton,
@@ -228,48 +240,80 @@
 
 .workspaceStatus {
   min-height: 20px;
-  margin: 10px 0 0;
+  margin: 6px 0 0;
   color: rgba(226, 239, 244, 0.6);
-  font-size: 0.76rem;
+  font-size: 0.7rem;
   line-height: 1.45;
+}
+
+.bootPanel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 4;
+  width: min(360px, calc(100vw - 40px));
+  transform: translate(-50%, -50%);
+  padding: 18px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(9, 24, 30, 0.64), rgba(7, 19, 25, 0.26));
+  color: var(--text);
+  text-align: left;
+  box-shadow:
+    0 22px 70px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px);
+}
+
+.bootPanel h1 {
+  margin: 8px 0 8px;
+  font-size: clamp(1.2rem, 2.2vw, 1.58rem);
+  line-height: 1.18;
+}
+
+.bootPanel p:last-child {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
 }
 
 .hero h1 {
   margin: 0;
-  font-size: clamp(1.18rem, 1.8vw, 1.42rem);
+  max-width: 17ch;
+  font-size: clamp(1.05rem, 1.36vw, 1.24rem);
   line-height: 1.24;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
 
 .heroCopy {
-  margin: 10px 0 0;
-  color: var(--muted);
-  font-size: 0.84rem;
-  line-height: 1.55;
+  max-width: 30ch;
+  margin: 8px 0 0;
+  color: rgba(226, 239, 244, 0.5);
+  font-size: 0.74rem;
+  line-height: 1.5;
 }
 
 .heroActions {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-  margin-top: 14px;
+  margin-top: 10px;
 }
 
 .heroActionButton {
-  min-height: 38px;
-  padding: 9px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  min-height: 32px;
+  padding: 7px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.075);
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(8, 21, 27, 0.72), rgba(7, 19, 25, 0.42));
-  color: rgba(243, 248, 250, 0.92);
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(226, 239, 244, 0.72);
   font: inherit;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.02em;
-  box-shadow:
-    0 16px 44px rgba(0, 0, 0, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  box-shadow: none;
 }
 
 .heroActionButton:hover {
@@ -318,11 +362,11 @@
   inset: 0;
   overflow: hidden;
   background:
-    radial-gradient(ellipse at 50% 42%, rgba(226, 239, 244, 0.045), transparent 36%),
+    radial-gradient(ellipse at 50% 42%, rgba(226, 239, 244, 0.06), transparent 38%),
     radial-gradient(ellipse at 38% 64%, rgba(35, 217, 161, 0.045), transparent 28%),
     radial-gradient(ellipse at 64% 66%, rgba(241, 191, 88, 0.04), transparent 30%),
-    linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.016) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.014) 1px, transparent 1px);
   background-size: auto, auto, auto, 52px 52px, 52px 52px;
 }
 
@@ -378,42 +422,42 @@
 
 .stageRelationPath {
   fill: none;
-  stroke: rgba(226, 239, 244, 0.48);
-  stroke-width: 0.92;
+  stroke: rgba(226, 239, 244, 0.64);
+  stroke-width: 1.54;
   stroke-linecap: round;
   stroke-dasharray: 3 2.2;
-  filter: drop-shadow(0 0 10px rgba(226, 239, 244, 0.16));
+  filter: drop-shadow(0 0 8px rgba(226, 239, 244, 0.16));
   animation: relationTrace 1.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .stageRelationThesis {
-  stroke: rgba(35, 217, 161, 0.78);
+  stroke: rgba(35, 217, 161, 0.94);
   stroke-dasharray: none;
 }
 
 .stageRelationAntithesis {
-  stroke: rgba(241, 95, 124, 0.76);
-  stroke-dasharray: 2 2.6;
+  stroke: rgba(241, 95, 124, 0.92);
+  stroke-dasharray: 3 2.6;
 }
 
 .stageRelationSource {
-  stroke-width: 1.04;
+  stroke-width: 1.68;
 }
 
 .stageRelationSynthesis,
 .stageRelationConverge {
   stroke: rgba(241, 191, 88, 0.86);
-  stroke-width: 1.12;
+  stroke-width: 1.48;
   stroke-dasharray: 5 1.8;
 }
 
 .stageRelationLineage {
-  stroke: rgba(226, 239, 244, 0.42);
+  stroke: rgba(226, 239, 244, 0.58);
   stroke-dasharray: 1.5 2.4;
 }
 
 .stageRelationEvent {
-  stroke-width: 1.22;
+  stroke-width: 1.56;
   stroke-dasharray: 6 2;
   animation:
     relationTrace 1.4s cubic-bezier(0.16, 1, 0.3, 1) both,
@@ -422,8 +466,8 @@
 
 .stageConvergenceMark {
   fill: none;
-  stroke: rgba(241, 191, 88, 0.64);
-  stroke-width: 1.08;
+  stroke: rgba(241, 191, 88, 0.74);
+  stroke-width: 1.36;
   stroke-linecap: round;
   stroke-dasharray: 4 2.6;
   filter: drop-shadow(0 0 12px rgba(241, 191, 88, 0.24));
@@ -431,11 +475,11 @@
 }
 
 .stageConvergenceMarkThesis {
-  stroke: rgba(35, 217, 161, 0.58);
+  stroke: rgba(35, 217, 161, 0.68);
 }
 
 .stageConvergenceMarkAntithesis {
-  stroke: rgba(241, 95, 124, 0.58);
+  stroke: rgba(241, 95, 124, 0.68);
 }
 
 .stageConvergenceDot {
@@ -455,12 +499,12 @@
 }
 
 .stageGlow {
-  width: 44vw;
-  height: 44vw;
+  width: 48vw;
+  height: 48vw;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0) 66%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.115), rgba(255, 255, 255, 0) 68%);
   filter: blur(14px);
 }
 
@@ -836,13 +880,13 @@
   z-index: 4;
   width: min(248px, calc(100vw - 32px));
   padding: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 26px;
-  background: linear-gradient(180deg, rgba(8, 21, 27, 0.58), rgba(7, 19, 25, 0.16));
-  backdrop-filter: blur(18px);
+  background: linear-gradient(180deg, rgba(8, 21, 27, 0.46), rgba(7, 19, 25, 0.1));
+  backdrop-filter: blur(14px);
   box-shadow:
-    0 16px 44px rgba(0, 0, 0, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    0 14px 38px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.045);
 }
 
 .sidebarHeader {
@@ -885,7 +929,7 @@
   padding: 12px 14px;
   border: 1px solid transparent;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.035);
+  background: rgba(255, 255, 255, 0.028);
   color: inherit;
   text-align: left;
   backdrop-filter: blur(12px);
@@ -920,7 +964,8 @@
   font-weight: 600;
 }
 
-.sidebarItemEventMarker {
+.sidebarItemEventMarker,
+.panelEventMarker {
   display: inline-flex;
   min-height: 22px;
   align-items: center;
@@ -967,13 +1012,13 @@
   max-height: calc(100dvh - 204px);
   overflow: auto;
   padding: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.065);
   border-radius: 28px;
-  background: linear-gradient(180deg, rgba(8, 21, 27, 0.66), rgba(7, 19, 25, 0.26));
-  backdrop-filter: blur(20px);
+  background: linear-gradient(180deg, rgba(8, 21, 27, 0.52), rgba(7, 19, 25, 0.18));
+  backdrop-filter: blur(16px);
   box-shadow:
-    0 18px 48px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    0 16px 42px rgba(0, 0, 0, 0.11),
+    inset 0 1px 0 rgba(255, 255, 255, 0.045);
 }
 
 .panelHeader h2 {
@@ -1122,13 +1167,13 @@
   gap: 12px;
   align-items: end;
   padding: 10px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 24px;
-  background: linear-gradient(180deg, rgba(11, 26, 32, 0.74), rgba(7, 19, 25, 0.48));
-  backdrop-filter: blur(20px);
+  background: linear-gradient(180deg, rgba(11, 26, 32, 0.68), rgba(7, 19, 25, 0.38));
+  backdrop-filter: blur(18px);
   box-shadow:
-    0 18px 56px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    0 16px 48px rgba(0, 0, 0, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .composerMeta,
@@ -1436,10 +1481,12 @@
 
 @media (max-width: 980px) {
   .shell {
-    min-height: 100svh;
+    height: 100dvh;
+    min-height: 100dvh;
     overflow-x: hidden;
     overflow-y: auto;
     padding-bottom: calc(12px + var(--safe-bottom));
+    -webkit-overflow-scrolling: touch;
   }
 
   .workspaceBar,
@@ -1518,13 +1565,13 @@
   .stagePanel {
     position: relative;
     width: 100%;
-    min-height: 52vh;
+    min-height: 55vh;
   }
 
   .stageCanvas {
     position: relative;
     width: 100%;
-    min-height: 52vh;
+    min-height: 55vh;
   }
 
   .stageViewport {
@@ -1544,6 +1591,7 @@
 
   .panel {
     order: 3;
+    background: linear-gradient(180deg, rgba(8, 21, 27, 0.5), rgba(7, 19, 25, 0.16));
   }
 
   .sidebarHeader {
@@ -1677,7 +1725,7 @@
     bottom: auto;
     transform: none;
     width: auto;
-    margin: 16px 18px 14px;
+    margin: 14px 18px 12px;
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
       "meta meta"
@@ -1696,9 +1744,18 @@
     padding: 2px 6px 0;
   }
 
-  .composerMeta .eyebrow,
-  .composerLabel {
+  .composerMeta .eyebrow {
     display: none;
+  }
+
+  .composerLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .composerTarget {
@@ -1762,18 +1819,28 @@
   }
 
   .hero {
-    margin-top: 8px;
-    padding: 0 2px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 4px;
+    padding: 0 4px;
     border: none;
     background: none;
     box-shadow: none;
     backdrop-filter: none;
+    opacity: 0.76;
   }
 
   .hero h1 {
-    max-width: 21ch;
-    font-size: 1.14rem;
-    line-height: 1.12;
+    max-width: none;
+    font-size: 0.86rem;
+    line-height: 1.1;
+  }
+
+  .hero .eyebrow {
+    margin: 0;
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
   }
 
   .heroCopy {
@@ -1781,44 +1848,52 @@
   }
 
   .heroActions {
-    margin-top: 8px;
-  }
-
-  .heroActionButton {
-    min-height: 32px;
-    padding: 7px 10px;
-    font-size: 0.72rem;
+    display: none;
   }
 
   .workspaceBar {
-    margin-top: 8px;
-    padding: 8px 10px;
-    border-radius: 20px;
+    margin-top: 4px;
+    padding: 5px 7px;
+    border-radius: 18px;
+    border-color: rgba(255, 255, 255, 0.045);
+    background: rgba(7, 19, 25, 0.2);
   }
 
   .workspaceBarHeader {
-    gap: 7px;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .workspaceBarCurrent .eyebrow {
+    display: none;
   }
 
   .workspaceBarCurrent strong {
-    font-size: 0.84rem;
+    font-size: 0.8rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  .workspaceBarActions,
-  .workspaceRenameActions {
-    width: 100%;
+  .workspaceBarActions {
+    width: auto;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
     gap: 6px;
   }
 
   .workspaceBarButton,
   .workspaceBarGhostButton {
-    flex: 1 1 calc(50% - 4px);
-    min-height: 44px;
-    padding: 10px 10px;
+    flex: 0 0 auto;
+    min-height: 40px;
+    padding: 9px 9px;
     font-size: 0.72rem;
+  }
+
+  .workspaceRenameActions {
+    width: 100%;
+    gap: 6px;
   }
 
   .workspaceStatus,
@@ -1827,15 +1902,15 @@
   }
 
   .workspaceRecent {
-    margin-top: 6px;
+    display: none;
   }
 
   .stagePanel {
-    min-height: 40vh;
+    min-height: 42vh;
   }
 
   .stageCanvas {
-    min-height: 40vh;
+    min-height: 42vh;
   }
 
   .stageViewport {

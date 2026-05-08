@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { WorkspaceBar } from "@/components/dialogue/WorkspaceBar";
 
@@ -128,5 +128,56 @@ describe("WorkspaceBar", () => {
     await user.click(screen.getByRole("button", { name: "保存工作区名称" }));
 
     expect(onRename).toHaveBeenCalledWith("Renamed Workspace");
+  });
+
+  it("moves focus into the overflow popover and returns it on Escape", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <WorkspaceBar
+        currentWorkspaceId="workspace_current"
+        currentTitle="Current Workspace"
+        items={[]}
+        statusMessage={null}
+        onCreate={vi.fn()}
+        onSelect={vi.fn()}
+        onRename={vi.fn()}
+        onExport={vi.fn()}
+        onImport={vi.fn()}
+      />
+    );
+
+    const moreButton = screen.getByRole("button", { name: "更多" });
+    await user.click(moreButton);
+
+    const renameButton = screen.getByRole("button", { name: "重命名工作区" });
+    await waitFor(() => expect(renameButton).toHaveFocus());
+
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("button", { name: "重命名工作区" })).not.toBeInTheDocument();
+    await waitFor(() => expect(moreButton).toHaveFocus());
+  });
+
+  it("focuses the rename input after opening rename mode", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <WorkspaceBar
+        currentWorkspaceId="workspace_current"
+        currentTitle="Current Workspace"
+        items={[]}
+        statusMessage={null}
+        onCreate={vi.fn()}
+        onSelect={vi.fn()}
+        onRename={vi.fn()}
+        onExport={vi.fn()}
+        onImport={vi.fn()}
+      />
+    );
+
+    await user.click(screen.getByRole("button", { name: "更多" }));
+    await user.click(await screen.findByRole("button", { name: "重命名工作区" }));
+
+    await waitFor(() => expect(screen.getByLabelText("工作区名称")).toHaveFocus());
   });
 });

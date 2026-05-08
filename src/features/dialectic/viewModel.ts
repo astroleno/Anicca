@@ -46,6 +46,7 @@ export type DialogueNodeDetail = {
   label: string;
   kind: AniccaNode["kind"];
   branchType?: BranchType;
+  displayRole: "node" | "synthesis-record";
   text?: string;
   summary?: string;
   lineageParentId?: string;
@@ -57,6 +58,7 @@ export type DialogueComposerTarget = {
   label: string;
   kind: "assistant" | "root";
   branchType?: BranchType;
+  displayRole: "node" | "synthesis-record";
 };
 
 export type DialogueSynthesisAction = {
@@ -270,6 +272,7 @@ function buildCurrentNode(graph: Graph, focusNodeId: string | null): DialogueNod
     label: getNodeLabel(node),
     kind: node.kind,
     branchType: node.branchType,
+    displayRole: node.kind === "assistant" && node.branchType === "合" ? "synthesis-record" : "node",
     text: node.text,
     summary: node.meta?.summary,
     lineageParentId: node.meta?.lineageParentId,
@@ -282,17 +285,20 @@ function buildComposerTarget(graph: Graph, focusNodeId: string | null): Dialogue
     return {
       nodeId: null,
       label: "新的主题",
-      kind: "root"
+      kind: "root",
+      displayRole: "node"
     };
   }
 
   const focusNode = graph.nodes[focusNodeId];
   if (focusNode.kind === "assistant") {
+    const isSynthesisRecord = focusNode.branchType === "合";
     return {
       nodeId: focusNode.id,
       label: getNodeLabel(focusNode),
       kind: "assistant",
-      branchType: focusNode.branchType
+      branchType: isSynthesisRecord ? undefined : focusNode.branchType,
+      displayRole: isSynthesisRecord ? "synthesis-record" : "node"
     };
   }
 
@@ -301,16 +307,19 @@ function buildComposerTarget(graph: Graph, focusNodeId: string | null): Dialogue
     return {
       nodeId: null,
       label: "新的主题",
-      kind: "root"
+      kind: "root",
+      displayRole: "node"
     };
   }
 
   const parentAssistant = graph.nodes[parentAssistantId];
+  const isSynthesisRecord = parentAssistant.branchType === "合";
   return {
     nodeId: parentAssistant.id,
     label: getNodeLabel(parentAssistant),
     kind: "assistant",
-    branchType: parentAssistant.branchType
+    branchType: isSynthesisRecord ? undefined : parentAssistant.branchType,
+    displayRole: isSynthesisRecord ? "synthesis-record" : "node"
   };
 }
 

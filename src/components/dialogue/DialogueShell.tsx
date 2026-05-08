@@ -322,7 +322,8 @@ function getComposerTargetFromNodeId(graph: Graph, nodeId: string | null): Dialo
     return {
       nodeId: null,
       label: "新的主题",
-      kind: "root"
+      kind: "root",
+      displayRole: "node"
     };
   }
 
@@ -331,15 +332,18 @@ function getComposerTargetFromNodeId(graph: Graph, nodeId: string | null): Dialo
     return {
       nodeId: null,
       label: "新的主题",
-      kind: "root"
+      kind: "root",
+      displayRole: "node"
     };
   }
 
+  const isSynthesisRecord = node.branchType === "合";
   return {
     nodeId: node.id,
     label: getDialogueNodeLabel(graph, node.id),
     kind: "assistant",
-    branchType: node.branchType
+    branchType: isSynthesisRecord ? undefined : node.branchType,
+    displayRole: isSynthesisRecord ? "synthesis-record" : "node"
   };
 }
 
@@ -1055,6 +1059,21 @@ export function DialogueShell() {
     graphSnapshot.graph,
     roundtablePendingSourceNodeId
   );
+
+  if (!workspaceReady) {
+    return (
+      <main className={styles.shell} data-testid="dialogue-shell" aria-busy="true">
+        <div className={styles.ambient} />
+        <div className={styles.ambientSecondary} />
+        <div className={styles.ambientTertiary} />
+        <section className={styles.bootPanel} role="status" aria-live="polite" data-testid="dialogue-boot">
+          <p className={styles.eyebrow}>Anicca 对话场</p>
+          <h1>正在恢复工作区</h1>
+          <p>先接回本地谱系，再开放舞台和续写入口。</p>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className={styles.shell} data-testid="dialogue-shell">

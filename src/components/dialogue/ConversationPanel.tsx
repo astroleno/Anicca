@@ -37,13 +37,18 @@ export function ConversationPanel({
   const roundtablePendingHint = roundtablePendingSourceLabel
     ? `正在从「${roundtablePendingSourceLabel}」召集圆桌`
     : "正在召集圆桌";
+  const isSynthesisRecord = node?.displayRole === "synthesis-record";
 
   return (
     <section className={styles.panel} aria-labelledby="conversation-panel-heading" data-testid="dialogue-panel">
       <div className={styles.panelHeader}>
         <p className={styles.eyebrow}>当前节点</p>
         <h2 id="conversation-panel-heading">{node ? node.label : "等待主题"}</h2>
-        {node?.branchType ? <span className={styles.panelPill}>{node.branchType}</span> : null}
+        {isSynthesisRecord ? (
+          <span className={styles.panelEventMarker}>合流记录</span>
+        ) : node?.branchType ? (
+          <span className={styles.panelPill}>{node.branchType}</span>
+        ) : null}
       </div>
 
       {node ? (
@@ -54,8 +59,8 @@ export function ConversationPanel({
           </div>
 
           {node.sourceNodes.length ? (
-            <section className={styles.panelSources} aria-label="合的来源">
-              <h3>来源</h3>
+            <section className={styles.panelSources} aria-label={isSynthesisRecord ? "这次合流的来源" : "来源节点"}>
+              <h3>{isSynthesisRecord ? "合流来源" : "来源"}</h3>
               <div className={styles.panelSourceList}>
                 {node.sourceNodes.map((source) => (
                   <button

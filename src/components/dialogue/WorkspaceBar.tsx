@@ -32,6 +32,8 @@ export function WorkspaceBar({
   const [draftTitle, setDraftTitle] = useState(currentTitle);
   const overflowActionsId = useId();
   const overflowButtonRef = useRef<HTMLButtonElement | null>(null);
+  const firstOverflowItemRef = useRef<HTMLButtonElement | null>(null);
+  const renameInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!renaming) {
@@ -45,9 +47,36 @@ export function WorkspaceBar({
     setRenaming(false);
   };
 
+  useEffect(() => {
+    if (!actionsOpen) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      firstOverflowItemRef.current?.focus();
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [actionsOpen]);
+
+  useEffect(() => {
+    if (!renaming) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      renameInputRef.current?.focus();
+      renameInputRef.current?.select();
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [renaming]);
+
   const closeOverflowActions = () => {
     setActionsOpen(false);
-    overflowButtonRef.current?.focus();
+    window.requestAnimationFrame(() => {
+      overflowButtonRef.current?.focus();
+    });
   };
 
   return (
@@ -69,7 +98,15 @@ export function WorkspaceBar({
           >
             新建工作区
           </button>
-          <div className={styles.workspaceOverflow}>
+          <div
+            className={styles.workspaceOverflow}
+            onKeyDown={(event) => {
+              if (event.key === "Escape" && actionsOpen) {
+                event.preventDefault();
+                closeOverflowActions();
+              }
+            }}
+          >
             <button
               type="button"
               ref={overflowButtonRef}
@@ -94,6 +131,7 @@ export function WorkspaceBar({
               >
                 <button
                   type="button"
+                  ref={firstOverflowItemRef}
                   className={styles.workspaceOverflowItem}
                   onClick={() => {
                     setRenaming((value) => !value);
@@ -122,6 +160,25 @@ export function WorkspaceBar({
                 >
                   导入工作区
                 </button>
+                {items.length ? (
+                  <div className={styles.workspaceOverflowRecent} aria-label="最近工作区">
+                    <span className={styles.workspaceOverflowLabel}>最近工作区</span>
+                    {items.map((item) => (
+                      <button
+                        key={`overflow-${item.id}`}
+                        type="button"
+                        className={styles.workspaceOverflowItem}
+                        aria-current={item.id === currentWorkspaceId ? "true" : undefined}
+                        onClick={() => {
+                          onSelect(item.id);
+                          setActionsOpen(false);
+                        }}
+                      >
+                        {item.title}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </div>
@@ -137,6 +194,7 @@ export function WorkspaceBar({
           <label className={styles.workspaceRenameField}>
             <span>工作区名称</span>
             <input
+              ref={renameInputRef}
               aria-label="工作区名称"
               value={draftTitle}
               onChange={(event) => setDraftTitle(event.target.value)}

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, type Ref } from "react";
+import { FormEvent, useId, type Ref } from "react";
 import { DialogueErrorState } from "@/features/dialectic/store";
 import { DialogueComposerTarget } from "@/features/dialectic/viewModel";
 import styles from "./DialogueShell.module.css";
@@ -28,10 +28,17 @@ export function DialogueComposer({
   onChange,
   onSubmit
 }: DialogueComposerProps) {
+  const targetDescriptionId = useId();
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     onSubmit();
   };
+  const isSynthesisRecordTarget = target.displayRole === "synthesis-record";
+  const targetVerb = targetFrozen
+    ? "正在续写到"
+    : isSynthesisRecordTarget
+      ? "基于这次合流"
+      : "将续写到";
 
   return (
     <form
@@ -42,10 +49,10 @@ export function DialogueComposer({
     >
       <div className={styles.composerMeta}>
         <p className={styles.eyebrow}>续写</p>
-        <div className={styles.composerTarget}>
-          <strong>{targetFrozen ? "正在续写到" : "将续写到"}</strong>
+        <div className={styles.composerTarget} id={targetDescriptionId}>
+          <strong>{targetVerb}</strong>
           <span>{target.label}</span>
-          {target.branchType ? <small>{target.branchType}</small> : null}
+          {target.branchType && !isSynthesisRecordTarget ? <small>{target.branchType}</small> : null}
         </div>
       </div>
 
@@ -53,6 +60,7 @@ export function DialogueComposer({
         <span className={styles.composerLabel}>输入</span>
         <textarea
           ref={textareaRef}
+          aria-describedby={targetDescriptionId}
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder="把当前母题推进到下一轮。"

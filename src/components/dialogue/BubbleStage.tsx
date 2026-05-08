@@ -89,12 +89,12 @@ export function BubbleStage({
   const hasSynthesis = nodes.some((node) => node.branchType === "合");
   const relationshipHint = isCoarsePointer
     ? hasSynthesis
-      ? "点选节点查看谱系；合已作为这条谱系的收束记录保留。"
+      ? "点选节点查看谱系；这条谱系已留下合流记录。"
       : hasThesis && hasAntithesis
         ? "点选节点查看正与反。"
         : null
     : hasSynthesis
-      ? "整理舞台只影响布局；合已作为这条谱系的收束记录保留。"
+      ? "整理舞台只影响布局；已记录一次正反合流。"
       : hasThesis && hasAntithesis
         ? "整理舞台只影响布局；是否记录合流由同一母题下的正反成对关系决定。"
         : null;

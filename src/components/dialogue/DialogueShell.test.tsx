@@ -157,6 +157,8 @@ describe("DialogueShell", () => {
     render(<DialogueShell />);
 
     expect((await screen.findAllByText("从 registry 恢复")).length).toBeGreaterThan(0);
+    expect(screen.queryByTestId("dialogue-boot")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "载入示例谱系" })).not.toBeInTheDocument();
     expect(branchGraphStore.getGraph()).toEqual(graph);
     expect(useDialogueUiStore.getState().workspaceId).toBe("workspace_registry");
     expect(useDialogueUiStore.getState().workspaceSessionId).not.toBe("workspace_registry");
@@ -973,6 +975,9 @@ describe("DialogueShell", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 2400));
     expect(useDialogueUiStore.getState().focusedNodeId).toBe(synthesisId);
+    expect(screen.getByText("合流记录")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "这次合流的来源" })).toBeInTheDocument();
+    expect(within(screen.getByTestId("dialogue-composer")).getByText("基于这次合流")).toBeInTheDocument();
     expect(within(screen.getByTestId("dialogue-composer")).getByText("收束")).toBeInTheDocument();
   }, 9000);
 
