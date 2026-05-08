@@ -280,7 +280,7 @@ async function getPageScrollMetrics(page) {
   });
 }
 
-async function ensureMobileCanScrollFromStage(page, viewportName) {
+async function resetPageScroll(page) {
   await page.evaluate(() => {
     const shell = document.querySelector('[data-testid="dialogue-shell"]');
     window.scrollTo(0, 0);
@@ -290,8 +290,12 @@ async function ensureMobileCanScrollFromStage(page, viewportName) {
       shell.scrollTop = 0;
     }
   });
+  await page.waitForTimeout(60);
+  return getPageScrollMetrics(page);
+}
 
-  const before = await getPageScrollMetrics(page);
+async function ensureMobileCanScrollFromStage(page, viewportName) {
+  const before = await resetPageScroll(page);
   const scrollableDistance = Math.max(
     before.docScrollHeight - before.docClientHeight,
     before.bodyScrollHeight - before.bodyClientHeight,
@@ -367,10 +371,10 @@ async function ensureTouchNodeTapSelects(page) {
     .filter({ hasText: "继续" })
     .waitFor();
   await page.getByTestId("dialogue-stage-node-user_root_1").tap();
-  await page.getByRole("heading", { name: "主题" }).waitFor();
+  await page.getByRole("heading", { name: /这个方向/ }).waitFor();
   await page
     .locator('[data-testid="dialogue-sidebar"] button[aria-current="true"]')
-    .filter({ hasText: "主题" })
+    .filter({ hasText: "这个方向" })
     .waitFor();
 }
 
@@ -454,7 +458,18 @@ async function runViewport(browser, viewport) {
   await assertRegionWidth(composer, viewport.width, `${viewport.name} composer`);
   await assertRegionWidth(workspaceBar, viewport.width, `${viewport.name} workspace bar`);
 
+  const captures = {};
+
   if (viewport.name.startsWith("mobile")) {
+    const initialScrollMetrics = await resetPageScroll(page);
+    const initialScreenshotPath = path.join(outputDir, `${viewport.name}-initial.png`);
+    await page.screenshot({ path: initialScreenshotPath, fullPage: false });
+    await page.screenshot({ path: path.join(outputDir, `${viewport.name}.png`), fullPage: false });
+    captures.initial = {
+      screenshotPath: initialScreenshotPath,
+      scrollMetrics: initialScrollMetrics
+    };
+
     await assertRegionMinWidth(
       workspaceBar,
       viewport.width - 28,
@@ -495,13 +510,26 @@ async function runViewport(browser, viewport) {
   }
 
   await composer.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(60);
 
   if (pageIssues.length) {
     throw new Error(`Console or page errors detected on ${viewport.name}: ${JSON.stringify(pageIssues, null, 2)}`);
   }
 
-  const screenshotPath = path.join(outputDir, `${viewport.name}.png`);
-  await page.screenshot({ path: screenshotPath, fullPage: viewport.fullPage });
+  const screenshotPath = viewport.name.startsWith("mobile")
+    ? path.join(outputDir, `${viewport.name}-initial.png`)
+    : path.join(outputDir, `${viewport.name}.png`);
+  if (viewport.name.startsWith("mobile")) {
+    const composerScreenshotPath = path.join(outputDir, `${viewport.name}-composer.png`);
+    const composerScrollMetrics = await getPageScrollMetrics(page);
+    await page.screenshot({ path: composerScreenshotPath, fullPage: false });
+    captures.composer = {
+      screenshotPath: composerScreenshotPath,
+      scrollMetrics: composerScrollMetrics
+    };
+  } else {
+    await page.screenshot({ path: screenshotPath, fullPage: viewport.fullPage });
+  }
   await context.close();
 
   return {
@@ -510,7 +538,8 @@ async function runViewport(browser, viewport) {
       width: viewport.width,
       height: viewport.height
     },
-    screenshotPath
+    screenshotPath,
+    ...(Object.keys(captures).length ? { captures } : {})
   };
 }
 

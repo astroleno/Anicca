@@ -112,7 +112,11 @@ function getRoundtablePendingSourceLabel(graph: Graph, sourceNodeId: string | nu
     return node.branchType;
   }
 
-  return node.kind === "user" ? "主题" : "节点";
+  if (node.kind === "user") {
+    return getDialogueNodeLabel(graph, sourceNodeId);
+  }
+
+  return "节点";
 }
 
 function formatDialogueError(error: unknown): DialogueErrorState {
@@ -314,7 +318,16 @@ function getDialogueNodeLabel(graph: Graph, nodeId: string): string {
   if (node.branchType) {
     return node.branchType;
   }
-  return node.kind === "user" ? "主题" : "节点";
+  if (node.kind === "user") {
+    const firstLine = (node.text || node.meta?.summary || "").trim().split(/\s*\n\s*/)[0] || "";
+    if (firstLine) {
+      return firstLine.length > 12 ? `${firstLine.slice(0, 12)}…` : firstLine;
+    }
+
+    return "主题";
+  }
+
+  return "节点";
 }
 
 function getComposerTargetFromNodeId(graph: Graph, nodeId: string | null): DialogueComposerTarget {
@@ -344,6 +357,15 @@ function getComposerTargetFromNodeId(graph: Graph, nodeId: string | null): Dialo
     kind: "assistant",
     branchType: isSynthesisRecord ? undefined : node.branchType,
     displayRole: isSynthesisRecord ? "synthesis-record" : "node"
+  };
+}
+
+function getSynthesisPendingComposerTarget(pendingRequest: PendingRequest): DialogueComposerTarget {
+  return {
+    nodeId: pendingRequest.composerTargetId,
+    label: pendingRequest.sourceLabel || "当前谱系",
+    kind: "root",
+    displayRole: "node"
   };
 }
 
@@ -438,8 +460,11 @@ export function DialogueShell() {
   const roundtablePending = roundtablePendingRequest !== null;
   const frozenComposerTarget = pending.branches
     ? getComposerTargetFromNodeId(graphSnapshot.graph, pending.branches.composerTargetId)
-    : null;
+    : pending.synthesis
+      ? getSynthesisPendingComposerTarget(pending.synthesis)
+      : null;
   const composerTarget = frozenComposerTarget || view.composerTarget;
+  const composerTargetFrozenReason = pending.branches ? "branches" : pending.synthesis ? "synthesis" : null;
   const composerTargetFrozen = Boolean(frozenComposerTarget);
 
   const beginRoundtablePending = (request: RoundtablePendingRequest) => {
@@ -986,7 +1011,9 @@ export function DialogueShell() {
       requestId,
       workspaceSessionId,
       focusSnapshotId: view.focusSnapshotId,
-      composerTargetId: view.composerTarget.nodeId
+      composerTargetId: view.composerTarget.nodeId,
+      sourceLabel: action.label,
+      synthesisActionKey: action.key
     });
 
     try {
@@ -1033,6 +1060,9 @@ export function DialogueShell() {
         startTransition(() => {
           setFocusedNodeId(synthesisId);
         });
+        window.setTimeout(() => {
+          document.getElementById("conversation-panel-heading")?.focus();
+        }, 0);
       } else {
         setWorkspaceStatus("合流已生成，当前焦点保持不变。");
       }
@@ -1059,6 +1089,14 @@ export function DialogueShell() {
     graphSnapshot.graph,
     roundtablePendingSourceNodeId
   );
+  const synthesisPendingActionKey = pending.synthesis?.synthesisActionKey || null;
+  const isSynthesisPendingForCurrentAction = Boolean(
+    relevantSynthesisAction && synthesisPendingActionKey === relevantSynthesisAction.key
+  );
+  const synthesisBlockedByOtherPending = Boolean(
+    relevantSynthesisAction && hasPendingRequest && !isSynthesisPendingForCurrentAction
+  );
+  const synthesisPendingSourceLabel = pending.synthesis?.sourceLabel || null;
 
   if (!workspaceReady) {
     return (
@@ -1139,7 +1177,9 @@ export function DialogueShell() {
         <ConversationPanel
           node={view.currentNode}
           synthesisAction={relevantSynthesisAction}
-          synthesisPending={isSynthesisPending}
+          synthesisPending={isSynthesisPendingForCurrentAction}
+          synthesisBlocked={synthesisBlockedByOtherPending}
+          synthesisPendingSourceLabel={synthesisPendingSourceLabel}
           roundtablePending={roundtablePending}
           roundtablePendingSourceLabel={roundtablePendingSourceLabel}
           roundtableSummonButtonRef={roundtableSummonButtonRef}
@@ -1161,6 +1201,7 @@ export function DialogueShell() {
           disabled={hasPendingRequest}
           pendingAction={pendingAction}
           targetFrozen={composerTargetFrozen}
+          targetFrozenReason={composerTargetFrozenReason}
           errorState={errorState}
           textareaRef={composerTextareaRef}
           onChange={setDraft}

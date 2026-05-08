@@ -50,6 +50,26 @@ describe("deriveDialogueView", () => {
     expect(rootView.composerTarget).toMatchObject({ nodeId: null, kind: "root" });
   });
 
+  it("derives stable short labels for user nodes from their text", () => {
+    const store = new BranchGraphStore();
+    const rootUserId = store.createUserNode("这个方向还值不值得继续投入？");
+    const { thesisId } = store.createAssistantPair(rootUserId, {
+      thesis: { text: "继续", summary: "继续推进", label: "继续" },
+      antithesis: { text: "暂停", summary: "暂停重构", label: "暂停" }
+    });
+    const followupId = store.createChildUserNode(thesisId, "如果继续，最小可验证范围是什么？");
+
+    const view = deriveDialogueView(store.getGraph(), followupId);
+
+    expect(view.breadcrumb.map((item) => item.label)).toEqual([
+      "这个方向还值不值得继续投…",
+      "继续",
+      "如果继续，最小可验证范围…"
+    ]);
+    expect(view.sidebarItems.find((item) => item.id === rootUserId)?.label).toBe("这个方向还值不值得继续投…");
+    expect(view.sidebarItems.find((item) => item.id === followupId)?.label).toBe("如果继续，最小可验证范围…");
+  });
+
   it("binds synthesis action to a fixed thesis/antithesis pair", () => {
     const store = new BranchGraphStore();
     const rootUserId = store.createUserNode("要不要继续");

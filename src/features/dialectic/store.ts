@@ -8,6 +8,8 @@ export type PendingRequest = {
   workspaceSessionId: string;
   focusSnapshotId: string;
   composerTargetId: string | null;
+  sourceLabel?: string;
+  synthesisActionKey?: string;
 };
 
 type PendingState = Record<PendingSlot, PendingRequest | null>;

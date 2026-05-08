@@ -96,7 +96,14 @@ function byCreatedAt(graph: Graph, leftId: string, rightId: string): number {
 function getNodeLabel(node: AniccaNode): string {
   if (node.meta?.label) return node.meta.label;
   if (node.branchType) return node.branchType;
-  if (node.kind === "user") return "主题";
+  if (node.kind === "user") {
+    const firstLine = (node.text || node.meta?.summary || "").trim().split(/\s*\n\s*/)[0] || "";
+    if (firstLine) {
+      return firstLine.length > 12 ? `${firstLine.slice(0, 12)}…` : firstLine;
+    }
+
+    return "主题";
+  }
   return "节点";
 }
 

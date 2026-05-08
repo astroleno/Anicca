@@ -11,6 +11,7 @@ type DialogueComposerProps = {
   disabled: boolean;
   pendingAction: string | null;
   targetFrozen?: boolean;
+  targetFrozenReason?: "branches" | "synthesis" | null;
   errorState: DialogueErrorState | null;
   textareaRef?: Ref<HTMLTextAreaElement>;
   onChange: (value: string) => void;
@@ -23,6 +24,7 @@ export function DialogueComposer({
   disabled,
   pendingAction,
   targetFrozen = false,
+  targetFrozenReason = null,
   errorState,
   textareaRef,
   onChange,
@@ -35,10 +37,15 @@ export function DialogueComposer({
   };
   const isSynthesisRecordTarget = target.displayRole === "synthesis-record";
   const targetVerb = targetFrozen
-    ? "正在续写到"
+    ? targetFrozenReason === "synthesis"
+      ? "正在记录合流"
+      : "正在续写到"
     : isSynthesisRecordTarget
       ? "基于这次合流"
+      : target.kind === "root"
+        ? "将开启"
       : "将续写到";
+  const actionLabel = target.kind === "root" && !pendingAction ? "开启新主题" : "生成正 / 反";
 
   return (
     <form
@@ -71,7 +78,7 @@ export function DialogueComposer({
 
       <div className={styles.composerActions}>
         <button type="submit" className={styles.primaryButton} disabled={disabled || !value.trim()}>
-          {pendingAction === "branches" ? "生成中..." : pendingAction === "synthesis" ? "收束中" : "生成正 / 反"}
+          {pendingAction === "branches" ? "生成中..." : pendingAction === "synthesis" ? "收束中" : actionLabel}
         </button>
       </div>
 

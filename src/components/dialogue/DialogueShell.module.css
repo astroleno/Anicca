@@ -1437,7 +1437,13 @@
   }
 
   .workspaceStatus {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .workspaceRecent {
@@ -1650,7 +1656,7 @@
 
   .sidebarSynthesisEvent {
     flex: 0 0 auto;
-    min-width: 0;
+    min-width: max-content;
     grid-template-columns: 12px minmax(0, auto);
     gap: 6px;
     padding: 7px 9px !important;
@@ -1694,7 +1700,11 @@
   }
 
   .sidebarSynthesisTitle {
-    display: none;
+    display: inline-block;
+    max-width: 108px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .sidebarItemMain {
@@ -1708,7 +1718,15 @@
   }
 
   .sidebarSynthesisEvent .sourceBadgeRow {
-    display: none;
+    display: inline-flex;
+    flex-wrap: nowrap;
+    gap: 4px;
+  }
+
+  .sidebarSynthesisEvent .sourceBadge {
+    min-height: 18px;
+    padding: 1px 6px;
+    font-size: 0.58rem;
   }
 
   .sidebarSynthesisEvent .sidebarItemEventMarker {
@@ -1896,7 +1914,16 @@
     gap: 6px;
   }
 
-  .workspaceStatus,
+  .workspaceStatus {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
   .workspaceRecentLabel {
     display: none;
   }
@@ -1954,15 +1981,15 @@
   }
 
   .composer textarea {
-    min-height: 40px;
-    max-height: 40px;
-    padding: 10px 11px;
+    min-height: 44px;
+    max-height: 44px;
+    padding: 11px 11px;
   }
 
   .composer .primaryButton {
     min-width: 84px;
-    min-height: 40px;
-    padding: 9px 11px;
+    min-height: 44px;
+    padding: 10px 11px;
     font-size: 0.78rem;
   }
 
