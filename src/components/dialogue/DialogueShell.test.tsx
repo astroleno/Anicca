@@ -132,8 +132,9 @@ describe("DialogueShell", () => {
     render(<DialogueShell />);
 
     expect(await screen.findByText("记录合流")).toBeInTheDocument();
-    expect(screen.getByText("将续写到")).toBeInTheDocument();
+    expect(screen.getByText("将开启")).toBeInTheDocument();
     expect(screen.getByText("新的主题")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "开启新主题" })).toBeInTheDocument();
   });
 
   it("loads a demo workspace from the empty-state action", async () => {
@@ -506,7 +507,7 @@ describe("DialogueShell", () => {
     await user.click(await screen.findByRole("button", { name: "召集圆桌讨论此节点" }));
 
     const pendingButton = screen.getByRole("button", { name: "圆桌生成中..." });
-    const pendingHint = screen.getByText("正在从「主题」召集圆桌");
+    const pendingHint = screen.getByText("正在从「要不要继续这个项目」召集圆桌");
 
     expect(pendingButton).toBeDisabled();
     expect(pendingButton).toHaveAttribute("aria-busy", "true");
@@ -531,7 +532,7 @@ describe("DialogueShell", () => {
     await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
 
     const pendingButton = screen.getByRole("button", { name: "圆桌生成中..." });
-    const pendingHint = screen.getByText("正在从「主题」召集圆桌");
+    const pendingHint = screen.getByText("正在从「要不要继续这个项目」召集圆桌");
 
     expect(pendingButton).toBeDisabled();
     expect(pendingButton).toHaveAttribute("aria-busy", "true");
@@ -589,7 +590,7 @@ describe("DialogueShell", () => {
     });
 
     expect(screen.queryByTestId("dialogue-roundtable-drawer")).not.toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("圆桌已保存：主题");
+    expect(screen.getByRole("status")).toHaveTextContent("圆桌已保存：要不要继续这个项目");
     expect(useDialogueUiStore.getState().focusedNodeId).toBe(thesisId);
   });
 
@@ -975,7 +976,10 @@ describe("DialogueShell", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 2400));
     expect(useDialogueUiStore.getState().focusedNodeId).toBe(synthesisId);
-    expect(screen.getByText("合流记录")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "一次正反合流" })).toHaveFocus();
+    });
+    expect(screen.getAllByText("合流记录").length).toBeGreaterThan(0);
     expect(screen.getByRole("region", { name: "这次合流的来源" })).toBeInTheDocument();
     expect(within(screen.getByTestId("dialogue-composer")).getByText("基于这次合流")).toBeInTheDocument();
     expect(within(screen.getByTestId("dialogue-composer")).getByText("收束")).toBeInTheDocument();
@@ -1079,7 +1083,12 @@ describe("DialogueShell", () => {
 
   it("does not steal focus when synthesis finishes after the user moves away", async () => {
     const user = userEvent.setup();
-    const { rootUserId, thesisId } = seedPair();
+    const { rootUserId } = seedPair();
+    const otherRootId = branchGraphStore.createUserNode("另一个问题");
+    branchGraphStore.createAssistantPair(otherRootId, {
+      thesis: { text: "转向", summary: "转向推进", label: "转向" },
+      antithesis: { text: "放下", summary: "先放下", label: "放下" }
+    });
     useDialogueUiStore.setState({ focusedNodeId: rootUserId });
     seedActiveWorkspaceFromCurrentGraph();
     let resolveFetch: ((value: Response) => void) | null = null;
@@ -1096,7 +1105,11 @@ describe("DialogueShell", () => {
     render(<DialogueShell />);
 
     await user.click(screen.getByRole("button", { name: "记录合流" }));
-    await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
+    await user.click(within(screen.getByTestId("dialogue-sidebar")).getByRole("button", { name: /另一个问题/ }));
+
+    expect(screen.queryByRole("button", { name: "收束中..." })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "记录合流" })).toBeDisabled();
+    expect(screen.getByText("等待另一条谱系收束完成：继续 / 暂停")).toBeInTheDocument();
 
     resolveFetch?.(
       new Response(
@@ -1120,7 +1133,7 @@ describe("DialogueShell", () => {
       expect(Object.values(branchGraphStore.getGraph().nodes).some((node) => node.branchType === "合")).toBe(true);
     });
 
-    expect(useDialogueUiStore.getState().focusedNodeId).toBe(thesisId);
+    expect(useDialogueUiStore.getState().focusedNodeId).toBe(otherRootId);
     expect(screen.getByRole("status")).toHaveTextContent("合流已生成，当前焦点保持不变。");
   });
 

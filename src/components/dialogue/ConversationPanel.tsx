@@ -8,6 +8,8 @@ type ConversationPanelProps = {
   node: DialogueNodeDetail | null;
   synthesisAction: DialogueSynthesisAction | null;
   synthesisPending: boolean;
+  synthesisBlocked: boolean;
+  synthesisPendingSourceLabel?: string | null;
   roundtablePending: boolean;
   roundtablePendingSourceLabel?: string | null;
   roundtableSummonButtonRef?: Ref<HTMLButtonElement>;
@@ -23,6 +25,8 @@ export function ConversationPanel({
   node,
   synthesisAction,
   synthesisPending,
+  synthesisBlocked,
+  synthesisPendingSourceLabel = null,
   roundtablePending,
   roundtablePendingSourceLabel = null,
   roundtableSummonButtonRef,
@@ -38,12 +42,20 @@ export function ConversationPanel({
     ? `正在从「${roundtablePendingSourceLabel}」召集圆桌`
     : "正在召集圆桌";
   const isSynthesisRecord = node?.displayRole === "synthesis-record";
+  const synthesisPendingHint = synthesisPendingSourceLabel
+    ? `正在沿「${synthesisPendingSourceLabel}」收束正与反`
+    : "正在收束正与反";
+  const synthesisBlockedHint = synthesisPendingSourceLabel
+    ? `等待另一条谱系收束完成：${synthesisPendingSourceLabel}`
+    : "等待当前生成完成";
+  const panelEyebrow = isSynthesisRecord ? "合流记录" : "当前节点";
+  const panelTitle = isSynthesisRecord ? "一次正反合流" : node ? node.label : "等待主题";
 
   return (
     <section className={styles.panel} aria-labelledby="conversation-panel-heading" data-testid="dialogue-panel">
       <div className={styles.panelHeader}>
-        <p className={styles.eyebrow}>当前节点</p>
-        <h2 id="conversation-panel-heading">{node ? node.label : "等待主题"}</h2>
+        <p className={styles.eyebrow}>{panelEyebrow}</p>
+        <h2 id="conversation-panel-heading" tabIndex={-1}>{panelTitle}</h2>
         {isSynthesisRecord ? (
           <span className={styles.panelEventMarker}>合流记录</span>
         ) : node?.branchType ? (
@@ -91,13 +103,17 @@ export function ConversationPanel({
               type="button"
               className={styles.primaryButton}
               onClick={() => onGenerateSynthesis(synthesisAction)}
-              disabled={synthesisPending}
+              disabled={synthesisPending || synthesisBlocked}
               aria-busy={synthesisPending ? "true" : undefined}
             >
               {synthesisPending ? "收束中..." : "记录合流"}
             </button>
             <span className={styles.panelActionHint}>
-              {synthesisPending ? "正在沿当前谱系收束正与反" : synthesisAction.label}
+              {synthesisPending
+                ? synthesisPendingHint
+                : synthesisBlocked
+                  ? synthesisBlockedHint
+                  : synthesisAction.label}
             </span>
           </div>
         ) : (

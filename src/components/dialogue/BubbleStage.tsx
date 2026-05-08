@@ -86,14 +86,14 @@ export function BubbleStage({
   const canPanStage = nodes.length > 0;
   const hasThesis = nodes.some((node) => node.branchType === "正");
   const hasAntithesis = nodes.some((node) => node.branchType === "反");
-  const hasSynthesis = nodes.some((node) => node.branchType === "合");
+  const hasSynthesisRecord = Boolean(convergenceEventId) || nodes.some((node) => node.branchType === "合");
   const relationshipHint = isCoarsePointer
-    ? hasSynthesis
+    ? hasSynthesisRecord
       ? "点选节点查看谱系；这条谱系已留下合流记录。"
       : hasThesis && hasAntithesis
         ? "点选节点查看正与反。"
         : null
-    : hasSynthesis
+    : hasSynthesisRecord
       ? "整理舞台只影响布局；已记录一次正反合流。"
       : hasThesis && hasAntithesis
         ? "整理舞台只影响布局；是否记录合流由同一母题下的正反成对关系决定。"

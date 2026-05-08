@@ -334,6 +334,7 @@ describe("BubbleStage", () => {
     expect(screen.getByTestId("dialogue-stage-convergence-mark-thesis")).toBeInTheDocument();
     expect(screen.getByTestId("dialogue-stage-convergence-mark-antithesis")).toBeInTheDocument();
     expect(screen.getByTestId("dialogue-stage-convergence-dot")).toBeInTheDocument();
+    expect(screen.getByTestId("dialogue-stage-hint")).toHaveTextContent("已记录一次正反合流");
     expect(screen.queryByText("合流 1 次")).not.toBeInTheDocument();
     expect(screen.queryByTestId("dialogue-stage-node-synthesis")).not.toBeInTheDocument();
   });
