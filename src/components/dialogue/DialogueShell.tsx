@@ -22,8 +22,9 @@ import { ConversationPanel } from "@/components/dialogue/ConversationPanel";
 import { DialogueComposer } from "@/components/dialogue/DialogueComposer";
 import { WorkspaceBar } from "@/components/dialogue/WorkspaceBar";
 import { createDialogueDemoWorkspace } from "@/features/dialectic/demoWorkspace";
-import { createClientId, DialogueErrorState, useDialogueUiStore } from "@/features/dialectic/store";
+import { createClientId, DialogueErrorState, PendingRequest, useDialogueUiStore } from "@/features/dialectic/store";
 import {
+  DialogueComposerTarget,
   DialogueSynthesisAction,
   deriveDialogueView
 } from "@/features/dialectic/viewModel";
@@ -79,10 +80,39 @@ type RoundtableResponse = {
   state: RoundtableState;
 };
 
+type RoundtablePendingRequest = {
+  requestId: string;
+  workspaceSessionId: string;
+  workspaceId: string;
+  sourceNodeId: string;
+  focusSnapshotId: string;
+};
+
 export function isDialogueDemoWorkspaceEnabled(locationLike: DialogueLocationLike) {
   const params = new URLSearchParams(locationLike.search);
   const isLocalHost = ["localhost", "127.0.0.1", "::1"].includes(locationLike.hostname);
   return isLocalHost || params.get("demo") === "1";
+}
+
+function getRoundtablePendingSourceLabel(graph: Graph, sourceNodeId: string | null): string | null {
+  if (!sourceNodeId) {
+    return null;
+  }
+
+  const node = graph.nodes[sourceNodeId];
+  if (!node) {
+    return null;
+  }
+
+  if (node.meta?.label) {
+    return node.meta.label;
+  }
+
+  if (node.branchType) {
+    return node.branchType;
+  }
+
+  return node.kind === "user" ? "主题" : "节点";
 }
 
 function formatDialogueError(error: unknown): DialogueErrorState {
@@ -255,6 +285,73 @@ function findRelevantSynthesisAction(
   );
 }
 
+function listRoundtableArtifactsForNode(
+  workspaceId: string | null,
+  sourceNodeId: string | null | undefined
+): WorkspaceRoundtableArtifact[] {
+  if (!workspaceId || !sourceNodeId) {
+    return [];
+  }
+
+  const roundtables = loadWorkspaceRecord(workspaceId)?.snapshot.artifacts?.roundtables;
+  if (!roundtables) {
+    return [];
+  }
+
+  return Object.values(roundtables)
+    .filter((artifact) => artifact.sourceNodeId === sourceNodeId)
+    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+}
+
+function getDialogueNodeLabel(graph: Graph, nodeId: string): string {
+  const node = graph.nodes[nodeId];
+  if (!node) {
+    return "节点";
+  }
+  if (node.meta?.label) {
+    return node.meta.label;
+  }
+  if (node.branchType) {
+    return node.branchType;
+  }
+  return node.kind === "user" ? "主题" : "节点";
+}
+
+function getComposerTargetFromNodeId(graph: Graph, nodeId: string | null): DialogueComposerTarget {
+  if (!nodeId) {
+    return {
+      nodeId: null,
+      label: "新的主题",
+      kind: "root",
+      displayRole: "node"
+    };
+  }
+
+  const node = graph.nodes[nodeId];
+  if (!node || node.kind !== "assistant") {
+    return {
+      nodeId: null,
+      label: "新的主题",
+      kind: "root",
+      displayRole: "node"
+    };
+  }
+
+  const isSynthesisRecord = node.branchType === "合";
+  return {
+    nodeId: node.id,
+    label: getDialogueNodeLabel(graph, node.id),
+    kind: "assistant",
+    branchType: isSynthesisRecord ? undefined : node.branchType,
+    displayRole: isSynthesisRecord ? "synthesis-record" : "node"
+  };
+}
+
+function shouldAutoFocusPendingResult(pendingRequest: PendingRequest, graph: Graph) {
+  const currentFocusedNodeId = useDialogueUiStore.getState().focusedNodeId;
+  return deriveDialogueView(graph, currentFocusedNodeId).focusSnapshotId === pendingRequest.focusSnapshotId;
+}
+
 export function DialogueShell() {
   const graphSnapshot = useSyncExternalStore(
     branchGraphStore.subscribe.bind(branchGraphStore),
@@ -266,8 +363,16 @@ export function DialogueShell() {
   const [workspaceReady, setWorkspaceReady] = useState(() => branchGraphStore.getGraph().entryIds.length > 0);
   const [workspaceEntries, setWorkspaceEntries] = useState<WorkspaceRegistryEntry[]>([]);
   const [roundtableArtifact, setRoundtableArtifact] = useState<WorkspaceRoundtableArtifact | null>(null);
-  const [roundtablePending, setRoundtablePending] = useState(false);
+  const [roundtablePendingRequest, setRoundtablePendingRequest] = useState<RoundtablePendingRequest | null>(null);
+  const [workspaceStatus, setWorkspaceStatus] = useState<string | null>(null);
+  const [synthesisRevealId, setSynthesisRevealId] = useState<string | null>(null);
   const importInputRef = useRef<HTMLInputElement | null>(null);
+  const composerTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const roundtableDrawerRef = useRef<HTMLElement | null>(null);
+  const roundtableSummonButtonRef = useRef<HTMLButtonElement | null>(null);
+  const roundtableSavedButtonRef = useRef<HTMLButtonElement | null>(null);
+  const roundtableReturnFocusRef = useRef<HTMLButtonElement | null>(null);
+  const roundtablePendingRef = useRef<RoundtablePendingRequest | null>(null);
   const workspaceId = useDialogueUiStore((state) => state.workspaceId);
   const workspaceSessionId = useDialogueUiStore((state) => state.workspaceSessionId);
   const focusedNodeId = useDialogueUiStore((state) => state.focusedNodeId);
@@ -330,6 +435,30 @@ export function DialogueShell() {
   const isBranchPending = pending.branches !== null;
   const isSynthesisPending = pending.synthesis !== null;
   const hasPendingRequest = isBranchPending || isSynthesisPending;
+  const roundtablePending = roundtablePendingRequest !== null;
+  const frozenComposerTarget = pending.branches
+    ? getComposerTargetFromNodeId(graphSnapshot.graph, pending.branches.composerTargetId)
+    : null;
+  const composerTarget = frozenComposerTarget || view.composerTarget;
+  const composerTargetFrozen = Boolean(frozenComposerTarget);
+
+  const beginRoundtablePending = (request: RoundtablePendingRequest) => {
+    roundtablePendingRef.current = request;
+    setRoundtablePendingRequest(request);
+  };
+
+  const clearRoundtablePending = (requestId?: string) => {
+    if (requestId && roundtablePendingRef.current?.requestId !== requestId) {
+      return;
+    }
+    roundtablePendingRef.current = null;
+    setRoundtablePendingRequest(null);
+  };
+
+  const clearRoundtableRuntime = () => {
+    clearRoundtablePending();
+    setRoundtableArtifact(null);
+  };
 
   useEffect(() => {
     if (view.focusNodeId !== focusedNodeId) {
@@ -338,10 +467,13 @@ export function DialogueShell() {
   }, [focusedNodeId, setFocusedNodeId, view.focusNodeId]);
 
   useEffect(() => {
+    if (hasPendingRequest) {
+      return;
+    }
     if (composerParentId !== view.composerTarget.nodeId) {
       setComposerParentId(view.composerTarget.nodeId);
     }
-  }, [composerParentId, setComposerParentId, view.composerTarget.nodeId]);
+  }, [composerParentId, hasPendingRequest, setComposerParentId, view.composerTarget.nodeId]);
 
   useEffect(() => {
     if (!workspaceReady) {
@@ -353,7 +485,7 @@ export function DialogueShell() {
       workspaceId,
       graph: graphSnapshot.graph,
       focusedNodeId: view.focusNodeId,
-      composerParentId: view.composerTarget.nodeId,
+      composerParentId: composerTarget.nodeId,
       stageLayouts,
       artifacts: existingRecord?.snapshot.artifacts
     });
@@ -362,11 +494,31 @@ export function DialogueShell() {
     graphSnapshot,
     refreshWorkspaceRegistryView,
     stageLayouts,
+    composerTarget.nodeId,
     view.focusNodeId,
-    view.composerTarget.nodeId,
     workspaceId,
     workspaceReady
   ]);
+
+  useEffect(() => {
+    if (!synthesisRevealId) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setSynthesisRevealId(null);
+    }, 2200);
+
+    return () => window.clearTimeout(timeout);
+  }, [synthesisRevealId]);
+
+  useEffect(() => {
+    if (!roundtableArtifact) {
+      return;
+    }
+
+    roundtableDrawerRef.current?.focus();
+  }, [roundtableArtifact]);
 
   const handleSelectNode = (nodeId: string) => {
     startTransition(() => {
@@ -407,7 +559,7 @@ export function DialogueShell() {
       );
     }
     setDraft("");
-    setRoundtableArtifact(null);
+    clearRoundtableRuntime();
     setErrorState(null);
   };
 
@@ -432,7 +584,7 @@ export function DialogueShell() {
     });
     refreshWorkspaceRegistryView(activeWorkspace.snapshot.workspaceId);
     setDraft("");
-    setRoundtableArtifact(null);
+    clearRoundtableRuntime();
     setErrorState(null);
   };
 
@@ -475,7 +627,7 @@ export function DialogueShell() {
       );
     }
     setDraft("");
-    setRoundtableArtifact(null);
+    clearRoundtableRuntime();
     setErrorState(null);
   };
 
@@ -496,6 +648,7 @@ export function DialogueShell() {
 
     refreshWorkspaceRegistryView(workspaceId);
     setErrorState(null);
+    setWorkspaceStatus(`工作区已重命名：${renamed.title}`);
   };
 
   const handleExportWorkspace = () => {
@@ -522,12 +675,14 @@ export function DialogueShell() {
       anchor.click();
       URL.revokeObjectURL(objectUrl);
       setErrorState(null);
+      setWorkspaceStatus(`工作区已导出：${record.entry.title || workspaceId}`);
     } catch {
       setErrorState({
         title: "导出工作区失败",
         detail: "当前工作区没有被序列化成 bundle。",
         recovery: "稍后重试；如果反复失败，先检查本地存储状态。"
       });
+      setWorkspaceStatus("导出工作区失败");
     }
   };
 
@@ -564,10 +719,12 @@ export function DialogueShell() {
         stageLayouts: activeWorkspace.snapshot.stageLayouts
       });
       setDraft("");
-      setRoundtableArtifact(null);
+      clearRoundtableRuntime();
       setErrorState(null);
+      setWorkspaceStatus(`工作区已导入：${imported.title}`);
     } catch (error: unknown) {
       setErrorState(formatWorkspaceBundleError(error));
+      setWorkspaceStatus("导入工作区失败");
     }
   };
 
@@ -612,16 +769,22 @@ export function DialogueShell() {
         antithesis: response.antithesis
       });
       const updatedGraph = branchGraphStore.getGraph();
+      const shouldAutoFocus = shouldAutoFocusPendingResult(activePending, updatedGraph);
 
       clearPending("branches");
       setDraft("");
+      setErrorState(null);
       void emitDialogueTelemetry(
         buildContinuationCreatedEvent(updatedGraph, targetId)
       );
-      startTransition(() => {
-        setFocusedNodeId(userNodeId);
-        setErrorState(null);
-      });
+      if (shouldAutoFocus) {
+        setWorkspaceStatus(null);
+        startTransition(() => {
+          setFocusedNodeId(userNodeId);
+        });
+      } else {
+        setWorkspaceStatus("正反已生成，当前焦点保持不变。");
+      }
     } catch (error: unknown) {
       const activePending = useDialogueUiStore.getState().pending.branches;
       if (!activePending || activePending.requestId !== requestId) {
@@ -637,9 +800,11 @@ export function DialogueShell() {
     if (!view.currentNode || roundtablePending || !workspaceId) {
       return;
     }
+    roundtableReturnFocusRef.current = roundtableSummonButtonRef.current;
 
     const requestId = createClientId("req");
-    const focusNode = branchGraphStore.getGraph().nodes[view.currentNode.id];
+    const sourceNodeId = view.currentNode.id;
+    const focusNode = branchGraphStore.getGraph().nodes[sourceNodeId];
     const topic = [view.currentNode.text, view.currentNode.summary, focusNode?.meta?.summary]
       .filter((value): value is string => Boolean(value && value.trim()))
       .join("\n")
@@ -655,14 +820,27 @@ export function DialogueShell() {
     }
 
     const requestSessionId = workspaceSessionId;
-    setRoundtablePending(true);
+    const requestWorkspaceId = workspaceId;
+    beginRoundtablePending({
+      requestId,
+      workspaceSessionId: requestSessionId,
+      workspaceId: requestWorkspaceId,
+      sourceNodeId,
+      focusSnapshotId: view.focusSnapshotId
+    });
     try {
       const response = await postJson<RoundtableResponse>("/api/roundtable", {
         requestId,
         command: "start",
         topic
       });
-      if (requestSessionId !== useDialogueUiStore.getState().workspaceSessionId) {
+      const activeRequest = roundtablePendingRef.current;
+      if (
+        !activeRequest ||
+        activeRequest.requestId !== response.requestId ||
+        activeRequest.workspaceSessionId !== useDialogueUiStore.getState().workspaceSessionId ||
+        activeRequest.sourceNodeId !== sourceNodeId
+      ) {
         return;
       }
 
@@ -671,18 +849,18 @@ export function DialogueShell() {
       const artifact: WorkspaceRoundtableArtifact = {
         id: artifactId,
         topic,
-        sourceNodeId: view.currentNode.id,
+        sourceNodeId,
         createdAt: now,
         updatedAt: now,
         state: response.state
       };
 
-      const record = loadWorkspaceRecord(workspaceId);
+      const record = loadWorkspaceRecord(activeRequest.workspaceId);
       if (!record) {
         throw new Error("workspace_roundtable_save_failed");
       }
       saveWorkspaceRecord({
-        id: workspaceId,
+        id: activeRequest.workspaceId,
         title: record.entry.title,
         titleSource: record.entry.titleSource,
         createdAt: record.entry.createdAt,
@@ -699,12 +877,21 @@ export function DialogueShell() {
           }
         }
       });
-      setRoundtableArtifact(artifact);
+      if (useDialogueUiStore.getState().focusedNodeId === activeRequest.sourceNodeId) {
+        setWorkspaceStatus(null);
+        setRoundtableArtifact(artifact);
+      } else {
+        setWorkspaceStatus(`圆桌已保存：${getDialogueNodeLabel(branchGraphStore.getGraph(), activeRequest.sourceNodeId)}`);
+      }
       setErrorState(null);
     } catch (error: unknown) {
+      const activeRequest = roundtablePendingRef.current;
+      if (!activeRequest || activeRequest.requestId !== requestId) {
+        return;
+      }
       setErrorState(formatDialogueError(error));
     } finally {
-      setRoundtablePending(false);
+      clearRoundtablePending(requestId);
     }
   };
 
@@ -725,7 +912,62 @@ export function DialogueShell() {
     setDraft(nextQuestion);
     setRoundtableArtifact(null);
     setErrorState(null);
+    setWorkspaceStatus("已填入圆桌追问，可以继续生成正 / 反。");
+    window.setTimeout(() => {
+      composerTextareaRef.current?.focus();
+    }, 0);
   };
+
+  const focusRoundtableReturnTarget = useCallback((sourceNodeId?: string | null) => {
+    const directTarget = [
+      roundtableReturnFocusRef.current,
+      roundtableSummonButtonRef.current,
+      roundtableSavedButtonRef.current
+    ].find((target) => target?.isConnected && !target.disabled);
+
+    if (directTarget) {
+      directTarget.focus();
+      return;
+    }
+
+    if (!sourceNodeId || !graphSnapshot.graph.nodes[sourceNodeId]) {
+      return;
+    }
+
+    startTransition(() => {
+      setFocusedNodeId(sourceNodeId);
+    });
+    window.setTimeout(() => {
+      const fallbackTarget = roundtableSummonButtonRef.current;
+      if (fallbackTarget?.isConnected && !fallbackTarget.disabled) {
+        fallbackTarget.focus();
+      }
+    }, 0);
+  }, [graphSnapshot.graph, setFocusedNodeId]);
+
+  const handleCloseRoundtableDrawer = useCallback(() => {
+    const sourceNodeId = roundtableArtifact?.sourceNodeId || null;
+    setRoundtableArtifact(null);
+    window.setTimeout(() => focusRoundtableReturnTarget(sourceNodeId), 0);
+  }, [focusRoundtableReturnTarget, roundtableArtifact?.sourceNodeId]);
+
+  useEffect(() => {
+    if (!roundtableArtifact) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") {
+        return;
+      }
+
+      event.preventDefault();
+      handleCloseRoundtableDrawer();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleCloseRoundtableDrawer, roundtableArtifact]);
 
   const handleGenerateSynthesis = async (action: DialogueSynthesisAction) => {
     if (!action.available || hasPendingRequest) {
@@ -780,13 +1022,20 @@ export function DialogueShell() {
         label: response.synthesis.label
       });
       const updatedGraph = branchGraphStore.getGraph();
+      const shouldAutoFocus = shouldAutoFocusPendingResult(activePending, updatedGraph);
 
       clearPending("synthesis");
+      setErrorState(null);
       void emitDialogueTelemetry(buildSynthesisCreatedEvent(updatedGraph, synthesisId));
-      startTransition(() => {
-        setFocusedNodeId(synthesisId);
-        setErrorState(null);
-      });
+      if (shouldAutoFocus) {
+        setWorkspaceStatus(null);
+        setSynthesisRevealId(synthesisId);
+        startTransition(() => {
+          setFocusedNodeId(synthesisId);
+        });
+      } else {
+        setWorkspaceStatus("合流已生成，当前焦点保持不变。");
+      }
     } catch (error: unknown) {
       const activePending = useDialogueUiStore.getState().pending.synthesis;
       if (!activePending || activePending.requestId !== requestId) {
@@ -803,6 +1052,28 @@ export function DialogueShell() {
     view.focusNodeId,
     view.availableSynthesisActions
   );
+  const savedRoundtableArtifacts = listRoundtableArtifactsForNode(workspaceId, view.currentNode?.id);
+  const latestSavedRoundtableArtifact = savedRoundtableArtifacts[0] || null;
+  const roundtablePendingSourceNodeId = roundtablePendingRequest?.sourceNodeId || null;
+  const roundtablePendingSourceLabel = getRoundtablePendingSourceLabel(
+    graphSnapshot.graph,
+    roundtablePendingSourceNodeId
+  );
+
+  if (!workspaceReady) {
+    return (
+      <main className={styles.shell} data-testid="dialogue-shell" aria-busy="true">
+        <div className={styles.ambient} />
+        <div className={styles.ambientSecondary} />
+        <div className={styles.ambientTertiary} />
+        <section className={styles.bootPanel} role="status" aria-live="polite" data-testid="dialogue-boot">
+          <p className={styles.eyebrow}>Anicca 对话场</p>
+          <h1>正在恢复工作区</h1>
+          <p>先接回本地谱系，再开放舞台和续写入口。</p>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className={styles.shell} data-testid="dialogue-shell">
@@ -814,34 +1085,12 @@ export function DialogueShell() {
         <p className={styles.eyebrow}>Anicca 对话场</p>
         <h1>让一个问题，先分岔，再收束。</h1>
         <p className={styles.heroCopy}>
-          把它放进场里，先长出正与反；等张力清楚了，再决定要不要把它们收成合。
+          把它放进场里，先长出正与反；等张力清楚了，再触发一次合流并留下记录。
         </p>
         <div className={styles.heroActions}>
           <a className={`${styles.heroActionButton} ${styles.heroActionLink}`} href="/roundtable">
             圆桌实验页
           </a>
-          <button
-            type="button"
-            className={styles.heroActionButton}
-            onClick={handleExportWorkspace}
-          >
-            导出工作区
-          </button>
-          <button
-            type="button"
-            className={styles.heroActionButton}
-            onClick={() => importInputRef.current?.click()}
-          >
-            导入工作区
-          </button>
-          <input
-            ref={importInputRef}
-            data-testid="dialogue-import-input"
-            type="file"
-            accept="application/json"
-            className={styles.hiddenFileInput}
-            onChange={handleImportWorkspace}
-          />
         </div>
       </header>
 
@@ -851,17 +1100,31 @@ export function DialogueShell() {
           workspaceEntries.find((entry) => entry.id === workspaceId)?.title || "未命名工作区"
         }
         items={workspaceEntries}
+        statusMessage={workspaceStatus}
         onCreate={handleCreateWorkspace}
         onSelect={handleSwitchWorkspace}
         onRename={handleRenameWorkspace}
+        onExport={handleExportWorkspace}
+        onImport={() => importInputRef.current?.click()}
+      />
+      <input
+        ref={importInputRef}
+        data-testid="dialogue-import-input"
+        type="file"
+        accept="application/json"
+        tabIndex={-1}
+        aria-hidden="true"
+        className={styles.hiddenFileInput}
+        onChange={handleImportWorkspace}
       />
 
       <div className={styles.workspace}>
-        <BranchSidebar breadcrumb={view.breadcrumb} items={view.sidebarItems} onSelect={handleSelectNode} />
         <BubbleStage
           layoutKey={view.focusSnapshotId}
           nodes={view.stageNodes}
           focusNodeId={view.focusNodeId}
+          convergenceEventId={relevantSynthesisAction?.synthesisId || null}
+          eventNodeId={synthesisRevealId}
           onSelect={handleSelectNode}
           emptyAction={
             demoWorkspaceEnabled && graphSnapshot.graph.entryIds.length === 0
@@ -872,22 +1135,57 @@ export function DialogueShell() {
               : null
           }
         />
+        <BranchSidebar breadcrumb={view.breadcrumb} items={view.sidebarItems} onSelect={handleSelectNode} />
         <ConversationPanel
           node={view.currentNode}
           synthesisAction={relevantSynthesisAction}
           synthesisPending={isSynthesisPending}
           roundtablePending={roundtablePending}
+          roundtablePendingSourceLabel={roundtablePendingSourceLabel}
+          roundtableSummonButtonRef={roundtableSummonButtonRef}
+          roundtableSavedButtonRef={roundtableSavedButtonRef}
+          savedRoundtableCount={savedRoundtableArtifacts.length}
           onGenerateSynthesis={handleGenerateSynthesis}
           onSelectSource={handleSelectNode}
           onSummonRoundtable={handleSummonRoundtable}
+          onOpenSavedRoundtable={() => {
+            if (latestSavedRoundtableArtifact) {
+              roundtableReturnFocusRef.current = roundtableSavedButtonRef.current;
+              setRoundtableArtifact(latestSavedRoundtableArtifact);
+            }
+          }}
+        />
+        <DialogueComposer
+          target={composerTarget}
+          value={draft}
+          disabled={hasPendingRequest}
+          pendingAction={pendingAction}
+          targetFrozen={composerTargetFrozen}
+          errorState={errorState}
+          textareaRef={composerTextareaRef}
+          onChange={setDraft}
+          onSubmit={handleSubmit}
         />
       </div>
 
       {roundtableArtifact ? (
-        <aside className={styles.roundtableDrawer} data-testid="dialogue-roundtable-drawer">
+        <aside
+          ref={roundtableDrawerRef}
+          className={styles.roundtableDrawer}
+          role="region"
+          aria-labelledby="dialogue-roundtable-drawer-title"
+          tabIndex={-1}
+          data-testid="dialogue-roundtable-drawer"
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.preventDefault();
+              handleCloseRoundtableDrawer();
+            }
+          }}
+        >
           <header className={styles.roundtableDrawerHeader}>
             <p className={styles.eyebrow}>Roundtable Artifact</p>
-            <strong>圆桌已保存</strong>
+            <h2 id="dialogue-roundtable-drawer-title">圆桌已保存</h2>
           </header>
           <p className={styles.roundtableDrawerTopic}>{roundtableArtifact.topic}</p>
           <p className={styles.roundtableDrawerSummary}>
@@ -908,23 +1206,13 @@ export function DialogueShell() {
             <button
               type="button"
               className={styles.secondaryButton}
-              onClick={() => setRoundtableArtifact(null)}
+              onClick={handleCloseRoundtableDrawer}
             >
               收起
             </button>
           </div>
         </aside>
       ) : null}
-
-      <DialogueComposer
-        target={view.composerTarget}
-        value={draft}
-        disabled={hasPendingRequest}
-        pendingAction={pendingAction}
-        errorState={errorState}
-        onChange={setDraft}
-        onSubmit={handleSubmit}
-      />
     </main>
   );
 }

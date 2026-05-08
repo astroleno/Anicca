@@ -6,8 +6,8 @@ export function createDialogueDemoWorkspace(): PersistedWorkspaceSnapshot {
   return {
     schemaVersion: ANICCA_WORKSPACE_SCHEMA_VERSION,
     workspaceId: "workspace_dialogue_demo",
-    focusedNodeId: "asst_synthesis_1",
-    composerParentId: "asst_synthesis_1",
+    focusedNodeId: "user_root_1",
+    composerParentId: null,
     stageLayouts: {},
     graph: {
       version: ANICCA_GRAPH_VERSION,

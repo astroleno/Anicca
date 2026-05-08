@@ -15,14 +15,16 @@ const baseUrl = process.env.DIALOGUE_SMOKE_BASE_URL || "http://127.0.0.1:3211";
 const viewports = [
   { name: "desktop", width: 1440, height: 980, fullPage: false },
   { name: "tablet", width: 1024, height: 900, fullPage: false },
-  { name: "mobile-390", width: 390, height: 844, fullPage: true }
+  { name: "tablet-touch", width: 1024, height: 768, fullPage: false, hasTouch: true, isMobile: true },
+  { name: "mobile-390", width: 390, height: 844, fullPage: true },
+  { name: "mobile-touch-390", width: 390, height: 844, fullPage: true, hasTouch: true, isMobile: true }
 ];
 
 const seededWorkspace = {
   schemaVersion: "anicca-workspace-v2",
   workspaceSessionId: "ws_visual_smoke",
-  focusedNodeId: "asst_synthesis_1",
-  composerParentId: "asst_synthesis_1",
+  focusedNodeId: "user_root_1",
+  composerParentId: null,
   graph: {
     version: "anicca-dialectic-v2",
     entryIds: ["user_root_1"],
@@ -205,20 +207,233 @@ async function assertRegionMinWidth(locator, minWidth, name) {
   }
 }
 
+async function ensureMobileComposerDoesNotCoverLineage(page) {
+  const metrics = await page.evaluate(() => {
+    const composer = document.querySelector('[data-testid="dialogue-composer"]');
+    const lineageButtons = [...document.querySelectorAll('[data-testid="dialogue-sidebar"] button')];
+    if (!(composer instanceof HTMLElement) || lineageButtons.length === 0) {
+      return null;
+    }
+
+    const composerRect = composer.getBoundingClientRect();
+    const overlappingButton = lineageButtons.find((button) => {
+      if (!(button instanceof HTMLElement)) {
+        return false;
+      }
+      const lineageRect = button.getBoundingClientRect();
+      return (
+        lineageRect.left < composerRect.right &&
+        lineageRect.right > composerRect.left &&
+        lineageRect.top < composerRect.bottom &&
+        lineageRect.bottom > composerRect.top
+      );
+    });
+    const lineageRect = overlappingButton instanceof HTMLElement
+      ? overlappingButton.getBoundingClientRect()
+      : lineageButtons[0] instanceof HTMLElement
+        ? lineageButtons[0].getBoundingClientRect()
+        : null;
+
+    return {
+      overlaps: Boolean(overlappingButton),
+      composer: {
+        top: composerRect.top,
+        bottom: composerRect.bottom,
+        height: composerRect.height
+      },
+      lineage: {
+        top: lineageRect?.top,
+        bottom: lineageRect?.bottom,
+        height: lineageRect?.height
+      }
+    };
+  });
+
+  if (!metrics) {
+    throw new Error("Missing mobile composer or lineage metrics");
+  }
+
+  if (metrics.overlaps) {
+    throw new Error(`Mobile composer overlaps lineage controls: ${JSON.stringify(metrics)}`);
+  }
+}
+
+async function getPageScrollMetrics(page) {
+  return page.evaluate(() => {
+    const shell = document.querySelector('[data-testid="dialogue-shell"]');
+    const doc = document.documentElement;
+    const body = document.body;
+    const shellElement = shell instanceof HTMLElement ? shell : null;
+
+    return {
+      windowScrollY: window.scrollY,
+      docScrollTop: doc.scrollTop,
+      bodyScrollTop: body.scrollTop,
+      shellScrollTop: shellElement?.scrollTop ?? null,
+      docScrollHeight: doc.scrollHeight,
+      docClientHeight: doc.clientHeight,
+      bodyScrollHeight: body.scrollHeight,
+      bodyClientHeight: body.clientHeight,
+      shellScrollHeight: shellElement?.scrollHeight ?? null,
+      shellClientHeight: shellElement?.clientHeight ?? null
+    };
+  });
+}
+
+async function ensureMobileCanScrollFromStage(page, viewportName) {
+  await page.evaluate(() => {
+    const shell = document.querySelector('[data-testid="dialogue-shell"]');
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    if (shell instanceof HTMLElement) {
+      shell.scrollTop = 0;
+    }
+  });
+
+  const before = await getPageScrollMetrics(page);
+  const scrollableDistance = Math.max(
+    before.docScrollHeight - before.docClientHeight,
+    before.bodyScrollHeight - before.bodyClientHeight,
+    before.shellScrollHeight && before.shellClientHeight
+      ? before.shellScrollHeight - before.shellClientHeight
+      : 0
+  );
+
+  if (scrollableDistance < 120) {
+    throw new Error(`Mobile page does not expose enough vertical scroll on ${viewportName}: ${JSON.stringify(before)}`);
+  }
+
+  const stageViewport = page.getByTestId("dialogue-stage-viewport");
+  const box = await stageViewport.boundingBox();
+  if (!box) {
+    throw new Error(`Missing stage viewport for mobile scroll check on ${viewportName}`);
+  }
+
+  await page.mouse.move(box.x + box.width / 2, box.y + Math.min(box.height / 2, 180));
+  await page.mouse.wheel(0, 420);
+  await page.waitForTimeout(80);
+
+  const after = await getPageScrollMetrics(page);
+  const beforePosition = Math.max(
+    before.windowScrollY,
+    before.docScrollTop,
+    before.bodyScrollTop,
+    before.shellScrollTop ?? 0
+  );
+  const afterPosition = Math.max(
+    after.windowScrollY,
+    after.docScrollTop,
+    after.bodyScrollTop,
+    after.shellScrollTop ?? 0
+  );
+
+  if (afterPosition <= beforePosition + 24) {
+    throw new Error(`Mobile page did not scroll from the stage area on ${viewportName}: ${JSON.stringify({ before, after })}`);
+  }
+}
+
+async function ensureTouchViewportSemantics(page) {
+  const metrics = await page.evaluate(() => {
+    const stageViewport = document.querySelector('[data-testid="dialogue-stage-viewport"]');
+    if (!(stageViewport instanceof HTMLElement)) {
+      return null;
+    }
+
+    return {
+      touchAction: getComputedStyle(stageViewport).touchAction,
+      pageText: document.body.textContent || ""
+    };
+  });
+
+  if (!metrics) {
+    throw new Error("Missing touch viewport metrics");
+  }
+
+  if (metrics.touchAction !== "pan-y") {
+    throw new Error(`Touch viewport should allow pan-y scrolling: ${JSON.stringify(metrics)}`);
+  }
+
+  if (metrics.pageText.includes("整理舞台")) {
+    throw new Error(`Touch viewport still shows fine-pointer hint: ${JSON.stringify(metrics)}`);
+  }
+}
+
+async function ensureTouchNodeTapSelects(page) {
+  await page.getByTestId("dialogue-stage-node-asst_thesis_1").tap();
+  await page.getByRole("heading", { name: "继续" }).waitFor();
+  await page
+    .locator('[data-testid="dialogue-sidebar"] button[aria-current="true"]')
+    .filter({ hasText: "继续" })
+    .waitFor();
+  await page.getByTestId("dialogue-stage-node-user_root_1").tap();
+  await page.getByRole("heading", { name: "主题" }).waitFor();
+  await page
+    .locator('[data-testid="dialogue-sidebar"] button[aria-current="true"]')
+    .filter({ hasText: "主题" })
+    .waitFor();
+}
+
 async function runViewport(browser, viewport) {
   const context = await browser.newContext({
     viewport: {
       width: viewport.width,
       height: viewport.height
     },
-    deviceScaleFactor: 1
+    deviceScaleFactor: 1,
+    hasTouch: Boolean(viewport.hasTouch),
+    isMobile: Boolean(viewport.isMobile)
   });
 
   await context.addInitScript((snapshot) => {
     window.localStorage.setItem("anicca_workspace_v2", JSON.stringify(snapshot));
   }, seededWorkspace);
 
+  if (viewport.hasTouch) {
+    await context.addInitScript(() => {
+      const originalMatchMedia = window.matchMedia.bind(window);
+      window.matchMedia = (query) => {
+        if (query.includes("pointer: coarse")) {
+          return {
+            matches: true,
+            media: query,
+            onchange: null,
+            addEventListener() {},
+            removeEventListener() {},
+            addListener() {},
+            removeListener() {},
+            dispatchEvent() {
+              return true;
+            }
+          };
+        }
+
+        return originalMatchMedia(query);
+      };
+    });
+  }
+
   const page = await context.newPage();
+  const pageIssues = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (
+      message.type() === "error" ||
+      /hydration|did not match|server rendered|text content does not match/i.test(text)
+    ) {
+      pageIssues.push({
+        type: `console:${message.type()}`,
+        text
+      });
+    }
+  });
+  page.on("pageerror", (error) => {
+    pageIssues.push({
+      type: "pageerror",
+      text: error.message
+    });
+  });
+
   await page.goto(`${baseUrl}/dialogue`, { waitUntil: "networkidle" });
 
   const stage = page.getByTestId("dialogue-stage");
@@ -266,9 +481,25 @@ async function runViewport(browser, viewport) {
     if (mobileMetrics.overflowY === "hidden") {
       throw new Error(`Mobile shell is not scrollable: ${JSON.stringify(mobileMetrics)}`);
     }
+
+    await ensureMobileComposerDoesNotCoverLineage(page);
+    await ensureMobileCanScrollFromStage(page, viewport.name);
+  }
+
+  if (viewport.hasTouch) {
+    await ensureTouchViewportSemantics(page);
+  }
+
+  if (viewport.hasTouch) {
+    await ensureTouchNodeTapSelects(page);
   }
 
   await composer.scrollIntoViewIfNeeded();
+
+  if (pageIssues.length) {
+    throw new Error(`Console or page errors detected on ${viewport.name}: ${JSON.stringify(pageIssues, null, 2)}`);
+  }
+
   const screenshotPath = path.join(outputDir, `${viewport.name}.png`);
   await page.screenshot({ path: screenshotPath, fullPage: viewport.fullPage });
   await context.close();
