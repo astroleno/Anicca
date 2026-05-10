@@ -152,7 +152,7 @@ export function ConversationPanel({
             role={roundtablePending ? "status" : undefined}
             aria-live={roundtablePending ? "polite" : undefined}
           >
-            {roundtablePending ? roundtablePendingHint : "作为 sidecar artifact 保存，不直接写入主图。"}
+            {roundtablePending ? roundtablePendingHint : "圆桌会作为旁路记录保存，不改变这条谱系。"}
           </span>
         </div>
       ) : null}

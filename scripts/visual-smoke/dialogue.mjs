@@ -106,6 +106,65 @@ const seededWorkspace = {
   }
 };
 
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function createWorkspaceWithoutSynthesis({ includeSecondRoot = false } = {}) {
+  const workspace = cloneJson(seededWorkspace);
+  workspace.workspaceSessionId = includeSecondRoot ? "ws_visual_flow_stale" : "ws_visual_flow";
+  workspace.focusedNodeId = "user_root_1";
+  workspace.graph.nodes.asst_thesis_1.children = ["user_followup_1"];
+  workspace.graph.nodes.asst_antithesis_1.children = [];
+  delete workspace.graph.nodes.asst_synthesis_1;
+  delete workspace.graph.nodes.user_followup_2;
+  delete workspace.graph.edges.e3;
+  delete workspace.graph.edges.e4;
+  delete workspace.graph.edges.e6;
+
+  if (includeSecondRoot) {
+    workspace.graph.entryIds.push("user_root_2");
+    workspace.graph.nodes.user_root_2 = {
+      id: "user_root_2",
+      kind: "user",
+      text: "另一个问题要不要先处理？",
+      createdAt: "2026-04-24T03:10:00.000Z",
+      parents: [],
+      children: ["asst_thesis_2", "asst_antithesis_2"]
+    };
+    workspace.graph.nodes.asst_thesis_2 = {
+      id: "asst_thesis_2",
+      kind: "assistant",
+      branchType: "正",
+      text: "先处理，避免阻塞。",
+      createdAt: "2026-04-24T03:11:00.000Z",
+      parents: ["user_root_2"],
+      children: [],
+      meta: {
+        label: "先处理",
+        summary: "先把阻塞拿掉。"
+      }
+    };
+    workspace.graph.nodes.asst_antithesis_2 = {
+      id: "asst_antithesis_2",
+      kind: "assistant",
+      branchType: "反",
+      text: "先不处理，保持主线。",
+      createdAt: "2026-04-24T03:12:00.000Z",
+      parents: ["user_root_2"],
+      children: [],
+      meta: {
+        label: "先不动",
+        summary: "别打断当前主线。"
+      }
+    };
+    workspace.graph.edges.e7 = { id: "e7", from: "user_root_2", to: "asst_thesis_2", reason: "正" };
+    workspace.graph.edges.e8 = { id: "e8", from: "user_root_2", to: "asst_antithesis_2", reason: "反" };
+  }
+
+  return workspace;
+}
+
 async function ensureBuildExists() {
   try {
     await access(buildIdPath, fsConstants.F_OK);
@@ -378,6 +437,179 @@ async function ensureTouchNodeTapSelects(page) {
     .waitFor();
 }
 
+async function createScenarioPage(browser, workspace) {
+  const context = await browser.newContext({
+    viewport: { width: 1280, height: 900 },
+    deviceScaleFactor: 1
+  });
+
+  await context.addInitScript((snapshot) => {
+    window.localStorage.setItem("anicca_workspace_v2", JSON.stringify(snapshot));
+  }, workspace);
+
+  const page = await context.newPage();
+  const pageIssues = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (
+      message.type() === "error" ||
+      /hydration|did not match|server rendered|text content does not match/i.test(text)
+    ) {
+      pageIssues.push({
+        type: `console:${message.type()}`,
+        text
+      });
+    }
+  });
+  page.on("pageerror", (error) => {
+    pageIssues.push({
+      type: "pageerror",
+      text: error.message
+    });
+  });
+
+  await page.goto(`${baseUrl}/dialogue`, { waitUntil: "networkidle" });
+  await page.getByTestId("dialogue-stage").waitFor();
+  await page.getByTestId("dialogue-panel").waitFor();
+
+  return { context, page, pageIssues };
+}
+
+function assertNoPageIssues(pageIssues, scenarioName) {
+  if (pageIssues.length) {
+    throw new Error(`Console or page errors detected during ${scenarioName}: ${JSON.stringify(pageIssues, null, 2)}`);
+  }
+}
+
+async function mockDeferredSynthesis(page) {
+  let releaseResponse;
+  const responseReady = new Promise((resolve) => {
+    releaseResponse = resolve;
+  });
+  let requestId = null;
+
+  await page.route("**/api/synthesis", async (route) => {
+    const body = route.request().postDataJSON();
+    requestId = body.requestId;
+    await responseReady;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        requestId,
+        synthesis: {
+          text: "保留主线，但拆开节奏。",
+          summary: "主线收束",
+          label: "收束",
+          stance: "合"
+        }
+      })
+    });
+  });
+
+  return {
+    release: () => releaseResponse(),
+    getRequestId: () => requestId
+  };
+}
+
+async function ensureActiveElement(page, expected) {
+  const active = await page.evaluate(() => ({
+    id: document.activeElement?.id || "",
+    testId: document.activeElement?.getAttribute("data-testid") || "",
+    text: document.activeElement?.textContent || ""
+  }));
+
+  if (
+    active.id !== expected.id &&
+    active.testId !== expected.testId &&
+    (expected.text ? !active.text.includes(expected.text) : true)
+  ) {
+    throw new Error(`Unexpected active element: ${JSON.stringify({ active, expected })}`);
+  }
+}
+
+async function ensureSynthesisPendingFocusFlow(browser) {
+  const { context, page, pageIssues } = await createScenarioPage(browser, createWorkspaceWithoutSynthesis());
+  const synthesis = await mockDeferredSynthesis(page);
+
+  await page.getByRole("button", { name: "记录合流" }).click();
+  await page.getByRole("button", { name: "收束中..." }).waitFor();
+  if (!synthesis.getRequestId()) {
+    throw new Error("Synthesis request did not start during pending flow scenario");
+  }
+  synthesis.release();
+  await page.getByRole("heading", { name: "一次正反合流" }).waitFor();
+  await ensureActiveElement(page, { id: "conversation-panel-heading" });
+  assertNoPageIssues(pageIssues, "synthesis pending focus flow");
+  await context.close();
+
+  return { name: "synthesis-pending-focus", passed: true };
+}
+
+async function ensureSynthesisStaleCompletionDoesNotStealFocus(browser) {
+  const { context, page, pageIssues } = await createScenarioPage(
+    browser,
+    createWorkspaceWithoutSynthesis({ includeSecondRoot: true })
+  );
+  const synthesis = await mockDeferredSynthesis(page);
+
+  await page.getByRole("button", { name: "记录合流" }).click();
+  await page.getByRole("button", { name: "收束中..." }).waitFor();
+  await page.getByTestId("dialogue-sidebar").getByRole("button", { name: /另一个问题/ }).click();
+  await page.getByRole("heading", { name: /另一个问题/ }).waitFor();
+  synthesis.release();
+  await page.getByTestId("dialogue-flow-status").waitFor();
+  await page.getByTestId("dialogue-flow-status").filter({ hasText: "合流已生成，当前焦点保持不变。" }).waitFor();
+  await page.getByRole("heading", { name: /另一个问题/ }).waitFor();
+  assertNoPageIssues(pageIssues, "synthesis stale completion focus flow");
+  await context.close();
+
+  return { name: "synthesis-stale-completion", passed: true };
+}
+
+async function ensureRoundtableDrawerReturnsFocus(browser) {
+  const { context, page, pageIssues } = await createScenarioPage(browser, seededWorkspace);
+  await page.route("**/api/roundtable", async (route) => {
+    const body = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        requestId: body.requestId,
+        state: {
+          topic: "roundtable topic",
+          participants: [],
+          rounds: [],
+          currentQuestion: "q1",
+          nextQuestion: "作为追问继续的问题",
+          lastCoreTension: "核心张力",
+          status: "active"
+        }
+      })
+    });
+  });
+
+  await page.getByRole("button", { name: "召集圆桌讨论此节点" }).click();
+  await page.getByTestId("dialogue-roundtable-drawer").waitFor();
+  await ensureActiveElement(page, { testId: "dialogue-roundtable-drawer" });
+  await page.keyboard.press("Escape");
+  await page.getByTestId("dialogue-roundtable-drawer").waitFor({ state: "detached" });
+  await ensureActiveElement(page, { text: "召集圆桌讨论此节点" });
+  assertNoPageIssues(pageIssues, "roundtable drawer focus return");
+  await context.close();
+
+  return { name: "roundtable-drawer-focus-return", passed: true };
+}
+
+async function runInteractionScenarios(browser) {
+  return [
+    await ensureSynthesisPendingFocusFlow(browser),
+    await ensureSynthesisStaleCompletionDoesNotStealFocus(browser),
+    await ensureRoundtableDrawerReturnsFocus(browser)
+  ];
+}
+
 async function runViewport(browser, viewport) {
   const context = await browser.newContext({
     viewport: {
@@ -574,6 +806,8 @@ async function main() {
       results.push(await runViewport(browser, viewport));
     }
 
+    const interactionScenarios = await runInteractionScenarios(browser);
+
     await browser.close();
     await writeFile(
       path.join(outputDir, "summary.json"),
@@ -581,7 +815,8 @@ async function main() {
         {
           baseUrl,
           generatedAt: new Date().toISOString(),
-          viewports: results
+          viewports: results,
+          interactionScenarios
         },
         null,
         2

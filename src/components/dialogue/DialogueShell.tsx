@@ -1155,6 +1155,11 @@ export function DialogueShell() {
         className={styles.hiddenFileInput}
         onChange={handleImportWorkspace}
       />
+      {workspaceStatus ? (
+        <p className={styles.flowStatus} aria-hidden="true" data-testid="dialogue-flow-status">
+          {workspaceStatus}
+        </p>
+      ) : null}
 
       <div className={styles.workspace}>
         <BubbleStage

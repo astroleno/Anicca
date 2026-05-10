@@ -134,6 +134,8 @@ describe("DialogueShell", () => {
     expect(await screen.findByText("记录合流")).toBeInTheDocument();
     expect(screen.getByText("将开启")).toBeInTheDocument();
     expect(screen.getByText("新的主题")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("写下一个新的母题，它会开启另一条谱系。")).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("把当前母题推进到下一轮。")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "开启新主题" })).toBeInTheDocument();
   });
 
@@ -351,7 +353,7 @@ describe("DialogueShell", () => {
     await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
     await user.click(screen.getByRole("button", { name: "作为追问继续" }));
 
-    const composerInput = screen.getByPlaceholderText("把当前母题推进到下一轮。");
+    const composerInput = screen.getByLabelText("输入");
     expect(composerInput).toHaveValue("作为追问继续的问题");
     await waitFor(() => {
       expect(composerInput).toHaveFocus();
@@ -504,6 +506,7 @@ describe("DialogueShell", () => {
 
     render(<DialogueShell />);
 
+    expect(await screen.findByText("圆桌会作为旁路记录保存，不改变这条谱系。")).toBeInTheDocument();
     await user.click(await screen.findByRole("button", { name: "召集圆桌讨论此节点" }));
 
     const pendingButton = screen.getByRole("button", { name: "圆桌生成中..." });
@@ -1135,6 +1138,7 @@ describe("DialogueShell", () => {
 
     expect(useDialogueUiStore.getState().focusedNodeId).toBe(otherRootId);
     expect(screen.getByRole("status")).toHaveTextContent("合流已生成，当前焦点保持不变。");
+    expect(screen.getByTestId("dialogue-flow-status")).toHaveTextContent("合流已生成，当前焦点保持不变。");
   });
 
   it("makes pending states exclusive and exposes synthesis busy feedback", async () => {

@@ -35,6 +35,7 @@ export function DialogueComposer({
     event.preventDefault();
     onSubmit();
   };
+  const isRootTarget = target.kind === "root";
   const isSynthesisRecordTarget = target.displayRole === "synthesis-record";
   const targetVerb = targetFrozen
     ? targetFrozenReason === "synthesis"
@@ -42,10 +43,18 @@ export function DialogueComposer({
       : "正在续写到"
     : isSynthesisRecordTarget
       ? "基于这次合流"
-      : target.kind === "root"
+      : isRootTarget
         ? "将开启"
       : "将续写到";
-  const actionLabel = target.kind === "root" && !pendingAction ? "开启新主题" : "生成正 / 反";
+  const actionLabel = isRootTarget && !pendingAction ? "开启新主题" : "生成正 / 反";
+  const composerEyebrow = isRootTarget && !targetFrozen ? "新主题" : "续写";
+  const placeholder = targetFrozen
+    ? "生成还在进行，先让这次请求落稳。"
+    : isSynthesisRecordTarget
+      ? "基于这次合流继续追问。"
+      : isRootTarget
+        ? "写下一个新的母题，它会开启另一条谱系。"
+        : "把当前节点推进到下一轮。";
 
   return (
     <form
@@ -55,7 +64,7 @@ export function DialogueComposer({
       data-testid="dialogue-composer"
     >
       <div className={styles.composerMeta}>
-        <p className={styles.eyebrow}>续写</p>
+        <p className={styles.eyebrow}>{composerEyebrow}</p>
         <div className={styles.composerTarget} id={targetDescriptionId}>
           <strong>{targetVerb}</strong>
           <span>{target.label}</span>
@@ -70,7 +79,7 @@ export function DialogueComposer({
           aria-describedby={targetDescriptionId}
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          placeholder="把当前母题推进到下一轮。"
+          placeholder={placeholder}
           rows={3}
           disabled={disabled}
         />
