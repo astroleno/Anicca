@@ -233,6 +233,12 @@ describe("workspace graph retrieval", () => {
       to: looseId,
       reason: "artifact"
     };
+    graph.edges.edge_to_string = {
+      id: "edge_to_string",
+      from: rootId,
+      to: looseId,
+      reason: "toString"
+    };
 
     const view = normalizeGraphForRetrieval(graph);
 
@@ -247,6 +253,7 @@ describe("workspace graph retrieval", () => {
     });
     expect(view.edges.some((edge) => edge.id === "edge_loose")).toBe(false);
     expect(view.edges.some((edge) => edge.id === "edge_artifact")).toBe(false);
+    expect(view.edges.some((edge) => edge.id === "edge_to_string")).toBe(false);
     expect(view.warnings.some((warning) => warning.includes("unknown edge reason"))).toBe(true);
     expect(view.warnings.some((warning) => warning.includes("does not declare"))).toBe(true);
     expect(view.warnings.some((warning) => warning.includes("unsupported reserved edge reason"))).toBe(true);
@@ -384,6 +391,92 @@ describe("workspace graph retrieval", () => {
       ["edge_a", "thesis"],
       ["edge_b", "antithesis"],
       ["edge_s_a", "synthesis"]
+    ]);
+  });
+
+  it("keeps all seed nodes before discovered descendants when multiple seeds match", () => {
+    const graph = createEmptyGraph();
+    addNode(graph, {
+      id: "user_seed_a",
+      kind: "user",
+      text: "shared seed query",
+      createdAt: "2026-04-29T00:00:00.000Z",
+      parents: [],
+      children: []
+    });
+    addNode(graph, {
+      id: "user_seed_b",
+      kind: "user",
+      text: "shared seed query",
+      createdAt: "2026-04-29T00:00:00.000Z",
+      parents: [],
+      children: []
+    });
+    addNode(graph, {
+      id: "asst_seed_a_child",
+      kind: "assistant",
+      text: "descendant",
+      createdAt: "2026-04-29T00:00:00.000Z",
+      parents: ["user_seed_a"],
+      children: [],
+      branchType: "正",
+      meta: { label: "descendant", summary: "descendant" }
+    });
+    graph.edges.edge_seed_a_child = {
+      id: "edge_seed_a_child",
+      from: "user_seed_a",
+      to: "asst_seed_a_child",
+      reason: "正"
+    };
+
+    const result = queryWorkspaceGraph(graph, "shared seed query", { seedLimit: 2, depth: 1 });
+
+    expect(result.seedNodeIds).toEqual(["user_seed_a", "user_seed_b"]);
+    expect(result.nodes.map((node) => node.id)).toEqual(["user_seed_a", "user_seed_b", "asst_seed_a_child"]);
+  });
+
+  it("sorts discovery edges with explicit confidence before derived confidence", () => {
+    const graph = createEmptyGraph();
+    addNode(graph, {
+      id: "user_seed",
+      kind: "user",
+      text: "edge confidence seed",
+      createdAt: "2026-04-29T00:00:00.000Z",
+      parents: [],
+      children: []
+    });
+    addNode(graph, {
+      id: "asst_explicit",
+      kind: "assistant",
+      text: "explicit",
+      createdAt: "2026-04-29T00:00:00.000Z",
+      parents: ["user_seed"],
+      children: [],
+      branchType: "反",
+      meta: { label: "explicit", summary: "explicit" }
+    });
+    addNode(graph, {
+      id: "asst_derived",
+      kind: "assistant",
+      text: "derived",
+      createdAt: "2026-04-29T00:00:00.000Z",
+      parents: ["user_seed"],
+      children: [],
+      branchType: "正",
+      meta: { label: "derived", summary: "derived" }
+    });
+    graph.edges.edge_explicit = {
+      id: "edge_explicit",
+      from: "user_seed",
+      to: "asst_explicit",
+      reason: "反"
+    };
+
+    const result = queryWorkspaceGraph(graph, "edge confidence seed", { seedLimit: 1, depth: 1 });
+
+    expect(result.edges.map((edge) => [edge.id, edge.confidence, edge.relation])).toEqual([
+      ["edge_explicit", "explicit", "antithesis"],
+      ["derived_child:user_seed->asst_derived:thesis", "derived", "thesis"]
     ]);
   });
 

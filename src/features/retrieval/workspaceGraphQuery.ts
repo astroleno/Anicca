@@ -18,6 +18,7 @@ type RelationResolution = {
 };
 type SelectedNodeMeta = {
   seedRank: number;
+  isSeed: boolean;
   distance: number;
   score: number;
 };
@@ -72,10 +73,10 @@ const RELATION_ORDER: Record<RetrievalRelation, number> = {
   antithesis: 1,
   synthesis: 2,
   continuation: 3,
-  lineage: 4,
-  source: 5,
-  merge: 6,
-  artifact: 7
+  source: 4,
+  merge: 5,
+  artifact: 6,
+  lineage: 7
 };
 const FIELD_ORDER: MatchField[] = ["label", "summary", "text", "branchType"];
 const FIELD_BONUS: Record<MatchField, number> = {
@@ -158,7 +159,7 @@ function relationFromReason(reason: string | undefined): RetrievalRelation | nul
     return null;
   }
 
-  if (reason in EXPLICIT_REASON_RELATIONS) {
+  if (Object.prototype.hasOwnProperty.call(EXPLICIT_REASON_RELATIONS, reason)) {
     return EXPLICIT_REASON_RELATIONS[reason];
   }
 
@@ -253,6 +254,8 @@ function resolveEdgeRelation(
 }
 
 function compareEdges(left: RetrievalEdge, right: RetrievalEdge) {
+  const confidenceDelta = confidenceOrder(left.confidence) - confidenceOrder(right.confidence);
+  if (confidenceDelta !== 0) return confidenceDelta;
   const relationDelta = RELATION_ORDER[left.relation] - RELATION_ORDER[right.relation];
   if (relationDelta !== 0) return relationDelta;
   const fromDelta = left.from.localeCompare(right.from);
@@ -260,6 +263,12 @@ function compareEdges(left: RetrievalEdge, right: RetrievalEdge) {
   const toDelta = left.to.localeCompare(right.to);
   if (toDelta !== 0) return toDelta;
   return left.id.localeCompare(right.id);
+}
+
+function confidenceOrder(confidence: RetrievalConfidence) {
+  if (confidence === "explicit") return 0;
+  if (confidence === "derived") return 1;
+  return 2;
 }
 
 function normalizeGraphInternal(graph: Graph): NormalizedGraph {
@@ -688,6 +697,7 @@ export function queryWorkspaceGraph(graph: Graph, query: string, options: QueryO
     selectedNodes.set(match.node.id, match.node);
     selectedNodeMeta.set(match.node.id, {
       seedRank: match.rank,
+      isSeed: true,
       distance: 0,
       score: match.score
     });
@@ -745,6 +755,7 @@ export function queryWorkspaceGraph(graph: Graph, query: string, options: QueryO
       const currentMeta = selectedNodeMeta.get(current.nodeId);
       selectedNodeMeta.set(nextNodeId, {
         seedRank: currentMeta?.seedRank ?? Number.POSITIVE_INFINITY,
+        isSeed: false,
         distance: current.depth + 1,
         score: scoreByNodeId.get(nextNodeId) || 0
       });
@@ -760,15 +771,18 @@ export function queryWorkspaceGraph(graph: Graph, query: string, options: QueryO
   const nodes = [...selectedNodes.values()].sort((left, right) => {
     const leftMeta = selectedNodeMeta.get(left.id) || {
       seedRank: Number.POSITIVE_INFINITY,
+      isSeed: false,
       distance: Number.POSITIVE_INFINITY,
       score: 0
     };
     const rightMeta = selectedNodeMeta.get(right.id) || {
       seedRank: Number.POSITIVE_INFINITY,
+      isSeed: false,
       distance: Number.POSITIVE_INFINITY,
       score: 0
     };
-    if (leftMeta.seedRank !== rightMeta.seedRank) return leftMeta.seedRank - rightMeta.seedRank;
+    if (leftMeta.isSeed !== rightMeta.isSeed) return leftMeta.isSeed ? -1 : 1;
+    if (leftMeta.isSeed && leftMeta.seedRank !== rightMeta.seedRank) return leftMeta.seedRank - rightMeta.seedRank;
     if (leftMeta.distance !== rightMeta.distance) return leftMeta.distance - rightMeta.distance;
     if (rightMeta.score !== leftMeta.score) return rightMeta.score - leftMeta.score;
     return left.id.localeCompare(right.id);
