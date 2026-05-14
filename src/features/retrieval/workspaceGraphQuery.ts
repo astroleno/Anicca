@@ -1,6 +1,7 @@
 import { AniccaNode, BranchType, Edge, Graph } from "@/types/anicca";
 import {
   RetrievalClampedOptions,
+  RetrievalConfidence,
   RetrievalEdge,
   RetrievalGraphView,
   RetrievalNode,
@@ -11,6 +12,20 @@ import {
 
 type MatchField = RetrievalNodeMatch["matchedFields"][number];
 type MatchKind = RetrievalNodeMatch["bestMatch"];
+type RelationResolution = {
+  relation: RetrievalRelation;
+  confidence: RetrievalConfidence;
+};
+type SelectedNodeMeta = {
+  seedRank: number;
+  distance: number;
+  score: number;
+};
+type SelectedEdgeMeta = {
+  edge: RetrievalEdge;
+  seedRank: number;
+  distance: number;
+};
 
 type NormalizeStats = {
   danglingEdges: number;
@@ -45,6 +60,23 @@ const ALL_RELATIONS: RetrievalRelation[] = [
   "merge",
   "artifact"
 ];
+const EXPLICIT_REASON_RELATIONS: Record<string, RetrievalRelation> = {
+  正: "thesis",
+  反: "antithesis",
+  continue: "continuation",
+  synthesis: "synthesis",
+  merge: "merge"
+};
+const RELATION_ORDER: Record<RetrievalRelation, number> = {
+  thesis: 0,
+  antithesis: 1,
+  synthesis: 2,
+  continuation: 3,
+  lineage: 4,
+  source: 5,
+  merge: 6,
+  artifact: 7
+};
 const FIELD_ORDER: MatchField[] = ["label", "summary", "text", "branchType"];
 const FIELD_BONUS: Record<MatchField, number> = {
   label: 30,
@@ -122,16 +154,18 @@ function toRetrievalNode(id: string, node: AniccaNode, warnings: string[]): Retr
 }
 
 function relationFromReason(reason: string | undefined): RetrievalRelation | null {
-  if (reason === "正") return "thesis";
-  if (reason === "反") return "antithesis";
-  if (reason === "synthesis") return "synthesis";
-  if (reason === "continue") return "continuation";
-  if (reason === "merge") return "merge";
-  if (isRetrievalRelation(reason)) return reason;
+  if (!reason) {
+    return null;
+  }
+
+  if (reason in EXPLICIT_REASON_RELATIONS) {
+    return EXPLICIT_REASON_RELATIONS[reason];
+  }
+
   return null;
 }
 
-function inferRelation(from: RetrievalNode | undefined, to: RetrievalNode | undefined): RetrievalRelation | null {
+function inferRelationFromShape(from: RetrievalNode | undefined, to: RetrievalNode | undefined): RetrievalRelation | null {
   if (!from || !to) {
     return null;
   }
@@ -143,7 +177,6 @@ function inferRelation(from: RetrievalNode | undefined, to: RetrievalNode | unde
   if (from.kind === "user" && to.kind === "assistant") {
     if (to.branchType === "正") return "thesis";
     if (to.branchType === "反") return "antithesis";
-    if (to.branchType === "合") return "synthesis";
   }
 
   if (from.kind === "assistant" && to.kind === "user") {
@@ -157,26 +190,76 @@ function inferRelation(from: RetrievalNode | undefined, to: RetrievalNode | unde
   return null;
 }
 
-function canonicalRelation(
-  reason: string | undefined,
-  from: RetrievalNode | undefined,
-  to: RetrievalNode | undefined,
-  warnings: string[],
-  edgeId: string
-): RetrievalRelation | null {
-  const explicit = relationFromReason(reason);
-  if (explicit) {
-    return explicit;
+function hasTargetMembership(fromId: string, toId: string, relation: RetrievalRelation, rawNodes: Record<string, AniccaNode>) {
+  const target = rawNodes[toId];
+  if (!target) {
+    return false;
   }
 
-  const inferred = inferRelation(from, to);
+  if (relation === "synthesis") {
+    return asStringArray(target.parents).includes(fromId) || asStringArray(target.meta?.sourceNodeIds).includes(fromId);
+  }
+
+  if (relation === "thesis" || relation === "antithesis" || relation === "continuation" || relation === "merge") {
+    return asStringArray(target.parents).includes(fromId);
+  }
+
+  return false;
+}
+
+function resolveEdgeRelation(
+  reason: string | undefined,
+  fromId: string,
+  toId: string,
+  from: RetrievalNode | undefined,
+  to: RetrievalNode | undefined,
+  rawNodes: Record<string, AniccaNode>,
+  warnings: string[],
+  edgeId: string
+): RelationResolution | null {
+  const explicit = relationFromReason(reason);
+  if (explicit) {
+    return {
+      relation: explicit,
+      confidence: "explicit"
+    };
+  }
+
+  if (reason && isRetrievalRelation(reason)) {
+    warnings.push(`edge ${edgeId}: unsupported reserved edge reason "${reason}" skipped`);
+    return null;
+  }
+
+  const inferred = inferRelationFromShape(from, to);
   if (reason && inferred) {
-    warnings.push(`edge ${edgeId}: unknown edge reason "${reason}", inferred ${inferred}`);
+    warnings.push(`edge ${edgeId}: unknown edge reason "${reason}", checking endpoint membership`);
   } else if (reason && !inferred) {
     warnings.push(`edge ${edgeId}: unknown edge reason "${reason}"`);
   }
 
-  return inferred;
+  if (!inferred) {
+    return null;
+  }
+
+  if (!hasTargetMembership(fromId, toId, inferred, rawNodes)) {
+    warnings.push(`edge ${edgeId}: skipped inferred ${inferred} because ${toId} does not declare ${fromId}`);
+    return null;
+  }
+
+  return {
+    relation: inferred,
+    confidence: "derived"
+  };
+}
+
+function compareEdges(left: RetrievalEdge, right: RetrievalEdge) {
+  const relationDelta = RELATION_ORDER[left.relation] - RELATION_ORDER[right.relation];
+  if (relationDelta !== 0) return relationDelta;
+  const fromDelta = left.from.localeCompare(right.from);
+  if (fromDelta !== 0) return fromDelta;
+  const toDelta = left.to.localeCompare(right.to);
+  if (toDelta !== 0) return toDelta;
+  return left.id.localeCompare(right.id);
 }
 
 function normalizeGraphInternal(graph: Graph): NormalizedGraph {
@@ -238,8 +321,8 @@ function normalizeGraphInternal(graph: Graph): NormalizedGraph {
       continue;
     }
 
-    const relation = canonicalRelation(edge.reason, fromNode, toNode, warnings, edgeId);
-    if (!relation) {
+    const resolution = resolveEdgeRelation(edge.reason, from, to, fromNode, toNode, rawNodes, warnings, edgeId);
+    if (!resolution) {
       warnings.push(`edge ${edgeId}: skipped because relation could not be inferred`);
       continue;
     }
@@ -249,11 +332,11 @@ function normalizeGraphInternal(graph: Graph): NormalizedGraph {
         id: edgeId,
         from,
         to,
-        relation,
-        confidence: "explicit",
+        relation: resolution.relation,
+        confidence: resolution.confidence,
         reason: edge.reason
       },
-      "explicit"
+      resolution.confidence === "explicit" ? "explicit" : "derived"
     );
   }
 
@@ -296,7 +379,7 @@ function normalizeGraphInternal(graph: Graph): NormalizedGraph {
     }
 
     for (const parentId of asStringArray(node.parents)) {
-      const relation = inferRelation(nodes[parentId], normalizedNode);
+      const relation = inferRelationFromShape(nodes[parentId], normalizedNode);
       if (!relation) {
         stats.danglingEdges += nodes[parentId] ? 0 : 1;
         warnings.push(`parent backfill ${parentId} -> ${normalizedNode.id}: dangling or unsupported relation`);
@@ -306,7 +389,7 @@ function normalizeGraphInternal(graph: Graph): NormalizedGraph {
     }
 
     for (const childId of asStringArray(node.children)) {
-      const relation = inferRelation(normalizedNode, nodes[childId]);
+      const relation = inferRelationFromShape(normalizedNode, nodes[childId]);
       if (!relation) {
         stats.danglingEdges += nodes[childId] ? 0 : 1;
         warnings.push(`child backfill ${normalizedNode.id} -> ${childId}: dangling or unsupported relation`);
@@ -352,7 +435,7 @@ function normalizeGraphInternal(graph: Graph): NormalizedGraph {
   return {
     view: {
       nodes,
-      edges,
+      edges: [...edges].sort(compareEdges),
       warnings
     },
     stats
@@ -591,9 +674,11 @@ export function queryWorkspaceGraph(graph: Graph, query: string, options: QueryO
   omitted.matches = Math.max(0, allMatches.length - seedMatches.length);
 
   const selectedNodes = new Map<string, RetrievalNode>();
-  const selectedEdges: RetrievalEdge[] = [];
+  const selectedNodeMeta = new Map<string, SelectedNodeMeta>();
+  const selectedEdges: SelectedEdgeMeta[] = [];
   const visited = new Set<string>();
   const queue: Array<{ nodeId: string; depth: number }> = [];
+  const scoreByNodeId = new Map(allMatches.map((match) => [match.node.id, match.score]));
 
   for (const match of seedMatches) {
     if (selectedNodes.size >= clampedOptions.maxNodes) {
@@ -601,6 +686,11 @@ export function queryWorkspaceGraph(graph: Graph, query: string, options: QueryO
       continue;
     }
     selectedNodes.set(match.node.id, match.node);
+    selectedNodeMeta.set(match.node.id, {
+      seedRank: match.rank,
+      distance: 0,
+      score: match.score
+    });
     visited.add(match.node.id);
     queue.push({ nodeId: match.node.id, depth: 0 });
   }
@@ -652,14 +742,48 @@ export function queryWorkspaceGraph(graph: Graph, query: string, options: QueryO
 
       visited.add(nextNodeId);
       selectedNodes.set(nextNodeId, nextNode);
-      selectedEdges.push(edge);
+      const currentMeta = selectedNodeMeta.get(current.nodeId);
+      selectedNodeMeta.set(nextNodeId, {
+        seedRank: currentMeta?.seedRank ?? Number.POSITIVE_INFINITY,
+        distance: current.depth + 1,
+        score: scoreByNodeId.get(nextNodeId) || 0
+      });
+      selectedEdges.push({
+        edge,
+        seedRank: currentMeta?.seedRank ?? Number.POSITIVE_INFINITY,
+        distance: current.depth + 1
+      });
       queue.push({ nodeId: nextNodeId, depth: current.depth + 1 });
     }
   }
 
+  const nodes = [...selectedNodes.values()].sort((left, right) => {
+    const leftMeta = selectedNodeMeta.get(left.id) || {
+      seedRank: Number.POSITIVE_INFINITY,
+      distance: Number.POSITIVE_INFINITY,
+      score: 0
+    };
+    const rightMeta = selectedNodeMeta.get(right.id) || {
+      seedRank: Number.POSITIVE_INFINITY,
+      distance: Number.POSITIVE_INFINITY,
+      score: 0
+    };
+    if (leftMeta.seedRank !== rightMeta.seedRank) return leftMeta.seedRank - rightMeta.seedRank;
+    if (leftMeta.distance !== rightMeta.distance) return leftMeta.distance - rightMeta.distance;
+    if (rightMeta.score !== leftMeta.score) return rightMeta.score - leftMeta.score;
+    return left.id.localeCompare(right.id);
+  });
+  const edges = [...selectedEdges]
+    .sort((left, right) => {
+      if (left.seedRank !== right.seedRank) return left.seedRank - right.seedRank;
+      if (left.distance !== right.distance) return left.distance - right.distance;
+      return compareEdges(left.edge, right.edge);
+    })
+    .map((entry) => entry.edge);
+
   return {
-    nodes: [...selectedNodes.values()],
-    edges: selectedEdges,
+    nodes,
+    edges,
     seedNodeIds: seedMatches.map((match) => match.node.id),
     seedMatches,
     clampedOptions,

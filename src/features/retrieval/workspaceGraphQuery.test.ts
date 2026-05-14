@@ -211,18 +211,45 @@ describe("workspace graph retrieval", () => {
       to: antiId,
       reason: "mystery"
     };
+    const looseId = "asst_loose_shape_only";
+    graph.nodes[looseId] = {
+      id: looseId,
+      kind: "assistant",
+      text: "shape only branch",
+      createdAt: "2026-04-29T00:00:00.000Z",
+      parents: [],
+      children: [],
+      branchType: "正",
+      meta: { label: "loose", summary: "shape only" }
+    };
+    graph.edges.edge_loose = {
+      id: "edge_loose",
+      from: rootId,
+      to: looseId
+    };
+    graph.edges.edge_artifact = {
+      id: "edge_artifact",
+      from: rootId,
+      to: looseId,
+      reason: "artifact"
+    };
 
     const view = normalizeGraphForRetrieval(graph);
 
     expect(view.edges.find((edge) => edge.to === forkId)).toMatchObject({
       relation: "thesis",
-      confidence: "explicit"
+      confidence: "derived"
     });
     expect(view.edges.find((edge) => edge.to === antiId)).toMatchObject({
       relation: "antithesis",
+      confidence: "derived",
       reason: "mystery"
     });
+    expect(view.edges.some((edge) => edge.id === "edge_loose")).toBe(false);
+    expect(view.edges.some((edge) => edge.id === "edge_artifact")).toBe(false);
     expect(view.warnings.some((warning) => warning.includes("unknown edge reason"))).toBe(true);
+    expect(view.warnings.some((warning) => warning.includes("does not declare"))).toBe(true);
+    expect(view.warnings.some((warning) => warning.includes("unsupported reserved edge reason"))).toBe(true);
   });
 
   it("guards against bad snapshots, duplicate edges, conflicts, and cycles", () => {
@@ -298,6 +325,66 @@ describe("workspace graph retrieval", () => {
     expect(excluded.omitted.excludedNodes).toBeGreaterThan(0);
     expect(oneHop.nodes.map((node) => node.id)).toEqual(expect.arrayContaining([rootId, thesisId, antithesisId]));
     expect(oneHop.edges.map((edge) => edge.id)).not.toContain("induced_extra");
+  });
+
+  it("returns nodes and edges in stable render order", () => {
+    const graph = createEmptyGraph();
+    addNode(graph, {
+      id: "user_seed",
+      kind: "user",
+      text: "seed query",
+      createdAt: "2026-04-29T00:00:00.000Z",
+      parents: [],
+      children: []
+    });
+    addNode(graph, {
+      id: "asst_b",
+      kind: "assistant",
+      text: "反 branch",
+      createdAt: "2026-04-29T00:00:00.000Z",
+      parents: ["user_seed"],
+      children: [],
+      branchType: "反",
+      meta: { label: "B", summary: "反" }
+    });
+    addNode(graph, {
+      id: "asst_a",
+      kind: "assistant",
+      text: "正 branch",
+      createdAt: "2026-04-29T00:00:00.000Z",
+      parents: ["user_seed"],
+      children: [],
+      branchType: "正",
+      meta: { label: "A", summary: "正" }
+    });
+    addNode(graph, {
+      id: "asst_s",
+      kind: "assistant",
+      text: "合 branch",
+      createdAt: "2026-04-29T00:00:00.000Z",
+      parents: ["asst_a", "asst_b"],
+      children: [],
+      branchType: "合",
+      meta: {
+        label: "S",
+        summary: "合",
+        sourceNodeIds: ["asst_a", "asst_b"],
+        lineageParentId: "user_seed"
+      }
+    });
+    graph.edges.edge_s_b = { id: "edge_s_b", from: "asst_b", to: "asst_s", reason: "synthesis" };
+    graph.edges.edge_b = { id: "edge_b", from: "user_seed", to: "asst_b", reason: "反" };
+    graph.edges.edge_s_a = { id: "edge_s_a", from: "asst_a", to: "asst_s", reason: "synthesis" };
+    graph.edges.edge_a = { id: "edge_a", from: "user_seed", to: "asst_a", reason: "正" };
+
+    const result = queryWorkspaceGraph(graph, "seed query", { seedLimit: 1, depth: 2 });
+
+    expect(result.nodes.map((node) => node.id)).toEqual(["user_seed", "asst_a", "asst_b", "asst_s"]);
+    expect(result.edges.map((edge) => [edge.id, edge.relation])).toEqual([
+      ["edge_a", "thesis"],
+      ["edge_b", "antithesis"],
+      ["edge_s_a", "synthesis"]
+    ]);
   });
 
   it("clamps unsafe query options", () => {
