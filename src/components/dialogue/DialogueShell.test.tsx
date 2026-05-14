@@ -115,6 +115,18 @@ function seedActiveWorkspaceFromCurrentGraph() {
   setActiveWorkspaceId("workspace_test");
 }
 
+function readFetchBody(fetchMock: ReturnType<typeof vi.fn>, callIndex = 0) {
+  const [, init] = fetchMock.mock.calls[callIndex] as [string, RequestInit];
+  return JSON.parse(String(init.body || "{}"));
+}
+
+function normalizeRequestId<T extends { requestId?: unknown }>(body: T) {
+  return {
+    ...body,
+    requestId: "<requestId>"
+  };
+}
+
 describe("DialogueShell", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -151,6 +163,108 @@ describe("DialogueShell", () => {
     expect(screen.queryByTestId("dialogue-stage-node-asst_synthesis_1")).not.toBeInTheDocument();
     expect(useDialogueUiStore.getState().focusedNodeId).toBe("user_root_1");
     expect(branchGraphStore.getGraph().entryIds).toEqual(["user_root_1"]);
+  });
+
+  it("locks the /api/branches request body for parent-context continuations", async () => {
+    const user = userEvent.setup();
+    const { thesisId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: thesisId });
+    const fetchMock = vi.fn(async (_url, init) => {
+      const body = JSON.parse(String((init as RequestInit).body || "{}"));
+      return new Response(
+        JSON.stringify({
+          requestId: body.requestId,
+          thesis: { text: "拆小", summary: "拆小推进", label: "拆小", stance: "正" },
+          antithesis: { text: "降速", summary: "降速观察", label: "降速", stance: "反" }
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<DialogueShell />);
+
+    await user.type(await screen.findByLabelText("输入"), "下一步怎么拆");
+    await user.click(screen.getByRole("button", { name: "生成正 / 反" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("/api/branches", expect.any(Object));
+    });
+    expect(normalizeRequestId(readFetchBody(fetchMock))).toMatchInlineSnapshot(`
+      {
+        "contextMessages": [
+          {
+            "content": "要不要继续这个项目",
+            "role": "user",
+          },
+          {
+            "content": "继续：继续推进；暂停：暂停重构",
+            "role": "assistant",
+          },
+        ],
+        "requestId": "<requestId>",
+        "userText": "下一步怎么拆",
+      }
+    `);
+  });
+
+  it("locks the /api/synthesis request body from the current sibling pair", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    const fetchMock = vi.fn(async (_url, init) => {
+      const body = JSON.parse(String((init as RequestInit).body || "{}"));
+      return new Response(
+        JSON.stringify({
+          requestId: body.requestId,
+          synthesis: { text: "重开主线", summary: "主线重开", label: "重开", stance: "合" }
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<DialogueShell />);
+
+    const synthesisButtons = await screen.findAllByRole("button", { name: /记录合流/ });
+    await user.click(synthesisButtons[0]);
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("/api/synthesis", expect.any(Object));
+    });
+    expect(normalizeRequestId(readFetchBody(fetchMock))).toMatchInlineSnapshot(`
+      {
+        "antithesis": {
+          "label": "暂停",
+          "stance": "反",
+          "summary": "暂停重构",
+          "text": "暂停",
+        },
+        "contextMessages": [
+          {
+            "content": "要不要继续这个项目",
+            "role": "user",
+          },
+          {
+            "content": "继续：继续推进；暂停：暂停重构",
+            "role": "assistant",
+          },
+        ],
+        "requestId": "<requestId>",
+        "thesis": {
+          "label": "继续",
+          "stance": "正",
+          "summary": "继续推进",
+          "text": "继续",
+        },
+      }
+    `);
   });
 
   it("boots from the active workspace registry instead of the legacy single snapshot key", async () => {
