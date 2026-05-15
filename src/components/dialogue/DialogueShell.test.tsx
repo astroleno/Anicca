@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import {
   DialogueShell,
   isDialogueDemoWorkspaceEnabled,
+  isDialogueRetrievalDebugPreviewEnabled,
   setDialogueWorkspaceRetrievalContextEnabledForTests
 } from "@/components/dialogue/DialogueShell";
 import { useDialogueUiStore } from "@/features/dialectic/store";
@@ -522,6 +523,35 @@ describe("DialogueShell", () => {
     expect(isDialogueDemoWorkspaceEnabled({ hostname: "localhost", search: "" })).toBe(false);
     expect(isDialogueDemoWorkspaceEnabled({ hostname: "anicca.app", search: "?demo=1" })).toBe(true);
     expect(isDialogueDemoWorkspaceEnabled({ hostname: "anicca.app", search: "" })).toBe(false);
+  });
+
+  it("limits retrieval debug preview to an explicit debug query", () => {
+    expect(isDialogueRetrievalDebugPreviewEnabled({ search: "" })).toBe(false);
+    expect(isDialogueRetrievalDebugPreviewEnabled({ search: "?retrievalDebug=1" })).toBe(true);
+    expect(isDialogueRetrievalDebugPreviewEnabled({ search: "?retrievalDebug=0" })).toBe(false);
+  });
+
+  it("renders query-enabled retrieval context preview without changing generation defaults", async () => {
+    const user = userEvent.setup();
+    window.history.replaceState({}, "", "/dialogue?retrievalDebug=1");
+    const { thesisId } = seedPair();
+    const relatedRootId = branchGraphStore.createUserNode("下一步怎么拆的参考");
+    branchGraphStore.createAssistantPair(relatedRootId, {
+      thesis: { text: "先列一张拆分清单", summary: "拆分参考", label: "拆分" },
+      antithesis: { text: "先延后拆分", summary: "延后参考", label: "延后" }
+    });
+    useDialogueUiStore.setState({ focusedNodeId: thesisId });
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    await user.type(await screen.findByLabelText("输入"), "下一步怎么拆");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("dialogue-retrieval-debug")).toHaveTextContent("相关谱系片段:");
+    });
+    expect(screen.getByTestId("dialogue-retrieval-debug")).toHaveTextContent("拆分参考");
+    expect(screen.getByTestId("dialogue-retrieval-debug")).not.toHaveTextContent("要不要继续这个项目");
   });
 
   it("keeps mobile reading and keyboard order aligned as stage, lineage, panel, then composer", async () => {

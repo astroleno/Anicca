@@ -5,6 +5,7 @@ import {
   startTransition,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore
@@ -104,12 +105,45 @@ export function isDialogueDemoWorkspaceEnabled(locationLike: DialogueLocationLik
   return params.get("demo") === "1";
 }
 
+export function isDialogueRetrievalDebugPreviewEnabled(locationLike: Pick<Location, "search">) {
+  const params = new URLSearchParams(locationLike.search);
+  return params.get("retrievalDebug") === "1";
+}
+
 function buildSynthesisRetrievalQueryText(thesisNode: Graph["nodes"][string], antithesisNode: Graph["nodes"][string]) {
   return [
     thesisNode.meta?.label || thesisNode.branchType,
     thesisNode.meta?.summary,
     antithesisNode.meta?.label || antithesisNode.branchType,
     antithesisNode.meta?.summary
+  ]
+    .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+    .join(" ");
+}
+
+function buildRetrievalDebugPreviewQueryText(input: {
+  draft: string;
+  currentNode: ReturnType<typeof deriveDialogueView>["currentNode"];
+  graph: Graph;
+  synthesisAction: DialogueSynthesisAction | null;
+}) {
+  const draft = input.draft.trim();
+  if (draft) {
+    return draft;
+  }
+
+  if (input.synthesisAction?.available) {
+    const thesisNode = input.graph.nodes[input.synthesisAction.thesisId];
+    const antithesisNode = input.graph.nodes[input.synthesisAction.antithesisId];
+    if (thesisNode && antithesisNode) {
+      return buildSynthesisRetrievalQueryText(thesisNode, antithesisNode);
+    }
+  }
+
+  return [
+    input.currentNode?.label,
+    input.currentNode?.summary,
+    input.currentNode?.text
   ]
     .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
     .join(" ");
@@ -412,6 +446,7 @@ export function DialogueShell() {
   const [draft, setDraft] = useState("");
   const [emptyComposerOpen, setEmptyComposerOpen] = useState(false);
   const [demoWorkspaceEnabled, setDemoWorkspaceEnabled] = useState(false);
+  const [retrievalDebugPreviewEnabled, setRetrievalDebugPreviewEnabled] = useState(false);
   const [workspaceReady, setWorkspaceReady] = useState(() => branchGraphStore.getGraph().entryIds.length > 0);
   const [workspaceEntries, setWorkspaceEntries] = useState<WorkspaceRegistryEntry[]>([]);
   const [roundtableArtifact, setRoundtableArtifact] = useState<WorkspaceRoundtableArtifact | null>(null);
@@ -481,6 +516,7 @@ export function DialogueShell() {
     }
 
     setDemoWorkspaceEnabled(isDialogueDemoWorkspaceEnabled(window.location));
+    setRetrievalDebugPreviewEnabled(isDialogueRetrievalDebugPreviewEnabled(window.location));
   }, []);
 
   const view = deriveDialogueView(graphSnapshot.graph, focusedNodeId);
@@ -1207,6 +1243,45 @@ export function DialogueShell() {
   const flowStatusMergedIntoComposer = Boolean(
     nextStepChoice && workspaceStatus?.startsWith("正反已生成")
   );
+  const retrievalDebugPreview = useMemo(() => {
+    if (!retrievalDebugPreviewEnabled) {
+      return null;
+    }
+
+    const targetId = composerTarget.nodeId || view.focusNodeId;
+    const built = buildWorkspaceContext({
+      targetId,
+      queryText: buildRetrievalDebugPreviewQueryText({
+        draft,
+        currentNode: view.currentNode,
+        graph: graphSnapshot.graph,
+        synthesisAction: relevantSynthesisAction
+      }),
+      systemPrelude: "",
+      graph: graphSnapshot.graph,
+      retrieval: {
+        enabled: true,
+        maxNodes: 6,
+        maxEdges: 10,
+        charBudget: 900
+      }
+    });
+
+    return {
+      content: built.retrieval?.message?.content || "",
+      coveredNodeCount: built.coverage.coveredNodeIds.length,
+      nodeCount: built.retrieval?.subgraph.nodes.length || 0,
+      edgeCount: built.retrieval?.subgraph.edges.length || 0
+    };
+  }, [
+    composerTarget.nodeId,
+    draft,
+    graphSnapshot.graph,
+    relevantSynthesisAction,
+    retrievalDebugPreviewEnabled,
+    view.currentNode,
+    view.focusNodeId
+  ]);
 
   if (!workspaceReady) {
     return (
@@ -1318,6 +1393,21 @@ export function DialogueShell() {
             }
           }}
         />
+        {retrievalDebugPreview ? (
+          <aside className={styles.retrievalDebugPanel} data-testid="dialogue-retrieval-debug" aria-label="Retrieval debug preview">
+            <div className={styles.retrievalDebugHeader}>
+              <span>retrieval_context preview</span>
+              <small>
+                nodes {retrievalDebugPreview.nodeCount} · edges {retrievalDebugPreview.edgeCount} · excluded {retrievalDebugPreview.coveredNodeCount}
+              </small>
+            </div>
+            {retrievalDebugPreview.content ? (
+              <pre>{retrievalDebugPreview.content}</pre>
+            ) : (
+              <p>无可注入片段</p>
+            )}
+          </aside>
+        ) : null}
         {shouldShowComposer ? (
           <DialogueComposer
             target={composerTarget}

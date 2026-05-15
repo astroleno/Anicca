@@ -1322,6 +1322,53 @@
   font-weight: 700;
 }
 
+.retrievalDebugPanel {
+  position: absolute;
+  right: calc(24px + var(--safe-right));
+  bottom: calc(116px + var(--safe-bottom));
+  z-index: 6;
+  width: min(420px, calc(100vw - 32px));
+  max-height: min(34dvh, 360px);
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid rgba(88, 183, 154, 0.18);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(7, 19, 25, 0.9), rgba(5, 11, 13, 0.82)),
+    rgba(7, 19, 25, 0.9);
+  color: rgba(226, 239, 244, 0.88);
+  font-size: 0.72rem;
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.055);
+  backdrop-filter: blur(18px);
+}
+
+.retrievalDebugHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  color: rgba(243, 248, 250, 0.9);
+  font-weight: 700;
+}
+
+.retrievalDebugHeader small {
+  color: rgba(226, 239, 244, 0.58);
+  font-weight: 500;
+}
+
+.retrievalDebugPanel pre,
+.retrievalDebugPanel p {
+  margin: 0;
+}
+
+.retrievalDebugPanel pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.45;
+}
+
 .roundtableDrawer {
   position: absolute;
   right: calc(24px + var(--safe-right));
@@ -1865,6 +1912,7 @@
   .hero,
   .sidebar,
   .panel,
+  .retrievalDebugPanel,
   .roundtableDrawer {
     position: relative;
     top: auto;
@@ -1879,6 +1927,12 @@
   .sidebar,
   .panel {
     opacity: 1;
+  }
+
+  .retrievalDebugPanel {
+    bottom: auto;
+    z-index: 4;
+    max-height: 260px;
   }
 
   .workspaceBar {
