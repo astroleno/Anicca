@@ -88,6 +88,26 @@ describe("BubbleStage", () => {
     expect(onSelect).not.toHaveBeenCalled();
   });
 
+  it("keeps full node meaning in the accessible name when the visual label is short", () => {
+    const nodes: DialogueStageNode[] = [
+      {
+        id: "thesis",
+        label: "继续",
+        preview: "继续，但是把范围切小一点。",
+        summary: "先缩范围，再推进。",
+        kind: "assistant",
+        branchType: "正",
+        relation: "child",
+        seedX: 50,
+        seedY: 50
+      }
+    ];
+
+    render(<BubbleStage layoutKey="focus:root" nodes={nodes} focusNodeId="thesis" onSelect={vi.fn()} />);
+
+    expect(screen.getByRole("button", { name: /继续，但是把范围切小一点。.*正方.*下游节点.*先缩范围/ })).toBeInTheDocument();
+  });
+
   it("persists stage pan independently from node positions", () => {
     const nodes: DialogueStageNode[] = [
       {
@@ -181,6 +201,24 @@ describe("BubbleStage", () => {
     render(<BubbleStage layoutKey="focus:empty" nodes={[]} focusNodeId={null} onSelect={vi.fn()} />);
 
     expect(screen.getByText("给它一个母题，它会先长出正与反；生成后可整理舞台布局。")).toBeInTheDocument();
+  });
+
+  it("lets the empty theme node act as the primary input target", () => {
+    const onPrimaryAction = vi.fn();
+
+    render(
+      <BubbleStage
+        layoutKey="focus:empty"
+        nodes={[]}
+        focusNodeId={null}
+        onSelect={vi.fn()}
+        onPrimaryAction={onPrimaryAction}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /主题/ }));
+
+    expect(onPrimaryAction).toHaveBeenCalledWith(null);
   });
 
   it("uses tap-and-scroll language for coarse pointers", () => {
@@ -289,6 +327,99 @@ describe("BubbleStage", () => {
     expect(screen.getByTestId("dialogue-stage-relations")).toBeInTheDocument();
     expect(screen.getByTestId("dialogue-stage-relation-root-thesis")).toBeInTheDocument();
     expect(screen.getByTestId("dialogue-stage-relation-root-antithesis")).toBeInTheDocument();
+  });
+
+  it("renders in-stage pending feedback while branches are generating", () => {
+    const nodes: DialogueStageNode[] = [
+      {
+        id: "root",
+        label: "主题",
+        preview: "这个方向还值不值得继续投入？",
+        kind: "user",
+        relation: "focus",
+        seedX: 50,
+        seedY: 40
+      }
+    ];
+
+    render(
+      <BubbleStage
+        layoutKey="focus:root"
+        nodes={nodes}
+        focusNodeId="root"
+        onSelect={vi.fn()}
+        pendingPreview={{ kind: "branches", anchorNodeId: "root", prompt: "下一步怎么拆？" }}
+      />
+    );
+
+    expect(screen.getByTestId("dialogue-stage-pending-branches")).toHaveTextContent("正在让问题分岔");
+    expect(screen.getByTestId("dialogue-stage-pending-thesis")).toBeInTheDocument();
+    expect(screen.getByTestId("dialogue-stage-pending-antithesis")).toBeInTheDocument();
+  });
+
+  it("keeps the empty start affordance hidden while a root branch request is pending", () => {
+    render(
+      <BubbleStage
+        layoutKey="empty"
+        nodes={[]}
+        focusNodeId={null}
+        onSelect={vi.fn()}
+        onPrimaryAction={vi.fn()}
+        pendingPreview={{ kind: "branches", anchorNodeId: null, prompt: "时间应该怎样被使用？" }}
+      />
+    );
+
+    expect(screen.getByTestId("dialogue-stage-pending-branches")).toHaveTextContent("时间应该怎样被使用？");
+    expect(screen.queryByRole("button", { name: /点此输入/ })).not.toBeInTheDocument();
+  });
+
+  it("renders in-stage pending feedback while synthesis is converging", () => {
+    const nodes: DialogueStageNode[] = [
+      {
+        id: "root",
+        label: "主题",
+        kind: "user",
+        relation: "focus",
+        seedX: 50,
+        seedY: 40
+      },
+      {
+        id: "thesis",
+        label: "继续",
+        kind: "assistant",
+        branchType: "正",
+        relation: "child",
+        seedX: 28,
+        seedY: 70
+      },
+      {
+        id: "antithesis",
+        label: "暂停",
+        kind: "assistant",
+        branchType: "反",
+        relation: "child",
+        seedX: 72,
+        seedY: 70
+      }
+    ];
+
+    render(
+      <BubbleStage
+        layoutKey="focus:root"
+        nodes={nodes}
+        focusNodeId="root"
+        onSelect={vi.fn()}
+        pendingPreview={{
+          kind: "synthesis",
+          thesisId: "thesis",
+          antithesisId: "antithesis",
+          label: "继续 / 暂停"
+        }}
+      />
+    );
+
+    expect(screen.getByTestId("dialogue-stage-pending-synthesis")).toHaveTextContent("正在收束");
+    expect(screen.getByTestId("dialogue-stage-pending-synthesis-node")).toBeInTheDocument();
   });
 
   it("renders a non-node convergence trace when synthesis already happened offstage", () => {

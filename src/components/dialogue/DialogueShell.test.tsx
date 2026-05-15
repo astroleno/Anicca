@@ -162,22 +162,32 @@ describe("DialogueShell", () => {
   });
 
   it("shows composer and synthesis affordance from the derived view model", async () => {
-    const { rootUserId } = seedPair();
+    const user = userEvent.setup();
+    const { rootUserId, thesisId } = seedPair();
     useDialogueUiStore.setState({ focusedNodeId: rootUserId });
     vi.stubGlobal("fetch", vi.fn());
 
     render(<DialogueShell />);
 
-    expect(await screen.findByText("记录合流")).toBeInTheDocument();
-    expect(screen.getByText("将开启")).toBeInTheDocument();
-    expect(screen.getByText("新的主题")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("写下一个新的母题，它会开启另一条谱系。")).toBeInTheDocument();
+    expect((await screen.findAllByText("记录合流")).length).toBeGreaterThan(0);
+    expect(screen.getByText("下一步")).toBeInTheDocument();
+    expect(screen.getByText("正反已生成，选择下一步")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("先选择一侧继续，或记录合流。")).toBeInTheDocument();
     expect(screen.queryByPlaceholderText("把当前母题推进到下一轮。")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "开启新主题" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "另开主题" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /继续正方/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /继续反方/ })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /记录合流/ }).length).toBeGreaterThan(0);
+
+    await user.click(screen.getByRole("button", { name: /继续正方/ }));
+
+    expect(useDialogueUiStore.getState().focusedNodeId).toBe(thesisId);
+    expect(screen.getByText("将续写到")).toBeInTheDocument();
   });
 
   it("loads a demo workspace from the empty-state action", async () => {
     const user = userEvent.setup();
+    window.history.replaceState({}, "", "/dialogue?demo=1");
     vi.stubGlobal("fetch", vi.fn());
 
     render(<DialogueShell />);
@@ -422,6 +432,67 @@ describe("DialogueShell", () => {
     `);
   });
 
+  it("keeps the empty start focused on the stage prompt until the user opens input", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    await screen.findByTestId("dialogue-stage");
+    expect(screen.queryByTestId("dialogue-composer")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "载入示例谱系" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /点此输入/ }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("dialogue-composer")).toBeInTheDocument();
+      expect(screen.getByLabelText("输入")).toHaveFocus();
+    });
+  });
+
+  it("keeps an empty-root branch request visible across stage, lineage, and panel", async () => {
+    const user = userEvent.setup();
+    let resolveFetch: ((value: Response) => void) | null = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(
+        () =>
+          new Promise<Response>((resolve) => {
+            resolveFetch = resolve;
+          })
+      )
+    );
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: /点此输入/ }));
+    await user.type(screen.getByLabelText("输入"), "这个方向还值得投入吗");
+    await user.click(screen.getByRole("button", { name: "开启新主题" }));
+
+    expect(screen.getByTestId("dialogue-stage-pending-branches")).toHaveTextContent("这个方向还值得投入吗");
+    expect(screen.getByTestId("dialogue-sidebar")).toHaveTextContent("正在生成正与反");
+    expect(screen.getByTestId("dialogue-panel-pending-branches")).toHaveTextContent("母题已进入舞台");
+
+    resolveFetch?.(
+      new Response(
+        JSON.stringify({
+          requestId: useDialogueUiStore.getState().pending.branches?.requestId,
+          thesis: { text: "继续", summary: "继续推进", label: "继续", stance: "正" },
+          antithesis: { text: "暂停", summary: "暂停重构", label: "暂停", stance: "反" }
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
+      )
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("dialogue-panel-pending-branches")).not.toBeInTheDocument();
+      expect(branchGraphStore.getGraph().entryIds).toHaveLength(1);
+    });
+  });
+
   it("boots from the active workspace registry instead of the legacy single snapshot key", async () => {
     const graph = seedRegistryWorkspace();
     vi.stubGlobal("fetch", vi.fn());
@@ -447,8 +518,8 @@ describe("DialogueShell", () => {
     expect(localStorage.getItem("anicca_workspace_v2")).toBeNull();
   });
 
-  it("limits the demo workspace action to localhost or explicit demo query", () => {
-    expect(isDialogueDemoWorkspaceEnabled({ hostname: "localhost", search: "" })).toBe(true);
+  it("limits the demo workspace action to an explicit demo query", () => {
+    expect(isDialogueDemoWorkspaceEnabled({ hostname: "localhost", search: "" })).toBe(false);
     expect(isDialogueDemoWorkspaceEnabled({ hostname: "anicca.app", search: "?demo=1" })).toBe(true);
     expect(isDialogueDemoWorkspaceEnabled({ hostname: "anicca.app", search: "" })).toBe(false);
   });
@@ -1166,7 +1237,7 @@ describe("DialogueShell", () => {
 
     render(<DialogueShell />);
 
-    await user.click(screen.getByRole("button", { name: "记录合流" }));
+    await user.click(screen.getByRole("button", { name: /记录合流/ }));
     resolveFetch?.(
       new Response(
         JSON.stringify({
@@ -1218,7 +1289,7 @@ describe("DialogueShell", () => {
 
     render(<DialogueShell />);
 
-    await user.click(screen.getByRole("button", { name: "记录合流" }));
+    await user.click(screen.getByRole("button", { name: /记录合流/ }));
     resolveFetch?.(
       new Response(
         JSON.stringify({
@@ -1349,7 +1420,7 @@ describe("DialogueShell", () => {
     const childUserId = branchGraphStore.getGraph().nodes[thesisId].children[0];
     expect(branchGraphStore.getGraph().nodes[childUserId]?.text).toBe("继续的话下一步做什么");
     expect(useDialogueUiStore.getState().focusedNodeId).toBe(antithesisId);
-    expect(screen.getByRole("status")).toHaveTextContent("正反已生成，当前焦点保持不变。");
+    expect(screen.getByRole("status")).toHaveTextContent("正反已生成：选择一侧继续，或记录合流。");
     expect(events.some((event) => event.name === "continuation_created")).toBe(true);
   });
 
@@ -1376,11 +1447,11 @@ describe("DialogueShell", () => {
 
     render(<DialogueShell />);
 
-    await user.click(screen.getByRole("button", { name: "记录合流" }));
+    await user.click(screen.getByRole("button", { name: /记录合流/ }));
     await user.click(within(screen.getByTestId("dialogue-sidebar")).getByRole("button", { name: /另一个问题/ }));
 
     expect(screen.queryByRole("button", { name: "收束中..." })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "记录合流" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /记录合流/ })).toBeDisabled();
     expect(screen.getByText("等待另一条谱系收束完成：继续 / 暂停")).toBeInTheDocument();
 
     resolveFetch?.(
@@ -1406,8 +1477,8 @@ describe("DialogueShell", () => {
     });
 
     expect(useDialogueUiStore.getState().focusedNodeId).toBe(otherRootId);
-    expect(screen.getByRole("status")).toHaveTextContent("合流已生成，当前焦点保持不变。");
-    expect(screen.getByTestId("dialogue-flow-status")).toHaveTextContent("合流已生成，当前焦点保持不变。");
+    expect(screen.getByRole("status")).toHaveTextContent("合流已生成：查看合流记录，或基于它继续追问。");
+    expect(screen.getByTestId("dialogue-flow-status")).toHaveTextContent("合流已生成：查看合流记录，或基于它继续追问。");
   });
 
   it("makes pending states exclusive and exposes synthesis busy feedback", async () => {
@@ -1428,7 +1499,7 @@ describe("DialogueShell", () => {
 
     render(<DialogueShell />);
 
-    await user.click(screen.getByRole("button", { name: "记录合流" }));
+    await user.click(screen.getByRole("button", { name: /记录合流/ }));
 
     expect(useDialogueUiStore.getState().pending.branches).toBeNull();
     expect(useDialogueUiStore.getState().pending.synthesis).not.toBeNull();

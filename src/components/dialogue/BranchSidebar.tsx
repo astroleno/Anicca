@@ -6,10 +6,14 @@ import styles from "./DialogueShell.module.css";
 type BranchSidebarProps = {
   breadcrumb: DialogueBreadcrumbItem[];
   items: DialogueSidebarItem[];
+  pendingRoot?: {
+    label: string;
+    summary: string;
+  } | null;
   onSelect: (nodeId: string) => void;
 };
 
-export function BranchSidebar({ breadcrumb, items, onSelect }: BranchSidebarProps) {
+export function BranchSidebar({ breadcrumb, items, pendingRoot = null, onSelect }: BranchSidebarProps) {
   return (
     <aside className={styles.sidebar} aria-label="对话谱系" data-testid="dialogue-sidebar">
       <div className={styles.sidebarHeader}>
@@ -30,6 +34,17 @@ export function BranchSidebar({ breadcrumb, items, onSelect }: BranchSidebarProp
       </div>
 
       <nav className={styles.sidebarTree} aria-label="分支列表">
+        {pendingRoot ? (
+          <div className={[styles.sidebarItem, styles.sidebarPendingItem].join(" ")} role="status" aria-live="polite">
+            <span className={styles.sidebarItemMain}>
+              <span className={styles.sidebarItemLabelGroup}>
+                <span className={styles.sidebarItemLabel}>{pendingRoot.label}</span>
+              </span>
+              <small>生成中</small>
+            </span>
+            <span className={styles.sidebarItemSummary}>{pendingRoot.summary}</span>
+          </div>
+        ) : null}
         {items.map((item) => {
           const isSynthesisEvent = item.displayRole === "synthesis-event";
 

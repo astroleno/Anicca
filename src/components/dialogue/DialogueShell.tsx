@@ -101,8 +101,7 @@ function isDialogueWorkspaceRetrievalContextEnabled() {
 
 export function isDialogueDemoWorkspaceEnabled(locationLike: DialogueLocationLike) {
   const params = new URLSearchParams(locationLike.search);
-  const isLocalHost = ["localhost", "127.0.0.1", "::1"].includes(locationLike.hostname);
-  return isLocalHost || params.get("demo") === "1";
+  return params.get("demo") === "1";
 }
 
 function buildSynthesisRetrievalQueryText(thesisNode: Graph["nodes"][string], antithesisNode: Graph["nodes"][string]) {
@@ -139,6 +138,14 @@ function getRoundtablePendingSourceLabel(graph: Graph, sourceNodeId: string | nu
   }
 
   return "节点";
+}
+
+function getShortPromptLabel(text: string) {
+  const firstLine = text.trim().replace(/\s+/g, " ");
+  if (!firstLine) {
+    return "待生成母题";
+  }
+  return firstLine.length > 14 ? `${firstLine.slice(0, 14)}…` : firstLine;
 }
 
 function formatDialogueError(error: unknown): DialogueErrorState {
@@ -403,6 +410,7 @@ export function DialogueShell() {
     branchGraphStore.getSnapshot.bind(branchGraphStore)
   );
   const [draft, setDraft] = useState("");
+  const [emptyComposerOpen, setEmptyComposerOpen] = useState(false);
   const [demoWorkspaceEnabled, setDemoWorkspaceEnabled] = useState(false);
   const [workspaceReady, setWorkspaceReady] = useState(() => branchGraphStore.getGraph().entryIds.length > 0);
   const [workspaceEntries, setWorkspaceEntries] = useState<WorkspaceRegistryEntry[]>([]);
@@ -476,6 +484,7 @@ export function DialogueShell() {
   }, []);
 
   const view = deriveDialogueView(graphSnapshot.graph, focusedNodeId);
+  const isEmptyWorkspace = graphSnapshot.graph.entryIds.length === 0;
   const isBranchPending = pending.branches !== null;
   const isSynthesisPending = pending.synthesis !== null;
   const hasPendingRequest = isBranchPending || isSynthesisPending;
@@ -488,6 +497,7 @@ export function DialogueShell() {
   const composerTarget = frozenComposerTarget || view.composerTarget;
   const composerTargetFrozenReason = pending.branches ? "branches" : pending.synthesis ? "synthesis" : null;
   const composerTargetFrozen = Boolean(frozenComposerTarget);
+  const shouldShowComposer = !isEmptyWorkspace || emptyComposerOpen || draft.trim().length > 0 || hasPendingRequest || Boolean(errorState);
 
   const beginRoundtablePending = (request: RoundtablePendingRequest) => {
     roundtablePendingRef.current = request;
@@ -506,6 +516,24 @@ export function DialogueShell() {
     clearRoundtablePending();
     setRoundtableArtifact(null);
   };
+
+  const focusComposerSoon = useCallback(() => {
+    setEmptyComposerOpen(true);
+    window.setTimeout(() => {
+      composerTextareaRef.current?.focus();
+    }, 0);
+  }, []);
+
+  const handleDraftChange = useCallback((value: string) => {
+    if (isEmptyWorkspace) {
+      setEmptyComposerOpen(true);
+    }
+    setDraft(value);
+  }, [isEmptyWorkspace]);
+
+  useEffect(() => {
+    setEmptyComposerOpen(false);
+  }, [workspaceId]);
 
   useEffect(() => {
     if (view.focusNodeId !== focusedNodeId) {
@@ -572,6 +600,11 @@ export function DialogueShell() {
       setFocusedNodeId(nodeId);
       setErrorState(null);
     });
+  };
+
+  const handleSelectStageNode = (nodeId: string) => {
+    handleSelectNode(nodeId);
+    focusComposerSoon();
   };
 
   const handleLoadDemoWorkspace = () => {
@@ -836,7 +869,7 @@ export function DialogueShell() {
           setFocusedNodeId(userNodeId);
         });
       } else {
-        setWorkspaceStatus("正反已生成，当前焦点保持不变。");
+        setWorkspaceStatus("正反已生成：选择一侧继续，或记录合流。");
       }
     } catch (error: unknown) {
       const activePending = useDialogueUiStore.getState().pending.branches;
@@ -1100,7 +1133,7 @@ export function DialogueShell() {
           document.getElementById("conversation-panel-heading")?.focus();
         }, 0);
       } else {
-        setWorkspaceStatus("合流已生成，当前焦点保持不变。");
+        setWorkspaceStatus("合流已生成：查看合流记录，或基于它继续追问。");
       }
     } catch (error: unknown) {
       const activePending = useDialogueUiStore.getState().pending.synthesis;
@@ -1133,6 +1166,47 @@ export function DialogueShell() {
     relevantSynthesisAction && hasPendingRequest && !isSynthesisPendingForCurrentAction
   );
   const synthesisPendingSourceLabel = pending.synthesis?.sourceLabel || null;
+  const pendingRootPrompt = pending.branches && !pending.branches.composerTargetId && isEmptyWorkspace
+    ? draft.trim()
+    : null;
+  const pendingRootSidebar = pendingRootPrompt
+    ? {
+        label: getShortPromptLabel(pendingRootPrompt),
+        summary: "正在生成正与反。"
+      }
+    : null;
+  const stagePendingPreview = pending.branches
+    ? {
+        kind: "branches" as const,
+        anchorNodeId: pending.branches.composerTargetId,
+        prompt: draft
+      }
+    : pending.synthesis && relevantSynthesisAction && pending.synthesis.synthesisActionKey === relevantSynthesisAction.key
+      ? {
+          kind: "synthesis" as const,
+          thesisId: relevantSynthesisAction.thesisId,
+          antithesisId: relevantSynthesisAction.antithesisId,
+          label: pending.synthesis.sourceLabel || relevantSynthesisAction.label
+        }
+      : null;
+  const nextStepChoice =
+    view.currentNode?.kind === "user" &&
+    composerTarget.kind === "root" &&
+    relevantSynthesisAction?.available
+      ? {
+          thesisLabel: getDialogueNodeLabel(graphSnapshot.graph, relevantSynthesisAction.thesisId),
+          antithesisLabel: getDialogueNodeLabel(graphSnapshot.graph, relevantSynthesisAction.antithesisId),
+          synthesisLabel: relevantSynthesisAction.label,
+          synthesisBusy: isSynthesisPendingForCurrentAction,
+          synthesisDisabled: hasPendingRequest || synthesisBlockedByOtherPending,
+          onSelectThesis: () => handleSelectStageNode(relevantSynthesisAction.thesisId),
+          onSelectAntithesis: () => handleSelectStageNode(relevantSynthesisAction.antithesisId),
+          onSynthesize: () => handleGenerateSynthesis(relevantSynthesisAction)
+        }
+      : null;
+  const flowStatusMergedIntoComposer = Boolean(
+    nextStepChoice && workspaceStatus?.startsWith("正反已生成")
+  );
 
   if (!workspaceReady) {
     return (
@@ -1161,11 +1235,6 @@ export function DialogueShell() {
         <p className={styles.heroCopy}>
           把它放进场里，先长出正与反；等张力清楚了，再触发一次合流并留下记录。
         </p>
-        <div className={styles.heroActions}>
-          <a className={`${styles.heroActionButton} ${styles.heroActionLink}`} href="/roundtable">
-            圆桌实验页
-          </a>
-        </div>
       </header>
 
       <WorkspaceBar
@@ -1191,7 +1260,7 @@ export function DialogueShell() {
         className={styles.hiddenFileInput}
         onChange={handleImportWorkspace}
       />
-      {workspaceStatus ? (
+      {workspaceStatus && !flowStatusMergedIntoComposer ? (
         <p className={styles.flowStatus} aria-hidden="true" data-testid="dialogue-flow-status">
           {workspaceStatus}
         </p>
@@ -1204,9 +1273,15 @@ export function DialogueShell() {
           focusNodeId={view.focusNodeId}
           convergenceEventId={relevantSynthesisAction?.synthesisId || null}
           eventNodeId={synthesisRevealId}
-          onSelect={handleSelectNode}
+          pendingPreview={stagePendingPreview}
+          onSelect={handleSelectStageNode}
+          onPrimaryAction={(nodeId) => {
+            if (!nodeId) {
+              focusComposerSoon();
+            }
+          }}
           emptyAction={
-            demoWorkspaceEnabled && graphSnapshot.graph.entryIds.length === 0
+            demoWorkspaceEnabled && isEmptyWorkspace
               ? {
                   label: "载入示例谱系",
                   onTrigger: handleLoadDemoWorkspace
@@ -1214,13 +1289,20 @@ export function DialogueShell() {
               : null
           }
         />
-        <BranchSidebar breadcrumb={view.breadcrumb} items={view.sidebarItems} onSelect={handleSelectNode} />
+        <BranchSidebar
+          breadcrumb={view.breadcrumb}
+          items={view.sidebarItems}
+          pendingRoot={pendingRootSidebar}
+          onSelect={handleSelectNode}
+        />
         <ConversationPanel
           node={view.currentNode}
+          pendingBranchPrompt={pendingRootPrompt}
           synthesisAction={relevantSynthesisAction}
           synthesisPending={isSynthesisPendingForCurrentAction}
           synthesisBlocked={synthesisBlockedByOtherPending}
           synthesisPendingSourceLabel={synthesisPendingSourceLabel}
+          suppressSynthesisAction={Boolean(nextStepChoice && !hasPendingRequest)}
           roundtablePending={roundtablePending}
           roundtablePendingSourceLabel={roundtablePendingSourceLabel}
           roundtableSummonButtonRef={roundtableSummonButtonRef}
@@ -1236,18 +1318,23 @@ export function DialogueShell() {
             }
           }}
         />
-        <DialogueComposer
-          target={composerTarget}
-          value={draft}
-          disabled={hasPendingRequest}
-          pendingAction={pendingAction}
-          targetFrozen={composerTargetFrozen}
-          targetFrozenReason={composerTargetFrozenReason}
-          errorState={errorState}
-          textareaRef={composerTextareaRef}
-          onChange={setDraft}
-          onSubmit={handleSubmit}
-        />
+        {shouldShowComposer ? (
+          <DialogueComposer
+            target={composerTarget}
+            value={draft}
+            disabled={hasPendingRequest}
+            pendingAction={pendingAction}
+            nextStepChoice={nextStepChoice}
+            isEmptyStart={isEmptyWorkspace}
+            emptyStartOpen={emptyComposerOpen}
+            targetFrozen={composerTargetFrozen}
+            targetFrozenReason={composerTargetFrozenReason}
+            errorState={errorState}
+            textareaRef={composerTextareaRef}
+            onChange={handleDraftChange}
+            onSubmit={handleSubmit}
+          />
+        ) : null}
       </div>
 
       {roundtableArtifact ? (
