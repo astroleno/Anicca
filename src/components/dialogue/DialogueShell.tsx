@@ -88,10 +88,32 @@ type RoundtablePendingRequest = {
   focusSnapshotId: string;
 };
 
+const DIALOGUE_WORKSPACE_RETRIEVAL_CONTEXT_DEFAULT_ENABLED = false;
+let dialogueWorkspaceRetrievalContextEnabled = DIALOGUE_WORKSPACE_RETRIEVAL_CONTEXT_DEFAULT_ENABLED;
+
+export function setDialogueWorkspaceRetrievalContextEnabledForTests(enabled: boolean) {
+  dialogueWorkspaceRetrievalContextEnabled = enabled;
+}
+
+function isDialogueWorkspaceRetrievalContextEnabled() {
+  return dialogueWorkspaceRetrievalContextEnabled;
+}
+
 export function isDialogueDemoWorkspaceEnabled(locationLike: DialogueLocationLike) {
   const params = new URLSearchParams(locationLike.search);
   const isLocalHost = ["localhost", "127.0.0.1", "::1"].includes(locationLike.hostname);
   return isLocalHost || params.get("demo") === "1";
+}
+
+function buildSynthesisRetrievalQueryText(thesisNode: Graph["nodes"][string], antithesisNode: Graph["nodes"][string]) {
+  return [
+    thesisNode.meta?.label || thesisNode.branchType,
+    thesisNode.meta?.summary,
+    antithesisNode.meta?.label || antithesisNode.branchType,
+    antithesisNode.meta?.summary
+  ]
+    .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+    .join(" ");
 }
 
 function getRoundtablePendingSourceLabel(graph: Graph, sourceNodeId: string | null): string | null {
@@ -775,7 +797,7 @@ export function DialogueShell() {
           queryText: text,
           systemPrelude: "",
           graph: graphSnapshot.graph,
-          retrieval: { enabled: false }
+          retrieval: { enabled: isDialogueWorkspaceRetrievalContextEnabled() }
         }).messages
       );
       const response = await postJson<BranchesResponse>("/api/branches", {
@@ -1026,10 +1048,10 @@ export function DialogueShell() {
       const contextMessages = serializeContextMessages(
         buildWorkspaceContext({
           targetId: action.thesisId,
-          queryText: "",
+          queryText: buildSynthesisRetrievalQueryText(thesisNode, antithesisNode),
           systemPrelude: "",
           graph,
-          retrieval: { enabled: false }
+          retrieval: { enabled: isDialogueWorkspaceRetrievalContextEnabled() }
         }).messages
       );
       const response = await postJson<SynthesisResponse>("/api/synthesis", {

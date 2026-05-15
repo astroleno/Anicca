@@ -1,6 +1,10 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { DialogueShell, isDialogueDemoWorkspaceEnabled } from "@/components/dialogue/DialogueShell";
+import {
+  DialogueShell,
+  isDialogueDemoWorkspaceEnabled,
+  setDialogueWorkspaceRetrievalContextEnabledForTests
+} from "@/components/dialogue/DialogueShell";
 import { useDialogueUiStore } from "@/features/dialectic/store";
 import {
   DialogueTelemetryEvent,
@@ -127,10 +131,31 @@ function normalizeRequestId<T extends { requestId?: unknown }>(body: T) {
   };
 }
 
+function normalizeRetrievalContextIds<T extends { contextMessages?: Array<{ content?: string }> }>(body: T) {
+  return {
+    ...body,
+    contextMessages: body.contextMessages?.map((message) => ({
+      ...message,
+      content: message.content?.startsWith("相关谱系片段:")
+        ? normalizeRetrievalContextContent(message.content)
+        : message.content
+    }))
+  };
+}
+
+function normalizeRetrievalContextContent(content: string) {
+  const normalized = content.replace(/\b(?:user|asst)_[a-z0-9_]+/g, "<nodeId>");
+  const [header, ...lines] = normalized.split("\n");
+  const nodeLines = lines.filter((line) => line.startsWith("NODE ")).sort();
+  const edgeLines = lines.filter((line) => line.startsWith("EDGE ")).sort();
+  return [header, ...nodeLines, ...edgeLines].join("\n");
+}
+
 describe("DialogueShell", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    setDialogueWorkspaceRetrievalContextEnabledForTests(false);
     resetDialogueTelemetrySinkForTests();
     window.history.replaceState({}, "", "/dialogue");
     resetWorkspace();
@@ -211,6 +236,67 @@ describe("DialogueShell", () => {
     `);
   });
 
+  it("adds flagged retrieval context to the /api/branches request body", async () => {
+    setDialogueWorkspaceRetrievalContextEnabledForTests(true);
+    const user = userEvent.setup();
+    const { thesisId } = seedPair();
+    const relatedRootId = branchGraphStore.createUserNode("下一步怎么拆的参考");
+    branchGraphStore.createAssistantPair(relatedRootId, {
+      thesis: { text: "先列一张拆分清单", summary: "拆分参考", label: "拆分" },
+      antithesis: { text: "先延后拆分", summary: "延后参考", label: "延后" }
+    });
+    useDialogueUiStore.setState({ focusedNodeId: thesisId });
+    const fetchMock = vi.fn(async (_url, init) => {
+      const body = JSON.parse(String((init as RequestInit).body || "{}"));
+      return new Response(
+        JSON.stringify({
+          requestId: body.requestId,
+          thesis: { text: "拆小", summary: "拆小推进", label: "拆小", stance: "正" },
+          antithesis: { text: "降速", summary: "降速观察", label: "降速", stance: "反" }
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<DialogueShell />);
+
+    await user.type(await screen.findByLabelText("输入"), "下一步怎么拆");
+    await user.click(screen.getByRole("button", { name: "生成正 / 反" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("/api/branches", expect.any(Object));
+    });
+    expect(normalizeRetrievalContextIds(normalizeRequestId(readFetchBody(fetchMock)))).toMatchInlineSnapshot(`
+      {
+        "contextMessages": [
+          {
+            "content": "要不要继续这个项目",
+            "role": "user",
+          },
+          {
+            "content": "继续：继续推进；暂停：暂停重构",
+            "role": "assistant",
+          },
+          {
+            "content": "相关谱系片段:
+      NODE [<nodeId>] kind=assistant branch=antithesis label=延后 summary=延后参考
+      NODE [<nodeId>] kind=assistant branch=thesis label=拆分 summary=拆分参考
+      NODE [<nodeId>] kind=user label=下一步怎么拆的参考
+      EDGE [<nodeId>] --antithesis--> [<nodeId>] confidence=explicit reason=反
+      EDGE [<nodeId>] --thesis--> [<nodeId>] confidence=explicit reason=正",
+            "role": "system",
+          },
+        ],
+        "requestId": "<requestId>",
+        "userText": "下一步怎么拆",
+      }
+    `);
+  });
+
   it("locks the /api/synthesis request body from the current sibling pair", async () => {
     const user = userEvent.setup();
     const { rootUserId } = seedPair();
@@ -254,6 +340,75 @@ describe("DialogueShell", () => {
           {
             "content": "继续：继续推进；暂停：暂停重构",
             "role": "assistant",
+          },
+        ],
+        "requestId": "<requestId>",
+        "thesis": {
+          "label": "继续",
+          "stance": "正",
+          "summary": "继续推进",
+          "text": "继续",
+        },
+      }
+    `);
+  });
+
+  it("adds flagged retrieval context to the /api/synthesis request body", async () => {
+    setDialogueWorkspaceRetrievalContextEnabledForTests(true);
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    const relatedRootId = branchGraphStore.createUserNode("继续 暂停 的历史参考");
+    branchGraphStore.createAssistantPair(relatedRootId, {
+      thesis: { text: "继续但压缩范围", summary: "继续参考", label: "继续参考" },
+      antithesis: { text: "暂停并复盘", summary: "暂停参考", label: "暂停参考" }
+    });
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    const fetchMock = vi.fn(async (_url, init) => {
+      const body = JSON.parse(String((init as RequestInit).body || "{}"));
+      return new Response(
+        JSON.stringify({
+          requestId: body.requestId,
+          synthesis: { text: "重开主线", summary: "主线重开", label: "重开", stance: "合" }
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<DialogueShell />);
+
+    const synthesisButtons = await screen.findAllByRole("button", { name: /记录合流/ });
+    await user.click(synthesisButtons[0]);
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("/api/synthesis", expect.any(Object));
+    });
+    expect(normalizeRetrievalContextIds(normalizeRequestId(readFetchBody(fetchMock)))).toMatchInlineSnapshot(`
+      {
+        "antithesis": {
+          "label": "暂停",
+          "stance": "反",
+          "summary": "暂停重构",
+          "text": "暂停",
+        },
+        "contextMessages": [
+          {
+            "content": "要不要继续这个项目",
+            "role": "user",
+          },
+          {
+            "content": "继续：继续推进；暂停：暂停重构",
+            "role": "assistant",
+          },
+          {
+            "content": "相关谱系片段:
+      NODE [<nodeId>] kind=assistant branch=antithesis label=暂停参考 summary=暂停参考
+      NODE [<nodeId>] kind=assistant branch=thesis label=继续参考 summary=继续参考
+      NODE [<nodeId>] kind=user label=继续 暂停 的历史参考",
+            "role": "system",
           },
         ],
         "requestId": "<requestId>",
