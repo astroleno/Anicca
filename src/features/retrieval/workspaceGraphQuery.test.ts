@@ -128,16 +128,59 @@ describe("workspace graph retrieval", () => {
         matchedFields: ["label", "text"]
       }
     ]);
-    expect(findByLabelOrText(graph, "正")[0]).toMatchObject({
-      node: { id: thesisId },
-      bestMatch: "exact",
-      matchedFields: ["branchType"]
-    });
+    expect(findByLabelOrText(graph, "正")).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          node: expect.objectContaining({ id: thesisId }),
+          bestMatch: "exact",
+          matchedFields: ["branchType"]
+        })
+      ])
+    );
     expect(findByLabelOrText(graph, "暂停", { limit: 1 })[0]).toMatchObject({
       node: { id: antithesisId },
       rank: 1
     });
     expect(findByLabelOrText(graph, "投入", { maxQueryChars: 0 })).toEqual([]);
+  });
+
+  it("orders equal branch type matches by stable node id", () => {
+    const graph = createEmptyGraph();
+    addNode(graph, {
+      id: "user_root",
+      kind: "user",
+      text: "root",
+      createdAt: "2026-04-29T00:00:00.000Z",
+      parents: [],
+      children: []
+    });
+    addNode(graph, {
+      id: "asst_b",
+      kind: "assistant",
+      text: "later",
+      createdAt: "2026-04-29T00:00:00.000Z",
+      parents: ["user_root"],
+      children: [],
+      branchType: "正",
+      meta: { label: "later", summary: "later" }
+    });
+    addNode(graph, {
+      id: "asst_a",
+      kind: "assistant",
+      text: "earlier",
+      createdAt: "2026-04-29T00:00:00.000Z",
+      parents: ["user_root"],
+      children: [],
+      branchType: "正",
+      meta: { label: "earlier", summary: "earlier" }
+    });
+
+    expect(findByLabelOrText(graph, "正").map((match) => match.node.id)).toEqual(["asst_a", "asst_b"]);
+    expect(findByLabelOrText(graph, "正")[0]).toMatchObject({
+      node: { id: "asst_a" },
+      bestMatch: "exact",
+      matchedFields: ["branchType"]
+    });
   });
 
   it("queries relevant subgraphs across entries without expanding the whole graph", () => {
