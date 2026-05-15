@@ -1358,6 +1358,36 @@
   font-weight: 500;
 }
 
+.retrievalDebugStats {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+
+.retrievalDebugStats div {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.retrievalDebugStats dt {
+  color: rgba(226, 239, 244, 0.52);
+}
+
+.retrievalDebugStats dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.retrievalDebugNotes {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 10px;
+  padding-left: 18px;
+  color: rgba(255, 232, 177, 0.78);
+}
+
 .retrievalDebugPanel pre,
 .retrievalDebugPanel p {
   margin: 0;

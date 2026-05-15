@@ -551,7 +551,35 @@ describe("DialogueShell", () => {
       expect(screen.getByTestId("dialogue-retrieval-debug")).toHaveTextContent("相关谱系片段:");
     });
     expect(screen.getByTestId("dialogue-retrieval-debug")).toHaveTextContent("拆分参考");
+    expect(screen.getByTestId("dialogue-retrieval-debug")).toHaveTextContent("query");
+    expect(screen.getByTestId("dialogue-retrieval-debug")).toHaveTextContent("omitted");
+    expect(screen.getByTestId("dialogue-retrieval-debug")).toHaveTextContent("coverage exclusion active");
     expect(screen.getByTestId("dialogue-retrieval-debug")).not.toHaveTextContent("要不要继续这个项目");
+  });
+
+  it("keeps retrieval debug preview hidden by default", async () => {
+    const { thesisId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: thesisId });
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    await screen.findByTestId("dialogue-stage");
+    expect(screen.queryByTestId("dialogue-retrieval-debug")).not.toBeInTheDocument();
+  });
+
+  it("explains empty retrieval preview results", async () => {
+    window.history.replaceState({}, "", "/dialogue?retrievalDebug=1");
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("dialogue-retrieval-debug")).toHaveTextContent("无可注入片段");
+    });
+    expect(screen.getByTestId("dialogue-retrieval-debug")).toHaveTextContent("query");
+    expect(screen.getByTestId("dialogue-retrieval-debug")).toHaveTextContent("(empty)");
+    expect(screen.getByTestId("dialogue-retrieval-debug")).toHaveTextContent("empty query");
   });
 
   it("keeps mobile reading and keyboard order aligned as stage, lineage, panel, then composer", async () => {

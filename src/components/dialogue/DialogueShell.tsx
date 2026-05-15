@@ -1249,14 +1249,15 @@ export function DialogueShell() {
     }
 
     const targetId = composerTarget.nodeId || view.focusNodeId;
+    const queryText = buildRetrievalDebugPreviewQueryText({
+      draft,
+      currentNode: view.currentNode,
+      graph: graphSnapshot.graph,
+      synthesisAction: relevantSynthesisAction
+    });
     const built = buildWorkspaceContext({
       targetId,
-      queryText: buildRetrievalDebugPreviewQueryText({
-        draft,
-        currentNode: view.currentNode,
-        graph: graphSnapshot.graph,
-        synthesisAction: relevantSynthesisAction
-      }),
+      queryText,
       systemPrelude: "",
       graph: graphSnapshot.graph,
       retrieval: {
@@ -1266,12 +1267,33 @@ export function DialogueShell() {
         charBudget: 900
       }
     });
+    const subgraph = built.retrieval?.subgraph;
+    const omitted = subgraph?.omitted || {
+      matches: 0,
+      nodes: 0,
+      edges: 0,
+      excludedNodes: 0,
+      danglingEdges: 0,
+      duplicateEdges: 0
+    };
+    const notes = [
+      !queryText.trim() ? "empty query" : null,
+      queryText.trim() && !subgraph?.seedMatches.length ? "no seed matches" : null,
+      built.coverage.coveredNodeIds.length > 0 ? "coverage exclusion active" : null,
+      omitted.excludedNodes > 0 ? "retrieval hits were excluded by coverage" : null,
+      omitted.matches || omitted.nodes || omitted.edges ? "result was clamped by retrieval limits" : null,
+      !built.retrieval?.message && (subgraph?.nodes.length || 0) > 0 ? "render produced empty content" : null,
+      ...(subgraph?.warnings || []).map((warning) => `warning: ${warning}`)
+    ].filter((note): note is string => Boolean(note));
 
     return {
       content: built.retrieval?.message?.content || "",
+      queryText,
       coveredNodeCount: built.coverage.coveredNodeIds.length,
-      nodeCount: built.retrieval?.subgraph.nodes.length || 0,
-      edgeCount: built.retrieval?.subgraph.edges.length || 0
+      nodeCount: subgraph?.nodes.length || 0,
+      edgeCount: subgraph?.edges.length || 0,
+      omitted,
+      notes
     };
   }, [
     composerTarget.nodeId,
@@ -1401,6 +1423,31 @@ export function DialogueShell() {
                 nodes {retrievalDebugPreview.nodeCount} · edges {retrievalDebugPreview.edgeCount} · excluded {retrievalDebugPreview.coveredNodeCount}
               </small>
             </div>
+            <dl className={styles.retrievalDebugStats}>
+              <div>
+                <dt>query</dt>
+                <dd>{retrievalDebugPreview.queryText || "(empty)"}</dd>
+              </div>
+              <div>
+                <dt>omitted</dt>
+                <dd>
+                  matches {retrievalDebugPreview.omitted.matches} · nodes {retrievalDebugPreview.omitted.nodes} · edges {retrievalDebugPreview.omitted.edges}
+                </dd>
+              </div>
+              <div>
+                <dt>graph hygiene</dt>
+                <dd>
+                  dangling {retrievalDebugPreview.omitted.danglingEdges} · duplicate {retrievalDebugPreview.omitted.duplicateEdges}
+                </dd>
+              </div>
+            </dl>
+            {retrievalDebugPreview.notes.length ? (
+              <ul className={styles.retrievalDebugNotes}>
+                {retrievalDebugPreview.notes.map((note) => (
+                  <li key={note}>{note}</li>
+                ))}
+              </ul>
+            ) : null}
             {retrievalDebugPreview.content ? (
               <pre>{retrievalDebugPreview.content}</pre>
             ) : (
