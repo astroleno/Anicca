@@ -142,6 +142,7 @@ export function renderRetrievalContext(subgraph: RetrievalSubgraph, options: Ren
   const includeEdges = options.includeEdges ?? true;
   const includeFullTextForSeedNodes = options.includeFullTextForSeedNodes ?? false;
   const lines: string[] = [];
+  const includedNodeIds = new Set<string>();
 
   if (!tryAppendLine(lines, HEADER, charBudget)) {
     return "";
@@ -149,11 +150,22 @@ export function renderRetrievalContext(subgraph: RetrievalSubgraph, options: Ren
 
   const seedNodeIds = new Set(subgraph.seedNodeIds);
   for (const node of orderNodesForRender(subgraph.nodes, subgraph.seedNodeIds)) {
-    tryAppendLine(lines, renderNodeLine(node, seedNodeIds, includeFullTextForSeedNodes), charBudget);
+    const appended = tryAppendLine(lines, renderNodeLine(node, seedNodeIds, includeFullTextForSeedNodes), charBudget);
+    if (!appended) {
+      break;
+    }
+    includedNodeIds.add(node.id);
+  }
+
+  if (includedNodeIds.size === 0) {
+    return "";
   }
 
   if (includeEdges) {
     for (const edge of subgraph.edges) {
+      if (!includedNodeIds.has(edge.from) || !includedNodeIds.has(edge.to)) {
+        continue;
+      }
       tryAppendLine(lines, renderEdgeLine(edge), charBudget);
     }
   }

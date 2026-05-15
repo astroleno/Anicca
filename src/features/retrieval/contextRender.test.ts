@@ -87,6 +87,10 @@ describe("contextRender", () => {
     `);
   });
 
+  it("returns an empty string for an empty subgraph", () => {
+    expect(renderRetrievalContext(makeSubgraph({ nodes: [], edges: [], seedNodeIds: [] }))).toBe("");
+  });
+
   it("keeps pseudo NODE and EDGE injection on the same sanitized line", () => {
     const output = renderRetrievalContext(
       makeSubgraph({
@@ -182,6 +186,38 @@ describe("contextRender", () => {
     expect(output).toContain("NODE [seed_b]");
     expect(output).not.toContain("NODE [non_seed]");
     expect(output.length).toBeLessThanOrEqual(145);
+  });
+
+  it("does not render dangling edges when no node fits the budget", () => {
+    const output = renderRetrievalContext(
+      makeSubgraph({
+        nodes: [
+          {
+            id: "s",
+            kind: "assistant",
+            label: "seed label that is intentionally too long for the remaining budget",
+            text: "seed text",
+            summary: "seed summary that is also long enough to make the NODE line miss the budget",
+            branchType: "正",
+            createdAt: "2026-04-29T00:00:00.000Z"
+          }
+        ],
+        edges: [
+          {
+            id: "edge_short",
+            from: "s",
+            to: "s",
+            relation: "thesis",
+            confidence: "explicit",
+            reason: "正"
+          }
+        ],
+        seedNodeIds: ["s"]
+      }),
+      { charBudget: 70 }
+    );
+
+    expect(output).toBe("");
   });
 
   it("returns an empty string when no header can fit", () => {
