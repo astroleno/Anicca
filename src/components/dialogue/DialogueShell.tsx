@@ -15,7 +15,7 @@ import {
   buildWorkspaceResumedEvent,
   emitDialogueTelemetry
 } from "@/lib/analytics/dialogue";
-import { buildParentContext } from "@/chat/context";
+import { buildWorkspaceContext } from "@/chat/workspaceContext";
 import { BranchSidebar } from "@/components/dialogue/BranchSidebar";
 import { BubbleStage } from "@/components/dialogue/BubbleStage";
 import { ConversationPanel } from "@/components/dialogue/ConversationPanel";
@@ -769,9 +769,15 @@ export function DialogueShell() {
     });
 
     try {
-      const contextMessages = targetId
-        ? serializeContextMessages(buildParentContext(targetId, "").messages)
-        : [];
+      const contextMessages = serializeContextMessages(
+        buildWorkspaceContext({
+          targetId,
+          queryText: text,
+          systemPrelude: "",
+          graph: graphSnapshot.graph,
+          retrieval: { enabled: false }
+        }).messages
+      );
       const response = await postJson<BranchesResponse>("/api/branches", {
         requestId,
         userText: text,
@@ -1017,7 +1023,15 @@ export function DialogueShell() {
     });
 
     try {
-      const contextMessages = serializeContextMessages(buildParentContext(action.thesisId, "").messages);
+      const contextMessages = serializeContextMessages(
+        buildWorkspaceContext({
+          targetId: action.thesisId,
+          queryText: "",
+          systemPrelude: "",
+          graph,
+          retrieval: { enabled: false }
+        }).messages
+      );
       const response = await postJson<SynthesisResponse>("/api/synthesis", {
         requestId,
         thesis: {
