@@ -17,6 +17,8 @@ const viewports = [
   { name: "tablet", width: 1024, height: 900, fullPage: false },
   { name: "tablet-touch", width: 1024, height: 768, fullPage: false, hasTouch: true, isMobile: true },
   { name: "mobile-390", width: 390, height: 844, fullPage: true },
+  { name: "mobile-360", width: 360, height: 740, fullPage: true },
+  { name: "mobile-320", width: 320, height: 740, fullPage: true },
   { name: "mobile-touch-390", width: 390, height: 844, fullPage: true, hasTouch: true, isMobile: true }
 ];
 
@@ -165,6 +167,16 @@ function createWorkspaceWithoutSynthesis({ includeSecondRoot = false } = {}) {
   return workspace;
 }
 
+function createEmptyWorkspace() {
+  const workspace = cloneJson(seededWorkspace);
+  workspace.workspaceSessionId = "ws_visual_empty";
+  workspace.focusedNodeId = null;
+  workspace.graph.entryIds = [];
+  workspace.graph.nodes = {};
+  workspace.graph.edges = {};
+  return workspace;
+}
+
 async function ensureBuildExists() {
   try {
     await access(buildIdPath, fsConstants.F_OK);
@@ -266,6 +278,70 @@ async function assertRegionMinWidth(locator, minWidth, name) {
   }
 }
 
+async function assertRegionVisible(locator, viewportHeight, name) {
+  const box = await locator.boundingBox();
+  if (!box) {
+    throw new Error(`${name} did not render`);
+  }
+
+  if (box.y < -1 || box.y + box.height > viewportHeight + 1) {
+    throw new Error(`${name} was not fully visible: ${JSON.stringify(box)}`);
+  }
+}
+
+async function ensureChoiceButtonsAccessibleAndTouchable(page, minTargetSize = 44) {
+  const composer = page.getByTestId("dialogue-composer");
+  const buttons = [
+    composer.getByRole("button", { name: /继续正方/ }),
+    composer.getByRole("button", { name: /继续反方/ }),
+    composer.getByRole("button", { name: /记录合流/ })
+  ];
+
+  for (const [index, button] of buttons.entries()) {
+    await button.waitFor();
+    const box = await button.boundingBox();
+    if (!box) {
+      throw new Error(`Choice button ${index} did not render`);
+    }
+    if (box.width < minTargetSize || box.height < minTargetSize) {
+      throw new Error(`Choice button ${index} is below touch target size: ${JSON.stringify(box)}`);
+    }
+  }
+}
+
+async function ensureEmptyRootPendingState(browser) {
+  const { context, page, pageIssues } = await createScenarioPage(browser, createEmptyWorkspace(), {
+    viewport: { width: 1280, height: 900 }
+  });
+
+  await page.route("**/api/branches", async () => {
+    await new Promise(() => {});
+  });
+
+  await page.getByRole("button", { name: /点此输入/ }).click();
+  await page.getByLabel("输入").fill("这个方向还值得投入吗");
+  await page.getByRole("button", { name: "开启新主题" }).click();
+  await page.getByTestId("dialogue-stage-pending-branches").waitFor();
+  await page.getByTestId("dialogue-stage-pending-branches").filter({ hasText: "这个方向还值得投入吗" }).waitFor();
+  await page.getByTestId("dialogue-panel-pending-branches").filter({ hasText: "母题已进入舞台" }).waitFor();
+  await page.getByTestId("dialogue-sidebar").filter({ hasText: "正在生成正与反" }).waitFor();
+  const emptyStartAffordances = await page.getByRole("button", { name: /点此输入/ }).count();
+  if (emptyStartAffordances > 0) {
+    throw new Error("Empty start affordance is still visible while root branches are pending");
+  }
+
+  const screenshotPath = path.join(outputDir, "desktop-pending-empty-root.png");
+  await page.screenshot({ path: screenshotPath, fullPage: false });
+  assertNoPageIssues(pageIssues, "empty root pending state");
+  await context.close();
+
+  return {
+    name: "empty-root-pending-state",
+    passed: true,
+    screenshot: screenshotPath
+  };
+}
+
 async function ensureMobileComposerDoesNotCoverLineage(page) {
   const metrics = await page.evaluate(() => {
     const composer = document.querySelector('[data-testid="dialogue-composer"]');
@@ -314,6 +390,178 @@ async function ensureMobileComposerDoesNotCoverLineage(page) {
 
   if (metrics.overlaps) {
     throw new Error(`Mobile composer overlaps lineage controls: ${JSON.stringify(metrics)}`);
+  }
+}
+
+async function ensureMobileComposerDoesNotCoverPanelActions(page) {
+  await page.evaluate(() => {
+    const panel = document.querySelector('[data-testid="dialogue-panel"]');
+    if (panel instanceof HTMLElement) {
+      panel.scrollIntoView({ block: "center", inline: "nearest" });
+    }
+  });
+  await page.waitForTimeout(80);
+
+  const metrics = await page.evaluate(() => {
+    const composer = document.querySelector('[data-testid="dialogue-composer"]');
+    const panel = document.querySelector('[data-testid="dialogue-panel"]');
+    if (!(composer instanceof HTMLElement) || !(panel instanceof HTMLElement)) {
+      return null;
+    }
+
+    const composerRect = composer.getBoundingClientRect();
+    const panelActions = [...panel.querySelectorAll("button")].filter((button) => button instanceof HTMLElement);
+    const overlappingAction = panelActions.find((button) => {
+      const actionRect = button.getBoundingClientRect();
+      return (
+        actionRect.left < composerRect.right &&
+        actionRect.right > composerRect.left &&
+        actionRect.top < composerRect.bottom &&
+        actionRect.bottom > composerRect.top
+      );
+    });
+    const actionRect = overlappingAction instanceof HTMLElement
+      ? overlappingAction.getBoundingClientRect()
+      : panelActions[0] instanceof HTMLElement
+        ? panelActions[0].getBoundingClientRect()
+        : null;
+
+    return {
+      overlaps: Boolean(overlappingAction),
+      composer: {
+        top: composerRect.top,
+        bottom: composerRect.bottom,
+        height: composerRect.height
+      },
+      action: {
+        text: overlappingAction instanceof HTMLElement ? overlappingAction.textContent : panelActions[0]?.textContent,
+        top: actionRect?.top,
+        bottom: actionRect?.bottom,
+        height: actionRect?.height
+      }
+    };
+  });
+
+  if (!metrics) {
+    throw new Error("Missing mobile composer or panel action metrics");
+  }
+
+  if (metrics.overlaps) {
+    throw new Error(`Mobile composer overlaps panel actions: ${JSON.stringify(metrics)}`);
+  }
+}
+
+async function ensureMobileRootNodeHasVisibleText(page) {
+  const metrics = await page.evaluate(() => {
+    const root = document.querySelector('[data-testid="dialogue-stage-node-user_root_1"]');
+    if (!(root instanceof HTMLElement)) {
+      return null;
+    }
+
+    const textCandidates = [
+      root.querySelector('[class*="stageNodeTextFull"]'),
+      root.querySelector('[class*="stageNodeTextShort"]')
+    ].filter((element) => element instanceof HTMLElement);
+    const visibleText = textCandidates
+      .map((element) => {
+        const rect = element.getBoundingClientRect();
+        const style = getComputedStyle(element);
+        return {
+          text: element.textContent?.trim() || "",
+          display: style.display,
+          visibility: style.visibility,
+          width: rect.width,
+          height: rect.height
+        };
+      })
+      .filter(
+        (entry) =>
+          entry.text &&
+          entry.display !== "none" &&
+          entry.visibility !== "hidden" &&
+          entry.width > 0 &&
+          entry.height > 0
+      );
+
+    return {
+      rootText: root.textContent?.trim() || "",
+      visibleText
+    };
+  });
+
+  if (!metrics) {
+    throw new Error("Missing mobile root node text metrics");
+  }
+
+  if (!metrics.visibleText.length) {
+    throw new Error(`Mobile root node has no visible topic text: ${JSON.stringify(metrics)}`);
+  }
+}
+
+async function ensureStageHintDoesNotOverlapWorkspace(page, scenarioName) {
+  const metrics = await page.evaluate(() => {
+    const hint = document.querySelector('[data-testid="dialogue-stage-hint"]');
+    const workspace = document.querySelector('[data-testid="dialogue-workspace-bar"]');
+    if (!(hint instanceof HTMLElement) || !(workspace instanceof HTMLElement)) {
+      return null;
+    }
+
+    const hintRect = hint.getBoundingClientRect();
+    const workspaceRect = workspace.getBoundingClientRect();
+    const overlaps = (
+      hintRect.left < workspaceRect.right &&
+      hintRect.right > workspaceRect.left &&
+      hintRect.top < workspaceRect.bottom &&
+      hintRect.bottom > workspaceRect.top
+    );
+
+    return {
+      overlaps,
+      hint: {
+        left: hintRect.left,
+        right: hintRect.right,
+        top: hintRect.top,
+        bottom: hintRect.bottom
+      },
+      workspace: {
+        left: workspaceRect.left,
+        right: workspaceRect.right,
+        top: workspaceRect.top,
+        bottom: workspaceRect.bottom
+      }
+    };
+  });
+
+  if (metrics?.overlaps) {
+    throw new Error(`Stage relationship hint overlaps workspace chrome during ${scenarioName}: ${JSON.stringify(metrics)}`);
+  }
+}
+
+async function ensureFocusedSidebarItemFullyVisible(page, viewportName) {
+  const metrics = await page.evaluate(() => {
+    const currentItem = document.querySelector(
+      '[data-testid="dialogue-sidebar"] nav[aria-label="分支列表"] button[aria-current="true"]'
+    );
+    if (!(currentItem instanceof HTMLElement)) {
+      return null;
+    }
+
+    const rect = currentItem.getBoundingClientRect();
+    return {
+      itemText: currentItem.textContent?.trim() || "",
+      left: rect.left,
+      right: rect.right,
+      width: rect.width,
+      viewportWidth: window.innerWidth
+    };
+  });
+
+  if (!metrics) {
+    return;
+  }
+
+  if (metrics.left < -1 || metrics.right > metrics.viewportWidth + 1) {
+    throw new Error(`Focused sidebar item is clipped on ${viewportName}: ${JSON.stringify(metrics)}`);
   }
 }
 
@@ -437,10 +685,11 @@ async function ensureTouchNodeTapSelects(page) {
     .waitFor();
 }
 
-async function createScenarioPage(browser, workspace) {
+async function createScenarioPage(browser, workspace, contextOptions = {}) {
   const context = await browser.newContext({
     viewport: { width: 1280, height: 900 },
-    deviceScaleFactor: 1
+    deviceScaleFactor: 1,
+    ...contextOptions
   });
 
   await context.addInitScript((snapshot) => {
@@ -533,7 +782,7 @@ async function ensureSynthesisPendingFocusFlow(browser) {
   const { context, page, pageIssues } = await createScenarioPage(browser, createWorkspaceWithoutSynthesis());
   const synthesis = await mockDeferredSynthesis(page);
 
-  await page.getByRole("button", { name: "记录合流" }).click();
+  await page.getByTestId("dialogue-composer").getByRole("button", { name: /记录合流/ }).click();
   await page.getByRole("button", { name: "收束中..." }).waitFor();
   if (!synthesis.getRequestId()) {
     throw new Error("Synthesis request did not start during pending flow scenario");
@@ -554,13 +803,13 @@ async function ensureSynthesisStaleCompletionDoesNotStealFocus(browser) {
   );
   const synthesis = await mockDeferredSynthesis(page);
 
-  await page.getByRole("button", { name: "记录合流" }).click();
+  await page.getByTestId("dialogue-composer").getByRole("button", { name: /记录合流/ }).click();
   await page.getByRole("button", { name: "收束中..." }).waitFor();
   await page.getByTestId("dialogue-sidebar").getByRole("button", { name: /另一个问题/ }).click();
   await page.getByRole("heading", { name: /另一个问题/ }).waitFor();
   synthesis.release();
   await page.getByTestId("dialogue-flow-status").waitFor();
-  await page.getByTestId("dialogue-flow-status").filter({ hasText: "合流已生成，当前焦点保持不变。" }).waitFor();
+  await page.getByTestId("dialogue-flow-status").filter({ hasText: "合流已生成：查看合流记录，或基于它继续追问。" }).waitFor();
   await page.getByRole("heading", { name: /另一个问题/ }).waitFor();
   assertNoPageIssues(pageIssues, "synthesis stale completion focus flow");
   await context.close();
@@ -602,11 +851,69 @@ async function ensureRoundtableDrawerReturnsFocus(browser) {
   return { name: "roundtable-drawer-focus-return", passed: true };
 }
 
+async function ensureNextStepChoiceDockLayout(browser) {
+  const workspace = createWorkspaceWithoutSynthesis();
+  const desktop = await createScenarioPage(browser, workspace, {
+    viewport: { width: 1440, height: 980 }
+  });
+  const desktopComposer = desktop.page.getByTestId("dialogue-composer");
+  await desktopComposer.waitFor();
+  await desktopComposer.getByRole("button", { name: /继续正方/ }).waitFor();
+  await desktopComposer.getByRole("button", { name: /继续反方/ }).waitFor();
+  await desktopComposer.getByRole("button", { name: /记录合流/ }).waitFor();
+  await ensureChoiceButtonsAccessibleAndTouchable(desktop.page, 38);
+  const desktopMode = await desktopComposer.getAttribute("data-mode");
+  if (desktopMode !== "choice") {
+    throw new Error(`Desktop composer did not enter choice mode: ${desktopMode}`);
+  }
+  await assertRegionWidth(desktopComposer, 1440, "desktop choice composer");
+  await ensureStageHintDoesNotOverlapWorkspace(desktop.page, "desktop choice dock");
+  const desktopScreenshotPath = path.join(outputDir, "desktop-choice-dock.png");
+  await desktop.page.screenshot({ path: desktopScreenshotPath, fullPage: false });
+  assertNoPageIssues(desktop.pageIssues, "desktop choice dock layout");
+  await desktop.context.close();
+
+  const mobile = await createScenarioPage(browser, workspace, {
+    viewport: { width: 320, height: 740 }
+  });
+  const mobileComposer = mobile.page.getByTestId("dialogue-composer");
+  await mobileComposer.waitFor();
+  const mobileMode = await mobileComposer.getAttribute("data-mode");
+  if (mobileMode !== "choice") {
+    throw new Error(`Mobile composer did not enter choice mode: ${mobileMode}`);
+  }
+  await assertRegionWidth(mobileComposer, 320, "mobile choice composer");
+  await assertRegionVisible(mobileComposer, 740, "mobile choice composer initial");
+  await ensureChoiceButtonsAccessibleAndTouchable(mobile.page, 44);
+  await ensureMobileRootNodeHasVisibleText(mobile.page);
+  await ensureMobileComposerDoesNotCoverLineage(mobile.page);
+  await ensureMobileComposerDoesNotCoverPanelActions(mobile.page);
+  await ensureFocusedSidebarItemFullyVisible(mobile.page, "mobile choice dock");
+  await mobileComposer.scrollIntoViewIfNeeded();
+  await mobile.page.waitForTimeout(60);
+  await assertRegionVisible(mobileComposer, 740, "mobile choice composer");
+  const mobileScreenshotPath = path.join(outputDir, "mobile-320-choice-dock.png");
+  await mobile.page.screenshot({ path: mobileScreenshotPath, fullPage: false });
+  assertNoPageIssues(mobile.pageIssues, "mobile choice dock layout");
+  await mobile.context.close();
+
+  return {
+    name: "next-step-choice-dock-layout",
+    passed: true,
+    screenshots: {
+      desktop: desktopScreenshotPath,
+      mobile: mobileScreenshotPath
+    }
+  };
+}
+
 async function runInteractionScenarios(browser) {
   return [
     await ensureSynthesisPendingFocusFlow(browser),
     await ensureSynthesisStaleCompletionDoesNotStealFocus(browser),
-    await ensureRoundtableDrawerReturnsFocus(browser)
+    await ensureRoundtableDrawerReturnsFocus(browser),
+    await ensureEmptyRootPendingState(browser),
+    await ensureNextStepChoiceDockLayout(browser)
   ];
 }
 
@@ -689,6 +996,7 @@ async function runViewport(browser, viewport) {
   await assertRegionWidth(panel, viewport.width, `${viewport.name} panel`);
   await assertRegionWidth(composer, viewport.width, `${viewport.name} composer`);
   await assertRegionWidth(workspaceBar, viewport.width, `${viewport.name} workspace bar`);
+  await ensureStageHintDoesNotOverlapWorkspace(page, viewport.name);
 
   const captures = {};
 
@@ -730,6 +1038,9 @@ async function runViewport(browser, viewport) {
     }
 
     await ensureMobileComposerDoesNotCoverLineage(page);
+    await ensureMobileComposerDoesNotCoverPanelActions(page);
+    await ensureMobileRootNodeHasVisibleText(page);
+    await ensureFocusedSidebarItemFullyVisible(page, viewport.name);
     await ensureMobileCanScrollFromStage(page, viewport.name);
   }
 
