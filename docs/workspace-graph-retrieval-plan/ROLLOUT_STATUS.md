@@ -36,8 +36,11 @@ npm test -- src/components/dialogue/DialogueShell.test.tsx src/chat/workspaceCon
 
 - `npm run test:visual-dialogue` 已通过，默认使用 `DIALOGUE_SMOKE_SERVER_MODE=dev` 启动 Next dev server，不再依赖已有 `.next/BUILD_ID`。
 - 脚本支持 `DIALOGUE_SMOKE_SERVER_MODE=auto|dev|start`；只有显式 `start` 时才要求先存在 production build。
+- 默认端口被占用时会自动寻找后续空闲端口；显式指定的 `DIALOGUE_SMOKE_BASE_URL` 若被占用会立即失败并提示。
+- runner 会等待 Next `Ready` 输出，监听子进程 early exit，并用 `DIALOGUE_SMOKE_READY_TIMEOUT_MS` / `DIALOGUE_SMOKE_PAGE_TIMEOUT_MS` 调整慢机等待窗口。
 - smoke 覆盖默认 debug preview 不可见、`?retrievalDebug=1` 有命中内容、空 workspace/空 query、360px 窄屏不横向溢出。
-- smoke 每次会清空 `artifacts/visual-smoke/dialogue/` 后重写截图，避免覆盖 macOS `compressed,dataless` 截图占位文件时超时。
+- smoke 先写临时目录，全部通过后再替换 `artifacts/visual-smoke/dialogue/`，失败不会清空上一轮通过 artifacts。
+- Tailwind source 已限制为 `src/**`，避免 `graphify-out/`、`artifacts/` 等本地生成物拖慢 dev 首编。
 - `npm run build` 已不再出现 Next workspace root 误判 warning，production compile 在约 2.3 分钟完成；后续类型检查仍会被本地 dataless 源文件读取超时影响，需要单独做本机文件 hydration/build hygiene。
 
 Prompt 质量检查：

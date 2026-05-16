@@ -1,5 +1,6 @@
-import { mkdir, access, rm, writeFile } from "node:fs/promises";
+import { mkdir, access, mkdtemp, rename, rm, writeFile } from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
+import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
@@ -9,9 +10,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..", "..");
 const buildIdPath = path.join(repoRoot, ".next", "BUILD_ID");
-const outputDir = path.join(repoRoot, "artifacts", "visual-smoke", "dialogue");
-const baseUrl = process.env.DIALOGUE_SMOKE_BASE_URL || "http://127.0.0.1:3211";
+const finalOutputDir = path.join(repoRoot, "artifacts", "visual-smoke", "dialogue");
+let outputDir = finalOutputDir;
+let baseUrl = process.env.DIALOGUE_SMOKE_BASE_URL || "http://127.0.0.1:3211";
+const baseUrlWasProvided = Boolean(process.env.DIALOGUE_SMOKE_BASE_URL);
 const requestedServerMode = process.env.DIALOGUE_SMOKE_SERVER_MODE || "dev";
+const serverReadyTimeoutMs = readTimeoutEnv("DIALOGUE_SMOKE_READY_TIMEOUT_MS", 120000);
+const pageReadyTimeoutMs = readTimeoutEnv("DIALOGUE_SMOKE_PAGE_TIMEOUT_MS", 300000);
+const portSearchLimit = Number.parseInt(process.env.DIALOGUE_SMOKE_PORT_SEARCH_LIMIT || "40", 10);
 
 const viewports = [
   { name: "desktop", width: 1440, height: 980, fullPage: false },
@@ -111,6 +117,20 @@ const seededWorkspace = {
 
 function cloneJson(value) {
   return JSON.parse(JSON.stringify(value));
+}
+
+function readTimeoutEnv(name, fallbackMs) {
+  const raw = process.env[name];
+  if (!raw) {
+    return fallbackMs;
+  }
+
+  const value = Number.parseInt(raw, 10);
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error(`${name} must be a positive millisecond value, received ${raw}`);
+  }
+
+  return value;
 }
 
 function createWorkspaceWithoutSynthesis({ includeSecondRoot = false } = {}) {
@@ -247,39 +267,211 @@ async function resolveServerMode() {
   return requestedServerMode;
 }
 
+function getBaseUrlParts(value) {
+  const url = new URL(value);
+  if (url.protocol !== "http:") {
+    throw new Error(`DIALOGUE_SMOKE_BASE_URL must use http:, received ${value}`);
+  }
+  if (!url.port) {
+    throw new Error(`DIALOGUE_SMOKE_BASE_URL must include an explicit port, received ${value}`);
+  }
+
+  return {
+    host: url.hostname,
+    port: Number.parseInt(url.port, 10),
+    origin: url.origin
+  };
+}
+
+async function isPortAvailable(host, port) {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.once("error", (error) => {
+      if (error && ["EADDRINUSE", "EACCES"].includes(error.code)) {
+        resolve(false);
+        return;
+      }
+      reject(error);
+    });
+    server.once("listening", () => {
+      server.close(() => resolve(true));
+    });
+    server.listen(port, host);
+  });
+}
+
+async function resolveBaseUrl() {
+  const requested = getBaseUrlParts(baseUrl);
+
+  if (baseUrlWasProvided) {
+    if (!(await isPortAvailable(requested.host, requested.port))) {
+      throw new Error(
+        `Dialogue visual smoke port ${requested.host}:${requested.port} is already in use. ` +
+          "Choose another DIALOGUE_SMOKE_BASE_URL or stop the existing process."
+      );
+    }
+    baseUrl = requested.origin;
+    return baseUrl;
+  }
+
+  const searchLimit = Number.isFinite(portSearchLimit) && portSearchLimit > 0 ? portSearchLimit : 40;
+  for (let offset = 0; offset < searchLimit; offset += 1) {
+    const port = requested.port + offset;
+    if (await isPortAvailable(requested.host, port)) {
+      const resolved = new URL(requested.origin);
+      resolved.port = String(port);
+      baseUrl = resolved.origin;
+      return baseUrl;
+    }
+  }
+
+  throw new Error(
+    `No available dialogue visual smoke port found from ${requested.host}:${requested.port} ` +
+      `through ${requested.host}:${requested.port + searchLimit - 1}.`
+  );
+}
+
 async function prepareOutputDir() {
-  await rm(outputDir, { recursive: true, force: true });
-  await mkdir(outputDir, { recursive: true });
+  const outputParentDir = path.dirname(finalOutputDir);
+  await mkdir(outputParentDir, { recursive: true });
+  outputDir = await mkdtemp(path.join(outputParentDir, ".dialogue-"));
+  return outputDir;
+}
+
+async function publishOutputDir(tempOutputDir) {
+  const previousOutputDir = `${finalOutputDir}.previous-${process.pid}`;
+  await rm(previousOutputDir, { recursive: true, force: true });
+
+  try {
+    await rename(finalOutputDir, previousOutputDir);
+  } catch (error) {
+    if (!(error && error.code === "ENOENT")) {
+      throw error;
+    }
+  }
+
+  try {
+    await rename(tempOutputDir, finalOutputDir);
+    await rm(previousOutputDir, { recursive: true, force: true });
+    outputDir = finalOutputDir;
+  } catch (error) {
+    try {
+      await access(finalOutputDir, fsConstants.F_OK);
+    } catch {
+      await rename(previousOutputDir, finalOutputDir).catch(() => {});
+    }
+    throw error;
+  }
+}
+
+async function discardOutputDir(tempOutputDir) {
+  if (tempOutputDir && tempOutputDir !== finalOutputDir) {
+    await rm(tempOutputDir, { recursive: true, force: true });
+  }
+}
+
+function rebaseArtifactPaths(value, tempOutputDir) {
+  if (typeof value === "string") {
+    return value.startsWith(tempOutputDir)
+      ? `${finalOutputDir}${value.slice(tempOutputDir.length)}`
+      : value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => rebaseArtifactPaths(item, tempOutputDir));
+  }
+
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, rebaseArtifactPaths(item, tempOutputDir)])
+    );
+  }
+
+  return value;
 }
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function waitForServer(url, timeoutMs = 120000) {
+function formatServerOutput(output) {
+  return output ? `\n\nNext output:\n${output}` : "";
+}
+
+function serverExitedError(server, phase) {
+  const exitInfo = server.getExitInfo();
+  const spawnError = server.getSpawnError();
+  if (spawnError) {
+    return new Error(`Next server failed to start before ${phase}: ${spawnError.message}${formatServerOutput(server.getOutput())}`);
+  }
+  if (exitInfo) {
+    return new Error(
+      `Next server exited before ${phase} (code ${exitInfo.code ?? "null"}, signal ${exitInfo.signal ?? "null"}).` +
+        formatServerOutput(server.getOutput())
+    );
+  }
+  return null;
+}
+
+async function waitForNextReady(server, timeoutMs = serverReadyTimeoutMs) {
   const startedAt = Date.now();
 
   while (Date.now() - startedAt < timeoutMs) {
+    const earlyExit = serverExitedError(server, "it became ready");
+    if (earlyExit) {
+      throw earlyExit;
+    }
+
+    if (/ready in|started server|listening/i.test(server.getOutput())) {
+      return;
+    }
+
+    await wait(250);
+  }
+
+  throw new Error(
+    `Timed out after ${timeoutMs}ms waiting for Next server readiness.` +
+      formatServerOutput(server.getOutput())
+  );
+}
+
+async function waitForServer(url, server, timeoutMs = pageReadyTimeoutMs) {
+  const startedAt = Date.now();
+  let lastErrorMessage = "";
+
+  while (Date.now() - startedAt < timeoutMs) {
+    const earlyExit = serverExitedError(server, url);
+    if (earlyExit) {
+      throw earlyExit;
+    }
+
     try {
       const response = await fetch(url, { redirect: "manual" });
       if (response.status < 500) {
         return;
       }
-    } catch {
+      lastErrorMessage = `HTTP ${response.status}`;
+    } catch (error) {
+      lastErrorMessage = error instanceof Error ? error.message : String(error);
       // Retry until timeout.
     }
 
     await wait(500);
   }
 
-  throw new Error(`Timed out waiting for ${url}`);
+  throw new Error(
+    `Timed out after ${timeoutMs}ms waiting for ${url}` +
+      (lastErrorMessage ? ` (last error: ${lastErrorMessage})` : "") +
+      formatServerOutput(server.getOutput())
+  );
 }
 
 function startNextServer(serverMode) {
+  const { host, port } = getBaseUrlParts(baseUrl);
   const scriptName = serverMode === "start" ? "start" : "dev";
   const child = spawn(
     "npm",
-    ["run", scriptName, "--", "--hostname", "127.0.0.1", "--port", new URL(baseUrl).port],
+    ["run", scriptName, "--", "--hostname", host, "--port", String(port)],
     {
       cwd: repoRoot,
       env: {
@@ -291,14 +483,27 @@ function startNextServer(serverMode) {
 
   let stderr = "";
   let stdout = "";
+  let exitInfo = null;
+  let spawnError = null;
   child.stdout.on("data", (chunk) => {
     stdout += chunk.toString();
   });
   child.stderr.on("data", (chunk) => {
     stderr += chunk.toString();
   });
+  child.once("error", (error) => {
+    spawnError = error;
+  });
+  child.once("exit", (code, signal) => {
+    exitInfo = { code, signal };
+  });
 
-  return { child, getOutput: () => `${stdout}\n${stderr}`.trim() };
+  return {
+    child,
+    getOutput: () => `${stdout}\n${stderr}`.trim(),
+    getExitInfo: () => exitInfo,
+    getSpawnError: () => spawnError
+  };
 }
 
 async function ensureNoHorizontalOverflow(page, viewportName) {
@@ -1237,30 +1442,38 @@ async function runViewport(browser, viewport) {
 }
 
 async function main() {
-  await prepareOutputDir();
-
   const serverMode = await resolveServerMode();
-  const { child, getOutput } = startNextServer(serverMode);
+  await resolveBaseUrl();
+
+  let tempOutputDir = null;
+  let outputPublished = false;
+  let browser = null;
+  let server = null;
 
   const shutdown = () => {
-    if (!child.killed) {
+    const child = server?.child;
+    if (child && !child.killed && !server.getExitInfo()) {
       child.kill("SIGTERM");
     }
   };
 
-  process.on("exit", shutdown);
-  process.on("SIGINT", () => {
-    shutdown();
-    process.exit(130);
-  });
-  process.on("SIGTERM", () => {
-    shutdown();
-    process.exit(143);
-  });
-
   try {
-    await waitForServer(`${baseUrl}/dialogue`);
-    const browser = await chromium.launch({ headless: true });
+    tempOutputDir = await prepareOutputDir();
+    server = startNextServer(serverMode);
+
+    process.on("exit", shutdown);
+    process.on("SIGINT", () => {
+      shutdown();
+      process.exit(130);
+    });
+    process.on("SIGTERM", () => {
+      shutdown();
+      process.exit(143);
+    });
+
+    await waitForNextReady(server);
+    await waitForServer(`${baseUrl}/dialogue`, server);
+    browser = await chromium.launch({ headless: true });
     const results = [];
 
     for (const viewport of viewports) {
@@ -1270,23 +1483,32 @@ async function main() {
     const interactionScenarios = await runInteractionScenarios(browser);
 
     await browser.close();
+    browser = null;
+    const summary = rebaseArtifactPaths(
+      {
+        baseUrl,
+        serverMode,
+        generatedAt: new Date().toISOString(),
+        viewports: results,
+        interactionScenarios
+      },
+      tempOutputDir
+    );
     await writeFile(
       path.join(outputDir, "summary.json"),
-      JSON.stringify(
-        {
-          baseUrl,
-          serverMode,
-          generatedAt: new Date().toISOString(),
-          viewports: results,
-          interactionScenarios
-        },
-        null,
-        2
-      )
+      JSON.stringify(summary, null, 2)
     );
+    await publishOutputDir(tempOutputDir);
+    outputPublished = true;
   } catch (error) {
+    if (browser) {
+      await browser.close().catch(() => {});
+    }
     shutdown();
-    const output = getOutput();
+    if (!outputPublished && tempOutputDir) {
+      await discardOutputDir(tempOutputDir);
+    }
+    const output = server?.getOutput() || "";
     if (output) {
       console.error(output);
     }
