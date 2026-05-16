@@ -6,6 +6,8 @@
 
 Phase 0、Phase 1A、Phase 2 已完成。MVP 主链已经打通；Phase 3A/3B 内部调试可观测性已闭环，但 retrieval 仍默认关闭。
 
+当前阶段标记为 **Engineering + Internal Observability Complete**（Product Rollout Pending）。这表示工程链路和内部观察能力已可合并，但还不是 retrieval 默认上线。
+
 1. Phase 0 锁定了父链上下文、DialogueShell request body、API final prompt baseline。
 2. Phase 1A 落地了纯 TypeScript retrieval query 层，包括 graph normalization、label/text scoring、BFS subgraph、relation fallback、防坏图和稳定排序。
 3. Phase 2 落地了 retrieval context render、workspace context builder，并将 DialogueShell 的 branches/synthesis 请求统一走 `buildWorkspaceContext()`。
@@ -13,6 +15,7 @@ Phase 0、Phase 1A、Phase 2 已完成。MVP 主链已经打通；Phase 3A/3B �
 5. flag 开启时只在 render 非空时追加一条 `retrieval_context` system message。
 6. Phase 3A 已新增 `?retrievalDebug=1` 内部 preview，不改变生成主链路。
 7. Phase 3B 已在 debug preview 中显示 query、nodes/edges、coverage、omitted、dangling/duplicate 和 notes。
+8. `1581410` 后 visual smoke runner 已稳定闭环：默认可跑通、端口占用可避让、失败不清空上一轮 artifacts。
 
 ## 收口 Review
 
@@ -60,14 +63,24 @@ Prompt 质量检查：
 
 ## 下一阶段边界
 
-Phase 3 才进入 UI / 可观测性：
+下一阶段进入受控试用，不继续堆核心功能，也不默认开启 retrieval。
+
+受控试用 checklist：
+
+- 准备 PR / merge 或阶段标签，说明当前阶段是工程与内部可观测性完成。
+- 用 `?retrievalDebug=1` 和测试开关在 3-5 个真实 workspace 上手动试跑。
+- 每个 workspace 记录 query、命中节点、coverage 排除、render 是否为空、prompt 是否重复父链。
+- 如果 prompt 质量稳定，再设计默认开启策略、kill switch 和用户可见说明。
+- 如果发现 prompt 噪音、重复或误召回，先收敛 query/render 参数，不扩大 UI 或默认开启范围。
+
+后续产品化才进入正式 UI / 可观测性：
 
 - 相关节点 preview。
 - debug panel 或 retrieval 状态展示。
 - 可视化“哪些节点进入了上下文”。
 - 更细粒度的 flag 或内部开关策略。
 
-在 Phase 3 之前，不做 schema 迁移、不引入 embedding/vector DB、不做跨 workspace 检索、不把 UI preview 混入已完成的 Phase 2 主链。
+受控试用阶段不做 schema 迁移、不引入 embedding/vector DB、不做跨 workspace 检索、不把 retrieval 默认注入用户主链。
 
 ## 仓库卫生
 
