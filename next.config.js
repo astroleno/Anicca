@@ -4,6 +4,15 @@ const path = require("path");
 const nextConfig = {
   reactStrictMode: true,
   devIndicators: false,
+  outputFileTracingExcludes: {
+    "*": [
+      "./.worktrees/**/*",
+      "./archived/**/*",
+      "./artifacts/**/*",
+      "./graphify-out/**/*",
+      "./ref/**/*"
+    ]
+  },
   outputFileTracingRoot: path.join(__dirname),
   webpack: (config) => {
     const ignoredWatchPaths = config.watchOptions?.ignored;
@@ -14,8 +23,11 @@ const nextConfig = {
       ...config.watchOptions,
       ignored: [
         ...existingIgnoredWatchPaths,
+        "**/.worktrees/**",
+        "**/archived/**",
         "**/artifacts/**",
-        "**/graphify-out/**"
+        "**/graphify-out/**",
+        "**/ref/**"
       ]
     };
 

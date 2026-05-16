@@ -16,6 +16,10 @@ build/
 dist/
 coverage/
 artifacts/
+.worktrees/
+graphify-out/
+ref/
+archived/
 
 # Logs
 npm-debug.log*

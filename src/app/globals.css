@@ -1,5 +1,16 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities source(none);
+@import "tailwindcss" source(none);
 
-@source "../**/*.{js,ts,jsx,tsx,mdx}";
+@source "../app";
+@source "../chat";
+@source "../components";
+@source "../features";
+@source "../lib";
+@source "../store";
+@source "../types";
+@source "./src/app";
+@source "./src/chat";
+@source "./src/components";
+@source "./src/features";
+@source "./src/lib";
+@source "./src/store";
+@source "./src/types";
