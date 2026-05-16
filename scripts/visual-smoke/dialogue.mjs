@@ -1,4 +1,4 @@
-import { mkdir, access, writeFile } from "node:fs/promises";
+import { mkdir, access, rm, writeFile } from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -11,6 +11,7 @@ const repoRoot = path.resolve(__dirname, "..", "..");
 const buildIdPath = path.join(repoRoot, ".next", "BUILD_ID");
 const outputDir = path.join(repoRoot, "artifacts", "visual-smoke", "dialogue");
 const baseUrl = process.env.DIALOGUE_SMOKE_BASE_URL || "http://127.0.0.1:3211";
+const requestedServerMode = process.env.DIALOGUE_SMOKE_SERVER_MODE || "dev";
 
 const viewports = [
   { name: "desktop", width: 1440, height: 980, fullPage: false },
@@ -177,19 +178,85 @@ function createEmptyWorkspace() {
   return workspace;
 }
 
-async function ensureBuildExists() {
+function createWorkspaceWithRetrievalMatch() {
+  const workspace = cloneJson(seededWorkspace);
+  workspace.workspaceSessionId = "ws_visual_retrieval_debug";
+  workspace.focusedNodeId = "asst_thesis_1";
+  workspace.graph.entryIds.push("user_related_1");
+  workspace.graph.nodes.user_related_1 = {
+    id: "user_related_1",
+    kind: "user",
+    text: "下一步怎么拆的参考",
+    createdAt: "2026-04-24T03:20:00.000Z",
+    parents: [],
+    children: ["asst_related_thesis_1", "asst_related_antithesis_1"]
+  };
+  workspace.graph.nodes.asst_related_thesis_1 = {
+    id: "asst_related_thesis_1",
+    kind: "assistant",
+    branchType: "正",
+    text: "先列一张拆分清单。",
+    createdAt: "2026-04-24T03:21:00.000Z",
+    parents: ["user_related_1"],
+    children: [],
+    meta: {
+      label: "拆分",
+      summary: "拆分参考"
+    }
+  };
+  workspace.graph.nodes.asst_related_antithesis_1 = {
+    id: "asst_related_antithesis_1",
+    kind: "assistant",
+    branchType: "反",
+    text: "先延后拆分。",
+    createdAt: "2026-04-24T03:22:00.000Z",
+    parents: ["user_related_1"],
+    children: [],
+    meta: {
+      label: "延后",
+      summary: "延后参考"
+    }
+  };
+  workspace.graph.edges.e_related_1 = { id: "e_related_1", from: "user_related_1", to: "asst_related_thesis_1", reason: "正" };
+  workspace.graph.edges.e_related_2 = { id: "e_related_2", from: "user_related_1", to: "asst_related_antithesis_1", reason: "反" };
+  return workspace;
+}
+
+async function buildExists() {
   try {
     await access(buildIdPath, fsConstants.F_OK);
+    return true;
   } catch {
-    throw new Error("Missing .next build output. Run `npm run build` before `npm run test:visual-dialogue`.");
+    return false;
   }
+}
+
+async function resolveServerMode() {
+  if (!["auto", "dev", "start"].includes(requestedServerMode)) {
+    throw new Error(`Unsupported DIALOGUE_SMOKE_SERVER_MODE=${requestedServerMode}. Use auto, dev, or start.`);
+  }
+
+  if (requestedServerMode === "auto") {
+    return (await buildExists()) ? "start" : "dev";
+  }
+
+  if (requestedServerMode === "start" && !(await buildExists())) {
+    throw new Error("DIALOGUE_SMOKE_SERVER_MODE=start requires .next build output. Run `npm run build` first or use DIALOGUE_SMOKE_SERVER_MODE=dev.");
+  }
+
+  return requestedServerMode;
+}
+
+async function prepareOutputDir() {
+  await rm(outputDir, { recursive: true, force: true });
+  await mkdir(outputDir, { recursive: true });
 }
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function waitForServer(url, timeoutMs = 30000) {
+async function waitForServer(url, timeoutMs = 120000) {
   const startedAt = Date.now();
 
   while (Date.now() - startedAt < timeoutMs) {
@@ -208,10 +275,11 @@ async function waitForServer(url, timeoutMs = 30000) {
   throw new Error(`Timed out waiting for ${url}`);
 }
 
-function startNextServer() {
+function startNextServer(serverMode) {
+  const scriptName = serverMode === "start" ? "start" : "dev";
   const child = spawn(
     "npm",
-    ["run", "start", "--", "--hostname", "127.0.0.1", "--port", new URL(baseUrl).port],
+    ["run", scriptName, "--", "--hostname", "127.0.0.1", "--port", new URL(baseUrl).port],
     {
       cwd: repoRoot,
       env: {
@@ -222,11 +290,15 @@ function startNextServer() {
   );
 
   let stderr = "";
+  let stdout = "";
+  child.stdout.on("data", (chunk) => {
+    stdout += chunk.toString();
+  });
   child.stderr.on("data", (chunk) => {
     stderr += chunk.toString();
   });
 
-  return { child, getStderr: () => stderr };
+  return { child, getOutput: () => `${stdout}\n${stderr}`.trim() };
 }
 
 async function ensureNoHorizontalOverflow(page, viewportName) {
@@ -685,7 +757,7 @@ async function ensureTouchNodeTapSelects(page) {
     .waitFor();
 }
 
-async function createScenarioPage(browser, workspace, contextOptions = {}) {
+async function createScenarioPage(browser, workspace, contextOptions = {}, routePath = "/dialogue") {
   const context = await browser.newContext({
     viewport: { width: 1280, height: 900 },
     deviceScaleFactor: 1,
@@ -717,7 +789,7 @@ async function createScenarioPage(browser, workspace, contextOptions = {}) {
     });
   });
 
-  await page.goto(`${baseUrl}/dialogue`, { waitUntil: "networkidle" });
+  await page.goto(`${baseUrl}${routePath}`, { waitUntil: "networkidle" });
   await page.getByTestId("dialogue-stage").waitFor();
   await page.getByTestId("dialogue-panel").waitFor();
 
@@ -907,13 +979,91 @@ async function ensureNextStepChoiceDockLayout(browser) {
   };
 }
 
+async function ensureRetrievalDebugPreview(browser) {
+  const hidden = await createScenarioPage(browser, createWorkspaceWithRetrievalMatch(), {
+    viewport: { width: 1280, height: 900 }
+  });
+  const hiddenPreviewCount = await hidden.page.getByTestId("dialogue-retrieval-debug").count();
+  if (hiddenPreviewCount !== 0) {
+    throw new Error("Retrieval debug preview rendered without ?retrievalDebug=1");
+  }
+  assertNoPageIssues(hidden.pageIssues, "retrieval debug hidden by default");
+  await hidden.context.close();
+
+  const desktop = await createScenarioPage(
+    browser,
+    createWorkspaceWithRetrievalMatch(),
+    {
+      viewport: { width: 1280, height: 900 }
+    },
+    "/dialogue?retrievalDebug=1"
+  );
+  await desktop.page.getByLabel("输入").fill("下一步怎么拆");
+  const desktopPreview = desktop.page.getByTestId("dialogue-retrieval-debug");
+  await desktopPreview.filter({ hasText: "retrieval_context preview" }).waitFor();
+  await desktopPreview.filter({ hasText: "拆分参考" }).waitFor();
+  await desktopPreview.filter({ hasText: "coverage exclusion active" }).waitFor();
+  await assertRegionWidth(desktopPreview, 1280, "desktop retrieval debug preview");
+  const desktopScreenshotPath = path.join(outputDir, "desktop-retrieval-debug.png");
+  await desktop.page.screenshot({ path: desktopScreenshotPath, fullPage: false });
+  assertNoPageIssues(desktop.pageIssues, "retrieval debug content preview");
+  await desktop.context.close();
+
+  const empty = await createScenarioPage(
+    browser,
+    createEmptyWorkspace(),
+    {
+      viewport: { width: 1280, height: 900 }
+    },
+    "/dialogue?retrievalDebug=1"
+  );
+  const emptyPreview = empty.page.getByTestId("dialogue-retrieval-debug");
+  await emptyPreview.filter({ hasText: "无可注入片段" }).waitFor();
+  await emptyPreview.filter({ hasText: "(empty)" }).waitFor();
+  await emptyPreview.filter({ hasText: "empty query" }).waitFor();
+  assertNoPageIssues(empty.pageIssues, "retrieval debug empty preview");
+  await empty.context.close();
+
+  const mobile = await createScenarioPage(
+    browser,
+    createWorkspaceWithRetrievalMatch(),
+    {
+      viewport: { width: 360, height: 740 },
+      hasTouch: true,
+      isMobile: true
+    },
+    "/dialogue?retrievalDebug=1"
+  );
+  await mobile.page.getByLabel("输入").fill("下一步怎么拆");
+  const mobilePreview = mobile.page.getByTestId("dialogue-retrieval-debug");
+  await mobilePreview.filter({ hasText: "拆分参考" }).waitFor();
+  await mobilePreview.scrollIntoViewIfNeeded();
+  await mobile.page.waitForTimeout(60);
+  await ensureNoHorizontalOverflow(mobile.page, "mobile retrieval debug preview");
+  await assertRegionWidth(mobilePreview, 360, "mobile retrieval debug preview");
+  const mobileScreenshotPath = path.join(outputDir, "mobile-360-retrieval-debug.png");
+  await mobile.page.screenshot({ path: mobileScreenshotPath, fullPage: false });
+  assertNoPageIssues(mobile.pageIssues, "mobile retrieval debug preview");
+  await mobile.context.close();
+
+  return {
+    name: "retrieval-debug-preview",
+    passed: true,
+    screenshots: {
+      desktop: desktopScreenshotPath,
+      mobile: mobileScreenshotPath
+    }
+  };
+}
+
 async function runInteractionScenarios(browser) {
   return [
     await ensureSynthesisPendingFocusFlow(browser),
     await ensureSynthesisStaleCompletionDoesNotStealFocus(browser),
     await ensureRoundtableDrawerReturnsFocus(browser),
     await ensureEmptyRootPendingState(browser),
-    await ensureNextStepChoiceDockLayout(browser)
+    await ensureNextStepChoiceDockLayout(browser),
+    await ensureRetrievalDebugPreview(browser)
   ];
 }
 
@@ -1087,10 +1237,10 @@ async function runViewport(browser, viewport) {
 }
 
 async function main() {
-  await ensureBuildExists();
-  await mkdir(outputDir, { recursive: true });
+  await prepareOutputDir();
 
-  const { child, getStderr } = startNextServer();
+  const serverMode = await resolveServerMode();
+  const { child, getOutput } = startNextServer(serverMode);
 
   const shutdown = () => {
     if (!child.killed) {
@@ -1125,6 +1275,7 @@ async function main() {
       JSON.stringify(
         {
           baseUrl,
+          serverMode,
           generatedAt: new Date().toISOString(),
           viewports: results,
           interactionScenarios
@@ -1135,9 +1286,9 @@ async function main() {
     );
   } catch (error) {
     shutdown();
-    const stderr = getStderr().trim();
-    if (stderr) {
-      console.error(stderr);
+    const output = getOutput();
+    if (output) {
+      console.error(output);
     }
     throw error;
   }

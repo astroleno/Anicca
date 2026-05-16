@@ -4,7 +4,7 @@
 
 ## 当前状态
 
-Phase 0、Phase 1A、Phase 2 已完成。MVP 主链已经打通；Phase 3A/3B 已启动调试可观测性，但 retrieval 仍默认关闭。
+Phase 0、Phase 1A、Phase 2 已完成。MVP 主链已经打通；Phase 3A/3B 内部调试可观测性已闭环，但 retrieval 仍默认关闭。
 
 1. Phase 0 锁定了父链上下文、DialogueShell request body、API final prompt baseline。
 2. Phase 1A 落地了纯 TypeScript retrieval query 层，包括 graph normalization、label/text scoring、BFS subgraph、relation fallback、防坏图和稳定排序。
@@ -34,10 +34,11 @@ npm test -- src/components/dialogue/DialogueShell.test.tsx src/chat/workspaceCon
 
 真实 visual smoke 状态：
 
-- `npm run test:visual-dialogue` 已尝试运行。
-- 当前缺少 `.next/BUILD_ID` 时脚本会要求先跑 `npm run build`。
-- `npm run build` 在 production build 阶段超过 6 分钟无输出进展，已手动终止，未得到可用 visual smoke 结果。
-- 因此 Phase 3A browser/visual smoke 仍标记为待补 gate，不作为本次默认开启依据。
+- `npm run test:visual-dialogue` 已通过，默认使用 `DIALOGUE_SMOKE_SERVER_MODE=dev` 启动 Next dev server，不再依赖已有 `.next/BUILD_ID`。
+- 脚本支持 `DIALOGUE_SMOKE_SERVER_MODE=auto|dev|start`；只有显式 `start` 时才要求先存在 production build。
+- smoke 覆盖默认 debug preview 不可见、`?retrievalDebug=1` 有命中内容、空 workspace/空 query、360px 窄屏不横向溢出。
+- smoke 每次会清空 `artifacts/visual-smoke/dialogue/` 后重写截图，避免覆盖 macOS `compressed,dataless` 截图占位文件时超时。
+- `npm run build` 已不再出现 Next workspace root 误判 warning，production compile 在约 2.3 分钟完成；后续类型检查仍会被本地 dataless 源文件读取超时影响，需要单独做本机文件 hydration/build hygiene。
 
 Prompt 质量检查：
 
