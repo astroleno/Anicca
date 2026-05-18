@@ -569,9 +569,9 @@ async function assertRegionVisible(locator, viewportHeight, name) {
 async function ensureChoiceButtonsAccessibleAndTouchable(page, minTargetSize = 44) {
   const composer = page.getByTestId("dialogue-composer");
   const buttons = [
-    composer.getByRole("button", { name: /继续正方/ }),
-    composer.getByRole("button", { name: /继续反方/ }),
-    composer.getByRole("button", { name: /记录合流/ })
+    composer.getByRole("button", { name: /继续推进正方/ }),
+    composer.getByRole("button", { name: /暂缓判断反方/ }),
+    composer.getByRole("button", { name: /合流记录/ })
   ];
 
   for (const [index, button] of buttons.entries()) {
@@ -583,6 +583,133 @@ async function ensureChoiceButtonsAccessibleAndTouchable(page, minTargetSize = 4
     if (box.width < minTargetSize || box.height < minTargetSize) {
       throw new Error(`Choice button ${index} is below touch target size: ${JSON.stringify(box)}`);
     }
+  }
+}
+
+async function ensureMobileChoiceContextVisible(page, viewportWidth, viewportHeight) {
+  const context = page.getByTestId("dialogue-decision-context");
+  await context.waitFor();
+  await context.filter({ hasText: "这个方向还值不值得继续投入？" }).waitFor();
+  await context.filter({ hasText: "先缩范围，再推进。" }).waitFor();
+  await context.filter({ hasText: "把摊子收住，再判断。" }).waitFor();
+  await assertRegionWidth(context, viewportWidth, "mobile choice context");
+  await assertRegionVisible(context, viewportHeight, "mobile choice context");
+
+  const metrics = await page.evaluate(() => {
+    const composer = document.querySelector('[data-testid="dialogue-composer"]');
+    const contextElement = document.querySelector('[data-testid="dialogue-decision-context"]');
+    if (!(composer instanceof HTMLElement) || !(contextElement instanceof HTMLElement)) {
+      return null;
+    }
+
+    const composerRect = composer.getBoundingClientRect();
+    const contextRect = contextElement.getBoundingClientRect();
+    const actions = [...composer.querySelectorAll("button")].flatMap((button) => {
+      const rect = button.getBoundingClientRect();
+      const style = window.getComputedStyle(button);
+      if (style.display === "none" || style.visibility === "hidden" || rect.width === 0 || rect.height === 0) {
+        return [];
+      }
+
+      return {
+        top: rect.top,
+        bottom: rect.bottom,
+        left: rect.left,
+        right: rect.right
+      };
+    });
+
+    return {
+      composer: {
+        top: composerRect.top,
+        bottom: composerRect.bottom,
+        left: composerRect.left,
+        right: composerRect.right
+      },
+      context: {
+        top: contextRect.top,
+        bottom: contextRect.bottom,
+        left: contextRect.left,
+        right: contextRect.right
+      },
+      actions
+    };
+  });
+
+  if (!metrics) {
+    throw new Error("Missing mobile choice context metrics");
+  }
+
+  const contextInsideComposer = (
+    metrics.context.top >= metrics.composer.top - 1 &&
+    metrics.context.bottom <= metrics.composer.bottom + 1 &&
+    metrics.context.left >= metrics.composer.left - 1 &&
+    metrics.context.right <= metrics.composer.right + 1
+  );
+  const actionsInsideComposer = metrics.actions.every((action) => (
+    action.top >= metrics.composer.top - 1 &&
+    action.bottom <= metrics.composer.bottom + 1 &&
+    action.left >= metrics.composer.left - 1 &&
+    action.right <= metrics.composer.right + 1
+  ));
+
+  if (!contextInsideComposer || !actionsInsideComposer) {
+    throw new Error(`Mobile choice context and actions are not in the same tray: ${JSON.stringify(metrics)}`);
+  }
+}
+
+async function ensureMobileComposerSingleColumn(page, viewportName) {
+  const metrics = await page.evaluate(() => {
+    const composer = document.querySelector('[data-testid="dialogue-composer"]');
+    if (!(composer instanceof HTMLElement)) {
+      return null;
+    }
+
+    if (composer.dataset.mode !== "compose") {
+      return { mode: composer.dataset.mode };
+    }
+
+    const textarea = composer.querySelector("textarea");
+    const submit = composer.querySelector('button[type="submit"]');
+    if (!(textarea instanceof HTMLElement) || !(submit instanceof HTMLElement)) {
+      return null;
+    }
+
+    const composerRect = composer.getBoundingClientRect();
+    const textareaRect = textarea.getBoundingClientRect();
+    const submitRect = submit.getBoundingClientRect();
+
+    return {
+      mode: composer.dataset.mode,
+      composerWidth: composerRect.width,
+      textarea: {
+        top: textareaRect.top,
+        bottom: textareaRect.bottom,
+        width: textareaRect.width
+      },
+      submit: {
+        top: submitRect.top,
+        bottom: submitRect.bottom,
+        width: submitRect.width
+      }
+    };
+  });
+
+  if (!metrics) {
+    throw new Error(`Missing composer single-column metrics on ${viewportName}`);
+  }
+
+  if (metrics.mode !== "compose") {
+    return;
+  }
+
+  const minWidth = metrics.composerWidth * 0.82;
+  if (metrics.textarea.width < minWidth || metrics.submit.width < minWidth) {
+    throw new Error(`Mobile composer controls are not full-width on ${viewportName}: ${JSON.stringify(metrics)}`);
+  }
+
+  if (metrics.submit.top < metrics.textarea.bottom + 4) {
+    throw new Error(`Mobile composer controls are still side-by-side on ${viewportName}: ${JSON.stringify(metrics)}`);
   }
 }
 
@@ -842,6 +969,44 @@ async function ensureFocusedSidebarItemFullyVisible(page, viewportName) {
   }
 }
 
+async function ensureVisibleSidebarItemsNotClipped(page, viewportName) {
+  const clippedItems = await page.evaluate(() => {
+    const buttons = [...document.querySelectorAll('[data-testid="dialogue-sidebar"] nav[aria-label="分支列表"] button')];
+    return buttons.flatMap((button) => {
+      if (!(button instanceof HTMLElement)) {
+        return [];
+      }
+
+      const rect = button.getBoundingClientRect();
+      const isVisibleInViewport = (
+        rect.width > 0 &&
+        rect.height > 0 &&
+        rect.bottom > 0 &&
+        rect.top < window.innerHeight
+      );
+      if (!isVisibleInViewport) {
+        return [];
+      }
+
+      if (rect.left < -1 || rect.right > window.innerWidth + 1) {
+        return [{
+          text: button.textContent?.trim() || "",
+          left: rect.left,
+          right: rect.right,
+          width: rect.width,
+          viewportWidth: window.innerWidth
+        }];
+      }
+
+      return [];
+    });
+  });
+
+  if (clippedItems.length) {
+    throw new Error(`Visible sidebar items are clipped on ${viewportName}: ${JSON.stringify(clippedItems)}`);
+  }
+}
+
 async function getPageScrollMetrics(page) {
   return page.evaluate(() => {
     const shell = document.querySelector('[data-testid="dialogue-shell"]');
@@ -1059,8 +1224,8 @@ async function ensureSynthesisPendingFocusFlow(browser) {
   const { context, page, pageIssues } = await createScenarioPage(browser, createWorkspaceWithoutSynthesis());
   const synthesis = await mockDeferredSynthesis(page);
 
-  await page.getByTestId("dialogue-composer").getByRole("button", { name: /记录合流/ }).click();
-  await page.getByRole("button", { name: "收束中..." }).waitFor();
+  await page.getByTestId("dialogue-composer").getByRole("button", { name: /合流记录/ }).click();
+  await page.getByRole("button", { name: "合流中..." }).waitFor();
   if (!synthesis.getRequestId()) {
     throw new Error("Synthesis request did not start during pending flow scenario");
   }
@@ -1080,8 +1245,8 @@ async function ensureSynthesisStaleCompletionDoesNotStealFocus(browser) {
   );
   const synthesis = await mockDeferredSynthesis(page);
 
-  await page.getByTestId("dialogue-composer").getByRole("button", { name: /记录合流/ }).click();
-  await page.getByRole("button", { name: "收束中..." }).waitFor();
+  await page.getByTestId("dialogue-composer").getByRole("button", { name: /合流记录/ }).click();
+  await page.getByRole("button", { name: "合流中..." }).waitFor();
   await page.getByTestId("dialogue-sidebar").getByRole("button", { name: /另一个问题/ }).click();
   await page.getByRole("heading", { name: /另一个问题/ }).waitFor();
   synthesis.release();
@@ -1135,9 +1300,9 @@ async function ensureNextStepChoiceDockLayout(browser) {
   });
   const desktopComposer = desktop.page.getByTestId("dialogue-composer");
   await desktopComposer.waitFor();
-  await desktopComposer.getByRole("button", { name: /继续正方/ }).waitFor();
-  await desktopComposer.getByRole("button", { name: /继续反方/ }).waitFor();
-  await desktopComposer.getByRole("button", { name: /记录合流/ }).waitFor();
+  await desktopComposer.getByRole("button", { name: /继续推进正方/ }).waitFor();
+  await desktopComposer.getByRole("button", { name: /暂缓判断反方/ }).waitFor();
+  await desktopComposer.getByRole("button", { name: /合流记录/ }).waitFor();
   await ensureChoiceButtonsAccessibleAndTouchable(desktop.page, 38);
   const desktopMode = await desktopComposer.getAttribute("data-mode");
   if (desktopMode !== "choice") {
@@ -1161,11 +1326,13 @@ async function ensureNextStepChoiceDockLayout(browser) {
   }
   await assertRegionWidth(mobileComposer, 320, "mobile choice composer");
   await assertRegionVisible(mobileComposer, 740, "mobile choice composer initial");
+  await ensureMobileChoiceContextVisible(mobile.page, 320, 740);
   await ensureChoiceButtonsAccessibleAndTouchable(mobile.page, 44);
   await ensureMobileRootNodeHasVisibleText(mobile.page);
   await ensureMobileComposerDoesNotCoverLineage(mobile.page);
   await ensureMobileComposerDoesNotCoverPanelActions(mobile.page);
   await ensureFocusedSidebarItemFullyVisible(mobile.page, "mobile choice dock");
+  await ensureVisibleSidebarItemsNotClipped(mobile.page, "mobile choice dock");
   await mobileComposer.scrollIntoViewIfNeeded();
   await mobile.page.waitForTimeout(60);
   await assertRegionVisible(mobileComposer, 740, "mobile choice composer");
@@ -1395,7 +1562,9 @@ async function runViewport(browser, viewport) {
     await ensureMobileComposerDoesNotCoverLineage(page);
     await ensureMobileComposerDoesNotCoverPanelActions(page);
     await ensureMobileRootNodeHasVisibleText(page);
+    await ensureMobileComposerSingleColumn(page, viewport.name);
     await ensureFocusedSidebarItemFullyVisible(page, viewport.name);
+    await ensureVisibleSidebarItemsNotClipped(page, viewport.name);
     await ensureMobileCanScrollFromStage(page, viewport.name);
   }
 
