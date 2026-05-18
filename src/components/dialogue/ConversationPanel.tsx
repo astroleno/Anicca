@@ -124,7 +124,7 @@ export function ConversationPanel({
                 disabled={synthesisPending || synthesisBlocked}
                 aria-busy={synthesisPending ? "true" : undefined}
               >
-                {synthesisPending ? "收束中..." : "记录合流"}
+                {synthesisPending ? "合流中..." : "合流记录"}
               </button>
               <span className={styles.panelActionHint}>
                 {synthesisPending

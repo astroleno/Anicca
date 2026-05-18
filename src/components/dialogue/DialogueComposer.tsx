@@ -22,8 +22,11 @@ type DialogueComposerProps = {
 };
 
 type DialogueComposerNextStepChoice = {
+  currentLabel: string;
   thesisLabel: string;
   antithesisLabel: string;
+  thesisSummary: string;
+  antithesisSummary: string;
   synthesisLabel: string;
   synthesisBusy: boolean;
   synthesisDisabled: boolean;
@@ -55,30 +58,34 @@ export function DialogueComposer({
   const isRootTarget = target.kind === "root";
   const isSynthesisRecordTarget = target.displayRole === "synthesis-record";
   const isNextStepChoice = Boolean(nextStepChoice && !targetFrozen && isRootTarget && !pendingAction);
-  const thesisChoiceLabel = nextStepChoice ? `${nextStepChoice.thesisLabel}（正）` : "";
-  const antithesisChoiceLabel = nextStepChoice ? `${nextStepChoice.antithesisLabel}（反）` : "";
+  const thesisChoiceLabel = nextStepChoice ? "继续推进（正）" : "";
+  const antithesisChoiceLabel = nextStepChoice ? "暂缓判断（反）" : "";
   const targetVerb = targetFrozen
     ? targetFrozenReason === "synthesis"
-      ? "正在记录合流"
+      ? "正在生成合流"
       : "正在续写到"
     : isNextStepChoice
-      ? "下一步"
+      ? "主决策"
     : isSynthesisRecordTarget
       ? "基于这次合流"
       : isRootTarget
-        ? "将开启"
+        ? "换一个问题继续"
         : "将续写到";
-  const targetLabel = isNextStepChoice ? "正反已生成，选择下一步" : target.label;
-  const actionLabel = isRootTarget && !pendingAction ? (isNextStepChoice ? "另开主题" : "开启新主题") : "生成正 / 反";
+  const targetLabel = isNextStepChoice
+    ? "正反已生成"
+    : isRootTarget && !isSynthesisRecordTarget
+      ? "输入新的问题"
+      : target.label;
+  const actionLabel = isRootTarget && !pendingAction ? "开启新主题" : "生成正 / 反";
   const composerEyebrow = isNextStepChoice ? "选择" : isRootTarget && !targetFrozen ? "新主题" : "续写";
   const placeholder = targetFrozen
     ? "生成还在进行，先让这次请求落稳。"
     : isNextStepChoice
-      ? "先选择一侧继续，或记录合流。"
+      ? "先选择推进、暂缓，或留下合流记录。"
     : isSynthesisRecordTarget
       ? "基于这次合流继续追问。"
       : isRootTarget
-        ? "写下一个新的母题，它会开启另一条谱系。"
+        ? "输入新的问题，将开启另一条谱系。"
         : "把当前节点推进到下一轮。";
 
   return (
@@ -101,42 +108,67 @@ export function DialogueComposer({
       </div>
 
       {nextStepChoice && isNextStepChoice ? (
-        <div className={styles.composerChoiceBar} aria-label="下一步选择">
-          <button
-            type="button"
-            className={styles.composerChoiceButton}
-            aria-label={`继续正方：${nextStepChoice.thesisLabel}`}
-            onClick={nextStepChoice.onSelectThesis}
+        <>
+          <div
+            className={styles.composerDecisionContext}
+            data-testid="dialogue-decision-context"
+            aria-label="当前正反摘要"
           >
-            <span className={styles.composerChoiceDesktopLabel}>{thesisChoiceLabel}</span>
-            <span className={styles.composerChoiceMobileLabel}>继续</span>
-          </button>
-          <button
-            type="button"
-            className={styles.composerChoiceButton}
-            aria-label={`继续反方：${nextStepChoice.antithesisLabel}`}
-            onClick={nextStepChoice.onSelectAntithesis}
-          >
-            <span className={styles.composerChoiceDesktopLabel}>{antithesisChoiceLabel}</span>
-            <span className={styles.composerChoiceMobileLabel}>暂停</span>
-          </button>
-          <button
-            type="button"
-            className={styles.composerChoiceButton}
-            aria-label={`记录合流：${nextStepChoice.synthesisLabel}`}
-            onClick={nextStepChoice.onSynthesize}
-            disabled={nextStepChoice.synthesisDisabled}
-            aria-busy={nextStepChoice.synthesisBusy ? "true" : undefined}
-          >
-            <span className={styles.composerChoiceDesktopLabel}>
-              {nextStepChoice.synthesisBusy ? "合流中" : "记录合流"}
-            </span>
-            <span className={styles.composerChoiceMobileLabel}>
-              {nextStepChoice.synthesisBusy ? "合流中" : "合流"}
-            </span>
-            <small>{nextStepChoice.synthesisLabel}</small>
-          </button>
-        </div>
+            <p className={styles.composerDecisionPrompt}>
+              <span>当前</span>
+              <strong>{nextStepChoice.currentLabel}</strong>
+            </p>
+            <div className={styles.composerDecisionBranches}>
+              <span>
+                <b>正</b>
+                {nextStepChoice.thesisSummary || nextStepChoice.thesisLabel}
+              </span>
+              <span>
+                <b>反</b>
+                {nextStepChoice.antithesisSummary || nextStepChoice.antithesisLabel}
+              </span>
+            </div>
+          </div>
+          <div className={styles.composerChoiceBar} aria-label="下一步选择">
+            <button
+              type="button"
+              className={styles.composerChoiceButton}
+              data-choice="thesis"
+              aria-label={`继续推进正方：${nextStepChoice.thesisLabel}`}
+              onClick={nextStepChoice.onSelectThesis}
+            >
+              <span className={styles.composerChoiceDesktopLabel}>{thesisChoiceLabel}</span>
+              <span className={styles.composerChoiceMobileLabel}>继续推进</span>
+            </button>
+            <button
+              type="button"
+              className={styles.composerChoiceButton}
+              data-choice="antithesis"
+              aria-label={`暂缓判断反方：${nextStepChoice.antithesisLabel}`}
+              onClick={nextStepChoice.onSelectAntithesis}
+            >
+              <span className={styles.composerChoiceDesktopLabel}>{antithesisChoiceLabel}</span>
+              <span className={styles.composerChoiceMobileLabel}>暂缓判断</span>
+            </button>
+            <button
+              type="button"
+              className={styles.composerChoiceButton}
+              data-choice="synthesis"
+              aria-label={`合流记录：${nextStepChoice.synthesisLabel}`}
+              onClick={nextStepChoice.onSynthesize}
+              disabled={nextStepChoice.synthesisDisabled}
+              aria-busy={nextStepChoice.synthesisBusy ? "true" : undefined}
+            >
+              <span className={styles.composerChoiceDesktopLabel}>
+                {nextStepChoice.synthesisBusy ? "合流中" : "合流记录"}
+              </span>
+              <span className={styles.composerChoiceMobileLabel}>
+                {nextStepChoice.synthesisBusy ? "合流中" : "合流记录"}
+              </span>
+              <small>{nextStepChoice.synthesisLabel}</small>
+            </button>
+          </div>
+        </>
       ) : null}
 
       <label className={styles.composerField}>
@@ -154,7 +186,7 @@ export function DialogueComposer({
 
       <div className={styles.composerActions}>
         <button type="submit" className={styles.primaryButton} disabled={disabled || !value.trim()}>
-          {pendingAction === "branches" ? "生成中..." : pendingAction === "synthesis" ? "收束中" : actionLabel}
+          {pendingAction === "branches" ? "生成中..." : pendingAction === "synthesis" ? "合流中" : actionLabel}
         </button>
       </div>
 

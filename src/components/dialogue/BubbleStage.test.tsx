@@ -200,7 +200,7 @@ describe("BubbleStage", () => {
     stubPointerMode("fine");
     render(<BubbleStage layoutKey="focus:empty" nodes={[]} focusNodeId={null} onSelect={vi.fn()} />);
 
-    expect(screen.getByText("给它一个母题，它会先长出正与反；生成后可整理舞台布局。")).toBeInTheDocument();
+    expect(screen.getByText("写下母题，让正反开始生成。")).toBeInTheDocument();
   });
 
   it("lets the empty theme node act as the primary input target", () => {
@@ -289,7 +289,7 @@ describe("BubbleStage", () => {
 
     render(<BubbleStage layoutKey="focus:root" nodes={nodes} focusNodeId="root" onSelect={vi.fn()} />);
 
-    expect(screen.getByText("整理舞台只影响布局；是否记录合流由同一母题下的正反成对关系决定。")).toBeInTheDocument();
+    expect(screen.getByText("正反已生成。")).toBeInTheDocument();
   });
 
   it("renders lineage connectors between focus and visible related nodes", () => {
@@ -465,7 +465,7 @@ describe("BubbleStage", () => {
     expect(screen.getByTestId("dialogue-stage-convergence-mark-thesis")).toBeInTheDocument();
     expect(screen.getByTestId("dialogue-stage-convergence-mark-antithesis")).toBeInTheDocument();
     expect(screen.getByTestId("dialogue-stage-convergence-dot")).toBeInTheDocument();
-    expect(screen.getByTestId("dialogue-stage-hint")).toHaveTextContent("已记录一次正反合流");
+    expect(screen.getByTestId("dialogue-stage-hint")).toHaveTextContent("已留下合流记录。");
     expect(screen.queryByText("合流 1 次")).not.toBeInTheDocument();
     expect(screen.queryByTestId("dialogue-stage-node-synthesis")).not.toBeInTheDocument();
   });

@@ -182,6 +182,15 @@ function getShortPromptLabel(text: string) {
   return firstLine.length > 14 ? `${firstLine.slice(0, 14)}…` : firstLine;
 }
 
+function getPlainTextSnippet(text: string | undefined, maxLength = 36): string {
+  const normalized = (text || "").trim().replace(/\s+/g, " ");
+  if (!normalized) {
+    return "";
+  }
+
+  return normalized.length > maxLength ? `${normalized.slice(0, maxLength)}…` : normalized;
+}
+
 function formatDialogueError(error: unknown): DialogueErrorState {
   const message =
     typeof error === "string"
@@ -391,6 +400,16 @@ function getDialogueNodeLabel(graph: Graph, nodeId: string): string {
   }
 
   return "节点";
+}
+
+function getDialogueNodeSnippet(graph: Graph, nodeId: string, fallback = "暂无摘要"): string {
+  const node = graph.nodes[nodeId];
+  const snippet = getPlainTextSnippet(
+    node?.meta?.summary || node?.text || node?.meta?.label,
+    34
+  );
+
+  return snippet || fallback;
 }
 
 function getComposerTargetFromNodeId(graph: Graph, nodeId: string | null): DialogueComposerTarget {
@@ -905,7 +924,7 @@ export function DialogueShell() {
           setFocusedNodeId(userNodeId);
         });
       } else {
-        setWorkspaceStatus("正反已生成：选择一侧继续，或记录合流。");
+        setWorkspaceStatus("正反已生成：继续推进、暂缓判断，或留下合流记录。");
       }
     } catch (error: unknown) {
       const activePending = useDialogueUiStore.getState().pending.branches;
@@ -1230,8 +1249,11 @@ export function DialogueShell() {
     composerTarget.kind === "root" &&
     relevantSynthesisAction?.available
       ? {
+          currentLabel: getPlainTextSnippet(view.currentNode.text || view.currentNode.label, 30) || view.currentNode.label,
           thesisLabel: getDialogueNodeLabel(graphSnapshot.graph, relevantSynthesisAction.thesisId),
           antithesisLabel: getDialogueNodeLabel(graphSnapshot.graph, relevantSynthesisAction.antithesisId),
+          thesisSummary: getDialogueNodeSnippet(graphSnapshot.graph, relevantSynthesisAction.thesisId),
+          antithesisSummary: getDialogueNodeSnippet(graphSnapshot.graph, relevantSynthesisAction.antithesisId),
           synthesisLabel: relevantSynthesisAction.label,
           synthesisBusy: isSynthesisPendingForCurrentAction,
           synthesisDisabled: hasPendingRequest || synthesisBlockedByOtherPending,
@@ -1363,7 +1385,7 @@ export function DialogueShell() {
         </p>
       ) : null}
 
-      <div className={styles.workspace}>
+      <div className={styles.workspace} data-mode={nextStepChoice ? "choice" : undefined}>
         <BubbleStage
           layoutKey={view.focusSnapshotId}
           nodes={view.stageNodes}

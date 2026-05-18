@@ -170,17 +170,17 @@ describe("DialogueShell", () => {
 
     render(<DialogueShell />);
 
-    expect((await screen.findAllByText("记录合流")).length).toBeGreaterThan(0);
-    expect(screen.getByText("下一步")).toBeInTheDocument();
-    expect(screen.getByText("正反已生成，选择下一步")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("先选择一侧继续，或记录合流。")).toBeInTheDocument();
+    expect((await screen.findAllByText("合流记录")).length).toBeGreaterThan(0);
+    expect(screen.getByText("主决策")).toBeInTheDocument();
+    expect(screen.getByText("正反已生成")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("先选择推进、暂缓，或留下合流记录。")).toBeInTheDocument();
     expect(screen.queryByPlaceholderText("把当前母题推进到下一轮。")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "另开主题" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /继续正方/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /继续反方/ })).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: /记录合流/ }).length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: "开启新主题" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /继续推进正方/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /暂缓判断反方/ })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /合流记录/ }).length).toBeGreaterThan(0);
 
-    await user.click(screen.getByRole("button", { name: /继续正方/ }));
+    await user.click(screen.getByRole("button", { name: /继续推进正方/ }));
 
     expect(useDialogueUiStore.getState().focusedNodeId).toBe(thesisId);
     expect(screen.getByText("将续写到")).toBeInTheDocument();
@@ -329,7 +329,7 @@ describe("DialogueShell", () => {
 
     render(<DialogueShell />);
 
-    const synthesisButtons = await screen.findAllByRole("button", { name: /记录合流/ });
+    const synthesisButtons = await screen.findAllByRole("button", { name: /合流记录/ });
     await user.click(synthesisButtons[0]);
 
     await waitFor(() => {
@@ -391,7 +391,7 @@ describe("DialogueShell", () => {
 
     render(<DialogueShell />);
 
-    const synthesisButtons = await screen.findAllByRole("button", { name: /记录合流/ });
+    const synthesisButtons = await screen.findAllByRole("button", { name: /合流记录/ });
     await user.click(synthesisButtons[0]);
 
     await waitFor(() => {
@@ -1295,7 +1295,7 @@ describe("DialogueShell", () => {
 
     render(<DialogueShell />);
 
-    await user.click(screen.getByRole("button", { name: /记录合流/ }));
+    await user.click(screen.getByRole("button", { name: /合流记录/ }));
     resolveFetch?.(
       new Response(
         JSON.stringify({
@@ -1347,7 +1347,7 @@ describe("DialogueShell", () => {
 
     render(<DialogueShell />);
 
-    await user.click(screen.getByRole("button", { name: /记录合流/ }));
+    await user.click(screen.getByRole("button", { name: /合流记录/ }));
     resolveFetch?.(
       new Response(
         JSON.stringify({
@@ -1478,7 +1478,7 @@ describe("DialogueShell", () => {
     const childUserId = branchGraphStore.getGraph().nodes[thesisId].children[0];
     expect(branchGraphStore.getGraph().nodes[childUserId]?.text).toBe("继续的话下一步做什么");
     expect(useDialogueUiStore.getState().focusedNodeId).toBe(antithesisId);
-    expect(screen.getByRole("status")).toHaveTextContent("正反已生成：选择一侧继续，或记录合流。");
+    expect(screen.getByRole("status")).toHaveTextContent("正反已生成：继续推进、暂缓判断，或留下合流记录。");
     expect(events.some((event) => event.name === "continuation_created")).toBe(true);
   });
 
@@ -1505,11 +1505,11 @@ describe("DialogueShell", () => {
 
     render(<DialogueShell />);
 
-    await user.click(screen.getByRole("button", { name: /记录合流/ }));
+    await user.click(screen.getByRole("button", { name: /合流记录/ }));
     await user.click(within(screen.getByTestId("dialogue-sidebar")).getByRole("button", { name: /另一个问题/ }));
 
-    expect(screen.queryByRole("button", { name: "收束中..." })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /记录合流/ })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "合流中..." })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /合流记录/ })).toBeDisabled();
     expect(screen.getByText("等待另一条谱系收束完成：继续 / 暂停")).toBeInTheDocument();
 
     resolveFetch?.(
@@ -1557,12 +1557,12 @@ describe("DialogueShell", () => {
 
     render(<DialogueShell />);
 
-    await user.click(screen.getByRole("button", { name: /记录合流/ }));
+    await user.click(screen.getByRole("button", { name: /合流记录/ }));
 
     expect(useDialogueUiStore.getState().pending.branches).toBeNull();
     expect(useDialogueUiStore.getState().pending.synthesis).not.toBeNull();
-    expect(screen.getByRole("button", { name: "收束中..." })).toHaveAttribute("aria-busy", "true");
-    expect(screen.getByRole("button", { name: "收束中" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "合流中..." })).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByRole("button", { name: "合流中" })).toBeDisabled();
 
     resolveFetch?.(
       new Response(

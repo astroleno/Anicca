@@ -130,13 +130,13 @@ export function BubbleStage({
         ? "点选节点查看正与反。"
         : null
     : hasSynthesisRecord
-      ? "整理舞台只影响布局；已记录一次正反合流。"
+      ? "已留下合流记录。"
       : hasThesis && hasAntithesis
-        ? "整理舞台只影响布局；是否记录合流由同一母题下的正反成对关系决定。"
+        ? "正反已生成。"
         : null;
   const emptyStageHint = isCoarsePointer
-    ? "给它一个母题，它会先长出正与反；点选节点查看谱系。"
-    : "给它一个母题，它会先长出正与反；生成后可整理舞台布局。";
+    ? "写下母题，点选节点查看谱系。"
+    : "写下母题，让正反开始生成。";
   const resolvedPan = stageLayout?.pan || DEFAULT_STAGE_PAN;
 
   useEffect(() => {
@@ -591,7 +591,7 @@ export function BubbleStage({
                   aria-hidden="true"
                 >
                   <strong>合</strong>
-                  <small>收束中</small>
+                  <small>合流中</small>
                 </div>
                 <p className={styles.stagePendingCaption}>正在收束「{pendingSynthesisMark.label}」。</p>
               </div>
