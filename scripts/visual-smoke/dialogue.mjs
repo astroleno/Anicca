@@ -569,9 +569,10 @@ async function assertRegionVisible(locator, viewportHeight, name) {
 async function ensureChoiceButtonsAccessibleAndTouchable(page, minTargetSize = 44) {
   const composer = page.getByTestId("dialogue-composer");
   const buttons = [
-    composer.getByRole("button", { name: /继续推进正方/ }),
-    composer.getByRole("button", { name: /暂缓判断反方/ }),
-    composer.getByRole("button", { name: /合流记录/ })
+    composer.getByRole("button", { name: /沿正继续写/ }),
+    composer.getByRole("button", { name: /沿反继续写/ }),
+    composer.getByRole("button", { name: /合流记录/ }),
+    composer.getByRole("button", { name: /发起圆桌旁路/ })
   ];
 
   for (const [index, button] of buttons.entries()) {
@@ -655,6 +656,71 @@ async function ensureMobileChoiceContextVisible(page, viewportWidth, viewportHei
 
   if (!contextInsideComposer || !actionsInsideComposer) {
     throw new Error(`Mobile choice context and actions are not in the same tray: ${JSON.stringify(metrics)}`);
+  }
+}
+
+async function ensureRetrievalDebugDoesNotCoverKeyActions(page, scenarioName) {
+  const overlaps = await page.evaluate(() => {
+    const preview = document.querySelector('[data-testid="dialogue-retrieval-debug"]');
+    if (!(preview instanceof HTMLElement)) {
+      return [];
+    }
+
+    const previewRect = preview.getBoundingClientRect();
+    const candidates = [
+      ...document.querySelectorAll('[data-testid="dialogue-panel"] button'),
+      ...document.querySelectorAll('[data-testid="dialogue-composer"] button'),
+      ...document.querySelectorAll('[data-testid="dialogue-composer"] textarea')
+    ];
+
+    return candidates.flatMap((candidate) => {
+      if (!(candidate instanceof HTMLElement)) {
+        return [];
+      }
+
+      const rect = candidate.getBoundingClientRect();
+      const style = window.getComputedStyle(candidate);
+      const isVisible = (
+        style.display !== "none" &&
+        style.visibility !== "hidden" &&
+        rect.width > 0 &&
+        rect.height > 0 &&
+        rect.bottom > 0 &&
+        rect.top < window.innerHeight
+      );
+      if (!isVisible) {
+        return [];
+      }
+
+      const overlapsPreview = (
+        rect.left < previewRect.right &&
+        rect.right > previewRect.left &&
+        rect.top < previewRect.bottom &&
+        rect.bottom > previewRect.top
+      );
+
+      return overlapsPreview
+        ? [{
+            text: candidate.textContent?.trim() || candidate.getAttribute("aria-label") || candidate.tagName,
+            preview: {
+              left: previewRect.left,
+              right: previewRect.right,
+              top: previewRect.top,
+              bottom: previewRect.bottom
+            },
+            target: {
+              left: rect.left,
+              right: rect.right,
+              top: rect.top,
+              bottom: rect.bottom
+            }
+          }]
+        : [];
+    });
+  });
+
+  if (overlaps.length) {
+    throw new Error(`Retrieval debug preview covers key actions during ${scenarioName}: ${JSON.stringify(overlaps)}`);
   }
 }
 
@@ -1159,7 +1225,7 @@ async function createScenarioPage(browser, workspace, contextOptions = {}, route
     });
   });
 
-  await page.goto(`${baseUrl}${routePath}`, { waitUntil: "networkidle" });
+  await page.goto(`${baseUrl}${routePath}`, { waitUntil: "domcontentloaded" });
   await page.getByTestId("dialogue-stage").waitFor();
   await page.getByTestId("dialogue-panel").waitFor();
 
@@ -1300,9 +1366,10 @@ async function ensureNextStepChoiceDockLayout(browser) {
   });
   const desktopComposer = desktop.page.getByTestId("dialogue-composer");
   await desktopComposer.waitFor();
-  await desktopComposer.getByRole("button", { name: /继续推进正方/ }).waitFor();
-  await desktopComposer.getByRole("button", { name: /暂缓判断反方/ }).waitFor();
+  await desktopComposer.getByRole("button", { name: /沿正继续写/ }).waitFor();
+  await desktopComposer.getByRole("button", { name: /沿反继续写/ }).waitFor();
   await desktopComposer.getByRole("button", { name: /合流记录/ }).waitFor();
+  await desktopComposer.getByRole("button", { name: /发起圆桌旁路/ }).waitFor();
   await ensureChoiceButtonsAccessibleAndTouchable(desktop.page, 38);
   const desktopMode = await desktopComposer.getAttribute("data-mode");
   if (desktopMode !== "choice") {
@@ -1376,6 +1443,7 @@ async function ensureRetrievalDebugPreview(browser) {
   await desktopPreview.filter({ hasText: "拆分参考" }).waitFor();
   await desktopPreview.filter({ hasText: "coverage exclusion active" }).waitFor();
   await assertRegionWidth(desktopPreview, 1280, "desktop retrieval debug preview");
+  await ensureRetrievalDebugDoesNotCoverKeyActions(desktop.page, "desktop retrieval debug preview");
   const desktopScreenshotPath = path.join(outputDir, "desktop-retrieval-debug.png");
   await desktop.page.screenshot({ path: desktopScreenshotPath, fullPage: false });
   assertNoPageIssues(desktop.pageIssues, "retrieval debug content preview");
@@ -1413,6 +1481,7 @@ async function ensureRetrievalDebugPreview(browser) {
   await mobile.page.waitForTimeout(60);
   await ensureNoHorizontalOverflow(mobile.page, "mobile retrieval debug preview");
   await assertRegionWidth(mobilePreview, 360, "mobile retrieval debug preview");
+  await ensureRetrievalDebugDoesNotCoverKeyActions(mobile.page, "mobile retrieval debug preview");
   const mobileScreenshotPath = path.join(outputDir, "mobile-360-retrieval-debug.png");
   await mobile.page.screenshot({ path: mobileScreenshotPath, fullPage: false });
   assertNoPageIssues(mobile.pageIssues, "mobile retrieval debug preview");
@@ -1499,7 +1568,7 @@ async function runViewport(browser, viewport) {
     });
   });
 
-  await page.goto(`${baseUrl}/dialogue`, { waitUntil: "networkidle" });
+  await page.goto(`${baseUrl}/dialogue`, { waitUntil: "domcontentloaded" });
 
   const stage = page.getByTestId("dialogue-stage");
   const panel = page.getByTestId("dialogue-panel");
