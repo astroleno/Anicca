@@ -2,9 +2,15 @@
 
 Date: 2026-07-26
 
-Validated source: corrective closeout worktree on `codex/anicca-mainline-release-closeout`
+Validated source commit: `b1652e8cf74ad860f577aa4970ca9667182b3281`
 
 Release branch: `codex/anicca-mainline-release-closeout`
+
+Remote validated-source commit: `b1652e8cf74ad860f577aa4970ca9667182b3281` (verified with `git ls-remote` after push)
+
+Push status: validated source is pushed to the release branch. This report is a separate evidence-only commit on that same branch.
+
+Pull request status: not created.
 
 ## Scope and decisions
 
@@ -33,7 +39,7 @@ Release branch: `codex/anicca-mainline-release-closeout`
 | `npm run typecheck` | exit 0, production TypeScript has 0 errors |
 | `npm run typecheck:test` | exit 0, includes all 28 `src` test files and has 0 errors |
 | Corrective targeted Vitest regression | exit 0, 5 files / 68 tests |
-| `npm run check` | exit 0, 28 files / 236 tests; lint has 0 errors |
+| `npm run check` | exit 0, 28 files / 242 tests; lint has 0 errors |
 | `npm run build` | exit 0, production build completed |
 | Production visual smoke (Next `start`, isolated loopback port) | exit 0, all desktop/tablet/touch/mobile scenarios completed |
 
@@ -51,22 +57,24 @@ Release branch: `codex/anicca-mainline-release-closeout`
 The production smoke summary and current screenshots are under `artifacts/visual-smoke/dialogue/`:
 
 - `summary.json` records desktop, tablet, touch, 390/360/320 mobile, pending, choice dock, retrieval debug, and Growth perspective scenarios.
-- Growth perspective screenshots cover `desktop-growth-perspectives.png`, `mobile-390-growth-perspectives.png`, and `mobile-320-growth-perspectives.png`.
-- `growth-perspective-flow.stageNodeChecks` records five Growth stage nodes in each target viewport; their bounding boxes are pairwise non-overlapping. Each node also receives programmatic focus and a click before the scenario capture.
+- Growth perspective screenshots cover `desktop-growth-perspectives.png`, `mobile-390-growth-perspectives.png`, and `mobile-320-growth-perspectives.png`; the two mobile images are stage-only captures. Separate `mobile-390-growth-composer.png` and `mobile-320-growth-composer.png` captures preserve the composer evidence.
+- `growth-perspective-flow.stageNodeChecks` records five Growth stage nodes in desktop, 390px mobile, and 320px mobile viewports; their bounding boxes are pairwise non-overlapping. Each node also receives programmatic focus and a click before the scenario capture.
+- `growth-layout-matrix.stageNodeChecks` validates actual, unclipped, pairwise non-overlapping stage boxes for `candidateLimit` 1–4 across desktop, 1024px tablet, and 390px mobile viewports.
 - The summary uses repository-relative artifact paths and contains no local absolute paths or provider credentials.
 
 Manual review of the refreshed Growth desktop evidence found all three artwork responses plus the merge node separately rendered and visible. The automated smoke also found no horizontal overflow or inaccessible Growth control.
 
 ## Corrective findings resolved
 
-- Growth children without `branchType` now use a dedicated distributed stage layout; mobile Growth stages reserve enough vertical space for the four-node grid.
+- Growth children without `branchType` now use dedicated wide and compact layouts. Five-child sessions (four artwork responses plus merge) use a multi-row grid; narrow stages reserve dynamic height for additional rows, and 1024px dense stages reduce card dimensions to preserve gaps.
 - Test TypeScript explicitly overrides production test exclusions, includes ambient shader declarations, uses the ES2022 test library, and loads the WebGPU types already supplied by `@types/three`.
 - Branch and synthesis parsers reject blank normalized text/summary; blank, emoji-only, and punctuation-only labels fall back to their Chinese contract label.
-- Provider statuses `408`, `502`, `503`, and `504`, including nested numeric status fields, map to the retryable `provider_unreachable` response (`503`) unless a more specific classification applies.
+- Provider status `408` and every numeric `500`–`599` status, including recursive `cause` / `response` wrappers, map to the retryable `provider_unreachable` response (`503`) unless a more specific classification applies.
+- The transient Growth completion status remains in the accessible workspace context rather than floating over mobile stage nodes.
 - `branches` and `synthesis` now parse only a strict top-level JSON object. The permissive shared parser remains available for legacy endpoints that explicitly use it.
 
 ## Repository safety
 
 - This branch was created from a fresh verified recovery clone. `git fsck --full --no-reflogs` exits 0; its two dangling pre-amend local commits are `a192a7a` and `c74f597`.
 - The prior dirty original worktree remains backed up and quarantined from release work.
-- No closeout-branch push or pull request has been created.
+- The immutable validated source SHA above is pushed; no pull request has been created.
