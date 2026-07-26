@@ -8,7 +8,12 @@ export type RetrievalRelation =
   | "continuation"
   | "source"
   | "merge"
-  | "artifact";
+  | "artifact"
+  | "growth:expand"
+  | "growth:counter_aha"
+  | "growth:merge_promote"
+  | "growth:resonate"
+  | "growth:reframe";
 
 export type RetrievalConfidence = "explicit" | "derived" | "inferred";
 
@@ -19,6 +24,12 @@ export type RetrievalNode = {
   summary?: string;
   kind: Extract<NodeKind, "user" | "assistant" | "merge">;
   branchType?: BranchType;
+  growth?: {
+    operator?: string;
+    artworkId?: string;
+    sourceArtworkIds?: string[];
+    eventId?: string;
+  };
   createdAt: string;
 };
 
@@ -36,7 +47,15 @@ export type RetrievalNodeMatch = {
   score: number;
   rank: number;
   bestMatch: "exact" | "prefix" | "substring";
-  matchedFields: Array<"label" | "summary" | "text" | "branchType">;
+  matchedFields: Array<
+    "label" |
+    "summary" |
+    "text" |
+    "branchType" |
+    "growthOperator" |
+    "growthArtworkId" |
+    "growthEventId"
+  >;
 };
 
 export type RetrievalClampedOptions = {

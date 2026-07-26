@@ -1,5 +1,7 @@
 import { BranchGraphStore } from "@/store/branchGraph";
 import { AniccaNode, Graph, createEmptyGraph } from "@/types/anicca";
+import { projectGrowthSessionToGraph } from "@/features/growth/graphProjection";
+import { runGrowthSession } from "@/features/growth/orchestrator";
 import {
   findByLabelOrText,
   getNode,
@@ -521,6 +523,122 @@ describe("workspace graph retrieval", () => {
       ["edge_explicit", "explicit", "antithesis"],
       ["derived_child:user_seed->asst_derived:thesis", "derived", "thesis"]
     ]);
+  });
+
+  it("indexes growth metadata and explicit growth edge relations", () => {
+    const store = new BranchGraphStore();
+    const session = runGrowthSession({
+      text: "这个方案一定是唯一答案，必须马上定下来",
+      requestId: "req_retrieval_growth"
+    });
+    const projection = projectGrowthSessionToGraph(store, session);
+    const graph = store.getGraph();
+    const counterNodeId = projection.responseNodeIds.find(
+      (nodeId) => graph.nodes[nodeId].meta?.growth?.operator === "counter_aha"
+    )!;
+
+    expect(findByLabelOrText(graph, "counter_aha")[0]).toMatchObject({
+      node: {
+        id: counterNodeId,
+        growth: {
+          operator: "counter_aha"
+        }
+      },
+      matchedFields: ["growthOperator"]
+    });
+    expect(findByLabelOrText(graph, graph.nodes[counterNodeId].meta?.growth?.artworkId || "")[0]).toMatchObject({
+      node: { id: counterNodeId },
+      matchedFields: ["growthArtworkId"]
+    });
+
+    const result = queryWorkspaceGraph(graph, "counter_aha", {
+      relations: ["growth:counter_aha", "growth:merge_promote"],
+      depth: 2
+    });
+    expect(result.edges.map((edge) => edge.relation)).toEqual(
+      expect.arrayContaining(["growth:counter_aha", "growth:merge_promote"])
+    );
+    expect(result.edges.every((edge) => edge.relation.startsWith("growth:"))).toBe(true);
+  });
+
+  it("skips poisoned explicit growth reasons instead of trusting imported edges", () => {
+    const store = new BranchGraphStore();
+    const session = runGrowthSession({
+      text: "这个方案一定是唯一答案，必须马上定下来",
+      requestId: "req_poison_growth"
+    });
+    const projection = projectGrowthSessionToGraph(store, session);
+    const graph = store.getGraph();
+    const counterNodeId = projection.responseNodeIds.find(
+      (nodeId) => graph.nodes[nodeId].meta?.growth?.operator === "counter_aha"
+    )!;
+
+    graph.edges.poison_mismatch = {
+      id: "poison_mismatch",
+      from: projection.userNodeId,
+      to: counterNodeId,
+      reason: "growth:expand"
+    };
+    graph.edges.poison_unknown = {
+      id: "poison_unknown",
+      from: projection.userNodeId,
+      to: counterNodeId,
+      reason: "growth:unknown_operator"
+    };
+
+    const view = normalizeGraphForRetrieval(graph);
+
+    expect(view.edges.some((edge) => edge.id === "poison_mismatch")).toBe(false);
+    expect(view.edges.some((edge) => edge.id === "poison_unknown")).toBe(false);
+    expect(view.edges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          from: projection.userNodeId,
+          to: counterNodeId,
+          relation: "growth:counter_aha"
+        })
+      ])
+    );
+    expect(view.warnings.join("\n")).toContain("explicit growth:expand failed endpoint validation");
+    expect(view.warnings.join("\n")).toContain("unknown growth edge reason");
+  });
+
+  it("skips poisoned explicit synthesis edges and still backfills canonical synthesis", () => {
+    const { graph, rootId, thesisId, synthesisId } = buildStoreFixture();
+    for (const [edgeId, edge] of Object.entries(graph.edges)) {
+      if (edge.from === thesisId && edge.to === synthesisId && edge.reason === "synthesis") {
+        delete graph.edges[edgeId];
+      }
+    }
+    graph.edges.poison_synthesis_shape = {
+      id: "poison_synthesis_shape",
+      from: thesisId,
+      to: rootId,
+      reason: "synthesis"
+    };
+    graph.edges.poison_same_pair = {
+      id: "poison_same_pair",
+      from: thesisId,
+      to: synthesisId,
+      reason: "growth:expand"
+    };
+
+    const view = normalizeGraphForRetrieval(graph);
+
+    expect(view.edges.some((edge) => edge.id === "poison_synthesis_shape")).toBe(false);
+    expect(view.edges.some((edge) => edge.id === "poison_same_pair")).toBe(false);
+    expect(view.edges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          from: thesisId,
+          to: synthesisId,
+          relation: "synthesis",
+          confidence: "derived"
+        })
+      ])
+    );
+    expect(view.warnings.join("\n")).toContain("explicit synthesis failed endpoint validation");
+    expect(view.warnings.join("\n")).toContain("explicit growth:expand failed endpoint validation");
   });
 
   it("clamps unsafe query options", () => {

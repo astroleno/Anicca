@@ -59,14 +59,24 @@ const ALL_RELATIONS: RetrievalRelation[] = [
   "continuation",
   "source",
   "merge",
-  "artifact"
+  "artifact",
+  "growth:expand",
+  "growth:counter_aha",
+  "growth:merge_promote",
+  "growth:resonate",
+  "growth:reframe"
 ];
 const EXPLICIT_REASON_RELATIONS: Record<string, RetrievalRelation> = {
   正: "thesis",
   反: "antithesis",
   continue: "continuation",
   synthesis: "synthesis",
-  merge: "merge"
+  merge: "merge",
+  "growth:expand": "growth:expand",
+  "growth:counter_aha": "growth:counter_aha",
+  "growth:merge_promote": "growth:merge_promote",
+  "growth:resonate": "growth:resonate",
+  "growth:reframe": "growth:reframe"
 };
 const RELATION_ORDER: Record<RetrievalRelation, number> = {
   thesis: 0,
@@ -76,13 +86,29 @@ const RELATION_ORDER: Record<RetrievalRelation, number> = {
   source: 4,
   merge: 5,
   artifact: 6,
-  lineage: 7
+  "growth:resonate": 7,
+  "growth:expand": 8,
+  "growth:counter_aha": 9,
+  "growth:reframe": 10,
+  "growth:merge_promote": 11,
+  lineage: 12
 };
-const FIELD_ORDER: MatchField[] = ["label", "summary", "text", "branchType"];
+const FIELD_ORDER: MatchField[] = [
+  "label",
+  "summary",
+  "text",
+  "growthOperator",
+  "growthArtworkId",
+  "growthEventId",
+  "branchType"
+];
 const FIELD_BONUS: Record<MatchField, number> = {
   label: 30,
   summary: 20,
   text: 10,
+  growthOperator: 18,
+  growthArtworkId: 16,
+  growthEventId: 14,
   branchType: 5
 };
 const MATCH_BASE: Record<MatchKind, number> = {
@@ -150,6 +176,16 @@ function toRetrievalNode(id: string, node: AniccaNode, warnings: string[]): Retr
     summary,
     kind: node.kind,
     branchType,
+    ...(node.meta?.growth
+      ? {
+          growth: {
+            operator: node.meta.growth.operator,
+            artworkId: node.meta.growth.artworkId,
+            sourceArtworkIds: asStringArray(node.meta.growth.sourceArtworkIds),
+            eventId: node.meta.growth.eventId
+          }
+        }
+      : {}),
     createdAt: typeof node.createdAt === "string" ? node.createdAt : ""
   };
 }
@@ -169,6 +205,13 @@ function relationFromReason(reason: string | undefined): RetrievalRelation | nul
 function inferRelationFromShape(from: RetrievalNode | undefined, to: RetrievalNode | undefined): RetrievalRelation | null {
   if (!from || !to) {
     return null;
+  }
+
+  if (to.kind === "assistant" && to.growth?.operator) {
+    const growthRelation = `growth:${to.growth.operator}`;
+    if (isRetrievalRelation(growthRelation)) {
+      return growthRelation;
+    }
   }
 
   if (to.kind === "merge") {
@@ -201,8 +244,51 @@ function hasTargetMembership(fromId: string, toId: string, relation: RetrievalRe
     return asStringArray(target.parents).includes(fromId) || asStringArray(target.meta?.sourceNodeIds).includes(fromId);
   }
 
+  if (relation.startsWith("growth:")) {
+    return asStringArray(target.parents).includes(fromId) || asStringArray(target.meta?.sourceNodeIds).includes(fromId);
+  }
+
   if (relation === "thesis" || relation === "antithesis" || relation === "continuation" || relation === "merge") {
     return asStringArray(target.parents).includes(fromId);
+  }
+
+  return false;
+}
+
+function validateExplicitRelation(
+  relation: RetrievalRelation,
+  fromId: string,
+  toId: string,
+  from: RetrievalNode | undefined,
+  to: RetrievalNode | undefined,
+  rawNodes: Record<string, AniccaNode>
+) {
+  if (!from || !to || !hasTargetMembership(fromId, toId, relation, rawNodes)) {
+    return false;
+  }
+
+  if (relation.startsWith("growth:")) {
+    return to.kind === "assistant" && `growth:${to.growth?.operator}` === relation;
+  }
+
+  if (relation === "thesis") {
+    return from.kind === "user" && to.kind === "assistant" && to.branchType === "正";
+  }
+
+  if (relation === "antithesis") {
+    return from.kind === "user" && to.kind === "assistant" && to.branchType === "反";
+  }
+
+  if (relation === "synthesis") {
+    return from.kind === "assistant" && to.kind === "assistant" && to.branchType === "合";
+  }
+
+  if (relation === "continuation") {
+    return from.kind === "assistant" && to.kind === "user";
+  }
+
+  if (relation === "merge") {
+    return to.kind === "merge";
   }
 
   return false;
@@ -220,10 +306,20 @@ function resolveEdgeRelation(
 ): RelationResolution | null {
   const explicit = relationFromReason(reason);
   if (explicit) {
+    if (!validateExplicitRelation(explicit, fromId, toId, from, to, rawNodes)) {
+      warnings.push(`edge ${edgeId}: explicit ${explicit} failed endpoint validation`);
+      return null;
+    }
+
     return {
       relation: explicit,
       confidence: "explicit"
     };
+  }
+
+  if (reason?.startsWith("growth:")) {
+    warnings.push(`edge ${edgeId}: unknown growth edge reason "${reason}" skipped`);
+    return null;
   }
 
   if (reason && isRetrievalRelation(reason)) {
@@ -499,7 +595,12 @@ function scoreNodes(view: RetrievalGraphView, query: string, maxQueryChars: numb
       const matchedFields: MatchField[] = [];
 
       for (const field of FIELD_ORDER) {
-        const value = field === "branchType" ? node.branchType : node[field];
+        const value =
+          field === "branchType" ? node.branchType :
+          field === "growthOperator" ? node.growth?.operator :
+          field === "growthArtworkId" ? node.growth?.artworkId :
+          field === "growthEventId" ? node.growth?.eventId :
+          node[field];
         if (typeof value !== "string" || !value.trim()) {
           continue;
         }

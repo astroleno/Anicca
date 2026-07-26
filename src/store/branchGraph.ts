@@ -9,6 +9,12 @@ type AssistantDraft = {
   temperature?: number;
 };
 
+type GrowthAssistantDraft = AssistantDraft & {
+  growth: NonNullable<AniccaNodeMeta["growth"]>;
+  sourceNodeIds?: string[];
+  edgeReason?: string;
+};
+
 export class BranchGraphStore {
   private graph: Graph = createEmptyGraph();
   private revision = 0;
@@ -122,6 +128,37 @@ export class BranchGraphStore {
       meta: { seedId: opts?.seedId, model: opts?.model }
     };
     this.graph.nodes[id] = node;
+    this.emit();
+    return id;
+  }
+
+  createGrowthAssistant(parentIds: string[], draft: GrowthAssistantDraft): string {
+    const normalizedParentIds = [...new Set(parentIds)].filter(Boolean);
+    if (!normalizedParentIds.length) {
+      throw new Error("growth assistant requires at least one parent");
+    }
+    normalizedParentIds.forEach((parentId) => {
+      if (!this.graph.nodes[parentId]) {
+        throw new Error(`parent not found: ${parentId}`);
+      }
+    });
+
+    const id = this.generateId("asst");
+    const node: AniccaNode = {
+      id,
+      kind: "assistant",
+      text: draft.text ?? "",
+      createdAt: new Date().toISOString(),
+      parents: normalizedParentIds,
+      children: [],
+      meta: this.buildMeta(draft)
+    };
+
+    this.graph.nodes[id] = node;
+    for (const parentId of normalizedParentIds) {
+      this.graph.nodes[parentId].children.push(id);
+      this.link(parentId, id, draft.edgeReason || (draft.growth.operator ? `growth:${draft.growth.operator}` : "growth"));
+    }
     this.emit();
     return id;
   }
@@ -266,7 +303,7 @@ export class BranchGraphStore {
     return lineageParentIds[0];
   }
 
-  private buildMeta(input?: AssistantDraft & { sourceNodeIds?: string[]; lineageParentId?: string }): AniccaNodeMeta | undefined {
+  private buildMeta(input?: AssistantDraft & { sourceNodeIds?: string[]; lineageParentId?: string; growth?: AniccaNodeMeta["growth"] }): AniccaNodeMeta | undefined {
     if (!input) {
       return undefined;
     }
@@ -279,6 +316,7 @@ export class BranchGraphStore {
     if (typeof input.temperature === "number") meta.temperature = input.temperature;
     if (Array.isArray(input.sourceNodeIds) && input.sourceNodeIds.length) meta.sourceNodeIds = [...input.sourceNodeIds];
     if (typeof input.lineageParentId === "string") meta.lineageParentId = input.lineageParentId;
+    if (input.growth) meta.growth = { ...input.growth };
     return Object.keys(meta).length ? meta : undefined;
   }
 
