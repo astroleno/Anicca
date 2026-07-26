@@ -1,5 +1,6 @@
 // Anicca 对话域核心类型定义
 // 说明：Dialectic V2 以 local-first graph 作为主线真相源。
+import type { GrowthNodeMeta } from "@/features/growth/types";
 
 export const ANICCA_GRAPH_VERSION = "anicca-dialectic-v2";
 
@@ -18,6 +19,7 @@ export interface AniccaNodeMeta {
   label?: string; // UI 短标签
   sourceNodeIds?: string[]; // 合节点的双来源 assistant
   lineageParentId?: string; // 合节点共享的上游 user anchor
+  growth?: GrowthNodeMeta; // A2A growth provenance, namespaced to keep dialectic metadata stable
 }
 
 export interface AniccaNode {

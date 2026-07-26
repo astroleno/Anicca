@@ -1,5 +1,6 @@
-import { mkdir, access, writeFile } from "node:fs/promises";
+import { mkdir, access, mkdtemp, rename, rm, writeFile } from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
+import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
@@ -9,14 +10,22 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..", "..");
 const buildIdPath = path.join(repoRoot, ".next", "BUILD_ID");
-const outputDir = path.join(repoRoot, "artifacts", "visual-smoke", "dialogue");
-const baseUrl = process.env.DIALOGUE_SMOKE_BASE_URL || "http://127.0.0.1:3211";
+const finalOutputDir = path.join(repoRoot, "artifacts", "visual-smoke", "dialogue");
+let outputDir = finalOutputDir;
+let baseUrl = process.env.DIALOGUE_SMOKE_BASE_URL || "http://127.0.0.1:3211";
+const baseUrlWasProvided = Boolean(process.env.DIALOGUE_SMOKE_BASE_URL);
+const requestedServerMode = process.env.DIALOGUE_SMOKE_SERVER_MODE || "dev";
+const serverReadyTimeoutMs = readTimeoutEnv("DIALOGUE_SMOKE_READY_TIMEOUT_MS", 120000);
+const pageReadyTimeoutMs = readTimeoutEnv("DIALOGUE_SMOKE_PAGE_TIMEOUT_MS", 300000);
+const portSearchLimit = Number.parseInt(process.env.DIALOGUE_SMOKE_PORT_SEARCH_LIMIT || "40", 10);
 
 const viewports = [
   { name: "desktop", width: 1440, height: 980, fullPage: false },
   { name: "tablet", width: 1024, height: 900, fullPage: false },
   { name: "tablet-touch", width: 1024, height: 768, fullPage: false, hasTouch: true, isMobile: true },
   { name: "mobile-390", width: 390, height: 844, fullPage: true },
+  { name: "mobile-360", width: 360, height: 740, fullPage: true },
+  { name: "mobile-320", width: 320, height: 740, fullPage: true },
   { name: "mobile-touch-390", width: 390, height: 844, fullPage: true, hasTouch: true, isMobile: true }
 ];
 
@@ -106,41 +115,363 @@ const seededWorkspace = {
   }
 };
 
-async function ensureBuildExists() {
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function readTimeoutEnv(name, fallbackMs) {
+  const raw = process.env[name];
+  if (!raw) {
+    return fallbackMs;
+  }
+
+  const value = Number.parseInt(raw, 10);
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error(`${name} must be a positive millisecond value, received ${raw}`);
+  }
+
+  return value;
+}
+
+function createWorkspaceWithoutSynthesis({ includeSecondRoot = false } = {}) {
+  const workspace = cloneJson(seededWorkspace);
+  workspace.workspaceSessionId = includeSecondRoot ? "ws_visual_flow_stale" : "ws_visual_flow";
+  workspace.focusedNodeId = "user_root_1";
+  workspace.graph.nodes.asst_thesis_1.children = ["user_followup_1"];
+  workspace.graph.nodes.asst_antithesis_1.children = [];
+  delete workspace.graph.nodes.asst_synthesis_1;
+  delete workspace.graph.nodes.user_followup_2;
+  delete workspace.graph.edges.e3;
+  delete workspace.graph.edges.e4;
+  delete workspace.graph.edges.e6;
+
+  if (includeSecondRoot) {
+    workspace.graph.entryIds.push("user_root_2");
+    workspace.graph.nodes.user_root_2 = {
+      id: "user_root_2",
+      kind: "user",
+      text: "另一个问题要不要先处理？",
+      createdAt: "2026-04-24T03:10:00.000Z",
+      parents: [],
+      children: ["asst_thesis_2", "asst_antithesis_2"]
+    };
+    workspace.graph.nodes.asst_thesis_2 = {
+      id: "asst_thesis_2",
+      kind: "assistant",
+      branchType: "正",
+      text: "先处理，避免阻塞。",
+      createdAt: "2026-04-24T03:11:00.000Z",
+      parents: ["user_root_2"],
+      children: [],
+      meta: {
+        label: "先处理",
+        summary: "先把阻塞拿掉。"
+      }
+    };
+    workspace.graph.nodes.asst_antithesis_2 = {
+      id: "asst_antithesis_2",
+      kind: "assistant",
+      branchType: "反",
+      text: "先不处理，保持主线。",
+      createdAt: "2026-04-24T03:12:00.000Z",
+      parents: ["user_root_2"],
+      children: [],
+      meta: {
+        label: "先不动",
+        summary: "别打断当前主线。"
+      }
+    };
+    workspace.graph.edges.e7 = { id: "e7", from: "user_root_2", to: "asst_thesis_2", reason: "正" };
+    workspace.graph.edges.e8 = { id: "e8", from: "user_root_2", to: "asst_antithesis_2", reason: "反" };
+  }
+
+  return workspace;
+}
+
+function createEmptyWorkspace() {
+  const workspace = cloneJson(seededWorkspace);
+  workspace.workspaceSessionId = "ws_visual_empty";
+  workspace.focusedNodeId = null;
+  workspace.graph.entryIds = [];
+  workspace.graph.nodes = {};
+  workspace.graph.edges = {};
+  return workspace;
+}
+
+function createWorkspaceWithRetrievalMatch() {
+  const workspace = cloneJson(seededWorkspace);
+  workspace.workspaceSessionId = "ws_visual_retrieval_debug";
+  workspace.focusedNodeId = "asst_thesis_1";
+  workspace.graph.entryIds.push("user_related_1");
+  workspace.graph.nodes.user_related_1 = {
+    id: "user_related_1",
+    kind: "user",
+    text: "下一步怎么拆的参考",
+    createdAt: "2026-04-24T03:20:00.000Z",
+    parents: [],
+    children: ["asst_related_thesis_1", "asst_related_antithesis_1"]
+  };
+  workspace.graph.nodes.asst_related_thesis_1 = {
+    id: "asst_related_thesis_1",
+    kind: "assistant",
+    branchType: "正",
+    text: "先列一张拆分清单。",
+    createdAt: "2026-04-24T03:21:00.000Z",
+    parents: ["user_related_1"],
+    children: [],
+    meta: {
+      label: "拆分",
+      summary: "拆分参考"
+    }
+  };
+  workspace.graph.nodes.asst_related_antithesis_1 = {
+    id: "asst_related_antithesis_1",
+    kind: "assistant",
+    branchType: "反",
+    text: "先延后拆分。",
+    createdAt: "2026-04-24T03:22:00.000Z",
+    parents: ["user_related_1"],
+    children: [],
+    meta: {
+      label: "延后",
+      summary: "延后参考"
+    }
+  };
+  workspace.graph.edges.e_related_1 = { id: "e_related_1", from: "user_related_1", to: "asst_related_thesis_1", reason: "正" };
+  workspace.graph.edges.e_related_2 = { id: "e_related_2", from: "user_related_1", to: "asst_related_antithesis_1", reason: "反" };
+  return workspace;
+}
+
+async function buildExists() {
   try {
     await access(buildIdPath, fsConstants.F_OK);
+    return true;
   } catch {
-    throw new Error("Missing .next build output. Run `npm run build` before `npm run test:visual-dialogue`.");
+    return false;
   }
+}
+
+async function resolveServerMode() {
+  if (!["auto", "dev", "start"].includes(requestedServerMode)) {
+    throw new Error(`Unsupported DIALOGUE_SMOKE_SERVER_MODE=${requestedServerMode}. Use auto, dev, or start.`);
+  }
+
+  if (requestedServerMode === "auto") {
+    return (await buildExists()) ? "start" : "dev";
+  }
+
+  if (requestedServerMode === "start" && !(await buildExists())) {
+    throw new Error("DIALOGUE_SMOKE_SERVER_MODE=start requires .next build output. Run `npm run build` first or use DIALOGUE_SMOKE_SERVER_MODE=dev.");
+  }
+
+  return requestedServerMode;
+}
+
+function getBaseUrlParts(value) {
+  const url = new URL(value);
+  if (url.protocol !== "http:") {
+    throw new Error(`DIALOGUE_SMOKE_BASE_URL must use http:, received ${value}`);
+  }
+  if (!url.port) {
+    throw new Error(`DIALOGUE_SMOKE_BASE_URL must include an explicit port, received ${value}`);
+  }
+
+  return {
+    host: url.hostname,
+    port: Number.parseInt(url.port, 10),
+    origin: url.origin
+  };
+}
+
+async function isPortAvailable(host, port) {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.once("error", (error) => {
+      if (error && ["EADDRINUSE", "EACCES"].includes(error.code)) {
+        resolve(false);
+        return;
+      }
+      reject(error);
+    });
+    server.once("listening", () => {
+      server.close(() => resolve(true));
+    });
+    server.listen(port, host);
+  });
+}
+
+async function resolveBaseUrl() {
+  const requested = getBaseUrlParts(baseUrl);
+
+  if (baseUrlWasProvided) {
+    if (!(await isPortAvailable(requested.host, requested.port))) {
+      throw new Error(
+        `Dialogue visual smoke port ${requested.host}:${requested.port} is already in use. ` +
+          "Choose another DIALOGUE_SMOKE_BASE_URL or stop the existing process."
+      );
+    }
+    baseUrl = requested.origin;
+    return baseUrl;
+  }
+
+  const searchLimit = Number.isFinite(portSearchLimit) && portSearchLimit > 0 ? portSearchLimit : 40;
+  for (let offset = 0; offset < searchLimit; offset += 1) {
+    const port = requested.port + offset;
+    if (await isPortAvailable(requested.host, port)) {
+      const resolved = new URL(requested.origin);
+      resolved.port = String(port);
+      baseUrl = resolved.origin;
+      return baseUrl;
+    }
+  }
+
+  throw new Error(
+    `No available dialogue visual smoke port found from ${requested.host}:${requested.port} ` +
+      `through ${requested.host}:${requested.port + searchLimit - 1}.`
+  );
+}
+
+async function prepareOutputDir() {
+  const outputParentDir = path.dirname(finalOutputDir);
+  await mkdir(outputParentDir, { recursive: true });
+  outputDir = await mkdtemp(path.join(outputParentDir, ".dialogue-"));
+  return outputDir;
+}
+
+async function publishOutputDir(tempOutputDir) {
+  const previousOutputDir = `${finalOutputDir}.previous-${process.pid}`;
+  await rm(previousOutputDir, { recursive: true, force: true });
+
+  try {
+    await rename(finalOutputDir, previousOutputDir);
+  } catch (error) {
+    if (!(error && error.code === "ENOENT")) {
+      throw error;
+    }
+  }
+
+  try {
+    await rename(tempOutputDir, finalOutputDir);
+    await rm(previousOutputDir, { recursive: true, force: true });
+    outputDir = finalOutputDir;
+  } catch (error) {
+    try {
+      await access(finalOutputDir, fsConstants.F_OK);
+    } catch {
+      await rename(previousOutputDir, finalOutputDir).catch(() => {});
+    }
+    throw error;
+  }
+}
+
+async function discardOutputDir(tempOutputDir) {
+  if (tempOutputDir && tempOutputDir !== finalOutputDir) {
+    await rm(tempOutputDir, { recursive: true, force: true });
+  }
+}
+
+function rebaseArtifactPaths(value, tempOutputDir) {
+  if (typeof value === "string") {
+    return value.startsWith(tempOutputDir)
+      ? `${finalOutputDir}${value.slice(tempOutputDir.length)}`
+      : value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => rebaseArtifactPaths(item, tempOutputDir));
+  }
+
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, rebaseArtifactPaths(item, tempOutputDir)])
+    );
+  }
+
+  return value;
 }
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function waitForServer(url, timeoutMs = 30000) {
+function formatServerOutput(output) {
+  return output ? `\n\nNext output:\n${output}` : "";
+}
+
+function serverExitedError(server, phase) {
+  const exitInfo = server.getExitInfo();
+  const spawnError = server.getSpawnError();
+  if (spawnError) {
+    return new Error(`Next server failed to start before ${phase}: ${spawnError.message}${formatServerOutput(server.getOutput())}`);
+  }
+  if (exitInfo) {
+    return new Error(
+      `Next server exited before ${phase} (code ${exitInfo.code ?? "null"}, signal ${exitInfo.signal ?? "null"}).` +
+        formatServerOutput(server.getOutput())
+    );
+  }
+  return null;
+}
+
+async function waitForNextReady(server, timeoutMs = serverReadyTimeoutMs) {
   const startedAt = Date.now();
 
   while (Date.now() - startedAt < timeoutMs) {
+    const earlyExit = serverExitedError(server, "it became ready");
+    if (earlyExit) {
+      throw earlyExit;
+    }
+
+    if (/ready in|started server|listening/i.test(server.getOutput())) {
+      return;
+    }
+
+    await wait(250);
+  }
+
+  throw new Error(
+    `Timed out after ${timeoutMs}ms waiting for Next server readiness.` +
+      formatServerOutput(server.getOutput())
+  );
+}
+
+async function waitForServer(url, server, timeoutMs = pageReadyTimeoutMs) {
+  const startedAt = Date.now();
+  let lastErrorMessage = "";
+
+  while (Date.now() - startedAt < timeoutMs) {
+    const earlyExit = serverExitedError(server, url);
+    if (earlyExit) {
+      throw earlyExit;
+    }
+
     try {
       const response = await fetch(url, { redirect: "manual" });
       if (response.status < 500) {
         return;
       }
-    } catch {
+      lastErrorMessage = `HTTP ${response.status}`;
+    } catch (error) {
+      lastErrorMessage = error instanceof Error ? error.message : String(error);
       // Retry until timeout.
     }
 
     await wait(500);
   }
 
-  throw new Error(`Timed out waiting for ${url}`);
+  throw new Error(
+    `Timed out after ${timeoutMs}ms waiting for ${url}` +
+      (lastErrorMessage ? ` (last error: ${lastErrorMessage})` : "") +
+      formatServerOutput(server.getOutput())
+  );
 }
 
-function startNextServer() {
+function startNextServer(serverMode) {
+  const { host, port } = getBaseUrlParts(baseUrl);
+  const scriptName = serverMode === "start" ? "start" : "dev";
   const child = spawn(
     "npm",
-    ["run", "start", "--", "--hostname", "127.0.0.1", "--port", new URL(baseUrl).port],
+    ["run", scriptName, "--", "--hostname", host, "--port", String(port)],
     {
       cwd: repoRoot,
       env: {
@@ -151,11 +482,28 @@ function startNextServer() {
   );
 
   let stderr = "";
+  let stdout = "";
+  let exitInfo = null;
+  let spawnError = null;
+  child.stdout.on("data", (chunk) => {
+    stdout += chunk.toString();
+  });
   child.stderr.on("data", (chunk) => {
     stderr += chunk.toString();
   });
+  child.once("error", (error) => {
+    spawnError = error;
+  });
+  child.once("exit", (code, signal) => {
+    exitInfo = { code, signal };
+  });
 
-  return { child, getStderr: () => stderr };
+  return {
+    child,
+    getOutput: () => `${stdout}\n${stderr}`.trim(),
+    getExitInfo: () => exitInfo,
+    getSpawnError: () => spawnError
+  };
 }
 
 async function ensureNoHorizontalOverflow(page, viewportName) {
@@ -207,6 +555,263 @@ async function assertRegionMinWidth(locator, minWidth, name) {
   }
 }
 
+async function assertRegionVisible(locator, viewportHeight, name) {
+  const box = await locator.boundingBox();
+  if (!box) {
+    throw new Error(`${name} did not render`);
+  }
+
+  if (box.y < -1 || box.y + box.height > viewportHeight + 1) {
+    throw new Error(`${name} was not fully visible: ${JSON.stringify(box)}`);
+  }
+}
+
+async function ensureChoiceButtonsAccessibleAndTouchable(page, minTargetSize = 44) {
+  const composer = page.getByTestId("dialogue-composer");
+  const buttons = [
+    composer.getByRole("button", { name: /沿正继续写/ }),
+    composer.getByRole("button", { name: /沿反继续写/ }),
+    composer.getByRole("button", { name: /合流记录/ }),
+    composer.getByRole("button", { name: /发起圆桌旁路/ })
+  ];
+
+  for (const [index, button] of buttons.entries()) {
+    await button.waitFor();
+    const box = await button.boundingBox();
+    if (!box) {
+      throw new Error(`Choice button ${index} did not render`);
+    }
+    if (box.width < minTargetSize || box.height < minTargetSize) {
+      throw new Error(`Choice button ${index} is below touch target size: ${JSON.stringify(box)}`);
+    }
+  }
+}
+
+async function ensureMobileChoiceContextVisible(page, viewportWidth, viewportHeight) {
+  const context = page.getByTestId("dialogue-decision-context");
+  await context.waitFor();
+  await context.filter({ hasText: "这个方向还值不值得继续投入？" }).waitFor();
+  await context.filter({ hasText: "先缩范围，再推进。" }).waitFor();
+  await context.filter({ hasText: "把摊子收住，再判断。" }).waitFor();
+  await assertRegionWidth(context, viewportWidth, "mobile choice context");
+  await assertRegionVisible(context, viewportHeight, "mobile choice context");
+
+  const metrics = await page.evaluate(() => {
+    const composer = document.querySelector('[data-testid="dialogue-composer"]');
+    const contextElement = document.querySelector('[data-testid="dialogue-decision-context"]');
+    if (!(composer instanceof HTMLElement) || !(contextElement instanceof HTMLElement)) {
+      return null;
+    }
+
+    const composerRect = composer.getBoundingClientRect();
+    const contextRect = contextElement.getBoundingClientRect();
+    const actions = [...composer.querySelectorAll("button")].flatMap((button) => {
+      const rect = button.getBoundingClientRect();
+      const style = window.getComputedStyle(button);
+      if (style.display === "none" || style.visibility === "hidden" || rect.width === 0 || rect.height === 0) {
+        return [];
+      }
+
+      return {
+        top: rect.top,
+        bottom: rect.bottom,
+        left: rect.left,
+        right: rect.right
+      };
+    });
+
+    return {
+      composer: {
+        top: composerRect.top,
+        bottom: composerRect.bottom,
+        left: composerRect.left,
+        right: composerRect.right
+      },
+      context: {
+        top: contextRect.top,
+        bottom: contextRect.bottom,
+        left: contextRect.left,
+        right: contextRect.right
+      },
+      actions
+    };
+  });
+
+  if (!metrics) {
+    throw new Error("Missing mobile choice context metrics");
+  }
+
+  const contextInsideComposer = (
+    metrics.context.top >= metrics.composer.top - 1 &&
+    metrics.context.bottom <= metrics.composer.bottom + 1 &&
+    metrics.context.left >= metrics.composer.left - 1 &&
+    metrics.context.right <= metrics.composer.right + 1
+  );
+  const actionsInsideComposer = metrics.actions.every((action) => (
+    action.top >= metrics.composer.top - 1 &&
+    action.bottom <= metrics.composer.bottom + 1 &&
+    action.left >= metrics.composer.left - 1 &&
+    action.right <= metrics.composer.right + 1
+  ));
+
+  if (!contextInsideComposer || !actionsInsideComposer) {
+    throw new Error(`Mobile choice context and actions are not in the same tray: ${JSON.stringify(metrics)}`);
+  }
+}
+
+async function ensureRetrievalDebugDoesNotCoverKeyActions(page, scenarioName) {
+  const overlaps = await page.evaluate(() => {
+    const preview = document.querySelector('[data-testid="dialogue-retrieval-debug"]');
+    if (!(preview instanceof HTMLElement)) {
+      return [];
+    }
+
+    const previewRect = preview.getBoundingClientRect();
+    const candidates = [
+      ...document.querySelectorAll('[data-testid="dialogue-panel"] button'),
+      ...document.querySelectorAll('[data-testid="dialogue-composer"] button'),
+      ...document.querySelectorAll('[data-testid="dialogue-composer"] textarea')
+    ];
+
+    return candidates.flatMap((candidate) => {
+      if (!(candidate instanceof HTMLElement)) {
+        return [];
+      }
+
+      const rect = candidate.getBoundingClientRect();
+      const style = window.getComputedStyle(candidate);
+      const isVisible = (
+        style.display !== "none" &&
+        style.visibility !== "hidden" &&
+        rect.width > 0 &&
+        rect.height > 0 &&
+        rect.bottom > 0 &&
+        rect.top < window.innerHeight
+      );
+      if (!isVisible) {
+        return [];
+      }
+
+      const overlapsPreview = (
+        rect.left < previewRect.right &&
+        rect.right > previewRect.left &&
+        rect.top < previewRect.bottom &&
+        rect.bottom > previewRect.top
+      );
+
+      return overlapsPreview
+        ? [{
+            text: candidate.textContent?.trim() || candidate.getAttribute("aria-label") || candidate.tagName,
+            preview: {
+              left: previewRect.left,
+              right: previewRect.right,
+              top: previewRect.top,
+              bottom: previewRect.bottom
+            },
+            target: {
+              left: rect.left,
+              right: rect.right,
+              top: rect.top,
+              bottom: rect.bottom
+            }
+          }]
+        : [];
+    });
+  });
+
+  if (overlaps.length) {
+    throw new Error(`Retrieval debug preview covers key actions during ${scenarioName}: ${JSON.stringify(overlaps)}`);
+  }
+}
+
+async function ensureMobileComposerSingleColumn(page, viewportName) {
+  const metrics = await page.evaluate(() => {
+    const composer = document.querySelector('[data-testid="dialogue-composer"]');
+    if (!(composer instanceof HTMLElement)) {
+      return null;
+    }
+
+    if (composer.dataset.mode !== "compose") {
+      return { mode: composer.dataset.mode };
+    }
+
+    const textarea = composer.querySelector("textarea");
+    const submit = composer.querySelector('button[type="submit"]');
+    if (!(textarea instanceof HTMLElement) || !(submit instanceof HTMLElement)) {
+      return null;
+    }
+
+    const composerRect = composer.getBoundingClientRect();
+    const textareaRect = textarea.getBoundingClientRect();
+    const submitRect = submit.getBoundingClientRect();
+
+    return {
+      mode: composer.dataset.mode,
+      composerWidth: composerRect.width,
+      textarea: {
+        top: textareaRect.top,
+        bottom: textareaRect.bottom,
+        width: textareaRect.width
+      },
+      submit: {
+        top: submitRect.top,
+        bottom: submitRect.bottom,
+        width: submitRect.width
+      }
+    };
+  });
+
+  if (!metrics) {
+    throw new Error(`Missing composer single-column metrics on ${viewportName}`);
+  }
+
+  if (metrics.mode !== "compose") {
+    return;
+  }
+
+  const minWidth = metrics.composerWidth * 0.82;
+  if (metrics.textarea.width < minWidth || metrics.submit.width < minWidth) {
+    throw new Error(`Mobile composer controls are not full-width on ${viewportName}: ${JSON.stringify(metrics)}`);
+  }
+
+  if (metrics.submit.top < metrics.textarea.bottom + 4) {
+    throw new Error(`Mobile composer controls are still side-by-side on ${viewportName}: ${JSON.stringify(metrics)}`);
+  }
+}
+
+async function ensureEmptyRootPendingState(browser) {
+  const { context, page, pageIssues } = await createScenarioPage(browser, createEmptyWorkspace(), {
+    viewport: { width: 1280, height: 900 }
+  });
+
+  await page.route("**/api/branches", async () => {
+    await new Promise(() => {});
+  });
+
+  await page.getByRole("button", { name: /点此输入/ }).click();
+  await page.getByLabel("输入").fill("这个方向还值得投入吗");
+  await page.getByRole("button", { name: "开启新主题" }).click();
+  await page.getByTestId("dialogue-stage-pending-branches").waitFor();
+  await page.getByTestId("dialogue-stage-pending-branches").filter({ hasText: "这个方向还值得投入吗" }).waitFor();
+  await page.getByTestId("dialogue-panel-pending-branches").filter({ hasText: "母题已进入舞台" }).waitFor();
+  await page.getByTestId("dialogue-sidebar").filter({ hasText: "正在生成正与反" }).waitFor();
+  const emptyStartAffordances = await page.getByRole("button", { name: /点此输入/ }).count();
+  if (emptyStartAffordances > 0) {
+    throw new Error("Empty start affordance is still visible while root branches are pending");
+  }
+
+  const screenshotPath = path.join(outputDir, "desktop-pending-empty-root.png");
+  await page.screenshot({ path: screenshotPath, fullPage: false });
+  assertNoPageIssues(pageIssues, "empty root pending state");
+  await context.close();
+
+  return {
+    name: "empty-root-pending-state",
+    passed: true,
+    screenshot: screenshotPath
+  };
+}
+
 async function ensureMobileComposerDoesNotCoverLineage(page) {
   const metrics = await page.evaluate(() => {
     const composer = document.querySelector('[data-testid="dialogue-composer"]');
@@ -255,6 +860,216 @@ async function ensureMobileComposerDoesNotCoverLineage(page) {
 
   if (metrics.overlaps) {
     throw new Error(`Mobile composer overlaps lineage controls: ${JSON.stringify(metrics)}`);
+  }
+}
+
+async function ensureMobileComposerDoesNotCoverPanelActions(page) {
+  await page.evaluate(() => {
+    const panel = document.querySelector('[data-testid="dialogue-panel"]');
+    if (panel instanceof HTMLElement) {
+      panel.scrollIntoView({ block: "center", inline: "nearest" });
+    }
+  });
+  await page.waitForTimeout(80);
+
+  const metrics = await page.evaluate(() => {
+    const composer = document.querySelector('[data-testid="dialogue-composer"]');
+    const panel = document.querySelector('[data-testid="dialogue-panel"]');
+    if (!(composer instanceof HTMLElement) || !(panel instanceof HTMLElement)) {
+      return null;
+    }
+
+    const composerRect = composer.getBoundingClientRect();
+    const panelActions = [...panel.querySelectorAll("button")].filter((button) => button instanceof HTMLElement);
+    const overlappingAction = panelActions.find((button) => {
+      const actionRect = button.getBoundingClientRect();
+      return (
+        actionRect.left < composerRect.right &&
+        actionRect.right > composerRect.left &&
+        actionRect.top < composerRect.bottom &&
+        actionRect.bottom > composerRect.top
+      );
+    });
+    const actionRect = overlappingAction instanceof HTMLElement
+      ? overlappingAction.getBoundingClientRect()
+      : panelActions[0] instanceof HTMLElement
+        ? panelActions[0].getBoundingClientRect()
+        : null;
+
+    return {
+      overlaps: Boolean(overlappingAction),
+      composer: {
+        top: composerRect.top,
+        bottom: composerRect.bottom,
+        height: composerRect.height
+      },
+      action: {
+        text: overlappingAction instanceof HTMLElement ? overlappingAction.textContent : panelActions[0]?.textContent,
+        top: actionRect?.top,
+        bottom: actionRect?.bottom,
+        height: actionRect?.height
+      }
+    };
+  });
+
+  if (!metrics) {
+    throw new Error("Missing mobile composer or panel action metrics");
+  }
+
+  if (metrics.overlaps) {
+    throw new Error(`Mobile composer overlaps panel actions: ${JSON.stringify(metrics)}`);
+  }
+}
+
+async function ensureMobileRootNodeHasVisibleText(page) {
+  const metrics = await page.evaluate(() => {
+    const root = document.querySelector('[data-testid="dialogue-stage-node-user_root_1"]');
+    if (!(root instanceof HTMLElement)) {
+      return null;
+    }
+
+    const textCandidates = [
+      root.querySelector('[class*="stageNodeTextFull"]'),
+      root.querySelector('[class*="stageNodeTextShort"]')
+    ].filter((element) => element instanceof HTMLElement);
+    const visibleText = textCandidates
+      .map((element) => {
+        const rect = element.getBoundingClientRect();
+        const style = getComputedStyle(element);
+        return {
+          text: element.textContent?.trim() || "",
+          display: style.display,
+          visibility: style.visibility,
+          width: rect.width,
+          height: rect.height
+        };
+      })
+      .filter(
+        (entry) =>
+          entry.text &&
+          entry.display !== "none" &&
+          entry.visibility !== "hidden" &&
+          entry.width > 0 &&
+          entry.height > 0
+      );
+
+    return {
+      rootText: root.textContent?.trim() || "",
+      visibleText
+    };
+  });
+
+  if (!metrics) {
+    throw new Error("Missing mobile root node text metrics");
+  }
+
+  if (!metrics.visibleText.length) {
+    throw new Error(`Mobile root node has no visible topic text: ${JSON.stringify(metrics)}`);
+  }
+}
+
+async function ensureStageHintDoesNotOverlapWorkspace(page, scenarioName) {
+  const metrics = await page.evaluate(() => {
+    const hint = document.querySelector('[data-testid="dialogue-stage-hint"]');
+    const workspace = document.querySelector('[data-testid="dialogue-workspace-bar"]');
+    if (!(hint instanceof HTMLElement) || !(workspace instanceof HTMLElement)) {
+      return null;
+    }
+
+    const hintRect = hint.getBoundingClientRect();
+    const workspaceRect = workspace.getBoundingClientRect();
+    const overlaps = (
+      hintRect.left < workspaceRect.right &&
+      hintRect.right > workspaceRect.left &&
+      hintRect.top < workspaceRect.bottom &&
+      hintRect.bottom > workspaceRect.top
+    );
+
+    return {
+      overlaps,
+      hint: {
+        left: hintRect.left,
+        right: hintRect.right,
+        top: hintRect.top,
+        bottom: hintRect.bottom
+      },
+      workspace: {
+        left: workspaceRect.left,
+        right: workspaceRect.right,
+        top: workspaceRect.top,
+        bottom: workspaceRect.bottom
+      }
+    };
+  });
+
+  if (metrics?.overlaps) {
+    throw new Error(`Stage relationship hint overlaps workspace chrome during ${scenarioName}: ${JSON.stringify(metrics)}`);
+  }
+}
+
+async function ensureFocusedSidebarItemFullyVisible(page, viewportName) {
+  const metrics = await page.evaluate(() => {
+    const currentItem = document.querySelector(
+      '[data-testid="dialogue-sidebar"] nav[aria-label="分支列表"] button[aria-current="true"]'
+    );
+    if (!(currentItem instanceof HTMLElement)) {
+      return null;
+    }
+
+    const rect = currentItem.getBoundingClientRect();
+    return {
+      itemText: currentItem.textContent?.trim() || "",
+      left: rect.left,
+      right: rect.right,
+      width: rect.width,
+      viewportWidth: window.innerWidth
+    };
+  });
+
+  if (!metrics) {
+    return;
+  }
+
+  if (metrics.left < -1 || metrics.right > metrics.viewportWidth + 1) {
+    throw new Error(`Focused sidebar item is clipped on ${viewportName}: ${JSON.stringify(metrics)}`);
+  }
+}
+
+async function ensureVisibleSidebarItemsNotClipped(page, viewportName) {
+  const clippedItems = await page.evaluate(() => {
+    const buttons = [...document.querySelectorAll('[data-testid="dialogue-sidebar"] nav[aria-label="分支列表"] button')];
+    return buttons.flatMap((button) => {
+      if (!(button instanceof HTMLElement)) {
+        return [];
+      }
+
+      const rect = button.getBoundingClientRect();
+      const isVisibleInViewport = (
+        rect.width > 0 &&
+        rect.height > 0 &&
+        rect.bottom > 0 &&
+        rect.top < window.innerHeight
+      );
+      if (!isVisibleInViewport) {
+        return [];
+      }
+
+      if (rect.left < -1 || rect.right > window.innerWidth + 1) {
+        return [{
+          text: button.textContent?.trim() || "",
+          left: rect.left,
+          right: rect.right,
+          width: rect.width,
+          viewportWidth: window.innerWidth
+        }];
+      }
+
+      return [];
+    });
+  });
+
+  if (clippedItems.length) {
+    throw new Error(`Visible sidebar items are clipped on ${viewportName}: ${JSON.stringify(clippedItems)}`);
   }
 }
 
@@ -378,6 +1193,321 @@ async function ensureTouchNodeTapSelects(page) {
     .waitFor();
 }
 
+async function createScenarioPage(browser, workspace, contextOptions = {}, routePath = "/dialogue") {
+  const context = await browser.newContext({
+    viewport: { width: 1280, height: 900 },
+    deviceScaleFactor: 1,
+    ...contextOptions
+  });
+
+  await context.addInitScript((snapshot) => {
+    window.localStorage.setItem("anicca_workspace_v2", JSON.stringify(snapshot));
+  }, workspace);
+
+  const page = await context.newPage();
+  const pageIssues = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (
+      message.type() === "error" ||
+      /hydration|did not match|server rendered|text content does not match/i.test(text)
+    ) {
+      pageIssues.push({
+        type: `console:${message.type()}`,
+        text
+      });
+    }
+  });
+  page.on("pageerror", (error) => {
+    pageIssues.push({
+      type: "pageerror",
+      text: error.message
+    });
+  });
+
+  await page.goto(`${baseUrl}${routePath}`, { waitUntil: "domcontentloaded" });
+  await page.getByTestId("dialogue-stage").waitFor();
+  await page.getByTestId("dialogue-panel").waitFor();
+
+  return { context, page, pageIssues };
+}
+
+function assertNoPageIssues(pageIssues, scenarioName) {
+  if (pageIssues.length) {
+    throw new Error(`Console or page errors detected during ${scenarioName}: ${JSON.stringify(pageIssues, null, 2)}`);
+  }
+}
+
+async function mockDeferredSynthesis(page) {
+  let releaseResponse;
+  const responseReady = new Promise((resolve) => {
+    releaseResponse = resolve;
+  });
+  let requestId = null;
+
+  await page.route("**/api/synthesis", async (route) => {
+    const body = route.request().postDataJSON();
+    requestId = body.requestId;
+    await responseReady;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        requestId,
+        synthesis: {
+          text: "保留主线，但拆开节奏。",
+          summary: "主线收束",
+          label: "收束",
+          stance: "合"
+        }
+      })
+    });
+  });
+
+  return {
+    release: () => releaseResponse(),
+    getRequestId: () => requestId
+  };
+}
+
+async function ensureActiveElement(page, expected) {
+  const active = await page.evaluate(() => ({
+    id: document.activeElement?.id || "",
+    testId: document.activeElement?.getAttribute("data-testid") || "",
+    text: document.activeElement?.textContent || ""
+  }));
+
+  if (
+    active.id !== expected.id &&
+    active.testId !== expected.testId &&
+    (expected.text ? !active.text.includes(expected.text) : true)
+  ) {
+    throw new Error(`Unexpected active element: ${JSON.stringify({ active, expected })}`);
+  }
+}
+
+async function ensureSynthesisPendingFocusFlow(browser) {
+  const { context, page, pageIssues } = await createScenarioPage(browser, createWorkspaceWithoutSynthesis());
+  const synthesis = await mockDeferredSynthesis(page);
+
+  await page.getByTestId("dialogue-composer").getByRole("button", { name: /合流记录/ }).click();
+  await page.getByRole("button", { name: "合流中..." }).waitFor();
+  if (!synthesis.getRequestId()) {
+    throw new Error("Synthesis request did not start during pending flow scenario");
+  }
+  synthesis.release();
+  await page.getByRole("heading", { name: "一次正反合流" }).waitFor();
+  await ensureActiveElement(page, { id: "conversation-panel-heading" });
+  assertNoPageIssues(pageIssues, "synthesis pending focus flow");
+  await context.close();
+
+  return { name: "synthesis-pending-focus", passed: true };
+}
+
+async function ensureSynthesisStaleCompletionDoesNotStealFocus(browser) {
+  const { context, page, pageIssues } = await createScenarioPage(
+    browser,
+    createWorkspaceWithoutSynthesis({ includeSecondRoot: true })
+  );
+  const synthesis = await mockDeferredSynthesis(page);
+
+  await page.getByTestId("dialogue-composer").getByRole("button", { name: /合流记录/ }).click();
+  await page.getByRole("button", { name: "合流中..." }).waitFor();
+  await page.getByTestId("dialogue-sidebar").getByRole("button", { name: /另一个问题/ }).click();
+  await page.getByRole("heading", { name: /另一个问题/ }).waitFor();
+  synthesis.release();
+  await page.getByTestId("dialogue-flow-status").waitFor();
+  await page.getByTestId("dialogue-flow-status").filter({ hasText: "合流已生成：查看合流记录，或基于它继续追问。" }).waitFor();
+  await page.getByRole("heading", { name: /另一个问题/ }).waitFor();
+  assertNoPageIssues(pageIssues, "synthesis stale completion focus flow");
+  await context.close();
+
+  return { name: "synthesis-stale-completion", passed: true };
+}
+
+async function ensureRoundtableDrawerReturnsFocus(browser) {
+  const { context, page, pageIssues } = await createScenarioPage(browser, seededWorkspace);
+  await page.route("**/api/roundtable", async (route) => {
+    const body = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        requestId: body.requestId,
+        state: {
+          topic: "roundtable topic",
+          participants: [],
+          rounds: [],
+          currentQuestion: "q1",
+          nextQuestion: "作为追问继续的问题",
+          lastCoreTension: "核心张力",
+          status: "active"
+        }
+      })
+    });
+  });
+
+  await page.getByRole("button", { name: "召集圆桌讨论此节点" }).click();
+  await page.getByTestId("dialogue-roundtable-drawer").waitFor();
+  await ensureActiveElement(page, { testId: "dialogue-roundtable-drawer" });
+  await page.keyboard.press("Escape");
+  await page.getByTestId("dialogue-roundtable-drawer").waitFor({ state: "detached" });
+  await ensureActiveElement(page, { text: "召集圆桌讨论此节点" });
+  assertNoPageIssues(pageIssues, "roundtable drawer focus return");
+  await context.close();
+
+  return { name: "roundtable-drawer-focus-return", passed: true };
+}
+
+async function ensureNextStepChoiceDockLayout(browser) {
+  const workspace = createWorkspaceWithoutSynthesis();
+  const desktop = await createScenarioPage(browser, workspace, {
+    viewport: { width: 1440, height: 980 }
+  });
+  const desktopComposer = desktop.page.getByTestId("dialogue-composer");
+  await desktopComposer.waitFor();
+  await desktopComposer.getByRole("button", { name: /沿正继续写/ }).waitFor();
+  await desktopComposer.getByRole("button", { name: /沿反继续写/ }).waitFor();
+  await desktopComposer.getByRole("button", { name: /合流记录/ }).waitFor();
+  await desktopComposer.getByRole("button", { name: /发起圆桌旁路/ }).waitFor();
+  await ensureChoiceButtonsAccessibleAndTouchable(desktop.page, 38);
+  const desktopMode = await desktopComposer.getAttribute("data-mode");
+  if (desktopMode !== "choice") {
+    throw new Error(`Desktop composer did not enter choice mode: ${desktopMode}`);
+  }
+  await assertRegionWidth(desktopComposer, 1440, "desktop choice composer");
+  await ensureStageHintDoesNotOverlapWorkspace(desktop.page, "desktop choice dock");
+  const desktopScreenshotPath = path.join(outputDir, "desktop-choice-dock.png");
+  await desktop.page.screenshot({ path: desktopScreenshotPath, fullPage: false });
+  assertNoPageIssues(desktop.pageIssues, "desktop choice dock layout");
+  await desktop.context.close();
+
+  const mobile = await createScenarioPage(browser, workspace, {
+    viewport: { width: 320, height: 740 }
+  });
+  const mobileComposer = mobile.page.getByTestId("dialogue-composer");
+  await mobileComposer.waitFor();
+  const mobileMode = await mobileComposer.getAttribute("data-mode");
+  if (mobileMode !== "choice") {
+    throw new Error(`Mobile composer did not enter choice mode: ${mobileMode}`);
+  }
+  await assertRegionWidth(mobileComposer, 320, "mobile choice composer");
+  await assertRegionVisible(mobileComposer, 740, "mobile choice composer initial");
+  await ensureMobileChoiceContextVisible(mobile.page, 320, 740);
+  await ensureChoiceButtonsAccessibleAndTouchable(mobile.page, 44);
+  await ensureMobileRootNodeHasVisibleText(mobile.page);
+  await ensureMobileComposerDoesNotCoverLineage(mobile.page);
+  await ensureMobileComposerDoesNotCoverPanelActions(mobile.page);
+  await ensureFocusedSidebarItemFullyVisible(mobile.page, "mobile choice dock");
+  await ensureVisibleSidebarItemsNotClipped(mobile.page, "mobile choice dock");
+  await mobileComposer.scrollIntoViewIfNeeded();
+  await mobile.page.waitForTimeout(60);
+  await assertRegionVisible(mobileComposer, 740, "mobile choice composer");
+  const mobileScreenshotPath = path.join(outputDir, "mobile-320-choice-dock.png");
+  await mobile.page.screenshot({ path: mobileScreenshotPath, fullPage: false });
+  assertNoPageIssues(mobile.pageIssues, "mobile choice dock layout");
+  await mobile.context.close();
+
+  return {
+    name: "next-step-choice-dock-layout",
+    passed: true,
+    screenshots: {
+      desktop: desktopScreenshotPath,
+      mobile: mobileScreenshotPath
+    }
+  };
+}
+
+async function ensureRetrievalDebugPreview(browser) {
+  const hidden = await createScenarioPage(browser, createWorkspaceWithRetrievalMatch(), {
+    viewport: { width: 1280, height: 900 }
+  });
+  const hiddenPreviewCount = await hidden.page.getByTestId("dialogue-retrieval-debug").count();
+  if (hiddenPreviewCount !== 0) {
+    throw new Error("Retrieval debug preview rendered without ?retrievalDebug=1");
+  }
+  assertNoPageIssues(hidden.pageIssues, "retrieval debug hidden by default");
+  await hidden.context.close();
+
+  const desktop = await createScenarioPage(
+    browser,
+    createWorkspaceWithRetrievalMatch(),
+    {
+      viewport: { width: 1280, height: 900 }
+    },
+    "/dialogue?retrievalDebug=1"
+  );
+  await desktop.page.getByLabel("输入").fill("下一步怎么拆");
+  const desktopPreview = desktop.page.getByTestId("dialogue-retrieval-debug");
+  await desktopPreview.filter({ hasText: "retrieval_context preview" }).waitFor();
+  await desktopPreview.filter({ hasText: "拆分参考" }).waitFor();
+  await desktopPreview.filter({ hasText: "coverage exclusion active" }).waitFor();
+  await assertRegionWidth(desktopPreview, 1280, "desktop retrieval debug preview");
+  await ensureRetrievalDebugDoesNotCoverKeyActions(desktop.page, "desktop retrieval debug preview");
+  const desktopScreenshotPath = path.join(outputDir, "desktop-retrieval-debug.png");
+  await desktop.page.screenshot({ path: desktopScreenshotPath, fullPage: false });
+  assertNoPageIssues(desktop.pageIssues, "retrieval debug content preview");
+  await desktop.context.close();
+
+  const empty = await createScenarioPage(
+    browser,
+    createEmptyWorkspace(),
+    {
+      viewport: { width: 1280, height: 900 }
+    },
+    "/dialogue?retrievalDebug=1"
+  );
+  const emptyPreview = empty.page.getByTestId("dialogue-retrieval-debug");
+  await emptyPreview.filter({ hasText: "无可注入片段" }).waitFor();
+  await emptyPreview.filter({ hasText: "(empty)" }).waitFor();
+  await emptyPreview.filter({ hasText: "empty query" }).waitFor();
+  assertNoPageIssues(empty.pageIssues, "retrieval debug empty preview");
+  await empty.context.close();
+
+  const mobile = await createScenarioPage(
+    browser,
+    createWorkspaceWithRetrievalMatch(),
+    {
+      viewport: { width: 360, height: 740 },
+      hasTouch: true,
+      isMobile: true
+    },
+    "/dialogue?retrievalDebug=1"
+  );
+  await mobile.page.getByLabel("输入").fill("下一步怎么拆");
+  const mobilePreview = mobile.page.getByTestId("dialogue-retrieval-debug");
+  await mobilePreview.filter({ hasText: "拆分参考" }).waitFor();
+  await mobilePreview.scrollIntoViewIfNeeded();
+  await mobile.page.waitForTimeout(60);
+  await ensureNoHorizontalOverflow(mobile.page, "mobile retrieval debug preview");
+  await assertRegionWidth(mobilePreview, 360, "mobile retrieval debug preview");
+  await ensureRetrievalDebugDoesNotCoverKeyActions(mobile.page, "mobile retrieval debug preview");
+  const mobileScreenshotPath = path.join(outputDir, "mobile-360-retrieval-debug.png");
+  await mobile.page.screenshot({ path: mobileScreenshotPath, fullPage: false });
+  assertNoPageIssues(mobile.pageIssues, "mobile retrieval debug preview");
+  await mobile.context.close();
+
+  return {
+    name: "retrieval-debug-preview",
+    passed: true,
+    screenshots: {
+      desktop: desktopScreenshotPath,
+      mobile: mobileScreenshotPath
+    }
+  };
+}
+
+async function runInteractionScenarios(browser) {
+  return [
+    await ensureSynthesisPendingFocusFlow(browser),
+    await ensureSynthesisStaleCompletionDoesNotStealFocus(browser),
+    await ensureRoundtableDrawerReturnsFocus(browser),
+    await ensureEmptyRootPendingState(browser),
+    await ensureNextStepChoiceDockLayout(browser),
+    await ensureRetrievalDebugPreview(browser)
+  ];
+}
+
 async function runViewport(browser, viewport) {
   const context = await browser.newContext({
     viewport: {
@@ -438,7 +1568,7 @@ async function runViewport(browser, viewport) {
     });
   });
 
-  await page.goto(`${baseUrl}/dialogue`, { waitUntil: "networkidle" });
+  await page.goto(`${baseUrl}/dialogue`, { waitUntil: "domcontentloaded" });
 
   const stage = page.getByTestId("dialogue-stage");
   const panel = page.getByTestId("dialogue-panel");
@@ -457,6 +1587,7 @@ async function runViewport(browser, viewport) {
   await assertRegionWidth(panel, viewport.width, `${viewport.name} panel`);
   await assertRegionWidth(composer, viewport.width, `${viewport.name} composer`);
   await assertRegionWidth(workspaceBar, viewport.width, `${viewport.name} workspace bar`);
+  await ensureStageHintDoesNotOverlapWorkspace(page, viewport.name);
 
   const captures = {};
 
@@ -498,6 +1629,11 @@ async function runViewport(browser, viewport) {
     }
 
     await ensureMobileComposerDoesNotCoverLineage(page);
+    await ensureMobileComposerDoesNotCoverPanelActions(page);
+    await ensureMobileRootNodeHasVisibleText(page);
+    await ensureMobileComposerSingleColumn(page, viewport.name);
+    await ensureFocusedSidebarItemFullyVisible(page, viewport.name);
+    await ensureVisibleSidebarItemsNotClipped(page, viewport.name);
     await ensureMobileCanScrollFromStage(page, viewport.name);
   }
 
@@ -544,54 +1680,75 @@ async function runViewport(browser, viewport) {
 }
 
 async function main() {
-  await ensureBuildExists();
-  await mkdir(outputDir, { recursive: true });
+  const serverMode = await resolveServerMode();
+  await resolveBaseUrl();
 
-  const { child, getStderr } = startNextServer();
+  let tempOutputDir = null;
+  let outputPublished = false;
+  let browser = null;
+  let server = null;
 
   const shutdown = () => {
-    if (!child.killed) {
+    const child = server?.child;
+    if (child && !child.killed && !server.getExitInfo()) {
       child.kill("SIGTERM");
     }
   };
 
-  process.on("exit", shutdown);
-  process.on("SIGINT", () => {
-    shutdown();
-    process.exit(130);
-  });
-  process.on("SIGTERM", () => {
-    shutdown();
-    process.exit(143);
-  });
-
   try {
-    await waitForServer(`${baseUrl}/dialogue`);
-    const browser = await chromium.launch({ headless: true });
+    tempOutputDir = await prepareOutputDir();
+    server = startNextServer(serverMode);
+
+    process.on("exit", shutdown);
+    process.on("SIGINT", () => {
+      shutdown();
+      process.exit(130);
+    });
+    process.on("SIGTERM", () => {
+      shutdown();
+      process.exit(143);
+    });
+
+    await waitForNextReady(server);
+    await waitForServer(`${baseUrl}/dialogue`, server);
+    browser = await chromium.launch({ headless: true });
     const results = [];
 
     for (const viewport of viewports) {
       results.push(await runViewport(browser, viewport));
     }
 
+    const interactionScenarios = await runInteractionScenarios(browser);
+
     await browser.close();
+    browser = null;
+    const summary = rebaseArtifactPaths(
+      {
+        baseUrl,
+        serverMode,
+        generatedAt: new Date().toISOString(),
+        viewports: results,
+        interactionScenarios
+      },
+      tempOutputDir
+    );
     await writeFile(
       path.join(outputDir, "summary.json"),
-      JSON.stringify(
-        {
-          baseUrl,
-          generatedAt: new Date().toISOString(),
-          viewports: results
-        },
-        null,
-        2
-      )
+      JSON.stringify(summary, null, 2)
     );
+    await publishOutputDir(tempOutputDir);
+    outputPublished = true;
   } catch (error) {
+    if (browser) {
+      await browser.close().catch(() => {});
+    }
     shutdown();
-    const stderr = getStderr().trim();
-    if (stderr) {
-      console.error(stderr);
+    if (!outputPublished && tempOutputDir) {
+      await discardOutputDir(tempOutputDir);
+    }
+    const output = server?.getOutput() || "";
+    if (output) {
+      console.error(output);
     }
     throw error;
   }

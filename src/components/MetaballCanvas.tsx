@@ -6,6 +6,10 @@ import computeWGSL from '@/shaders/metaball_compute.wgsl'
 import shadeWGSL from '@/shaders/shade_fullscreen.wgsl'
 import GSAPChatInput from './GSAPChatInput'
 
+type MetaballCanvasProps = {
+  showLabUi?: boolean
+}
+
 // 为了通过类型检查，声明 WebGPU 用到的常量命名空间（运行时由浏览器提供）
 declare const GPUBufferUsage: any
 declare const GPUTextureUsage: any
@@ -14,7 +18,7 @@ const K_MERGE = 1.3
 const K_UNMERGE = 1.6
 const DWELL_MS = 1000
 
-export default function MetaballCanvas() {
+export default function MetaballCanvas({ showLabUi = false }: MetaballCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const balls = useMetaballStore(s => s.balls)
@@ -30,12 +34,20 @@ export default function MetaballCanvas() {
   // Chat UI状态
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [selectedBallId, setSelectedBallId] = useState<number | null>(null)
+  const [renderError, setRenderError] = useState<string | null>(null)
 
 
   useEffect(() => {
     if (!canvasRef.current) return
     let cleanup: (() => void) | undefined
-    run(canvasRef.current, balls, fusionRange, adaptiveScale, setPos, setHoverMergeCandidate, () => hoverMergeCandidate, merge).then(stop => (cleanup = stop)).catch(console.error)
+    run(canvasRef.current, balls, fusionRange, adaptiveScale, setPos, setHoverMergeCandidate, () => hoverMergeCandidate, merge)
+      .then(stop => {
+        setRenderError(null)
+        cleanup = stop
+      })
+      .catch((error) => {
+        setRenderError(error instanceof Error ? error.message : 'WebGPU 初始化失败。')
+      })
     return () => { if (cleanup) cleanup() }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -67,14 +79,38 @@ export default function MetaballCanvas() {
     <div ref={containerRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
       <canvas ref={canvasRef} style={{ width: '100%', height: '100%', touchAction: 'none' }} />
 
+      {renderError ? (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'grid',
+            placeItems: 'center',
+            padding: 24,
+            color: 'rgba(242, 247, 250, 0.82)',
+            background:
+              'radial-gradient(circle at 50% 38%, rgba(241, 191, 88, 0.14), transparent 28%), linear-gradient(180deg, rgba(5, 9, 12, 0.82), rgba(5, 9, 12, 0.96))',
+            textAlign: 'center'
+          }}
+        >
+          <div style={{ maxWidth: 420, lineHeight: 1.55 }}>
+            <strong style={{ display: 'block', marginBottom: 8, color: '#f2f7fa' }}>当前设备没有可用 WebGPU adapter。</strong>
+            <span>实验画布已安静收起，主体验请回到 /dialogue。</span>
+            {showLabUi ? <small style={{ display: 'block', marginTop: 10, color: 'rgba(226, 239, 244, 0.58)' }}>{renderError}</small> : null}
+          </div>
+        </div>
+      ) : null}
 
       {/* 球体序号标签（可点击触发chat） */}
-      {balls.filter(b=>b.active!==false).map((ball) => {
+      {showLabUi ? balls.filter(b=>b.active!==false).map((ball) => {
         const [x, y] = ndcToPixel(ball.pos)
         const isHoverMerge = hoverMergeCandidate === ball.id
 
-        // 调试信息
-        console.log(`球体${ball.id}: NDC=${ball.pos}, 像素=${[x, y]}, 容器=${containerRef.current?.getBoundingClientRect()}`)
+        if (showLabUi) {
+          console.log(`球体${ball.id}: NDC=${ball.pos}, 像素=${[x, y]}, 容器=${containerRef.current?.getBoundingClientRect()}`)
+        }
 
         // 暂时不隐藏任何标签，先让所有序号都显示
         // if (typeof window !== 'undefined' && (x < 20 || y < 20 || x > window.innerWidth - 20 || y > window.innerHeight - 20)) {
@@ -115,17 +151,19 @@ export default function MetaballCanvas() {
             </div>
           </div>
         )
-      })}
+      }) : null}
 
       {/* GSAP Chat Input */}
-      <GSAPChatInput
-        isOpen={isChatOpen}
-        onClose={() => {
-          setIsChatOpen(false)
-          setSelectedBallId(null)
-        }}
-        selectedBallId={selectedBallId}
-      />
+      {showLabUi ? (
+        <GSAPChatInput
+          isOpen={isChatOpen}
+          onClose={() => {
+            setIsChatOpen(false)
+            setSelectedBallId(null)
+          }}
+          selectedBallId={selectedBallId}
+        />
+      ) : null}
     </div>
   )
 }

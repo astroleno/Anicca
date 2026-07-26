@@ -29,6 +29,7 @@ vi.mock("@/lib/openai/client", () => ({
 
 describe("roundtable route", () => {
   beforeEach(() => {
+    vi.unstubAllEnvs();
     createResponse.mockReset();
     createChatCompletion.mockReset();
   });
@@ -212,6 +213,31 @@ describe("roundtable route", () => {
         knowledgeNetwork: "AI creativity -> novelty -> intent",
         openQuestions: ["没有主体的创造是否只是拟制？"]
       }
+    });
+  });
+
+  it("returns 503 when the roundtable provider is overloaded", async () => {
+    vi.stubEnv("OPENAI_API_KEY", "test-key");
+    createResponse.mockRejectedValue(
+      Object.assign(new Error("429 当前分组上游负载已饱和，请稍后再试"), { status: 429 })
+    );
+
+    const response = await roundtablePost(
+      new NextRequest("http://localhost/api/roundtable", {
+        method: "POST",
+        body: JSON.stringify({
+          requestId: "req-rt-overloaded",
+          command: "start",
+          topic: "AI 是否拥有真正的创造力？"
+        })
+      })
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({
+      requestId: "req-rt-overloaded",
+      error: "roundtable_failed",
+      details: "provider_overloaded"
     });
   });
 });

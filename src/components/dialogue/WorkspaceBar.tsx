@@ -186,7 +186,7 @@ export function WorkspaceBar({
       </div>
 
       <p className={styles.workspaceStatus} role="status" aria-live="polite">
-        {statusMessage || "工作区变更会保存在本地。"}
+        {statusMessage || "已就绪。"}
       </p>
 
       {renaming ? (

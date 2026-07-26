@@ -24,6 +24,8 @@ export type DialogueSidebarItem = {
 export type DialogueStageNode = {
   id: string;
   label: string;
+  preview?: string;
+  summary?: string;
   kind: AniccaNode["kind"];
   branchType?: BranchType;
   displayRole?: "node" | "synthesis-record";
@@ -105,6 +107,15 @@ function getNodeLabel(node: AniccaNode): string {
     return "主题";
   }
   return "节点";
+}
+
+function getNodePreview(node: AniccaNode): string | undefined {
+  const text = (node.text || node.meta?.summary || node.meta?.label || "").trim().replace(/\s+/g, " ");
+  if (!text) {
+    return undefined;
+  }
+
+  return text;
 }
 
 function getBreadcrumbParentId(graph: Graph, node: AniccaNode): string | null {
@@ -202,7 +213,7 @@ function buildSidebarItems(graph: Graph, focusNodeId: string | null, breadcrumbI
       kind: node.kind,
       branchType: node.branchType,
       displayRole: "node",
-      summary: node.meta?.summary,
+      summary: node.meta?.summary || (node.kind === "user" ? getNodePreview(node) : undefined),
       isFocused: node.id === focusNodeId,
       isOnFocusedPath: focusPath.has(node.id),
       sourceLabels
@@ -235,7 +246,7 @@ function buildSidebarItems(graph: Graph, focusNodeId: string | null, breadcrumbI
           kind: eventNode.kind,
           branchType: eventNode.branchType,
           displayRole: "synthesis-event",
-          summary: eventNode.meta?.summary,
+          summary: eventNode.meta?.summary || getNodePreview(eventNode),
           isFocused: eventNode.id === focusNodeId,
           isOnFocusedPath: focusPath.has(eventNode.id),
           sourceLabels: eventSourceLabels
@@ -482,6 +493,8 @@ function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStag
     nodes.push({
       id: ancestor.id,
       label: getNodeLabel(ancestor),
+      preview: getNodePreview(ancestor),
+      summary: ancestor.meta?.summary,
       kind: ancestor.kind,
       branchType: ancestor.branchType,
       relation: "ancestor",
@@ -493,6 +506,8 @@ function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStag
   nodes.push({
     id: focusNode.id,
     label: getNodeLabel(focusNode),
+    preview: getNodePreview(focusNode),
+    summary: focusNode.meta?.summary,
     kind: focusNode.kind,
     branchType: focusNode.branchType,
     displayRole: focusNode.kind === "assistant" && focusNode.branchType === "合" ? "synthesis-record" : "node",
@@ -512,6 +527,8 @@ function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStag
       nodes.push({
         id: source.id,
         label: getNodeLabel(source),
+        preview: getNodePreview(source),
+        summary: source.meta?.summary,
         kind: source.kind,
         branchType: source.branchType,
         relation: "source",
@@ -540,6 +557,8 @@ function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStag
     nodes.push({
       id: child.id,
       label: getNodeLabel(child),
+      preview: getNodePreview(child),
+      summary: child.meta?.summary,
       kind: child.kind,
       branchType: child.branchType,
       relation: "child",

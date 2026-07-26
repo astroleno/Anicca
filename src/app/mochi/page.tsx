@@ -1,58 +1,67 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import MochiCanvas from '@/components/archived/MochiCanvas';
 
 export default function MochiPage() {
+  const [showLabUi, setShowLabUi] = useState(false);
+
+  useEffect(() => {
+    setShowLabUi(new URLSearchParams(window.location.search).get('lab') === '1');
+  }, []);
+
   return (
-    <div className="min-h-screen bg-black">
-      {/* 页面标题和控制面板 */}
-      <div className="absolute top-4 left-4 z-10 text-white">
-        <div className="bg-gray-900/80 backdrop-blur-sm rounded-xl p-6 max-w-sm">
-          <h1 className="text-2xl font-bold mb-3 text-blue-200">麻薯质感弥散圆</h1>
-          <p className="text-sm text-gray-300 mb-4">
-            基于 Shader Park 的麻薯质感效果复刻
-          </p>
+    <div className="min-h-screen bg-[#05090c]">
+      {showLabUi ? (
+        <div className="absolute top-4 left-4 z-10 text-white">
+          <div className="max-w-sm rounded-[20px] border border-white/10 bg-[#071319]/80 p-6 backdrop-blur-sm">
+            <h1 className="mb-3 text-2xl font-bold text-[#f2f7fa]">Mochi visual lab</h1>
+            <p className="mb-4 text-sm text-[#dcebf2]/75">
+              Shader Park 质感实验，默认成品视图不展示说明卡。
+            </p>
 
-          <div className="space-y-3">
-            <div>
-              <h3 className="text-sm font-semibold mb-2 text-green-200">交互说明</h3>
-              <ul className="text-xs space-y-1 text-gray-300">
-                <li>• 鼠标悬停：激活效果</li>
-                <li>• 鼠标点击：旋转交互</li>
-                <li>• 拖拽：位移效果</li>
-              </ul>
-            </div>
+            <div className="space-y-3">
+              <div>
+                <h3 className="mb-2 text-sm font-semibold text-[#37d3ad]">交互说明</h3>
+                <ul className="space-y-1 text-xs text-[#dcebf2]/72">
+                  <li>鼠标悬停：激活效果</li>
+                  <li>鼠标点击：旋转交互</li>
+                  <li>拖拽：位移效果</li>
+                </ul>
+              </div>
 
-            <div>
-              <h3 className="text-sm font-semibold mb-2 text-purple-200">技术栈</h3>
-              <p className="text-xs text-gray-300">Shader Park + React</p>
-              <p className="text-xs text-gray-300">WebGL 着色器渲染</p>
+              <div>
+                <h3 className="mb-2 text-sm font-semibold text-[#e6be62]">技术栈</h3>
+                <p className="text-xs text-[#dcebf2]/72">Shader Park + React</p>
+                <p className="text-xs text-[#dcebf2]/72">WebGL 着色器渲染</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      ) : null}
 
-      {/* 性能指标 */}
-      <div className="absolute bottom-4 left-4 z-10 text-white">
-        <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-3">
-          <div className="text-xs text-gray-300">
-            <div>技术栈: Shader Park + React</div>
-            <div>渲染: WebGL 着色器</div>
+      {showLabUi ? (
+        <div className="absolute bottom-4 left-4 z-10 text-white">
+          <div className="rounded-lg bg-[#071319]/60 p-3 backdrop-blur-sm">
+            <div className="text-xs text-[#dcebf2]/70">
+              <div>技术栈: Shader Park + React</div>
+              <div>渲染: WebGL 着色器</div>
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
 
-      {/* 返回按钮 */}
-      <div className="absolute bottom-4 right-4 z-10">
+      {showLabUi ? (
+        <div className="absolute bottom-4 right-4 z-10">
         <Link
-          href="/"
-          className="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-lg transition-colors text-sm"
+          href="/dialogue"
+          className="rounded-lg bg-white/10 px-4 py-2 text-sm text-white backdrop-blur-sm transition-colors hover:bg-white/20"
         >
-          返回首页
+          回到 /dialogue
         </Link>
-      </div>
+        </div>
+      ) : null}
 
       {/* 主画布 */}
       <MochiCanvas className="w-full h-screen" />
