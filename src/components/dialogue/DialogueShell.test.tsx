@@ -25,6 +25,8 @@ import {
 } from "@/lib/persist/workspaces";
 import { branchGraphStore } from "@/store/branchGraph";
 import { createEmptyGraph } from "@/types/anicca";
+import { PersistedWorkspaceSnapshot } from "@/types/workspace";
+import { createDeferred } from "../../../tests/deferred";
 
 function resetWorkspace(focusedNodeId: string | null = null) {
   branchGraphStore.setGraph(createEmptyGraph());
@@ -453,16 +455,8 @@ describe("DialogueShell", () => {
 
   it("keeps an empty-root branch request visible across stage, lineage, and panel", async () => {
     const user = userEvent.setup();
-    let resolveFetch: ((value: Response) => void) | null = null;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockImplementation(
-        () =>
-          new Promise<Response>((resolve) => {
-            resolveFetch = resolve;
-          })
-      )
-    );
+    const fetchDeferred = createDeferred<Response>();
+    vi.stubGlobal("fetch", vi.fn(() => fetchDeferred.promise));
 
     render(<DialogueShell />);
 
@@ -474,7 +468,7 @@ describe("DialogueShell", () => {
     expect(screen.getByTestId("dialogue-sidebar")).toHaveTextContent("正在生成正与反");
     expect(screen.getByTestId("dialogue-panel-pending-branches")).toHaveTextContent("母题已进入舞台");
 
-    resolveFetch?.(
+    fetchDeferred.resolve(
       new Response(
         JSON.stringify({
           requestId: useDialogueUiStore.getState().pending.branches?.requestId,
@@ -607,7 +601,10 @@ describe("DialogueShell", () => {
     seedActiveWorkspaceFromCurrentGraph();
     vi.stubGlobal("fetch", vi.fn());
 
-    const createObjectURL = vi.fn(() => "blob:workspace");
+    const createObjectURL = vi.fn((blob: Blob) => {
+      void blob;
+      return "blob:workspace";
+    });
     const revokeObjectURL = vi.fn();
     vi.stubGlobal("URL", {
       createObjectURL,
@@ -655,7 +652,7 @@ describe("DialogueShell", () => {
       focusedNodeId: "user_import_source",
       composerParentId: "user_import_source",
       stageLayouts: {}
-    };
+    } satisfies PersistedWorkspaceSnapshot;
     const file = new File(
       [serializeWorkspaceBundle({ entry: sourceEntry, snapshot: sourceSnapshot })],
       "workspace.json",
@@ -947,44 +944,40 @@ describe("DialogueShell", () => {
     const { rootUserId, thesisId } = seedPair();
     useDialogueUiStore.setState({ focusedNodeId: rootUserId });
     seedActiveWorkspaceFromCurrentGraph();
-    let resolveRoundtable: (() => void) | null = null;
+    const roundtableDeferred = createDeferred<void>();
     vi.stubGlobal(
       "fetch",
-      vi.fn(
-        (_url, init) =>
-          new Promise<Response>((resolve) => {
-            resolveRoundtable = () => {
-              const body = JSON.parse(String((init as RequestInit).body || "{}"));
-              resolve(
-                new Response(
-                  JSON.stringify({
-                    requestId: body.requestId,
-                    state: {
-                      topic: "roundtable topic",
-                      participants: [],
-                      rounds: [],
-                      currentQuestion: "q1",
-                      nextQuestion: "q2",
-                      lastCoreTension: "t",
-                      status: "active"
-                    }
-                  }),
-                  {
-                    status: 200,
-                    headers: { "Content-Type": "application/json" }
-                  }
-                )
-              );
-            };
-          })
-      )
+      vi.fn((_url, init) => {
+        const body = JSON.parse(String((init as RequestInit).body || "{}"));
+        return roundtableDeferred.promise.then(
+          () =>
+            new Response(
+              JSON.stringify({
+                requestId: body.requestId,
+                state: {
+                  topic: "roundtable topic",
+                  participants: [],
+                  rounds: [],
+                  currentQuestion: "q1",
+                  nextQuestion: "q2",
+                  lastCoreTension: "t",
+                  status: "active"
+                }
+              }),
+              {
+                status: 200,
+                headers: { "Content-Type": "application/json" }
+              }
+            )
+        );
+      })
     );
 
     render(<DialogueShell />);
 
     await user.click(await screen.findByRole("button", { name: "召集圆桌讨论此节点" }));
     await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
-    resolveRoundtable?.();
+    roundtableDeferred.resolve();
 
     await waitFor(() => {
       expect(loadWorkspaceRecord("workspace_test")?.snapshot.artifacts?.roundtables).toBeTruthy();
@@ -1074,13 +1067,8 @@ describe("DialogueShell", () => {
       }
     });
 
-    let resolveRoundtable: ((value: Response) => void) | null = null;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(() => new Promise<Response>((resolve) => {
-        resolveRoundtable = resolve;
-      }))
-    );
+    const roundtableDeferred = createDeferred<Response>();
+    vi.stubGlobal("fetch", vi.fn(() => roundtableDeferred.promise));
 
     render(<DialogueShell />);
 
@@ -1092,7 +1080,7 @@ describe("DialogueShell", () => {
     });
     expect(screen.getByRole("button", { name: "召集圆桌讨论此节点" })).toBeEnabled();
 
-    resolveRoundtable?.(
+    roundtableDeferred.resolve(
       new Response(
         JSON.stringify({
           requestId: "req_roundtable",
@@ -1225,23 +1213,15 @@ describe("DialogueShell", () => {
     const { thesisId } = seedPair();
     useDialogueUiStore.setState({ focusedNodeId: thesisId });
     seedActiveWorkspaceFromCurrentGraph();
-    let resolveFetch: ((value: Response) => void) | null = null;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockImplementation(
-        () =>
-          new Promise<Response>((resolve) => {
-            resolveFetch = resolve;
-          })
-      )
-    );
+    const fetchDeferred = createDeferred<Response>();
+    vi.stubGlobal("fetch", vi.fn(() => fetchDeferred.promise));
 
     render(<DialogueShell />);
 
     await user.type(screen.getByLabelText("输入"), "继续的话下一步做什么");
     await user.click(screen.getByRole("button", { name: "生成正 / 反" }));
 
-    resolveFetch?.(
+    fetchDeferred.resolve(
       new Response(
         JSON.stringify({
           requestId: useDialogueUiStore.getState().pending.branches?.requestId,
@@ -1282,21 +1262,13 @@ describe("DialogueShell", () => {
     const { rootUserId } = seedPair();
     useDialogueUiStore.setState({ focusedNodeId: rootUserId });
     seedActiveWorkspaceFromCurrentGraph();
-    let resolveFetch: ((value: Response) => void) | null = null;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockImplementation(
-        () =>
-          new Promise<Response>((resolve) => {
-            resolveFetch = resolve;
-          })
-      )
-    );
+    const fetchDeferred = createDeferred<Response>();
+    vi.stubGlobal("fetch", vi.fn(() => fetchDeferred.promise));
 
     render(<DialogueShell />);
 
     await user.click(screen.getByRole("button", { name: /合流记录/ }));
-    resolveFetch?.(
+    fetchDeferred.resolve(
       new Response(
         JSON.stringify({
           requestId: useDialogueUiStore.getState().pending.synthesis?.requestId,
@@ -1334,21 +1306,13 @@ describe("DialogueShell", () => {
     const { rootUserId } = seedPair();
     useDialogueUiStore.setState({ focusedNodeId: rootUserId });
     seedActiveWorkspaceFromCurrentGraph();
-    let resolveFetch: ((value: Response) => void) | null = null;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockImplementation(
-        () =>
-          new Promise<Response>((resolve) => {
-            resolveFetch = resolve;
-          })
-      )
-    );
+    const fetchDeferred = createDeferred<Response>();
+    vi.stubGlobal("fetch", vi.fn(() => fetchDeferred.promise));
 
     render(<DialogueShell />);
 
     await user.click(screen.getByRole("button", { name: /合流记录/ }));
-    resolveFetch?.(
+    fetchDeferred.resolve(
       new Response(
         JSON.stringify({
           requestId: useDialogueUiStore.getState().pending.synthesis?.requestId,
@@ -1434,17 +1398,8 @@ describe("DialogueShell", () => {
     });
     const { thesisId, antithesisId } = seedPair();
     useDialogueUiStore.setState({ focusedNodeId: thesisId });
-
-    let resolveFetch: ((value: Response) => void) | null = null;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockImplementation(
-        () =>
-          new Promise<Response>((resolve) => {
-            resolveFetch = resolve;
-          })
-      )
-    );
+    const fetchDeferred = createDeferred<Response>();
+    vi.stubGlobal("fetch", vi.fn(() => fetchDeferred.promise));
 
     render(<DialogueShell />);
 
@@ -1457,7 +1412,7 @@ describe("DialogueShell", () => {
     expect(within(composer).getByText("继续")).toBeInTheDocument();
     expect(within(composer).queryByText("暂停")).not.toBeInTheDocument();
 
-    resolveFetch?.(
+    fetchDeferred.resolve(
       new Response(
         JSON.stringify({
           requestId: useDialogueUiStore.getState().pending.branches?.requestId,
@@ -1492,16 +1447,8 @@ describe("DialogueShell", () => {
     });
     useDialogueUiStore.setState({ focusedNodeId: rootUserId });
     seedActiveWorkspaceFromCurrentGraph();
-    let resolveFetch: ((value: Response) => void) | null = null;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockImplementation(
-        () =>
-          new Promise<Response>((resolve) => {
-            resolveFetch = resolve;
-          })
-      )
-    );
+    const fetchDeferred = createDeferred<Response>();
+    vi.stubGlobal("fetch", vi.fn(() => fetchDeferred.promise));
 
     render(<DialogueShell />);
 
@@ -1512,7 +1459,7 @@ describe("DialogueShell", () => {
     expect(screen.getByRole("button", { name: /合流记录/ })).toBeDisabled();
     expect(screen.getByText("等待另一条谱系收束完成：继续 / 暂停")).toBeInTheDocument();
 
-    resolveFetch?.(
+    fetchDeferred.resolve(
       new Response(
         JSON.stringify({
           requestId: useDialogueUiStore.getState().pending.synthesis?.requestId,
@@ -1543,17 +1490,8 @@ describe("DialogueShell", () => {
     const user = userEvent.setup();
     const { rootUserId } = seedPair();
     useDialogueUiStore.setState({ focusedNodeId: rootUserId });
-
-    let resolveFetch: ((value: Response) => void) | null = null;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockImplementation(
-        () =>
-          new Promise<Response>((resolve) => {
-            resolveFetch = resolve;
-          })
-      )
-    );
+    const fetchDeferred = createDeferred<Response>();
+    vi.stubGlobal("fetch", vi.fn(() => fetchDeferred.promise));
 
     render(<DialogueShell />);
 
@@ -1564,7 +1502,7 @@ describe("DialogueShell", () => {
     expect(screen.getByRole("button", { name: "合流中..." })).toHaveAttribute("aria-busy", "true");
     expect(screen.getByRole("button", { name: "合流中" })).toBeDisabled();
 
-    resolveFetch?.(
+    fetchDeferred.resolve(
       new Response(
         JSON.stringify({
           requestId: useDialogueUiStore.getState().pending.synthesis?.requestId,

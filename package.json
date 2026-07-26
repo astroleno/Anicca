@@ -8,6 +8,9 @@
     "start": "next start",
     "lint": "eslint .",
     "test": "vitest run",
+    "typecheck": "tsc --noEmit --incremental false",
+    "typecheck:test": "tsc -p tsconfig.test.json --noEmit --incremental false",
+    "check": "npm run lint && npm run typecheck && npm run typecheck:test && npm test",
     "test:visual-dialogue": "node ./scripts/visual-smoke/dialogue.mjs"
   },
   "dependencies": {
