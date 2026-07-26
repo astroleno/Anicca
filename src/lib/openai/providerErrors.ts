@@ -14,7 +14,9 @@ export type ProviderFailure = {
 const STATUS_KEYS = ["status", "statusCode"] as const;
 const TEXT_KEYS = ["message", "name", "type", "code", "status", "statusCode"] as const;
 const NESTED_KEYS = ["cause", "error", "response", "data", "body"] as const;
-const RETRYABLE_PROVIDER_STATUSES = new Set([408, 502, 503, 504]);
+const RETRYABLE_PROVIDER_TIMEOUT_STATUS = 408;
+const PROVIDER_SERVER_ERROR_MIN = 500;
+const PROVIDER_SERVER_ERROR_MAX = 599;
 
 function readNumericStatus(value: unknown): number | null {
   if (!value || typeof value !== "object") {
@@ -65,24 +67,31 @@ function collectErrorParts(value: unknown, parts: string[], seen: Set<object>, d
 }
 
 function getProviderStatus(error: unknown): number | null {
-  const directStatus = readNumericStatus(error);
-  if (directStatus) {
-    return directStatus;
-  }
+  const seen = new Set<object>();
 
-  if (!error || typeof error !== "object") {
-    return null;
-  }
-
-  const candidate = error as Record<string, unknown>;
-  for (const key of NESTED_KEYS) {
-    const nestedStatus = readNumericStatus(candidate[key]);
-    if (nestedStatus) {
-      return nestedStatus;
+  const visit = (value: unknown, depth = 0): number | null => {
+    if (depth > 3 || !value || typeof value !== "object" || seen.has(value)) {
+      return null;
     }
-  }
 
-  return null;
+    seen.add(value);
+    const directStatus = readNumericStatus(value);
+    if (directStatus !== null) {
+      return directStatus;
+    }
+
+    const candidate = value as Record<string, unknown>;
+    for (const key of NESTED_KEYS) {
+      const nestedStatus = visit(candidate[key], depth + 1);
+      if (nestedStatus !== null) {
+        return nestedStatus;
+      }
+    }
+
+    return null;
+  };
+
+  return visit(error);
 }
 
 function getProviderErrorText(error: unknown): string {
@@ -111,7 +120,10 @@ export function describeProviderFailure(error: unknown): ProviderFailure {
     return { details: "provider_rate_limited", status: 429 };
   }
 
-  if (status !== null && RETRYABLE_PROVIDER_STATUSES.has(status)) {
+  if (
+    status === RETRYABLE_PROVIDER_TIMEOUT_STATUS ||
+    (status !== null && status >= PROVIDER_SERVER_ERROR_MIN && status <= PROVIDER_SERVER_ERROR_MAX)
+  ) {
     return { details: "provider_unreachable", status: 503 };
   }
 

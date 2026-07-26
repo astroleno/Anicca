@@ -71,9 +71,11 @@ describe("describeProviderFailure", () => {
 
   it.each([
     { error: { status: 408 }, label: "direct timeout status" },
+    { error: { status: 500 }, label: "direct internal server error status" },
     { error: { response: { status: 502 } }, label: "nested bad gateway status" },
     { error: { status: 503 }, label: "direct service unavailable status" },
-    { error: { response: { statusCode: "504" } }, label: "nested gateway timeout status" }
+    { error: { response: { statusCode: "504" } }, label: "nested gateway timeout status" },
+    { error: { cause: { response: { status: 503 } } }, label: "deeply nested service unavailable status" }
   ])("classifies $label as a retryable provider failure", ({ error }) => {
     configureApiKey();
 
