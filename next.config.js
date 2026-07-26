@@ -1,5 +1,3 @@
-const path = require("path");
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -13,7 +11,7 @@ const nextConfig = {
       "./ref/**/*"
     ]
   },
-  outputFileTracingRoot: path.join(__dirname),
+  outputFileTracingRoot: __dirname,
   webpack: (config) => {
     const ignoredWatchPaths = config.watchOptions?.ignored;
     const existingIgnoredWatchPaths = (
