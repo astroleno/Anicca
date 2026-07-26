@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readOutputText } from "@/lib/openai/readOutputText";
 import { getDefaultModel, openai } from "@/lib/openai/client";
+import { describeProviderFailure } from "@/lib/openai/providerErrors";
 import { normalizeSummary } from "@/chat/summary";
 
 export async function POST(req: NextRequest) {
@@ -38,11 +39,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ text, summary });
   } catch (error: any) {
     console.error("/api/chat error", { message: error?.message, stack: error?.stack });
-    const details =
-      !process.env.OPENAI_API_KEY ? "openai_api_key_missing" :
-      /401|unauthorized|incorrect api key|invalid api key/i.test(error?.message || "") ? "provider_auth_failed" :
-      /fetch failed|network|timeout|econnrefused|enotfound|connection/i.test(error?.message || "") ? "provider_unreachable" :
-      "provider_runtime_error";
-    return NextResponse.json({ error: "chat_failed", details }, { status: 500 });
+    const failure = describeProviderFailure(error);
+    return NextResponse.json({ error: "chat_failed", details: failure.details }, { status: failure.status });
   }
 }
