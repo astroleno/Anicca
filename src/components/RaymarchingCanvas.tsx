@@ -10,6 +10,10 @@ import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js'
 import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectionShader.js'
 import { useMetaballStore } from '@/store/metaballStore'
 
+type RaymarchingCanvasProps = {
+  showLabUi?: boolean
+}
+
 // 交互常量
 const K_MERGE = 1.4
 const K_UNMERGE = 1.7
@@ -32,7 +36,7 @@ const MAX_DIST = 10.0
  * 基于 Three.js + WebGL 的 Raymarching 渲染，支持纹理表驱动的 metaball 渲染
  * 实现后期效果：Bloom、FXAA、Gamma 校正
  */
-export default function RaymarchingCanvas() {
+export default function RaymarchingCanvas({ showLabUi = false }: RaymarchingCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -111,7 +115,7 @@ export default function RaymarchingCanvas() {
       try {
         // 场景、相机、渲染器
         const scene = new THREE.Scene()
-        scene.background = new THREE.Color(0x767676) // 18% gray
+        scene.background = new THREE.Color(0x05090c)
         const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
 
         // 设备检测
@@ -125,7 +129,7 @@ export default function RaymarchingCanvas() {
           alpha: false // 不需要透明背景，使用场景背景色
         })
         renderer.setPixelRatio(dpr)
-        renderer.setClearColor(0x767676, 1.0) // 18% gray
+        renderer.setClearColor(0x05090c, 1.0)
 
         // 初始尺寸
         const updateSize = () => {
@@ -499,9 +503,9 @@ export default function RaymarchingCanvas() {
             uSpecularIntensity: { value: presets[preset].specularIntensity },
             uSpecularPower: { value: presets[preset].specularPower },
             uFresnelPower: { value: presets[preset].fresnelPower },
-            uBackgroundColor: { value: new THREE.Color(0x767676) }, // 18% gray
-            uSphereColor: { value: new THREE.Color(0x1a1a1a) }, // 调亮球体颜色，增加对比度
-            uLightColor: { value: new THREE.Color(0xffffff) },
+            uBackgroundColor: { value: new THREE.Color(0x05090c) },
+            uSphereColor: { value: new THREE.Color(0x12382f) },
+            uLightColor: { value: new THREE.Color(0xe6be62) },
             uLightPosition: { value: new THREE.Vector3(1.0, 1.0, 1.0) },
           },
           vertexShader,
@@ -1100,77 +1104,79 @@ export default function RaymarchingCanvas() {
     <div ref={containerRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
       <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />
 
-      {/* 性能指标 */}
-      <div style={{
-        position: 'absolute',
-        top: 20,
-        left: 20,
-        zIndex: 1000,
-        background: 'rgba(0, 0, 0, 0.5)',
-        backdropFilter: 'blur(10px)',
-        color: '#fff',
-        padding: '10px 15px',
-        borderRadius: '8px',
-        fontSize: '12px',
-        fontFamily: 'monospace'
-      }}>
-        <div>FPS: {fps}</div>
-        <div>分辨率: {Math.round(renderScale * 100)}%</div>
-        <div>球数: {activeBallCount}</div>
-      </div>
-
-      {/* 预设切换 */}
-      <div style={{
-        position: 'absolute',
-        top: 20,
-        right: 20,
-        zIndex: 1000,
-        background: 'rgba(0, 0, 0, 0.5)',
-        backdropFilter: 'blur(10px)',
-        color: '#fff',
-        padding: '10px 15px',
-        borderRadius: '8px',
-        fontSize: '12px'
-      }}>
-        <div style={{ marginBottom: '8px', fontWeight: 'bold' }}>预设</div>
-        <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
-          {(['soft', 'neutral', 'high'] as const).map((p) => (
-            <button
-              key={p}
-              onClick={() => {
-                setPreset(p)
-                console.log(`切换预设: ${p}`, presets[p])
-              }}
-              style={{
-                padding: '4px 8px',
-                background: preset === p ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '4px',
-                color: '#fff',
-                cursor: 'pointer',
-                fontSize: '11px'
-              }}
-            >
-              {p === 'soft' ? '柔和' : p === 'neutral' ? '中性' : '高对比'}
-            </button>
-          ))}
+      {showLabUi ? (
+        <div style={{
+          position: 'absolute',
+          top: 20,
+          left: 20,
+          zIndex: 1000,
+          background: 'rgba(0, 0, 0, 0.5)',
+          backdropFilter: 'blur(10px)',
+          color: '#fff',
+          padding: '10px 15px',
+          borderRadius: '8px',
+          fontSize: '12px',
+          fontFamily: 'monospace'
+        }}>
+          <div>FPS: {fps}</div>
+          <div>分辨率: {Math.round(renderScale * 100)}%</div>
+          <div>球数: {activeBallCount}</div>
         </div>
-      </div>
+      ) : null}
 
-      {/* 参数面板 */}
-      <div style={{
-        position: 'absolute',
-        bottom: 20,
-        left: 20,
-        zIndex: 1000,
-        background: 'rgba(0, 0, 0, 0.5)',
-        backdropFilter: 'blur(10px)',
-        color: '#fff',
-        padding: '10px 15px',
-        borderRadius: '8px',
-        fontSize: '11px',
-        maxWidth: '200px'
-      }}>
+      {showLabUi ? (
+        <div style={{
+          position: 'absolute',
+          top: 20,
+          right: 20,
+          zIndex: 1000,
+          background: 'rgba(0, 0, 0, 0.5)',
+          backdropFilter: 'blur(10px)',
+          color: '#fff',
+          padding: '10px 15px',
+          borderRadius: '8px',
+          fontSize: '12px'
+        }}>
+          <div style={{ marginBottom: '8px', fontWeight: 'bold' }}>预设</div>
+          <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
+            {(['soft', 'neutral', 'high'] as const).map((p) => (
+              <button
+                key={p}
+                onClick={() => {
+                  setPreset(p)
+                  console.log(`切换预设: ${p}`, presets[p])
+                }}
+                style={{
+                  padding: '4px 8px',
+                  background: preset === p ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '4px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '11px'
+                }}
+              >
+                {p === 'soft' ? '柔和' : p === 'neutral' ? '中性' : '高对比'}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {showLabUi ? (
+        <div style={{
+          position: 'absolute',
+          bottom: 20,
+          left: 20,
+          zIndex: 1000,
+          background: 'rgba(0, 0, 0, 0.5)',
+          backdropFilter: 'blur(10px)',
+          color: '#fff',
+          padding: '10px 15px',
+          borderRadius: '8px',
+          fontSize: '11px',
+          maxWidth: '200px'
+        }}>
         <div style={{ marginBottom: '8px', fontWeight: 'bold' }}>参数调整</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div>
@@ -1270,10 +1276,11 @@ export default function RaymarchingCanvas() {
             />
           </div>
         </div>
-      </div>
+        </div>
+      ) : null}
 
       {/* 球体序号标签 */}
-      {balls.filter(b => b.active !== false).map((ball) => {
+      {showLabUi ? balls.filter(b => b.active !== false).map((ball) => {
         const [x, y] = ndcToPixel(ball.pos)
         const isHoverMerge = hoverMergeCandidate === ball.id
 
@@ -1305,7 +1312,7 @@ export default function RaymarchingCanvas() {
             {ball.id}
           </div>
         )
-      })}
+      }) : null}
     </div>
   )
 }

@@ -33,6 +33,7 @@ import NewframePage from "@/app/newframe/page";
 describe("entrypoint smoke", () => {
   beforeEach(() => {
     redirectMock.mockReset();
+    window.history.replaceState({}, "", "/");
   });
 
   it("redirects the root route to /dialogue", () => {
@@ -41,11 +42,21 @@ describe("entrypoint smoke", () => {
     expect(redirectMock).toHaveBeenCalledWith("/dialogue");
   });
 
-  it("marks /newframe as a legacy experiment and links back to /dialogue", () => {
+  it("keeps /newframe as a clean visual experiment by default", () => {
     render(<NewframePage />);
 
-    expect(screen.getByText("旧实验入口")).toBeInTheDocument();
-    expect(screen.getByText(/新的正反合主线已经迁移到 `\/dialogue`/)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "前往 /dialogue" })).not.toBeInTheDocument();
+    expect(screen.getByTestId("legacy-metaball-canvas")).toBeInTheDocument();
+  });
+
+  it("shows /newframe lab UI when explicitly requested", async () => {
+    window.history.replaceState({}, "", "/newframe?lab=1");
+
+    render(<NewframePage />);
+
+    expect(await screen.findByText("Visual Lab")).toBeInTheDocument();
+    expect(screen.getByText("/newframe metaball")).toBeInTheDocument();
+    expect(screen.getByText(/WebGPU \/ metaball 实验入口/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "前往 /dialogue" })).toHaveAttribute("href", "/dialogue");
     expect(screen.getByTestId("legacy-metaball-canvas")).toBeInTheDocument();
   });
