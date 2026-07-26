@@ -112,10 +112,19 @@ function buildSynthesisPrompt(thesis: Required<SynthesisInput>, antithesis: Requ
 }
 
 export async function POST(req: NextRequest) {
+  let body: Record<string, unknown>;
+  try {
+    const parsedBody: unknown = await req.json();
+    body = parsedBody && typeof parsedBody === "object" && !Array.isArray(parsedBody)
+      ? (parsedBody as Record<string, unknown>)
+      : {};
+  } catch {
+    return NextResponse.json({ error: "invalid JSON body" }, { status: 400 });
+  }
+
   let requestId = "";
 
   try {
-    const body = await req.json();
     requestId = typeof body?.requestId === "string" ? body.requestId.trim() : "";
     const thesis = body?.thesis;
     const antithesis = body?.antithesis;

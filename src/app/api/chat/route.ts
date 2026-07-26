@@ -5,8 +5,17 @@ import { describeProviderFailure } from "@/lib/openai/providerErrors";
 import { normalizeSummary } from "@/chat/summary";
 
 export async function POST(req: NextRequest) {
+  let body: Record<string, unknown>;
   try {
-    const body = await req.json();
+    const parsedBody: unknown = await req.json();
+    body = parsedBody && typeof parsedBody === "object" && !Array.isArray(parsedBody)
+      ? (parsedBody as Record<string, unknown>)
+      : {};
+  } catch {
+    return NextResponse.json({ error: "invalid JSON body" }, { status: 400 });
+  }
+
+  try {
     const { messages, model: modelFromBody, temperature: tempFromBody } = body ?? {};
 
     if (!Array.isArray(messages) || messages.length === 0) {
@@ -14,9 +23,16 @@ export async function POST(req: NextRequest) {
     }
 
     // 构造简化的对话输入：用户与助手轮次
-    const prompt = messages.map((m: any) => `${m.role || "user"}: ${m.content || ""}`).join("\n");
+    const prompt = messages
+      .map((message) => {
+        const entry = message && typeof message === "object" ? (message as Record<string, unknown>) : {};
+        const role = typeof entry.role === "string" ? entry.role : "user";
+        const content = typeof entry.content === "string" ? entry.content : "";
+        return `${role}: ${content}`;
+      })
+      .join("\n");
 
-    const model = getDefaultModel(modelFromBody);
+    const model = getDefaultModel(typeof modelFromBody === "string" ? modelFromBody : undefined);
     const temperature = typeof tempFromBody === 'number' ? tempFromBody : 0.7;
 
     const res = await openai.responses.create({
@@ -37,8 +53,9 @@ export async function POST(req: NextRequest) {
     const summary = normalizeSummary(text.slice(0, 30));
 
     return NextResponse.json({ text, summary });
-  } catch (error: any) {
-    console.error("/api/chat error", { message: error?.message, stack: error?.stack });
+  } catch (error: unknown) {
+    const errorInfo = error instanceof Error ? { message: error.message, stack: error.stack } : { message: String(error) };
+    console.error("/api/chat error", errorInfo);
     const failure = describeProviderFailure(error);
     return NextResponse.json({ error: "chat_failed", details: failure.details }, { status: failure.status });
   }

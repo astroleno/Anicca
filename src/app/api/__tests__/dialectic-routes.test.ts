@@ -169,6 +169,49 @@ describe("dialectic routes", () => {
     });
   });
 
+  it("returns a stable 400 caller error for malformed branch JSON", async () => {
+    const response = await branchesPost(
+      new NextRequest("http://localhost/api/branches", {
+        method: "POST",
+        body: "{"
+      })
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: "invalid JSON body" });
+    expect(createResponse).not.toHaveBeenCalled();
+  });
+
+  it("returns a stable 400 caller error when branch input is missing", async () => {
+    const response = await branchesPost(
+      new NextRequest("http://localhost/api/branches", {
+        method: "POST",
+        body: JSON.stringify({ requestId: "req-missing-user" })
+      })
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ requestId: "req-missing-user", error: "userText required" });
+    expect(createResponse).not.toHaveBeenCalled();
+  });
+
+  it("accepts a fenced branch JSON object surrounded by prose", async () => {
+    createResponse.mockResolvedValue({
+      output_text:
+        "模型结果如下：\n```json\n{\"thesis\":{\"text\":\"继续\",\"summary\":\"继续推进\",\"label\":\"继续\",\"stance\":\"正\"},\"antithesis\":{\"text\":\"暂停\",\"summary\":\"暂停重构\",\"label\":\"暂停\",\"stance\":\"反\"}}\n```\n请展示。"
+    });
+
+    const response = await branchesPost(
+      new NextRequest("http://localhost/api/branches", {
+        method: "POST",
+        body: JSON.stringify({ requestId: "req-fenced-branches", userText: "要不要继续" })
+      })
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ requestId: "req-fenced-branches" });
+  });
+
   it("returns 502 when branches output is not valid JSON", async () => {
     createResponse.mockResolvedValue({
       output_text: "这里没有 JSON"
@@ -472,6 +515,38 @@ describe("dialectic routes", () => {
     });
   });
 
+  it("returns a stable 400 caller error for malformed synthesis JSON", async () => {
+    const response = await synthesisPost(
+      new NextRequest("http://localhost/api/synthesis", {
+        method: "POST",
+        body: "{"
+      })
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: "invalid JSON body" });
+    expect(createResponse).not.toHaveBeenCalled();
+  });
+
+  it("does not expose provider error text in branch responses", async () => {
+    vi.stubEnv("OPENAI_API_KEY", "test-key");
+    createResponse.mockRejectedValue(new Error("fetch failed with sk-sensitive-provider-detail"));
+
+    const response = await branchesPost(
+      new NextRequest("http://localhost/api/branches", {
+        method: "POST",
+        body: JSON.stringify({ requestId: "req-safe-provider-error", userText: "要不要继续" })
+      })
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      requestId: "req-safe-provider-error",
+      error: "branches_failed",
+      details: "provider_unreachable"
+    });
+  });
+
   it("returns 502 for chat provider-format failures", async () => {
     createResponse.mockResolvedValue({
       output: [{ content: [] }]
@@ -510,5 +585,18 @@ describe("dialectic routes", () => {
       error: "chat_failed",
       details: "provider_rate_limited"
     });
+  });
+
+  it("returns a stable 400 caller error for malformed chat JSON", async () => {
+    const response = await chatPost(
+      new NextRequest("http://localhost/api/chat", {
+        method: "POST",
+        body: "{"
+      })
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: "invalid JSON body" });
+    expect(createResponse).not.toHaveBeenCalled();
   });
 });

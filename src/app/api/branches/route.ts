@@ -86,10 +86,19 @@ function buildBranchesPrompt(userText: string, contextMessages: unknown): string
 }
 
 export async function POST(req: NextRequest) {
+  let body: Record<string, unknown>;
+  try {
+    const parsedBody: unknown = await req.json();
+    body = parsedBody && typeof parsedBody === "object" && !Array.isArray(parsedBody)
+      ? (parsedBody as Record<string, unknown>)
+      : {};
+  } catch {
+    return NextResponse.json({ error: "invalid JSON body" }, { status: 400 });
+  }
+
   let requestId = "";
 
   try {
-    const body = await req.json();
     requestId = typeof body?.requestId === "string" ? body.requestId.trim() : "";
     const userText = typeof body?.userText === "string" ? body.userText.trim() : "";
     const model = getDefaultModel(typeof body?.model === "string" ? body.model : undefined);
