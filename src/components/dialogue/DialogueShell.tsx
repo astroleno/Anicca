@@ -1288,8 +1288,9 @@ export function DialogueShell() {
           onSynthesize: () => handleGenerateSynthesis(relevantSynthesisAction)
         }
       : null;
-  const flowStatusMergedIntoComposer = Boolean(
-    nextStepChoice && workspaceStatus?.startsWith("正反已生成")
+  const flowStatusHandledInContext = Boolean(
+    (nextStepChoice && workspaceStatus?.startsWith("正反已生成")) ||
+    workspaceStatus?.startsWith("画作视角已生成")
   );
   const retrievalDebugPreview = useMemo(() => {
     if (!retrievalDebugPreviewEnabled) {
@@ -1405,7 +1406,7 @@ export function DialogueShell() {
         className={styles.hiddenFileInput}
         onChange={handleImportWorkspace}
       />
-      {workspaceStatus && !flowStatusMergedIntoComposer ? (
+      {workspaceStatus && !flowStatusHandledInContext ? (
         <p className={styles.flowStatus} aria-hidden="true" data-testid="dialogue-flow-status">
           {workspaceStatus}
         </p>

@@ -35,11 +35,11 @@ function mockViewportRect(element: HTMLElement) {
   });
 }
 
-function stubPointerMode(pointer: "fine" | "coarse") {
+function stubPointerMode(pointer: "fine" | "coarse", narrow = false) {
   vi.stubGlobal(
     "matchMedia",
     vi.fn().mockImplementation((query: string) => ({
-      matches: query === "(pointer: coarse)" ? pointer === "coarse" : false,
+      matches: query === "(pointer: coarse)" ? pointer === "coarse" : query === "(max-width: 980px)" ? narrow : false,
       media: query,
       onchange: null,
       addEventListener: vi.fn(),
@@ -134,6 +134,37 @@ describe("BubbleStage", () => {
 
     expect(screen.getByTestId("dialogue-stage")).toHaveAttribute("data-layout", "growth");
     expect(screen.getByTestId("dialogue-stage-node-growth-lower")).toHaveStyle({ top: "88%" });
+  });
+
+  it("uses compact Growth seeds and reserves a third mobile row for five children", () => {
+    stubPointerMode("coarse", true);
+    const nodes: DialogueStageNode[] = [
+      {
+        id: "growth-root",
+        label: "主题",
+        kind: "user",
+        relation: "focus",
+        isGrowthPerspective: true,
+        seedX: 50,
+        seedY: 40
+      },
+      ...["one", "two", "three", "four", "merge"].map((id, index) => ({
+        id,
+        label: id,
+        kind: "assistant" as const,
+        relation: "child" as const,
+        isGrowthPerspective: true,
+        seedX: 20 + index * 10,
+        seedY: 65,
+        compactSeedX: index === 4 ? 50 : index % 2 === 0 ? 20 : 80,
+        compactSeedY: 62 + Math.floor(index / 2) * 13
+      }))
+    ];
+
+    render(<BubbleStage layoutKey="focus:growth-dense" nodes={nodes} focusNodeId="growth-root" onSelect={vi.fn()} />);
+
+    expect(screen.getByTestId("dialogue-stage")).toHaveAttribute("data-growth-compact-rows", "3");
+    expect(screen.getByTestId("dialogue-stage-node-merge")).toHaveStyle({ left: "50%", top: "88%" });
   });
 
   it("persists stage pan independently from node positions", () => {

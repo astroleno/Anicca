@@ -198,6 +198,85 @@ function createEmptyWorkspace() {
   return workspace;
 }
 
+function createGrowthWorkspace(candidateLimit) {
+  if (!Number.isInteger(candidateLimit) || candidateLimit < 1 || candidateLimit > 4) {
+    throw new Error(`Growth visual fixture requires candidateLimit 1-4, received ${candidateLimit}`);
+  }
+
+  const workspace = createEmptyWorkspace();
+  const rootId = `growth_matrix_root_${candidateLimit}`;
+  const responseIds = Array.from({ length: candidateLimit }, (_, index) => `growth_matrix_response_${candidateLimit}_${index + 1}`);
+  const synthesisId = candidateLimit >= 2 ? `growth_matrix_synthesis_${candidateLimit}` : null;
+  const childIds = synthesisId ? [...responseIds, synthesisId] : responseIds;
+
+  workspace.workspaceSessionId = `ws_growth_matrix_${candidateLimit}`;
+  workspace.focusedNodeId = rootId;
+  workspace.graph.entryIds = [rootId];
+  workspace.graph.nodes[rootId] = {
+    id: rootId,
+    kind: "user",
+    text: `Growth layout matrix ${candidateLimit}`,
+    createdAt: "2026-07-26T00:00:00.000Z",
+    parents: [],
+    children: childIds,
+    meta: { growth: { eventId: `growth_matrix_${candidateLimit}`, memoryRefIds: [] } }
+  };
+
+  responseIds.forEach((id, index) => {
+    workspace.graph.nodes[id] = {
+      id,
+      kind: "assistant",
+      text: `画作视角 ${index + 1}`,
+      createdAt: `2026-07-26T00:00:0${index + 1}.000Z`,
+      parents: [rootId],
+      children: synthesisId ? [synthesisId] : [],
+      meta: {
+        label: `视角 ${index + 1}`,
+        summary: `Growth 视角 ${index + 1}`,
+        growth: {
+          eventId: `growth_matrix_${candidateLimit}`,
+          operator: "expand",
+          artworkId: `matrix_artwork_${index + 1}`,
+          memoryRefIds: []
+        }
+      }
+    };
+  });
+
+  if (synthesisId) {
+    workspace.graph.nodes[synthesisId] = {
+      id: synthesisId,
+      kind: "assistant",
+      text: "画作合并",
+      createdAt: "2026-07-26T00:00:09.000Z",
+      parents: [rootId, ...responseIds],
+      children: [],
+      meta: {
+        label: "画作合并",
+        summary: "合并 Growth 视角",
+        sourceNodeIds: responseIds,
+        growth: {
+          eventId: `growth_matrix_${candidateLimit}`,
+          operator: "merge_promote",
+          sourceArtworkIds: responseIds,
+          memoryRefIds: []
+        }
+      }
+    };
+  }
+
+  childIds.forEach((childId, index) => {
+    workspace.graph.edges[`growth_matrix_edge_${candidateLimit}_${index + 1}`] = {
+      id: `growth_matrix_edge_${candidateLimit}_${index + 1}`,
+      from: rootId,
+      to: childId,
+      reason: childId === synthesisId ? "growth:merge_promote" : "growth:expand"
+    };
+  });
+
+  return workspace;
+}
+
 function createWorkspaceWithRetrievalMatch() {
   const workspace = cloneJson(seededWorkspace);
   workspace.workspaceSessionId = "ws_visual_retrieval_debug";
@@ -1172,6 +1251,83 @@ function assertNoPageIssues(pageIssues, scenarioName) {
   }
 }
 
+async function collectVisibleStageNodeBoxes(stage, scenarioName, expectedNodeCount) {
+  const stageBox = await stage.boundingBox();
+  if (!stageBox) {
+    throw new Error(`Growth stage is not measurable on ${scenarioName}`);
+  }
+
+  const nodeBoxes = await stage.locator('[data-testid^="dialogue-stage-node-"]').evaluateAll((nodes) =>
+    nodes.map((node) => {
+      const rect = node.getBoundingClientRect();
+      return {
+        testId: node.getAttribute("data-testid"),
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height
+      };
+    })
+  );
+
+  if (nodeBoxes.length !== expectedNodeCount) {
+    throw new Error(`Growth stage node count mismatch on ${scenarioName}: ${JSON.stringify({ expectedNodeCount, nodeBoxes })}`);
+  }
+
+  for (const node of nodeBoxes) {
+    const clipped =
+      node.left < stageBox.x ||
+      node.right > stageBox.x + stageBox.width ||
+      node.top < stageBox.y ||
+      node.bottom > stageBox.y + stageBox.height;
+    if (clipped) {
+      throw new Error(`Growth stage node is clipped on ${scenarioName}: ${JSON.stringify({ stageBox, node })}`);
+    }
+  }
+
+  for (let leftIndex = 0; leftIndex < nodeBoxes.length; leftIndex += 1) {
+    for (let rightIndex = leftIndex + 1; rightIndex < nodeBoxes.length; rightIndex += 1) {
+      const left = nodeBoxes[leftIndex];
+      const right = nodeBoxes[rightIndex];
+      const overlaps =
+        left.left < right.right &&
+        left.right > right.left &&
+        left.top < right.bottom &&
+        left.bottom > right.top;
+      if (overlaps) {
+        throw new Error(`Growth stage nodes overlap on ${scenarioName}: ${JSON.stringify({ left, right })}`);
+      }
+    }
+  }
+
+  return nodeBoxes;
+}
+
+async function assertFlowStatusDoesNotCoverStageNodes(page, nodeBoxes, scenarioName) {
+  const flowStatus = page.getByTestId("dialogue-flow-status");
+  if (!await flowStatus.count()) {
+    return;
+  }
+
+  const statusBox = await flowStatus.boundingBox();
+  if (!statusBox) {
+    return;
+  }
+
+  for (const node of nodeBoxes) {
+    const overlaps =
+      statusBox.x < node.right &&
+      statusBox.x + statusBox.width > node.left &&
+      statusBox.y < node.bottom &&
+      statusBox.y + statusBox.height > node.top;
+    if (overlaps) {
+      throw new Error(`Growth flow status covers a stage node on ${scenarioName}: ${JSON.stringify({ statusBox, node })}`);
+    }
+  }
+}
+
 async function mockDeferredSynthesis(page) {
   let releaseResponse;
   const responseReady = new Promise((resolve) => {
@@ -1435,6 +1591,7 @@ async function ensureGrowthPerspectiveFlow(browser) {
     { name: "mobile-320", viewport: { width: 320, height: 740 }, fullPage: true }
   ];
   const screenshots = {};
+  const composerScreenshots = {};
   const stageNodeChecks = {};
 
   for (const scenario of scenarios) {
@@ -1464,34 +1621,8 @@ async function ensureGrowthPerspectiveFlow(browser) {
     if (growthNodeTestIds.length < 5) {
       throw new Error(`Growth stage did not render every local perspective on ${scenario.name}: ${JSON.stringify(growthNodeTestIds)}`);
     }
-    const nodeBoxes = await stage.locator('[data-testid^="dialogue-stage-node-"]').evaluateAll((nodes) =>
-      nodes.map((node) => {
-        const rect = node.getBoundingClientRect();
-        return {
-          testId: node.getAttribute("data-testid"),
-          left: rect.left,
-          right: rect.right,
-          top: rect.top,
-          bottom: rect.bottom,
-          width: rect.width,
-          height: rect.height
-        };
-      })
-    );
-    for (let leftIndex = 0; leftIndex < nodeBoxes.length; leftIndex += 1) {
-      for (let rightIndex = leftIndex + 1; rightIndex < nodeBoxes.length; rightIndex += 1) {
-        const left = nodeBoxes[leftIndex];
-        const right = nodeBoxes[rightIndex];
-        const overlaps =
-          left.left < right.right &&
-          left.right > right.left &&
-          left.top < right.bottom &&
-          left.bottom > right.top;
-        if (overlaps) {
-          throw new Error(`Growth stage nodes overlap on ${scenario.name}: ${JSON.stringify({ left, right })}`);
-        }
-      }
-    }
+    const nodeBoxes = await collectVisibleStageNodeBoxes(stage, scenario.name, growthNodeTestIds.length);
+    await assertFlowStatusDoesNotCoverStageNodes(page, nodeBoxes, scenario.name);
     stageNodeChecks[scenario.name] = {
       nodeCount: nodeBoxes.length,
       nodes: nodeBoxes
@@ -1500,7 +1631,12 @@ async function ensureGrowthPerspectiveFlow(browser) {
     const rootTestId = growthNodeTestIds[0];
     for (const testId of growthNodeTestIds) {
       const node = page.getByTestId(testId);
-      await node.focus();
+      await node.evaluate((element) => {
+        (element instanceof HTMLElement ? element : null)?.focus();
+      });
+      await page.waitForFunction((expectedTestId) =>
+        document.activeElement?.getAttribute("data-testid") === expectedTestId,
+      testId);
       await ensureActiveElement(page, { testId });
       await node.click();
       if (testId !== rootTestId) {
@@ -1520,17 +1656,26 @@ async function ensureGrowthPerspectiveFlow(browser) {
     await ensureNoHorizontalOverflow(page, `growth ${scenario.name}`);
     await assertRegionWidth(composer, scenario.viewport.width, `growth composer ${scenario.name}`);
 
+    const screenshotPath = path.join(outputDir, `${scenario.name}-growth-perspectives.png`);
+    if (scenario.name.startsWith("mobile")) {
+      await stage.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(60);
+      await stage.screenshot({ path: screenshotPath });
+    } else {
+      await page.screenshot({ path: screenshotPath, fullPage: scenario.fullPage });
+    }
+    screenshots[scenario.name] = screenshotPath;
+
     if (scenario.name.startsWith("mobile")) {
       await composer.scrollIntoViewIfNeeded();
       await page.waitForTimeout(60);
       await ensureMobileComposerSingleColumn(page, `growth ${scenario.name}`);
       await ensureMobileComposerDoesNotCoverLineage(page);
       await ensureMobileComposerDoesNotCoverPanelActions(page);
+      const composerScreenshotPath = path.join(outputDir, `${scenario.name}-growth-composer.png`);
+      await composer.screenshot({ path: composerScreenshotPath });
+      composerScreenshots[scenario.name] = composerScreenshotPath;
     }
-
-    const screenshotPath = path.join(outputDir, `${scenario.name}-growth-perspectives.png`);
-    await page.screenshot({ path: screenshotPath, fullPage: scenario.fullPage });
-    screenshots[scenario.name] = screenshotPath;
     assertNoPageIssues(pageIssues, `growth perspectives ${scenario.name}`);
     await context.close();
   }
@@ -1539,6 +1684,46 @@ async function ensureGrowthPerspectiveFlow(browser) {
     name: "growth-perspective-flow",
     passed: true,
     screenshots,
+    composerScreenshots,
+    stageNodeChecks
+  };
+}
+
+async function ensureGrowthLayoutMatrix(browser) {
+  const scenarios = [
+    { name: "desktop", viewport: { width: 1440, height: 980 } },
+    { name: "tablet", viewport: { width: 1024, height: 900 } },
+    { name: "mobile-390", viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true }
+  ];
+  const stageNodeChecks = {};
+
+  for (const candidateLimit of [1, 2, 3, 4]) {
+    const expectedChildCount = candidateLimit + (candidateLimit >= 2 ? 1 : 0);
+
+    for (const scenario of scenarios) {
+      const scenarioName = `growth matrix candidateLimit=${candidateLimit} ${scenario.name}`;
+      const { context, page, pageIssues } = await createScenarioPage(browser, createGrowthWorkspace(candidateLimit), {
+        viewport: scenario.viewport,
+        hasTouch: scenario.hasTouch,
+        isMobile: scenario.isMobile
+      });
+      const stage = page.getByTestId("dialogue-stage");
+      const nodeBoxes = await collectVisibleStageNodeBoxes(stage, scenarioName, expectedChildCount + 1);
+
+      stageNodeChecks[`candidate-${candidateLimit}-${scenario.name}`] = {
+        candidateLimit,
+        nodeCount: nodeBoxes.length,
+        nodes: nodeBoxes
+      };
+
+      assertNoPageIssues(pageIssues, scenarioName);
+      await context.close();
+    }
+  }
+
+  return {
+    name: "growth-layout-matrix",
+    passed: true,
     stageNodeChecks
   };
 }
@@ -1551,7 +1736,8 @@ async function runInteractionScenarios(browser) {
     await ensureEmptyRootPendingState(browser),
     await ensureNextStepChoiceDockLayout(browser),
     await ensureRetrievalDebugPreview(browser),
-    await ensureGrowthPerspectiveFlow(browser)
+    await ensureGrowthPerspectiveFlow(browser),
+    await ensureGrowthLayoutMatrix(browser)
   ];
 }
 

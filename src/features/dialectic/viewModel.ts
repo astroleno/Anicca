@@ -34,6 +34,9 @@ export type DialogueStageNode = {
   // Seed coordinates define the default composition before per-snapshot drag state takes over.
   seedX: number;
   seedY: number;
+  // Narrow stages use a separate seed grid so dense Growth sessions keep real card spacing.
+  compactSeedX?: number;
+  compactSeedY?: number;
 };
 
 export type DialogueSourceNode = {
@@ -478,33 +481,66 @@ function getFallbackChildPosition(index: number, count: number): StageSeed {
   };
 }
 
-function getGrowthChildPosition(index: number, count: number): StageSeed {
+type GrowthStageSeed = {
+  wide: StageSeed;
+  compact: StageSeed;
+};
+
+function getCompactGrowthPosition(index: number, count: number): StageSeed {
   if (count <= 1) {
     return { x: 50, y: 72 };
   }
 
+  const rowCount = Math.ceil(count / 2);
+  const row = Math.floor(index / 2);
+  const isFinalUnpairedChild = count % 2 === 1 && index === count - 1;
+  const y = rowCount === 1 ? 72 : 62 + (26 / (rowCount - 1)) * row;
+
+  return {
+    x: isFinalUnpairedChild ? 50 : index % 2 === 0 ? 20 : 80,
+    y
+  };
+}
+
+function getGrowthChildPosition(index: number, count: number): GrowthStageSeed {
+  if (count <= 1) {
+    return { wide: { x: 50, y: 72 }, compact: { x: 50, y: 72 } };
+  }
+
   if (count === 2) {
-    return index === 0 ? { x: 20, y: 72 } : { x: 80, y: 72 };
+    const wide = index === 0 ? { x: 20, y: 72 } : { x: 80, y: 72 };
+    return { wide, compact: wide };
   }
 
   if (count === 3) {
-    return [
+    const wide = [
       { x: 50, y: 65 },
       { x: 20, y: 86 },
       { x: 80, y: 86 }
     ][index];
+    return { wide, compact: getCompactGrowthPosition(index, count) };
   }
 
   if (count === 4) {
-    return [
+    const wide = [
       { x: 20, y: 65 },
       { x: 80, y: 65 },
       { x: 20, y: 88 },
       { x: 80, y: 88 }
     ][index];
+    return { wide, compact: getCompactGrowthPosition(index, count) };
   }
 
-  return getFallbackChildPosition(index, count);
+  const columns = Math.ceil(count / 2);
+  const row = Math.floor(index / columns);
+  const column = index % columns;
+  const columnsInRow = row === 0 ? Math.min(columns, count) : count - columns;
+  const x = columnsInRow <= 1 ? 50 : 20 + (60 / (columnsInRow - 1)) * column;
+
+  return {
+    wide: { x, y: row === 0 ? 65 : 86 },
+    compact: getCompactGrowthPosition(index, count)
+  };
 }
 
 function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStageNode[] {
@@ -579,6 +615,7 @@ function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStag
   childIds.forEach((childId, index) => {
     const child = graph.nodes[childId];
     let position: StageSeed | null = null;
+    let compactPosition: StageSeed | null = null;
 
     if (focusNode.kind === "user") {
       position =
@@ -589,7 +626,9 @@ function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStag
     }
 
     if (!position && child.meta?.growth && !child.branchType) {
-      position = getGrowthChildPosition(growthChildren.indexOf(childId), growthChildren.length);
+      const growthPosition = getGrowthChildPosition(growthChildren.indexOf(childId), growthChildren.length);
+      position = growthPosition.wide;
+      compactPosition = growthPosition.compact;
     }
 
     if (!position) {
@@ -606,7 +645,9 @@ function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStag
       isGrowthPerspective: Boolean(child.meta?.growth),
       relation: "child",
       seedX: position.x,
-      seedY: position.y
+      seedY: position.y,
+      compactSeedX: compactPosition?.x,
+      compactSeedY: compactPosition?.y
     });
   });
 

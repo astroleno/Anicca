@@ -117,6 +117,7 @@ export function BubbleStage({
   const setStagePan = useDialogueUiStore((state) => state.setStagePan);
   const [gesture, setGesture] = useState<ActiveStageGesture | null>(null);
   const [isCoarsePointer, setIsCoarsePointer] = useState(false);
+  const [isNarrowViewport, setIsNarrowViewport] = useState(false);
   const livePanRef = useRef<StagePan | null>(null);
   const didDragRef = useRef(false);
   const suppressClickUntilRef = useRef(0);
@@ -124,6 +125,11 @@ export function BubbleStage({
   const hasThesis = nodes.some((node) => node.branchType === "正");
   const hasAntithesis = nodes.some((node) => node.branchType === "反");
   const hasGrowthPerspectives = nodes.some((node) => node.isGrowthPerspective);
+  const growthChildCount = nodes.filter((node) => node.isGrowthPerspective && node.relation === "child").length;
+  const growthCompactRows = Math.ceil(growthChildCount / 2);
+  const growthStageMinHeight = growthCompactRows >= 3
+    ? `${115 + Math.max(0, growthCompactRows - 3) * 55}vh`
+    : "94vh";
   const hasSynthesisRecord = Boolean(convergenceEventId) || nodes.some((node) => node.branchType === "合");
   const relationshipHint = isCoarsePointer
     ? hasSynthesisRecord
@@ -162,11 +168,37 @@ export function BubbleStage({
     return () => mediaQuery.removeListener(updatePointerMode);
   }, []);
 
-  const getNodePosition = (node: DialogueStageNode): StagePoint =>
-    clampNodePosition(
-      stageLayout?.nodePositions[node.id] || { x: node.seedX, y: node.seedY },
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia("(max-width: 980px)");
+    const updateViewportMode = () => {
+      setIsNarrowViewport(mediaQuery.matches);
+    };
+
+    updateViewportMode();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", updateViewportMode);
+      return () => mediaQuery.removeEventListener("change", updateViewportMode);
+    }
+
+    mediaQuery.addListener(updateViewportMode);
+    return () => mediaQuery.removeListener(updateViewportMode);
+  }, []);
+
+  const getNodePosition = (node: DialogueStageNode): StagePoint => {
+    const defaultPosition = isNarrowViewport && node.compactSeedX !== undefined && node.compactSeedY !== undefined
+      ? { x: node.compactSeedX, y: node.compactSeedY }
+      : { x: node.seedX, y: node.seedY };
+
+    return clampNodePosition(
+      stageLayout?.nodePositions[node.id] || defaultPosition,
       node.isGrowthPerspective ? GROWTH_NODE_MAX_Y_PERCENT : NODE_MAX_Y_PERCENT
     );
+  };
 
   const setTrackPanPreview = (pan: StagePan) => {
     const track = trackRef.current;
@@ -249,11 +281,12 @@ export function BubbleStage({
       if (gesture.kind === "node") {
         const viewport = viewportRef.current;
         const rect = viewport?.getBoundingClientRect();
+        const draggedNode = nodes.find((node) => node.id === gesture.nodeId);
         const nextPosition = rect?.width && rect.height
           ? clampNodePosition({
               x: gesture.startPosition.x + ((event.clientX - gesture.startClientX) / rect.width) * 100,
               y: gesture.startPosition.y + ((event.clientY - gesture.startClientY) / rect.height) * 100
-            })
+            }, draggedNode?.isGrowthPerspective ? GROWTH_NODE_MAX_Y_PERCENT : NODE_MAX_Y_PERCENT)
           : gesture.startPosition;
 
         setStageNodePosition(layoutKey, gesture.nodeId, nextPosition);
@@ -288,7 +321,7 @@ export function BubbleStage({
       window.removeEventListener("pointerup", handlePointerUp);
       window.removeEventListener("pointercancel", handlePointerUp);
     };
-  }, [gesture, layoutKey, setStageNodePosition, setStagePan]);
+  }, [gesture, layoutKey, nodes, setStageNodePosition, setStagePan]);
 
   const handleStagePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (!canPanStage || event.button !== 0 || event.target !== event.currentTarget) {
@@ -430,6 +463,9 @@ export function BubbleStage({
       aria-labelledby="dialogue-stage-heading"
       data-testid="dialogue-stage"
       data-layout={hasGrowthPerspectives ? "growth" : undefined}
+      data-growth-compact-rows={hasGrowthPerspectives ? growthCompactRows : undefined}
+      data-growth-density={growthChildCount >= 5 ? "dense" : undefined}
+      style={{ "--growth-stage-min-height": growthStageMinHeight } as CSSProperties}
     >
       <div className={styles.stageHeader}>
         <p className={styles.eyebrow}>舞台</p>

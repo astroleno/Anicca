@@ -134,9 +134,13 @@ describe("deriveDialogueView", () => {
     });
   });
 
-  it("assigns a distinct stage seed to every growth response and synthesis", () => {
+  it.each([1, 2, 3, 4])("assigns non-overlapping multi-row Growth seeds for candidateLimit=%i", (candidateLimit) => {
     const store = new BranchGraphStore();
-    const session = runGrowthSession({ text: "也许要换个角度继续推进", requestId: "growth_stage_layout" });
+    const session = runGrowthSession({
+      text: "也许要换个角度继续推进",
+      requestId: `growth_stage_layout_${candidateLimit}`,
+      candidateLimit
+    });
     const projection = projectGrowthSessionToGraph(store, session);
 
     const view = deriveDialogueView(store.getGraph(), projection.userNodeId);
@@ -147,6 +151,16 @@ describe("deriveDialogueView", () => {
 
     expect(growthNodes).toHaveLength(growthNodeIds.length);
     expect(new Set(growthNodes.map((node) => `${node.seedX}:${node.seedY}`)).size).toBe(growthNodeIds.length);
+    expect(growthNodes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ compactSeedX: expect.any(Number), compactSeedY: expect.any(Number) })
+    ]));
+    expect(new Set(growthNodes.map((node) => `${node.compactSeedX}:${node.compactSeedY}`)).size)
+      .toBe(growthNodeIds.length);
+
+    if (candidateLimit === 4) {
+      expect(new Set(growthNodes.map((node) => node.seedY)).size).toBeGreaterThan(1);
+      expect(new Set(growthNodes.map((node) => node.compactSeedY)).size).toBeGreaterThan(1);
+    }
   });
 
   it("does not render synthesis as a permanent third stage child when its parent user is focused", () => {
