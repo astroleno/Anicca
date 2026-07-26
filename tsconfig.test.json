@@ -1,7 +1,8 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "types": ["node", "vitest/globals", "@testing-library/jest-dom"],
+    "types": ["node", "vitest/globals", "@testing-library/jest-dom", "@webgpu/types"],
+    "lib": ["dom", "dom.iterable", "es2022"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
@@ -11,8 +12,10 @@
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
     "src/**/__tests__/**/*",
+    "src/**/*.d.ts",
     "tests/**/*.ts",
     "vitest.config.ts",
     "next-env.d.ts"
-  ]
+  ],
+  "exclude": ["node_modules", "ref/**/*"]
 }
