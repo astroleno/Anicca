@@ -289,16 +289,16 @@ This keeps existing retrieval and export paths compatible while allowing later g
 - [x] Run existing dialectic tests to confirm no regression.
 - [x] Run `npm run lint`.
 - [x] Run `npm test`.
-- [ ] Run `npm run test:visual-dialogue` if `/dialogue` UI changes.
+- [x] Run `npm run test:visual-dialogue` if `/dialogue` UI changes.
 - [x] Document any deferred product decisions in this plan before closing.
 
 ### Verification Notes
 
 - `npx vitest run src/features/growth/*.test.ts src/features/retrieval/workspaceGraphQuery.test.ts src/store/branchGraph.test.ts` passed: 9 files, 60 tests.
 - Mainline targeted regression passed: 13 files, 127 tests.
-- `npm test` passed: 28 files, 221 tests.
-- `npm run lint` passed with 36 existing warnings and no errors.
-- Growth visual smoke is scheduled after the production build gate in the mainline release closeout; the checkbox remains open until its artifacts are reviewed.
+- `npm test` passed: 28 files, 224 tests.
+- `npm run lint` passed with 34 existing warnings and no errors.
+- `DIALOGUE_SMOKE_SERVER_MODE=start npm run test:visual-dialogue` passed after the production build gate; current screenshots and scenario results are in `artifacts/visual-smoke/dialogue/summary.json`.
 
 ---
 

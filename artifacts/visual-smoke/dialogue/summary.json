@@ -1,0 +1,235 @@
+{
+  "baseUrl": "http://127.0.0.1:3211",
+  "serverMode": "start",
+  "generatedAt": "2026-07-26T12:26:23.126Z",
+  "viewports": [
+    {
+      "name": "desktop",
+      "viewport": {
+        "width": 1440,
+        "height": 980
+      },
+      "screenshotPath": "artifacts/visual-smoke/dialogue/desktop.png"
+    },
+    {
+      "name": "tablet",
+      "viewport": {
+        "width": 1024,
+        "height": 900
+      },
+      "screenshotPath": "artifacts/visual-smoke/dialogue/tablet.png"
+    },
+    {
+      "name": "tablet-touch",
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "screenshotPath": "artifacts/visual-smoke/dialogue/tablet-touch.png"
+    },
+    {
+      "name": "mobile-390",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshotPath": "artifacts/visual-smoke/dialogue/mobile-390-initial.png",
+      "captures": {
+        "initial": {
+          "screenshotPath": "artifacts/visual-smoke/dialogue/mobile-390-initial.png",
+          "scrollMetrics": {
+            "windowScrollY": 0,
+            "docScrollTop": 0,
+            "bodyScrollTop": 0,
+            "shellScrollTop": 0,
+            "docScrollHeight": 844,
+            "docClientHeight": 844,
+            "bodyScrollHeight": 844,
+            "bodyClientHeight": 844,
+            "shellScrollHeight": 1708,
+            "shellClientHeight": 844
+          }
+        },
+        "composer": {
+          "screenshotPath": "artifacts/visual-smoke/dialogue/mobile-390-composer.png",
+          "scrollMetrics": {
+            "windowScrollY": 0,
+            "docScrollTop": 0,
+            "bodyScrollTop": 0,
+            "shellScrollTop": 864,
+            "docScrollHeight": 844,
+            "docClientHeight": 844,
+            "bodyScrollHeight": 844,
+            "bodyClientHeight": 844,
+            "shellScrollHeight": 1708,
+            "shellClientHeight": 844
+          }
+        }
+      }
+    },
+    {
+      "name": "mobile-360",
+      "viewport": {
+        "width": 360,
+        "height": 740
+      },
+      "screenshotPath": "artifacts/visual-smoke/dialogue/mobile-360-initial.png",
+      "captures": {
+        "initial": {
+          "screenshotPath": "artifacts/visual-smoke/dialogue/mobile-360-initial.png",
+          "scrollMetrics": {
+            "windowScrollY": 0,
+            "docScrollTop": 0,
+            "bodyScrollTop": 0,
+            "shellScrollTop": 0,
+            "docScrollHeight": 740,
+            "docClientHeight": 740,
+            "bodyScrollHeight": 740,
+            "bodyClientHeight": 740,
+            "shellScrollHeight": 1676,
+            "shellClientHeight": 740
+          }
+        },
+        "composer": {
+          "screenshotPath": "artifacts/visual-smoke/dialogue/mobile-360-composer.png",
+          "scrollMetrics": {
+            "windowScrollY": 0,
+            "docScrollTop": 0,
+            "bodyScrollTop": 0,
+            "shellScrollTop": 936,
+            "docScrollHeight": 740,
+            "docClientHeight": 740,
+            "bodyScrollHeight": 740,
+            "bodyClientHeight": 740,
+            "shellScrollHeight": 1676,
+            "shellClientHeight": 740
+          }
+        }
+      }
+    },
+    {
+      "name": "mobile-320",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "screenshotPath": "artifacts/visual-smoke/dialogue/mobile-320-initial.png",
+      "captures": {
+        "initial": {
+          "screenshotPath": "artifacts/visual-smoke/dialogue/mobile-320-initial.png",
+          "scrollMetrics": {
+            "windowScrollY": 0,
+            "docScrollTop": 0,
+            "bodyScrollTop": 0,
+            "shellScrollTop": 0,
+            "docScrollHeight": 740,
+            "docClientHeight": 740,
+            "bodyScrollHeight": 740,
+            "bodyClientHeight": 740,
+            "shellScrollHeight": 1676,
+            "shellClientHeight": 740
+          }
+        },
+        "composer": {
+          "screenshotPath": "artifacts/visual-smoke/dialogue/mobile-320-composer.png",
+          "scrollMetrics": {
+            "windowScrollY": 0,
+            "docScrollTop": 0,
+            "bodyScrollTop": 0,
+            "shellScrollTop": 936,
+            "docScrollHeight": 740,
+            "docClientHeight": 740,
+            "bodyScrollHeight": 740,
+            "bodyClientHeight": 740,
+            "shellScrollHeight": 1676,
+            "shellClientHeight": 740
+          }
+        }
+      }
+    },
+    {
+      "name": "mobile-touch-390",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshotPath": "artifacts/visual-smoke/dialogue/mobile-touch-390-initial.png",
+      "captures": {
+        "initial": {
+          "screenshotPath": "artifacts/visual-smoke/dialogue/mobile-touch-390-initial.png",
+          "scrollMetrics": {
+            "windowScrollY": 0,
+            "docScrollTop": 0,
+            "bodyScrollTop": 0,
+            "shellScrollTop": 0,
+            "docScrollHeight": 844,
+            "docClientHeight": 844,
+            "bodyScrollHeight": 844,
+            "bodyClientHeight": 844,
+            "shellScrollHeight": 1708,
+            "shellClientHeight": 844
+          }
+        },
+        "composer": {
+          "screenshotPath": "artifacts/visual-smoke/dialogue/mobile-touch-390-composer.png",
+          "scrollMetrics": {
+            "windowScrollY": 0,
+            "docScrollTop": 0,
+            "bodyScrollTop": 0,
+            "shellScrollTop": 864,
+            "docScrollHeight": 844,
+            "docClientHeight": 844,
+            "bodyScrollHeight": 844,
+            "bodyClientHeight": 844,
+            "shellScrollHeight": 1708,
+            "shellClientHeight": 844
+          }
+        }
+      }
+    }
+  ],
+  "interactionScenarios": [
+    {
+      "name": "synthesis-pending-focus",
+      "passed": true
+    },
+    {
+      "name": "synthesis-stale-completion",
+      "passed": true
+    },
+    {
+      "name": "roundtable-drawer-focus-return",
+      "passed": true
+    },
+    {
+      "name": "empty-root-pending-state",
+      "passed": true,
+      "screenshot": "artifacts/visual-smoke/dialogue/desktop-pending-empty-root.png"
+    },
+    {
+      "name": "next-step-choice-dock-layout",
+      "passed": true,
+      "screenshots": {
+        "desktop": "artifacts/visual-smoke/dialogue/desktop-choice-dock.png",
+        "mobile": "artifacts/visual-smoke/dialogue/mobile-320-choice-dock.png"
+      }
+    },
+    {
+      "name": "retrieval-debug-preview",
+      "passed": true,
+      "screenshots": {
+        "desktop": "artifacts/visual-smoke/dialogue/desktop-retrieval-debug.png",
+        "mobile": "artifacts/visual-smoke/dialogue/mobile-360-retrieval-debug.png"
+      }
+    },
+    {
+      "name": "growth-perspective-flow",
+      "passed": true,
+      "screenshots": {
+        "desktop": "artifacts/visual-smoke/dialogue/desktop-growth-perspectives.png",
+        "mobile-390": "artifacts/visual-smoke/dialogue/mobile-390-growth-perspectives.png",
+        "mobile-320": "artifacts/visual-smoke/dialogue/mobile-320-growth-perspectives.png"
+      }
+    }
+  ]
+}
