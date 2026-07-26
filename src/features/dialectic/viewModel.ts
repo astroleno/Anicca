@@ -29,6 +29,7 @@ export type DialogueStageNode = {
   kind: AniccaNode["kind"];
   branchType?: BranchType;
   displayRole?: "node" | "synthesis-record";
+  isGrowthPerspective?: boolean;
   relation: "focus" | "ancestor" | "child" | "source";
   // Seed coordinates define the default composition before per-snapshot drag state takes over.
   seedX: number;
@@ -477,6 +478,35 @@ function getFallbackChildPosition(index: number, count: number): StageSeed {
   };
 }
 
+function getGrowthChildPosition(index: number, count: number): StageSeed {
+  if (count <= 1) {
+    return { x: 50, y: 72 };
+  }
+
+  if (count === 2) {
+    return index === 0 ? { x: 20, y: 72 } : { x: 80, y: 72 };
+  }
+
+  if (count === 3) {
+    return [
+      { x: 50, y: 65 },
+      { x: 20, y: 86 },
+      { x: 80, y: 86 }
+    ][index];
+  }
+
+  if (count === 4) {
+    return [
+      { x: 20, y: 65 },
+      { x: 80, y: 65 },
+      { x: 20, y: 88 },
+      { x: 80, y: 88 }
+    ][index];
+  }
+
+  return getFallbackChildPosition(index, count);
+}
+
 function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStageNode[] {
   if (!focusNodeId || !graph.nodes[focusNodeId]) {
     return [];
@@ -497,6 +527,7 @@ function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStag
       summary: ancestor.meta?.summary,
       kind: ancestor.kind,
       branchType: ancestor.branchType,
+      isGrowthPerspective: Boolean(ancestor.meta?.growth),
       relation: "ancestor",
       seedX: 50,
       seedY: preset.ancestorStartY + index * preset.ancestorStepY
@@ -510,6 +541,7 @@ function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStag
     summary: focusNode.meta?.summary,
     kind: focusNode.kind,
     branchType: focusNode.branchType,
+    isGrowthPerspective: Boolean(focusNode.meta?.growth),
     displayRole: focusNode.kind === "assistant" && focusNode.branchType === "合" ? "synthesis-record" : "node",
     relation: "focus",
     seedX: preset.focus.x,
@@ -531,6 +563,7 @@ function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStag
         summary: source.meta?.summary,
         kind: source.kind,
         branchType: source.branchType,
+        isGrowthPerspective: Boolean(source.meta?.growth),
         relation: "source",
         seedX: sourcePosition.x,
         seedY: sourcePosition.y
@@ -539,6 +572,10 @@ function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStag
   }
 
   const childIds = getDisplayChildren(graph, focusNode);
+  const growthChildren = childIds.filter((childId) => {
+    const child = graph.nodes[childId];
+    return Boolean(child.meta?.growth) && !child.branchType;
+  });
   childIds.forEach((childId, index) => {
     const child = graph.nodes[childId];
     let position: StageSeed | null = null;
@@ -547,7 +584,12 @@ function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStag
       position =
         child.branchType === "正" ? preset.childPositions[0] :
         child.branchType === "反" ? preset.childPositions[1] :
-        preset.childPositions[2] || null;
+        child.branchType === "合" ? preset.childPositions[2] || null :
+        null;
+    }
+
+    if (!position && child.meta?.growth && !child.branchType) {
+      position = getGrowthChildPosition(growthChildren.indexOf(childId), growthChildren.length);
     }
 
     if (!position) {
@@ -561,6 +603,7 @@ function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStag
       summary: child.meta?.summary,
       kind: child.kind,
       branchType: child.branchType,
+      isGrowthPerspective: Boolean(child.meta?.growth),
       relation: "child",
       seedX: position.x,
       seedY: position.y

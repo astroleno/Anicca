@@ -1,7 +1,7 @@
 {
-  "baseUrl": "http://127.0.0.1:3211",
+  "baseUrl": "http://127.0.0.1:3290",
   "serverMode": "start",
-  "generatedAt": "2026-07-26T12:26:23.126Z",
+  "generatedAt": "2026-07-26T14:09:34.341Z",
   "viewports": [
     {
       "name": "desktop",
@@ -229,6 +229,158 @@
         "desktop": "artifacts/visual-smoke/dialogue/desktop-growth-perspectives.png",
         "mobile-390": "artifacts/visual-smoke/dialogue/mobile-390-growth-perspectives.png",
         "mobile-320": "artifacts/visual-smoke/dialogue/mobile-320-growth-perspectives.png"
+      },
+      "stageNodeChecks": {
+        "desktop": {
+          "nodeCount": 5,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-user_ms1vjqx4_y0bhrb",
+              "left": 617.11376953125,
+              "right": 794.07373046875,
+              "top": 305.4731140136719,
+              "bottom": 482.43310546875,
+              "width": 176.9599609375,
+              "height": 176.95999145507812
+            },
+            {
+              "testId": "dialogue-stage-node-asst_ms1vjqx4_pr5jxc",
+              "left": 345.46875,
+              "right": 495.46875,
+              "top": 494.5625,
+              "bottom": 626.5625,
+              "width": 150,
+              "height": 132
+            },
+            {
+              "testId": "dialogue-stage-node-asst_ms1vjqx4_uwe0i1",
+              "left": 915.71875,
+              "right": 1065.71875,
+              "top": 494.5625,
+              "bottom": 626.5625,
+              "width": 150,
+              "height": 132
+            },
+            {
+              "testId": "dialogue-stage-node-asst_ms1vjqx4_cam6ku",
+              "left": 345.46875,
+              "right": 495.46875,
+              "top": 647.828125,
+              "bottom": 779.828125,
+              "width": 150,
+              "height": 132
+            },
+            {
+              "testId": "dialogue-stage-node-asst_ms1vjqx4_56cufc",
+              "left": 915.71875,
+              "right": 1065.71875,
+              "top": 647.828125,
+              "bottom": 779.828125,
+              "width": 150,
+              "height": 132
+            }
+          ]
+        },
+        "mobile-390": {
+          "nodeCount": 5,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-user_ms1vjrtw_oj0824",
+              "left": 126.68000030517578,
+              "right": 263.3200149536133,
+              "top": 158.96124267578125,
+              "bottom": 295.60125732421875,
+              "width": 136.6400146484375,
+              "height": 136.6400146484375
+            },
+            {
+              "testId": "dialogue-stage-node-asst_ms1vjrtw_39z53e",
+              "left": 29.1875,
+              "right": 141.1875,
+              "top": 360.625,
+              "bottom": 464.625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-asst_ms1vjrtw_sql8sp",
+              "left": 248.796875,
+              "right": 360.796875,
+              "top": 360.625,
+              "bottom": 464.625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-asst_ms1vjrtw_3lo6sp",
+              "left": 29.1875,
+              "right": 141.1875,
+              "top": 531.140625,
+              "bottom": 635.140625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-asst_ms1vjrtw_wgn9g8",
+              "left": 248.796875,
+              "right": 360.796875,
+              "top": 531.140625,
+              "bottom": 635.140625,
+              "width": 112,
+              "height": 104
+            }
+          ]
+        },
+        "mobile-320": {
+          "nodeCount": 5,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-user_ms1vjsvf_6jylf5",
+              "left": 91.68000030517578,
+              "right": 228.32001495361328,
+              "top": 47.86749267578125,
+              "bottom": 184.50750732421875,
+              "width": 136.6400146484375,
+              "height": 136.6400146484375
+            },
+            {
+              "testId": "dialogue-stage-node-asst_ms1vjsvf_70ba3w",
+              "left": 15.1875,
+              "right": 127.1875,
+              "top": 225.078125,
+              "bottom": 329.078125,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-asst_ms1vjsvg_d5225e",
+              "left": 192.796875,
+              "right": 304.796875,
+              "top": 225.078125,
+              "bottom": 329.078125,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-asst_ms1vjsvg_i8wrvs",
+              "left": 15.1875,
+              "right": 127.1875,
+              "top": 373.109375,
+              "bottom": 477.109375,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-asst_ms1vjsvg_s05x66",
+              "left": 192.796875,
+              "right": 304.796875,
+              "top": 373.109375,
+              "bottom": 477.109375,
+              "width": 112,
+              "height": 104
+            }
+          ]
+        }
       }
     }
   ]

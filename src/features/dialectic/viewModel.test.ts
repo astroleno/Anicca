@@ -1,5 +1,7 @@
 import { BranchGraphStore } from "@/store/branchGraph";
 import { deriveDialogueView } from "@/features/dialectic/viewModel";
+import { projectGrowthSessionToGraph } from "@/features/growth/graphProjection";
+import { runGrowthSession } from "@/features/growth/orchestrator";
 
 describe("deriveDialogueView", () => {
   it("uses lineageParentId for synthesis breadcrumb and source projection", () => {
@@ -130,6 +132,21 @@ describe("deriveDialogueView", () => {
       preview: "主线收束",
       summary: "主线收束"
     });
+  });
+
+  it("assigns a distinct stage seed to every growth response and synthesis", () => {
+    const store = new BranchGraphStore();
+    const session = runGrowthSession({ text: "也许要换个角度继续推进", requestId: "growth_stage_layout" });
+    const projection = projectGrowthSessionToGraph(store, session);
+
+    const view = deriveDialogueView(store.getGraph(), projection.userNodeId);
+    const growthNodeIds = [...projection.responseNodeIds, projection.synthesisNodeId].filter(
+      (nodeId): nodeId is string => Boolean(nodeId)
+    );
+    const growthNodes = view.stageNodes.filter((node) => growthNodeIds.includes(node.id));
+
+    expect(growthNodes).toHaveLength(growthNodeIds.length);
+    expect(new Set(growthNodes.map((node) => `${node.seedX}:${node.seedY}`)).size).toBe(growthNodeIds.length);
   });
 
   it("does not render synthesis as a permanent third stage child when its parent user is focused", () => {

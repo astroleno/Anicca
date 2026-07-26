@@ -2091,6 +2091,11 @@
     min-height: 58vh;
   }
 
+  .stagePanel[data-layout="growth"],
+  .stagePanel[data-layout="growth"] .stageCanvas {
+    min-height: 94vh;
+  }
+
   .stageViewport {
     inset: 18px 18px 52px;
     touch-action: pan-y;

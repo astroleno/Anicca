@@ -56,6 +56,7 @@ const NODE_MIN_X_PERCENT = 12;
 const NODE_MAX_X_PERCENT = 88;
 const NODE_MIN_Y_PERCENT = 12;
 const NODE_MAX_Y_PERCENT = 84;
+const GROWTH_NODE_MAX_Y_PERCENT = 90;
 
 const RELATION_LABELS: Record<DialogueStageNode["relation"], string> = {
   focus: "当前焦点",
@@ -68,10 +69,10 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
-function clampNodePosition(position: StagePoint) {
+function clampNodePosition(position: StagePoint, maxY = NODE_MAX_Y_PERCENT) {
   return {
     x: clamp(position.x, NODE_MIN_X_PERCENT, NODE_MAX_X_PERCENT),
-    y: clamp(position.y, NODE_MIN_Y_PERCENT, NODE_MAX_Y_PERCENT)
+    y: clamp(position.y, NODE_MIN_Y_PERCENT, maxY)
   };
 }
 
@@ -122,6 +123,7 @@ export function BubbleStage({
   const canPanStage = nodes.length > 0;
   const hasThesis = nodes.some((node) => node.branchType === "正");
   const hasAntithesis = nodes.some((node) => node.branchType === "反");
+  const hasGrowthPerspectives = nodes.some((node) => node.isGrowthPerspective);
   const hasSynthesisRecord = Boolean(convergenceEventId) || nodes.some((node) => node.branchType === "合");
   const relationshipHint = isCoarsePointer
     ? hasSynthesisRecord
@@ -161,7 +163,10 @@ export function BubbleStage({
   }, []);
 
   const getNodePosition = (node: DialogueStageNode): StagePoint =>
-    clampNodePosition(stageLayout?.nodePositions[node.id] || { x: node.seedX, y: node.seedY });
+    clampNodePosition(
+      stageLayout?.nodePositions[node.id] || { x: node.seedX, y: node.seedY },
+      node.isGrowthPerspective ? GROWTH_NODE_MAX_Y_PERCENT : NODE_MAX_Y_PERCENT
+    );
 
   const setTrackPanPreview = (pan: StagePan) => {
     const track = trackRef.current;
@@ -424,6 +429,7 @@ export function BubbleStage({
       className={styles.stagePanel}
       aria-labelledby="dialogue-stage-heading"
       data-testid="dialogue-stage"
+      data-layout={hasGrowthPerspectives ? "growth" : undefined}
     >
       <div className={styles.stageHeader}>
         <p className={styles.eyebrow}>舞台</p>

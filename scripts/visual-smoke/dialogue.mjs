@@ -1435,6 +1435,7 @@ async function ensureGrowthPerspectiveFlow(browser) {
     { name: "mobile-320", viewport: { width: 320, height: 740 }, fullPage: true }
   ];
   const screenshots = {};
+  const stageNodeChecks = {};
 
   for (const scenario of scenarios) {
     const { context, page, pageIssues } = await createScenarioPage(browser, createEmptyWorkspace(), {
@@ -1453,11 +1454,69 @@ async function ensureGrowthPerspectiveFlow(browser) {
       throw new Error(`Artwork perspective target is below 44px on ${scenario.name}: ${JSON.stringify(growthButtonBox)}`);
     }
 
-    await growthButton.focus();
-    await ensureActiveElement(page, { text: "画作视角" });
     await growthButton.click();
     await page.getByRole("status").filter({ hasText: "画作视角已生成：只回应当前事件，不写长期记忆。" }).waitFor();
     await page.getByTestId("dialogue-sidebar").getByRole("button", { name: /画作合并/ }).waitFor();
+    const stage = page.getByTestId("dialogue-stage");
+    const growthNodeTestIds = await stage.locator('[data-testid^="dialogue-stage-node-"]').evaluateAll((nodes) =>
+      nodes.map((node) => node.getAttribute("data-testid")).filter((testId) => Boolean(testId))
+    );
+    if (growthNodeTestIds.length < 5) {
+      throw new Error(`Growth stage did not render every local perspective on ${scenario.name}: ${JSON.stringify(growthNodeTestIds)}`);
+    }
+    const nodeBoxes = await stage.locator('[data-testid^="dialogue-stage-node-"]').evaluateAll((nodes) =>
+      nodes.map((node) => {
+        const rect = node.getBoundingClientRect();
+        return {
+          testId: node.getAttribute("data-testid"),
+          left: rect.left,
+          right: rect.right,
+          top: rect.top,
+          bottom: rect.bottom,
+          width: rect.width,
+          height: rect.height
+        };
+      })
+    );
+    for (let leftIndex = 0; leftIndex < nodeBoxes.length; leftIndex += 1) {
+      for (let rightIndex = leftIndex + 1; rightIndex < nodeBoxes.length; rightIndex += 1) {
+        const left = nodeBoxes[leftIndex];
+        const right = nodeBoxes[rightIndex];
+        const overlaps =
+          left.left < right.right &&
+          left.right > right.left &&
+          left.top < right.bottom &&
+          left.bottom > right.top;
+        if (overlaps) {
+          throw new Error(`Growth stage nodes overlap on ${scenario.name}: ${JSON.stringify({ left, right })}`);
+        }
+      }
+    }
+    stageNodeChecks[scenario.name] = {
+      nodeCount: nodeBoxes.length,
+      nodes: nodeBoxes
+    };
+
+    const rootTestId = growthNodeTestIds[0];
+    for (const testId of growthNodeTestIds) {
+      const node = page.getByTestId(testId);
+      await node.focus();
+      await ensureActiveElement(page, { testId });
+      await node.click();
+      if (testId !== rootTestId) {
+        await page.waitForFunction(([expectedRootTestId, expectedSelectedTestId]) => {
+          const stageNodeTestIds = [...document.querySelectorAll('[data-testid^="dialogue-stage-node-"]')]
+            .map((node) => node.getAttribute("data-testid"));
+          return stageNodeTestIds.length === 2 &&
+            stageNodeTestIds.includes(expectedRootTestId) &&
+            stageNodeTestIds.includes(expectedSelectedTestId);
+        }, [rootTestId, testId]);
+        await page.getByTestId(rootTestId).click();
+        await page.waitForFunction((expectedTestIds) =>
+          expectedTestIds.every((expectedTestId) => document.querySelector(`[data-testid="${expectedTestId}"]`)),
+        growthNodeTestIds);
+      }
+    }
     await ensureNoHorizontalOverflow(page, `growth ${scenario.name}`);
     await assertRegionWidth(composer, scenario.viewport.width, `growth composer ${scenario.name}`);
 
@@ -1479,7 +1538,8 @@ async function ensureGrowthPerspectiveFlow(browser) {
   return {
     name: "growth-perspective-flow",
     passed: true,
-    screenshots
+    screenshots,
+    stageNodeChecks
   };
 }
 

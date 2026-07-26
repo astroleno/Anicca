@@ -108,6 +108,34 @@ describe("BubbleStage", () => {
     expect(screen.getByRole("button", { name: /继续，但是把范围切小一点。.*正方.*下游节点.*先缩范围/ })).toBeInTheDocument();
   });
 
+  it("marks a growth stage and preserves its lower growth layout seed", () => {
+    const nodes: DialogueStageNode[] = [
+      {
+        id: "growth-root",
+        label: "主题",
+        kind: "user",
+        relation: "focus",
+        isGrowthPerspective: true,
+        seedX: 50,
+        seedY: 40
+      },
+      {
+        id: "growth-lower",
+        label: "合并",
+        kind: "assistant",
+        relation: "child",
+        isGrowthPerspective: true,
+        seedX: 80,
+        seedY: 88
+      }
+    ];
+
+    render(<BubbleStage layoutKey="focus:growth" nodes={nodes} focusNodeId="growth-root" onSelect={vi.fn()} />);
+
+    expect(screen.getByTestId("dialogue-stage")).toHaveAttribute("data-layout", "growth");
+    expect(screen.getByTestId("dialogue-stage-node-growth-lower")).toHaveStyle({ top: "88%" });
+  });
+
   it("persists stage pan independently from node positions", () => {
     const nodes: DialogueStageNode[] = [
       {
