@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDefaultModel } from "@/lib/openai/client";
 import { generateText } from "@/lib/openai/generateText";
-import { parseFirstJsonObject } from "@/lib/openai/parseFirstJsonObject";
+import { parseStrictJsonObject } from "@/lib/openai/parseStrictJsonObject";
 import { describeProviderFailure } from "@/lib/openai/providerErrors";
 import { normalizeDialecticLabel, normalizeDialecticSummary } from "@/features/dialectic/outputContract";
 
@@ -88,9 +88,15 @@ function parseSynthesis(value: unknown, rootValue: unknown): SynthesisBranch | n
     return null;
   }
 
+  const text = candidate.text.trim();
+  const summary = normalizeDialecticSummary(candidate.summary);
+  if (!text || !summary) {
+    return null;
+  }
+
   return {
-    text: candidate.text.trim(),
-    summary: normalizeDialecticSummary(candidate.summary),
+    text,
+    summary,
     label: normalizeDialecticLabel(candidate.label, "合流", "合"),
     stance: "合"
   };
@@ -144,7 +150,7 @@ export async function POST(req: NextRequest) {
       maxOutputTokens: 1200
     });
 
-    const parsed = outputText ? parseFirstJsonObject(outputText) : null;
+    const parsed = outputText ? parseStrictJsonObject(outputText) : null;
     if (!parsed) {
       console.warn("/api/synthesis invalid model output", { requestId, outputText: outputText.slice(0, 500) });
       return invalidModelOutput(requestId, "expected synthesis JSON object");

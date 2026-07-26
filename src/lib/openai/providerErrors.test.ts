@@ -69,6 +69,20 @@ describe("describeProviderFailure", () => {
     });
   });
 
+  it.each([
+    { error: { status: 408 }, label: "direct timeout status" },
+    { error: { response: { status: 502 } }, label: "nested bad gateway status" },
+    { error: { status: 503 }, label: "direct service unavailable status" },
+    { error: { response: { statusCode: "504" } }, label: "nested gateway timeout status" }
+  ])("classifies $label as a retryable provider failure", ({ error }) => {
+    configureApiKey();
+
+    expect(describeProviderFailure(error)).toEqual({
+      details: "provider_unreachable",
+      status: 503
+    });
+  });
+
   it("uses a stable runtime fallback for unknown failures", () => {
     configureApiKey();
 

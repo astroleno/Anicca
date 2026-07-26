@@ -19,7 +19,7 @@ export function normalizeDialecticLabel(label: string, fallback: string, redunda
   const firstSegment = compact.split(/[：:，,、\-—|/]/u).find((part) => part.trim());
   const candidate = stripRedundantStanceSuffix((firstSegment || compact).trim(), redundantSuffix);
 
-  if (!/[\u3400-\u9fff]/u.test(candidate) && /^[A-Za-z0-9_+./ ]+$/.test(candidate)) {
+  if (!/[\u3400-\u9fff]/u.test(candidate)) {
     return fallback;
   }
 

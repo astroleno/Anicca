@@ -7,9 +7,12 @@ describe("dialectic output contract", () => {
     expect(normalizeDialecticSummary("  先做小步\n\t再评估  ")).toBe("先做小步 再评估");
   });
 
-  it("falls back when a label is pure ASCII", () => {
+  it("falls back when a label does not contain a Chinese character", () => {
     expect(normalizeDialecticLabel("fold_need", "正向", "正")).toBe("正向");
     expect(normalizeDialecticLabel("A/B plan", "合流", "合")).toBe("合流");
+    expect(normalizeDialecticLabel("   ", "正向", "正")).toBe("正向");
+    expect(normalizeDialecticLabel("✅", "反向", "反")).toBe("反向");
+    expect(normalizeDialecticLabel("!!!", "合流", "合")).toBe("合流");
   });
 
   it("limits labels to eight Unicode characters", () => {

@@ -195,7 +195,7 @@ describe("dialectic routes", () => {
     expect(createResponse).not.toHaveBeenCalled();
   });
 
-  it("accepts a fenced branch JSON object surrounded by prose", async () => {
+  it("rejects a fenced branch JSON object surrounded by prose", async () => {
     createResponse.mockResolvedValue({
       output_text:
         "模型结果如下：\n```json\n{\"thesis\":{\"text\":\"继续\",\"summary\":\"继续推进\",\"label\":\"继续\",\"stance\":\"正\"},\"antithesis\":{\"text\":\"暂停\",\"summary\":\"暂停重构\",\"label\":\"暂停\",\"stance\":\"反\"}}\n```\n请展示。"
@@ -208,8 +208,61 @@ describe("dialectic routes", () => {
       })
     );
 
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toMatchObject({
+      requestId: "req-fenced-branches",
+      error: "invalid_model_output"
+    });
+  });
+
+  it.each([
+    { field: "text", value: " \n\t" },
+    { field: "summary", value: " \n\t" }
+  ])("rejects branches with a blank normalized $field", async ({ field, value }) => {
+    const thesis = { text: "继续", summary: "继续推进", label: "继续", stance: "正" };
+    if (field === "text") {
+      thesis.text = value;
+    } else {
+      thesis.summary = value;
+    }
+    createResponse.mockResolvedValue({
+      output_text: JSON.stringify({
+        thesis,
+        antithesis: { text: "暂停", summary: "暂停重构", label: "暂停", stance: "反" }
+      })
+    });
+
+    const response = await branchesPost(
+      new NextRequest("http://localhost/api/branches", {
+        method: "POST",
+        body: JSON.stringify({ requestId: `req-blank-branch-${field}`, userText: "要不要继续" })
+      })
+    );
+
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toMatchObject({ error: "invalid_model_output" });
+  });
+
+  it("falls back blank and emoji branch labels to Chinese stance labels", async () => {
+    createResponse.mockResolvedValue({
+      output_text: JSON.stringify({
+        thesis: { text: "继续", summary: "继续推进", label: "   ", stance: "正" },
+        antithesis: { text: "暂停", summary: "暂停重构", label: "✅", stance: "反" }
+      })
+    });
+
+    const response = await branchesPost(
+      new NextRequest("http://localhost/api/branches", {
+        method: "POST",
+        body: JSON.stringify({ requestId: "req-non-chinese-branch-labels", userText: "要不要继续" })
+      })
+    );
+
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({ requestId: "req-fenced-branches" });
+    await expect(response.json()).resolves.toMatchObject({
+      thesis: { label: "正向" },
+      antithesis: { label: "反向" }
+    });
   });
 
   it("returns 502 when branches output is not valid JSON", async () => {
@@ -285,7 +338,9 @@ describe("dialectic routes", () => {
 
   it("returns structured synthesis with echoed requestId", async () => {
     createResponse.mockResolvedValue({
-      output_text: "```json\n{\"synthesis\":{\"text\":\"重开主线\",\"summary\":\"主线重开\",\"label\":\"重开\",\"stance\":\"合\"}}\n```"
+      output_text: JSON.stringify({
+        synthesis: { text: "重开主线", summary: "主线重开", label: "重开", stance: "合" }
+      })
     });
 
     const response = await synthesisPost(
@@ -339,6 +394,73 @@ describe("dialectic routes", () => {
       assistant: 继续：继续推进；暂停：暂停重构"
     `);
     expect(createResponse.mock.calls[0][0].input).not.toContain("route must not read synthesis graph payload");
+  });
+
+  it("rejects a fenced synthesis JSON object", async () => {
+    createResponse.mockResolvedValue({
+      output_text: "```json\n{\"synthesis\":{\"text\":\"重开主线\",\"summary\":\"主线重开\",\"label\":\"重开\",\"stance\":\"合\"}}\n```"
+    });
+
+    const response = await synthesisPost(
+      new NextRequest("http://localhost/api/synthesis", {
+        method: "POST",
+        body: JSON.stringify({
+          requestId: "req-fenced-synthesis",
+          thesis: { text: "继续", summary: "继续推进", label: "继续", stance: "正" },
+          antithesis: { text: "暂停", summary: "暂停重构", label: "暂停", stance: "反" }
+        })
+      })
+    );
+
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toMatchObject({
+      requestId: "req-fenced-synthesis",
+      error: "invalid_model_output"
+    });
+  });
+
+  it("rejects synthesis with a blank normalized summary", async () => {
+    createResponse.mockResolvedValue({
+      output_text: JSON.stringify({
+        synthesis: { text: "重开主线", summary: " \n\t", label: "重开", stance: "合" }
+      })
+    });
+
+    const response = await synthesisPost(
+      new NextRequest("http://localhost/api/synthesis", {
+        method: "POST",
+        body: JSON.stringify({
+          requestId: "req-blank-synthesis-summary",
+          thesis: { text: "继续", summary: "继续推进", label: "继续", stance: "正" },
+          antithesis: { text: "暂停", summary: "暂停重构", label: "暂停", stance: "反" }
+        })
+      })
+    );
+
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toMatchObject({ error: "invalid_model_output" });
+  });
+
+  it("falls back pure punctuation synthesis labels to a Chinese label", async () => {
+    createResponse.mockResolvedValue({
+      output_text: JSON.stringify({
+        synthesis: { text: "重开主线", summary: "主线重开", label: "!!!", stance: "合" }
+      })
+    });
+
+    const response = await synthesisPost(
+      new NextRequest("http://localhost/api/synthesis", {
+        method: "POST",
+        body: JSON.stringify({
+          requestId: "req-punctuation-synthesis-label",
+          thesis: { text: "继续", summary: "继续推进", label: "继续", stance: "正" },
+          antithesis: { text: "暂停", summary: "暂停重构", label: "暂停", stance: "反" }
+        })
+      })
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ synthesis: { label: "合流" } });
   });
 
   it("normalizes synthesis labels and summaries for compact UI nodes", async () => {

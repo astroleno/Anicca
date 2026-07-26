@@ -14,6 +14,7 @@ export type ProviderFailure = {
 const STATUS_KEYS = ["status", "statusCode"] as const;
 const TEXT_KEYS = ["message", "name", "type", "code", "status", "statusCode"] as const;
 const NESTED_KEYS = ["cause", "error", "response", "data", "body"] as const;
+const RETRYABLE_PROVIDER_STATUSES = new Set([408, 502, 503, 504]);
 
 function readNumericStatus(value: unknown): number | null {
   if (!value || typeof value !== "object") {
@@ -108,6 +109,10 @@ export function describeProviderFailure(error: unknown): ProviderFailure {
 
   if (status === 429 || /rate.?limit|too many requests|quota|限流|速率限制/i.test(text)) {
     return { details: "provider_rate_limited", status: 429 };
+  }
+
+  if (status !== null && RETRYABLE_PROVIDER_STATUSES.has(status)) {
+    return { details: "provider_unreachable", status: 503 };
   }
 
   if (/fetch failed|network|timeout|econnrefused|enotfound|connection/i.test(text)) {
