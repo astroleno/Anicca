@@ -16,7 +16,7 @@
     "moduleResolution": "Bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
       "@/*": [
@@ -35,8 +35,10 @@
     "src/**/*.tsx",
     "src/**/*.wgsl",
     "next-env.d.ts",
-    ".next/types/**/*.ts"
-, "src/app/combined/page.tsx.backup"  ],
+    ".next/types/**/*.ts",
+    "src/app/combined/page.tsx.backup",
+    ".next/dev/types/**/*.ts"
+  ],
   "exclude": [
     "node_modules",
     "ref/**/*"
