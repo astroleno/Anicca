@@ -19,6 +19,7 @@ type DialogueComposerProps = {
   textareaRef?: Ref<HTMLTextAreaElement>;
   onChange: (value: string) => void;
   onSubmit: () => void;
+  onGrowthSubmit?: () => void;
 };
 
 type DialogueComposerNextStepChoice = {
@@ -48,7 +49,8 @@ export function DialogueComposer({
   errorState,
   textareaRef,
   onChange,
-  onSubmit
+  onSubmit,
+  onGrowthSubmit
 }: DialogueComposerProps) {
   const targetDescriptionId = useId();
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -185,6 +187,16 @@ export function DialogueComposer({
       </label>
 
       <div className={styles.composerActions}>
+        {onGrowthSubmit ? (
+          <button
+            type="button"
+            className={styles.secondaryButton}
+            disabled={disabled || !value.trim()}
+            onClick={onGrowthSubmit}
+          >
+            画作视角
+          </button>
+        ) : null}
         <button type="submit" className={styles.primaryButton} disabled={disabled || !value.trim()}>
           {pendingAction === "branches" ? "生成中..." : pendingAction === "synthesis" ? "合流中" : actionLabel}
         </button>

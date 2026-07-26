@@ -29,6 +29,8 @@ import {
   DialogueSynthesisAction,
   deriveDialogueView
 } from "@/features/dialectic/viewModel";
+import { projectGrowthSessionToGraph } from "@/features/growth/graphProjection";
+import { runGrowthSession } from "@/features/growth/orchestrator";
 import { RoundtableState } from "@/features/roundtable/types";
 import {
   exportWorkspaceBundle,
@@ -937,6 +939,30 @@ export function DialogueShell() {
     }
   };
 
+  const handleGrowthSubmit = () => {
+    const text = draft.trim();
+    if (!text || hasPendingRequest) {
+      return;
+    }
+
+    try {
+      const requestId = createClientId("growth_req");
+      const session = runGrowthSession({ text, requestId });
+      const projection = projectGrowthSessionToGraph(branchGraphStore, session, {
+        targetAssistantId: view.composerTarget.nodeId
+      });
+
+      setDraft("");
+      setErrorState(null);
+      setWorkspaceStatus("画作视角已生成：只回应当前事件，不写长期记忆。");
+      startTransition(() => {
+        setFocusedNodeId(projection.userNodeId);
+      });
+    } catch (error: unknown) {
+      setErrorState(formatDialogueError(error));
+    }
+  };
+
   const handleSummonRoundtable = async () => {
     if (!view.currentNode || roundtablePending || !workspaceId) {
       return;
@@ -1492,6 +1518,7 @@ export function DialogueShell() {
             textareaRef={composerTextareaRef}
             onChange={handleDraftChange}
             onSubmit={handleSubmit}
+            onGrowthSubmit={handleGrowthSubmit}
           />
         ) : null}
       </div>

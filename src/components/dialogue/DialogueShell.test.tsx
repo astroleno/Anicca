@@ -203,6 +203,93 @@ describe("DialogueShell", () => {
     expect(branchGraphStore.getGraph().entryIds).toEqual(["user_root_1"]);
   });
 
+  it("runs the artwork perspective command locally without calling the branch route", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: /点此输入/ }));
+    await user.type(screen.getByLabelText("输入"), "也许要换个角度继续推进？");
+    const growthButton = screen.getByRole("button", { name: "画作视角" });
+    expect(growthButton).toBeEnabled();
+    await user.click(growthButton);
+
+    await waitFor(() => {
+      expect(branchGraphStore.getGraph().entryIds).toHaveLength(1);
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    const graph = branchGraphStore.getGraph();
+    const rootId = graph.entryIds[0];
+    const growthNodes = Object.values(graph.nodes).filter((node) => node.meta?.growth?.operator);
+
+    expect(graph.nodes[rootId]).toMatchObject({
+      kind: "user",
+      text: "也许要换个角度继续推进？",
+      meta: { growth: { eventId: expect.stringMatching(/^event_growth_req_/) } }
+    });
+    expect(growthNodes.length).toBeGreaterThanOrEqual(3);
+    expect(growthNodes.map((node) => node.meta?.growth?.operator)).toEqual(
+      expect.arrayContaining(["merge_promote"])
+    );
+    expect(Object.values(graph.edges)).toEqual(
+      expect.arrayContaining([expect.objectContaining({ reason: expect.stringMatching(/^growth:/) })])
+    );
+    expect(screen.getByRole("status")).toHaveTextContent("画作视角已生成：只回应当前事件，不写长期记忆。");
+  });
+
+  it("writes artwork perspectives under the selected assistant without reordering canonical siblings", async () => {
+    const user = userEvent.setup();
+    const { rootUserId, thesisId, antithesisId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: thesisId });
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    await user.type(await screen.findByLabelText("输入"), "继续拆小");
+    await user.click(screen.getByRole("button", { name: "画作视角" }));
+
+    await waitFor(() => {
+      expect(branchGraphStore.getGraph().nodes[rootUserId].children).toEqual([thesisId, antithesisId]);
+    });
+
+    const graph = branchGraphStore.getGraph();
+    const growthUser = Object.values(graph.nodes).find((node) => node.kind === "user" && node.text === "继续拆小");
+    expect(growthUser?.parents).toEqual([thesisId]);
+    expect(Object.values(graph.edges)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ from: thesisId, to: growthUser?.id, reason: "continue" }),
+        expect.objectContaining({ from: growthUser?.id, reason: expect.stringMatching(/^growth:/) })
+      ])
+    );
+  });
+
+  it("returns from artwork perspectives to canonical choices without leaving pending state", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    await user.type(await screen.findByLabelText("输入"), "换一个角度");
+    await user.click(screen.getByRole("button", { name: "画作视角" }));
+    await waitFor(() => {
+      expect(useDialogueUiStore.getState().focusedNodeId).not.toBe(rootUserId);
+    });
+
+    await user.click(
+      within(screen.getByTestId("dialogue-sidebar")).getByRole("button", { name: /要不要继续这个项目/ })
+    );
+
+    expect(screen.getByTestId("dialogue-decision-context")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /继续推进正方/ })).toBeEnabled();
+    expect(useDialogueUiStore.getState().pending).toEqual({ branches: null, synthesis: null });
+    expect(screen.getByText("画作视角")).toBeInTheDocument();
+  });
+
   it("locks the /api/branches request body for parent-context continuations", async () => {
     const user = userEvent.setup();
     const { thesisId } = seedPair();

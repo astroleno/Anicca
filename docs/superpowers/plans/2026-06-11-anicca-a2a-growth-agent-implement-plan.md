@@ -288,17 +288,17 @@ This keeps existing retrieval and export paths compatible while allowing later g
 - [x] Run targeted growth tests.
 - [x] Run existing dialectic tests to confirm no regression.
 - [x] Run `npm run lint`.
-- [ ] Run `npm test`.
+- [x] Run `npm test`.
 - [ ] Run `npm run test:visual-dialogue` if `/dialogue` UI changes.
 - [x] Document any deferred product decisions in this plan before closing.
 
 ### Verification Notes
 
-- `npm test -- src/features/growth src/features/retrieval/workspaceGraphQuery.test.ts src/components/dialogue/DialogueShell.test.tsx` passed: 8 files, 67 tests.
-- `npm test -- src/store/branchGraph.test.ts src/features/dialectic src/components/dialogue/DialogueShell.test.tsx` passed: 4 files, 54 tests.
+- `npx vitest run src/features/growth/*.test.ts src/features/retrieval/workspaceGraphQuery.test.ts src/store/branchGraph.test.ts` passed: 9 files, 60 tests.
+- Mainline targeted regression passed: 13 files, 127 tests.
+- `npm test` passed: 28 files, 221 tests.
 - `npm run lint` passed with 36 existing warnings and no errors.
-- `npm test` is currently blocked by an unrelated dirty-worktree `/newframe` smoke failure: `src/app/__tests__/entrypoint-smoke.test.tsx` expects “旧实验入口”, but `src/app/newframe/page.tsx` only renders the legacy canvas unless `?lab=1`.
-- `npm run test:visual-dialogue` is blocked by local environment: Playwright Chromium v1217 is missing, and `npx playwright install chromium` failed during extraction with `ENOSPC: no space left on device` while the volume had about 488MB free.
+- Growth visual smoke is scheduled after the production build gate in the mainline release closeout; the checkbox remains open until its artifacts are reviewed.
 
 ---
 

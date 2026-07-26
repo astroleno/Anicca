@@ -373,7 +373,7 @@ async function discardOutputDir(tempOutputDir) {
 function rebaseArtifactPaths(value, tempOutputDir) {
   if (typeof value === "string") {
     return value.startsWith(tempOutputDir)
-      ? `${finalOutputDir}${value.slice(tempOutputDir.length)}`
+      ? `${path.relative(repoRoot, finalOutputDir)}${value.slice(tempOutputDir.length)}`
       : value;
   }
 
@@ -1428,6 +1428,61 @@ async function ensureRetrievalDebugPreview(browser) {
   };
 }
 
+async function ensureGrowthPerspectiveFlow(browser) {
+  const scenarios = [
+    { name: "desktop", viewport: { width: 1440, height: 980 }, fullPage: false },
+    { name: "mobile-390", viewport: { width: 390, height: 844 }, fullPage: true },
+    { name: "mobile-320", viewport: { width: 320, height: 740 }, fullPage: true }
+  ];
+  const screenshots = {};
+
+  for (const scenario of scenarios) {
+    const { context, page, pageIssues } = await createScenarioPage(browser, createEmptyWorkspace(), {
+      viewport: scenario.viewport,
+      hasTouch: scenario.name.startsWith("mobile"),
+      isMobile: scenario.name.startsWith("mobile")
+    });
+    const composer = page.getByTestId("dialogue-composer");
+
+    await page.getByRole("button", { name: /点此输入/ }).click();
+    await composer.getByLabel("输入").fill("也许要换个角度继续推进？");
+    const growthButton = composer.getByRole("button", { name: "画作视角" });
+    await growthButton.waitFor();
+    const growthButtonBox = await growthButton.boundingBox();
+    if (!growthButtonBox || growthButtonBox.width < 44 || growthButtonBox.height < 44) {
+      throw new Error(`Artwork perspective target is below 44px on ${scenario.name}: ${JSON.stringify(growthButtonBox)}`);
+    }
+
+    await growthButton.focus();
+    await ensureActiveElement(page, { text: "画作视角" });
+    await growthButton.click();
+    await page.getByRole("status").filter({ hasText: "画作视角已生成：只回应当前事件，不写长期记忆。" }).waitFor();
+    await page.getByTestId("dialogue-sidebar").getByRole("button", { name: /画作合并/ }).waitFor();
+    await ensureNoHorizontalOverflow(page, `growth ${scenario.name}`);
+    await assertRegionWidth(composer, scenario.viewport.width, `growth composer ${scenario.name}`);
+
+    if (scenario.name.startsWith("mobile")) {
+      await composer.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(60);
+      await ensureMobileComposerSingleColumn(page, `growth ${scenario.name}`);
+      await ensureMobileComposerDoesNotCoverLineage(page);
+      await ensureMobileComposerDoesNotCoverPanelActions(page);
+    }
+
+    const screenshotPath = path.join(outputDir, `${scenario.name}-growth-perspectives.png`);
+    await page.screenshot({ path: screenshotPath, fullPage: scenario.fullPage });
+    screenshots[scenario.name] = screenshotPath;
+    assertNoPageIssues(pageIssues, `growth perspectives ${scenario.name}`);
+    await context.close();
+  }
+
+  return {
+    name: "growth-perspective-flow",
+    passed: true,
+    screenshots
+  };
+}
+
 async function runInteractionScenarios(browser) {
   return [
     await ensureSynthesisPendingFocusFlow(browser),
@@ -1435,7 +1490,8 @@ async function runInteractionScenarios(browser) {
     await ensureRoundtableDrawerReturnsFocus(browser),
     await ensureEmptyRootPendingState(browser),
     await ensureNextStepChoiceDockLayout(browser),
-    await ensureRetrievalDebugPreview(browser)
+    await ensureRetrievalDebugPreview(browser),
+    await ensureGrowthPerspectiveFlow(browser)
   ];
 }
 
