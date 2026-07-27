@@ -2,11 +2,11 @@
 
 Date: 2026-07-26
 
-Validated source commit: `b1652e8cf74ad860f577aa4970ca9667182b3281`
+Validated source commit: `e65a07238f9ea78a75a33cbdbc57ed72616938e0`
 
 Release branch: `codex/anicca-mainline-release-closeout`
 
-Remote validated-source commit: `b1652e8cf74ad860f577aa4970ca9667182b3281` (verified with `git ls-remote` after push)
+Remote validated-source commit: `e65a07238f9ea78a75a33cbdbc57ed72616938e0` (verified with `git ls-remote` after push)
 
 Push status: validated source is pushed to the release branch. This report is a separate evidence-only commit on that same branch.
 
@@ -38,8 +38,8 @@ Pull request status: not created.
 | `git diff --check` | exit 0 |
 | `npm run typecheck` | exit 0, production TypeScript has 0 errors |
 | `npm run typecheck:test` | exit 0, includes all 28 `src` test files and has 0 errors |
-| Corrective targeted Vitest regression | exit 0, 5 files / 68 tests |
-| `npm run check` | exit 0, 28 files / 242 tests; lint has 0 errors |
+| `npm exec vitest run src/features/dialectic/outputContract.test.ts src/lib/openai/providerErrors.test.ts src/app/api/__tests__/dialectic-routes.test.ts src/components/dialogue/BubbleStage.test.tsx src/features/dialectic/viewModel.test.ts` | exit 0, 5 files / 76 tests |
+| `npm run check` | exit 0, 28 files / 244 tests; lint has 0 errors |
 | `npm run build` | exit 0, production build completed |
 | Production visual smoke (Next `start`, isolated loopback port) | exit 0, all desktop/tablet/touch/mobile scenarios completed |
 
@@ -59,14 +59,15 @@ The production smoke summary and current screenshots are under `artifacts/visual
 - `summary.json` records desktop, tablet, touch, 390/360/320 mobile, pending, choice dock, retrieval debug, and Growth perspective scenarios.
 - Growth perspective screenshots cover `desktop-growth-perspectives.png`, `mobile-390-growth-perspectives.png`, and `mobile-320-growth-perspectives.png`; the two mobile images are stage-only captures. Separate `mobile-390-growth-composer.png` and `mobile-320-growth-composer.png` captures preserve the composer evidence.
 - `growth-perspective-flow.stageNodeChecks` records five Growth stage nodes in desktop, 390px mobile, and 320px mobile viewports; their bounding boxes are pairwise non-overlapping. Each node also receives programmatic focus and a click before the scenario capture.
-- `growth-layout-matrix.stageNodeChecks` validates actual, unclipped, pairwise non-overlapping stage boxes for `candidateLimit` 1–4 across desktop, 1024px tablet, and 390px mobile viewports.
+- `growth-layout-matrix.stageNodeChecks` validates actual, unclipped, pairwise non-overlapping stage boxes for `candidateLimit` 1–4 across desktop, 1024px tablet, and 390px/360px/320px mobile viewports. Clipping is measured against the actual `dialogue-stage-viewport` overflow boundary.
+- `growth-wide-layout-compatibility.stageNodeChecks` validates the six-node `candidateLimit=4` stage at 320px after importing a legacy wide-layout workspace and after a real desktop node drag followed by a 320px viewport change.
 - The summary uses repository-relative artifact paths and contains no local absolute paths or provider credentials.
 
 Manual review of the refreshed Growth desktop evidence found all three artwork responses plus the merge node separately rendered and visible. The automated smoke also found no horizontal overflow or inaccessible Growth control.
 
 ## Corrective findings resolved
 
-- Growth children without `branchType` now use dedicated wide and compact layouts. Five-child sessions (four artwork responses plus merge) use a multi-row grid; narrow stages reserve dynamic height for additional rows, and 1024px dense stages reduce card dimensions to preserve gaps.
+- Growth children without `branchType` now use dedicated wide and compact layouts. Five-child sessions (four artwork responses plus merge) use a multi-row grid; narrow stages reserve dynamic height for additional rows, and 1024px dense stages reduce card dimensions to preserve gaps. Legacy top-level persisted coordinates remain wide-only; compact Growth drags and pans persist independently, so imports and desktop edits cannot override responsive compact seeds.
 - Test TypeScript explicitly overrides production test exclusions, includes ambient shader declarations, uses the ES2022 test library, and loads the WebGPU types already supplied by `@types/three`.
 - Branch and synthesis parsers reject blank normalized text/summary; blank, emoji-only, and punctuation-only labels fall back to their Chinese contract label.
 - Provider status `408` and every numeric `500`–`599` status, including recursive `cause` / `response` wrappers, map to the retryable `provider_unreachable` response (`503`) unless a more specific classification applies.
