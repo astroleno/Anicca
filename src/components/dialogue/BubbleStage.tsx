@@ -1,6 +1,6 @@
 "use client";
 
-import { PointerEvent as ReactPointerEvent, useEffect, useRef, useState, type CSSProperties } from "react";
+import { PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { useDialogueUiStore } from "@/features/dialectic/store";
 import { DialogueStageNode } from "@/features/dialectic/viewModel";
 import { StagePan, StagePoint } from "@/types/anicca";
@@ -203,7 +203,7 @@ export function BubbleStage({
     );
   };
 
-  const setTrackPanPreview = (pan: StagePan) => {
+  const setTrackPanPreview = useCallback((pan: StagePan) => {
     const track = trackRef.current;
     if (!track) {
       return;
@@ -211,9 +211,9 @@ export function BubbleStage({
 
     track.style.setProperty("--stage-pan-x", `${pan.x}px`);
     track.style.setProperty("--stage-pan-y", `${pan.y}px`);
-  };
+  }, []);
 
-  const setNodeDragPreview = (nodeId: string, offsetX: number, offsetY: number) => {
+  const setNodeDragPreview = useCallback((nodeId: string, offsetX: number, offsetY: number) => {
     const node = nodeRefs.current[nodeId];
     if (!node) {
       return;
@@ -221,15 +221,20 @@ export function BubbleStage({
 
     node.style.setProperty("--stage-node-drag-x", `${offsetX}px`);
     node.style.setProperty("--stage-node-drag-y", `${offsetY}px`);
-  };
+  }, []);
+
+  const clearNodeDragPreview = useCallback((nodeId: string) => {
+    setNodeDragPreview(nodeId, 0, 0);
+  }, [setNodeDragPreview]);
 
   useEffect(() => {
+    Object.keys(nodeRefs.current).forEach(clearNodeDragPreview);
     setGesture(null);
     livePanRef.current = null;
     didDragRef.current = false;
     suppressClickUntilRef.current = 0;
     activePointerTargetRef.current = null;
-  }, [layoutKey]);
+  }, [clearNodeDragPreview, layoutKey]);
 
   useEffect(() => {
     if (!gesture) {
@@ -282,6 +287,7 @@ export function BubbleStage({
       }
 
       if (gesture.kind === "node") {
+        clearNodeDragPreview(gesture.nodeId);
         const viewport = viewportRef.current;
         const rect = viewport?.getBoundingClientRect();
         const draggedNode = nodes.find((node) => node.id === gesture.nodeId);
@@ -320,11 +326,24 @@ export function BubbleStage({
     window.addEventListener("pointercancel", handlePointerUp);
 
     return () => {
+      if (gesture.kind === "node") {
+        clearNodeDragPreview(gesture.nodeId);
+      }
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
       window.removeEventListener("pointercancel", handlePointerUp);
     };
-  }, [gesture, layoutKey, nodes, setStageNodePosition, setStagePan, stageLayoutMode]);
+  }, [
+    clearNodeDragPreview,
+    gesture,
+    layoutKey,
+    nodes,
+    setNodeDragPreview,
+    setStageNodePosition,
+    setStagePan,
+    setTrackPanPreview,
+    stageLayoutMode
+  ]);
 
   const handleStagePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (!canPanStage || event.button !== 0 || event.target !== event.currentTarget) {

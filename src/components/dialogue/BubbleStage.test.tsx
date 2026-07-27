@@ -246,6 +246,8 @@ describe("BubbleStage", () => {
     };
     expect(layout.nodePositions).toEqual({});
     expect(layout.compact?.nodePositions["growth-merge"]).toEqual({ x: 60, y: 82 });
+    expect(merge.style.getPropertyValue("--stage-node-drag-x")).toBe("0px");
+    expect(merge.style.getPropertyValue("--stage-node-drag-y")).toBe("0px");
   });
 
   it("persists stage pan independently from node positions", () => {

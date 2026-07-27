@@ -1,7 +1,7 @@
 {
   "baseUrl": "http://127.0.0.1:3211",
   "serverMode": "start",
-  "generatedAt": "2026-07-27T02:00:55.004Z",
+  "generatedAt": "2026-07-27T13:55:37.117Z",
   "viewports": [
     {
       "name": "desktop",
@@ -239,7 +239,7 @@
           "nodeCount": 5,
           "nodes": [
             {
-              "testId": "dialogue-stage-node-user_ms2ky84t_bknml0",
+              "testId": "dialogue-stage-node-user_ms3ahc45_5qb3t4",
               "left": 617.11376953125,
               "right": 794.07373046875,
               "top": 305.4731140136719,
@@ -248,7 +248,7 @@
               "height": 176.95999145507812
             },
             {
-              "testId": "dialogue-stage-node-asst_ms2ky84t_z15aye",
+              "testId": "dialogue-stage-node-asst_ms3ahc45_lge1l1",
               "left": 345.46875,
               "right": 495.46875,
               "top": 494.5625,
@@ -257,7 +257,7 @@
               "height": 132
             },
             {
-              "testId": "dialogue-stage-node-asst_ms2ky84t_v71nmu",
+              "testId": "dialogue-stage-node-asst_ms3ahc45_d5sqe0",
               "left": 915.71875,
               "right": 1065.71875,
               "top": 494.5625,
@@ -266,7 +266,7 @@
               "height": 132
             },
             {
-              "testId": "dialogue-stage-node-asst_ms2ky84t_4zfe76",
+              "testId": "dialogue-stage-node-asst_ms3ahc45_4o4l72",
               "left": 345.46875,
               "right": 495.46875,
               "top": 647.828125,
@@ -275,7 +275,7 @@
               "height": 132
             },
             {
-              "testId": "dialogue-stage-node-asst_ms2ky84t_d5rlag",
+              "testId": "dialogue-stage-node-asst_ms3ahc45_r299jn",
               "left": 915.71875,
               "right": 1065.71875,
               "top": 647.828125,
@@ -289,7 +289,7 @@
           "nodeCount": 5,
           "nodes": [
             {
-              "testId": "dialogue-stage-node-user_ms2ky9tg_h9b2c5",
+              "testId": "dialogue-stage-node-user_ms3ahd2f_jy84ah",
               "left": 126.68000030517578,
               "right": 263.3200149536133,
               "top": 158.96124267578125,
@@ -298,7 +298,7 @@
               "height": 136.6400146484375
             },
             {
-              "testId": "dialogue-stage-node-asst_ms2ky9tg_pfy2k4",
+              "testId": "dialogue-stage-node-asst_ms3ahd2f_kinhba",
               "left": 29.1875,
               "right": 141.1875,
               "top": 323.5625,
@@ -307,7 +307,7 @@
               "height": 104
             },
             {
-              "testId": "dialogue-stage-node-asst_ms2ky9th_ukh0z2",
+              "testId": "dialogue-stage-node-asst_ms3ahd2f_lez5t0",
               "left": 248.796875,
               "right": 360.796875,
               "top": 323.5625,
@@ -316,7 +316,7 @@
               "height": 104
             },
             {
-              "testId": "dialogue-stage-node-asst_ms2ky9th_31rz5a",
+              "testId": "dialogue-stage-node-asst_ms3ahd2f_x52zlx",
               "left": 29.1875,
               "right": 141.1875,
               "top": 531.140625,
@@ -325,7 +325,7 @@
               "height": 104
             },
             {
-              "testId": "dialogue-stage-node-asst_ms2ky9th_r5zfuv",
+              "testId": "dialogue-stage-node-asst_ms3ahd2f_35q9rc",
               "left": 248.796875,
               "right": 360.796875,
               "top": 531.140625,
@@ -339,7 +339,7 @@
           "nodeCount": 5,
           "nodes": [
             {
-              "testId": "dialogue-stage-node-user_ms2kybfc_88b7he",
+              "testId": "dialogue-stage-node-user_ms3ahent_hi3df9",
               "left": 91.68000030517578,
               "right": 228.32001495361328,
               "top": 47.86749267578125,
@@ -348,7 +348,7 @@
               "height": 136.6400146484375
             },
             {
-              "testId": "dialogue-stage-node-asst_ms2kybfc_5kmb60",
+              "testId": "dialogue-stage-node-asst_ms3ahent_zt3nv1",
               "left": 15.1875,
               "right": 127.1875,
               "top": 192.90625,
@@ -357,7 +357,7 @@
               "height": 104
             },
             {
-              "testId": "dialogue-stage-node-asst_ms2kybfc_mmaote",
+              "testId": "dialogue-stage-node-asst_ms3ahent_zmzel1",
               "left": 192.796875,
               "right": 304.796875,
               "top": 192.90625,
@@ -366,7 +366,7 @@
               "height": 104
             },
             {
-              "testId": "dialogue-stage-node-asst_ms2kybfc_7ytnnd",
+              "testId": "dialogue-stage-node-asst_ms3ahent_0hp0zo",
               "left": 15.1875,
               "right": 127.1875,
               "top": 373.109375,
@@ -375,7 +375,7 @@
               "height": 104
             },
             {
-              "testId": "dialogue-stage-node-asst_ms2kybfc_ocht0x",
+              "testId": "dialogue-stage-node-asst_ms3ahent_yiqbi5",
               "left": 192.796875,
               "right": 304.796875,
               "top": 373.109375,
@@ -1355,11 +1355,11 @@
             },
             {
               "testId": "dialogue-stage-node-growth_matrix_response_4_1",
-              "left": 45.874839782714844,
-              "right": 157.87484741210938,
-              "top": 525.7969360351562,
-              "bottom": 629.7969360351562,
-              "width": 112.00000762939453,
+              "left": 15.1875,
+              "right": 127.1875,
+              "top": 541.140625,
+              "bottom": 645.140625,
+              "width": 112,
               "height": 104
             },
             {

@@ -1327,6 +1327,31 @@ async function collectVisibleStageNodeBoxes(stage, scenarioName, expectedNodeCou
   return nodeBoxes;
 }
 
+function assertStageNodePositionsMatchBaseline(actualNodes, baselineNodes, scenarioName) {
+  const baselineByTestId = new Map(baselineNodes.map((node) => [node.testId, node]));
+
+  for (const actualNode of actualNodes) {
+    const baselineNode = baselineByTestId.get(actualNode.testId);
+    if (!baselineNode) {
+      throw new Error(`Growth stage baseline is missing ${actualNode.testId} on ${scenarioName}`);
+    }
+
+    const leftDelta = Math.abs(actualNode.left - baselineNode.left);
+    const topDelta = Math.abs(actualNode.top - baselineNode.top);
+    if (leftDelta > 0.01 || topDelta > 0.01) {
+      throw new Error(
+        `Growth stage position diverged from the compact baseline on ${scenarioName}: ${JSON.stringify({
+          testId: actualNode.testId,
+          baseline: { left: baselineNode.left, top: baselineNode.top },
+          actual: { left: actualNode.left, top: actualNode.top },
+          leftDelta,
+          topDelta
+        })}`
+      );
+    }
+  }
+}
+
 async function assertFlowStatusDoesNotCoverStageNodes(page, nodeBoxes, scenarioName) {
   const flowStatus = page.getByTestId("dialogue-flow-status");
   if (!await flowStatus.count()) {
@@ -1769,6 +1794,19 @@ async function ensureGrowthLayoutMatrix(browser) {
 
 async function ensureGrowthWideLayoutCompatibility(browser) {
   const expectedNodeCount = 6;
+  const baseline = await createScenarioPage(browser, createGrowthWorkspace(4), {
+    viewport: { width: 320, height: 740 },
+    hasTouch: true,
+    isMobile: true
+  });
+  const baselineNodeBoxes = await collectVisibleStageNodeBoxes(
+    baseline.page.getByTestId("dialogue-stage"),
+    "Growth compact baseline on mobile-320",
+    expectedNodeCount
+  );
+  assertNoPageIssues(baseline.pageIssues, "Growth compact baseline on mobile-320");
+  await baseline.context.close();
+
   const imported = await createScenarioPage(browser, createGrowthWorkspace(4, { withWideStageLayout: true }), {
     viewport: { width: 320, height: 740 },
     hasTouch: true,
@@ -1780,6 +1818,7 @@ async function ensureGrowthWideLayoutCompatibility(browser) {
     "Growth imported wide layout on mobile-320",
     expectedNodeCount
   );
+  assertStageNodePositionsMatchBaseline(importedNodeBoxes, baselineNodeBoxes, "Growth imported wide layout on mobile-320");
   assertNoPageIssues(imported.pageIssues, "Growth imported wide layout on mobile-320");
   await imported.context.close();
 
@@ -1804,6 +1843,7 @@ async function ensureGrowthWideLayoutCompatibility(browser) {
     "Growth desktop drag then mobile-320",
     expectedNodeCount
   );
+  assertStageNodePositionsMatchBaseline(draggedNodeBoxes, baselineNodeBoxes, "Growth desktop drag then mobile-320");
   assertNoPageIssues(dragged.pageIssues, "Growth desktop drag then mobile-320");
   await dragged.context.close();
 
