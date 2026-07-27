@@ -145,7 +145,10 @@ export function BubbleStage({
   const emptyStageHint = isCoarsePointer
     ? "写下母题，点选节点查看谱系。"
     : "写下母题，让正反开始生成。";
-  const resolvedPan = stageLayout?.pan || DEFAULT_STAGE_PAN;
+  const usesCompactGrowthLayout = isNarrowViewport && hasGrowthPerspectives;
+  const stageLayoutMode = usesCompactGrowthLayout ? "compact" : "wide";
+  const stageLayoutViewport = stageLayoutMode === "compact" ? stageLayout?.compact : stageLayout;
+  const resolvedPan = stageLayoutViewport?.pan || DEFAULT_STAGE_PAN;
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
@@ -190,12 +193,12 @@ export function BubbleStage({
   }, []);
 
   const getNodePosition = (node: DialogueStageNode): StagePoint => {
-    const defaultPosition = isNarrowViewport && node.compactSeedX !== undefined && node.compactSeedY !== undefined
+    const defaultPosition = usesCompactGrowthLayout && node.compactSeedX !== undefined && node.compactSeedY !== undefined
       ? { x: node.compactSeedX, y: node.compactSeedY }
       : { x: node.seedX, y: node.seedY };
 
     return clampNodePosition(
-      stageLayout?.nodePositions[node.id] || defaultPosition,
+      stageLayoutViewport?.nodePositions[node.id] || defaultPosition,
       node.isGrowthPerspective ? GROWTH_NODE_MAX_Y_PERCENT : NODE_MAX_Y_PERCENT
     );
   };
@@ -289,9 +292,9 @@ export function BubbleStage({
             }, draggedNode?.isGrowthPerspective ? GROWTH_NODE_MAX_Y_PERCENT : NODE_MAX_Y_PERCENT)
           : gesture.startPosition;
 
-        setStageNodePosition(layoutKey, gesture.nodeId, nextPosition);
+        setStageNodePosition(layoutKey, gesture.nodeId, nextPosition, stageLayoutMode);
       } else {
-        setStagePan(layoutKey, livePanRef.current || gesture.startPan);
+        setStagePan(layoutKey, livePanRef.current || gesture.startPan, stageLayoutMode);
       }
 
       if (didDragRef.current) {
@@ -321,7 +324,7 @@ export function BubbleStage({
       window.removeEventListener("pointerup", handlePointerUp);
       window.removeEventListener("pointercancel", handlePointerUp);
     };
-  }, [gesture, layoutKey, nodes, setStageNodePosition, setStagePan]);
+  }, [gesture, layoutKey, nodes, setStageNodePosition, setStagePan, stageLayoutMode]);
 
   const handleStagePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (!canPanStage || event.button !== 0 || event.target !== event.currentTarget) {

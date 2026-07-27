@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { StageLayouts, StagePan, StagePoint } from "@/types/anicca";
+import { StageLayoutMode, StageLayouts, StagePan, StagePoint } from "@/types/anicca";
 
 export type PendingSlot = "branches" | "synthesis";
 
@@ -40,8 +40,8 @@ type DialogueUiState = {
   hydrateWorkspace: (state: HydratedWorkspaceState) => void;
   setFocusedNodeId: (nodeId: string | null) => void;
   setComposerParentId: (nodeId: string | null) => void;
-  setStageNodePosition: (layoutKey: string, nodeId: string, position: StagePoint) => void;
-  setStagePan: (layoutKey: string, pan: StagePan) => void;
+  setStageNodePosition: (layoutKey: string, nodeId: string, position: StagePoint, mode?: StageLayoutMode) => void;
+  setStagePan: (layoutKey: string, pan: StagePan, mode?: StageLayoutMode) => void;
   beginPending: (slot: PendingSlot, pending: PendingRequest) => void;
   clearPending: (slot: PendingSlot) => void;
   cancelPendingRequests: () => void;
@@ -71,6 +71,20 @@ function getStageLayoutView(stageLayouts: StageLayouts, layoutKey: string) {
   };
 }
 
+function getStageLayoutViewport(layout: ReturnType<typeof getStageLayoutView>, mode: StageLayoutMode) {
+  if (mode === "compact") {
+    return layout.compact || {
+      pan: { x: 0, y: 0 },
+      nodePositions: {}
+    };
+  }
+
+  return {
+    pan: layout.pan,
+    nodePositions: layout.nodePositions
+  };
+}
+
 export const useDialogueUiStore = create<DialogueUiState>((set, get) => ({
   workspaceId: createClientId("workspace"),
   workspaceSessionId: createClientId("ws"),
@@ -93,31 +107,38 @@ export const useDialogueUiStore = create<DialogueUiState>((set, get) => ({
     }),
   setFocusedNodeId: (nodeId) => set({ focusedNodeId: nodeId }),
   setComposerParentId: (nodeId) => set({ composerParentId: nodeId }),
-  setStageNodePosition: (layoutKey, nodeId, position) =>
+  setStageNodePosition: (layoutKey, nodeId, position, mode = "wide") =>
     set((state) => {
       const currentView = getStageLayoutView(state.stageLayouts, layoutKey);
+      const currentViewport = getStageLayoutViewport(currentView, mode);
+      const nodePositions = {
+        ...currentViewport.nodePositions,
+        [nodeId]: position
+      };
       return {
         stageLayouts: {
           ...state.stageLayouts,
           [layoutKey]: {
             ...currentView,
-            nodePositions: {
-              ...currentView.nodePositions,
-              [nodeId]: position
-            }
+            ...(mode === "compact"
+              ? { compact: { pan: currentViewport.pan, nodePositions } }
+              : { nodePositions })
           }
         }
       };
     }),
-  setStagePan: (layoutKey, pan) =>
+  setStagePan: (layoutKey, pan, mode = "wide") =>
     set((state) => {
       const currentView = getStageLayoutView(state.stageLayouts, layoutKey);
+      const currentViewport = getStageLayoutViewport(currentView, mode);
       return {
         stageLayouts: {
           ...state.stageLayouts,
           [layoutKey]: {
             ...currentView,
-            pan
+            ...(mode === "compact"
+              ? { compact: { pan, nodePositions: currentViewport.nodePositions } }
+              : { pan })
           }
         }
       };

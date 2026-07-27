@@ -57,9 +57,19 @@ export interface StagePan {
   y: number;
 }
 
+export type StageLayoutMode = "wide" | "compact";
+
+export interface StageLayoutViewport {
+  pan: StagePan;
+  nodePositions: Record<string, StagePoint>;
+}
+
 export interface StageLayoutView {
   pan: StagePan;
   nodePositions: Record<string, StagePoint>;
+  // Legacy persisted layouts remain the wide view. Compact coordinates are opt-in
+  // so importing an older workspace falls back to the responsive Growth seeds.
+  compact?: StageLayoutViewport;
 }
 
 export type StageLayouts = Record<string, StageLayoutView>;

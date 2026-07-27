@@ -198,7 +198,7 @@ function createEmptyWorkspace() {
   return workspace;
 }
 
-function createGrowthWorkspace(candidateLimit) {
+function createGrowthWorkspace(candidateLimit, { withWideStageLayout = false } = {}) {
   if (!Number.isInteger(candidateLimit) || candidateLimit < 1 || candidateLimit > 4) {
     throw new Error(`Growth visual fixture requires candidateLimit 1-4, received ${candidateLimit}`);
   }
@@ -273,6 +273,28 @@ function createGrowthWorkspace(candidateLimit) {
       reason: childId === synthesisId ? "growth:merge_promote" : "growth:expand"
     };
   });
+
+  if (withWideStageLayout) {
+    const columns = Math.ceil(childIds.length / 2);
+    const nodePositions = {
+      [rootId]: { x: 50, y: 40 }
+    };
+    childIds.forEach((childId, index) => {
+      const row = Math.floor(index / columns);
+      const column = index % columns;
+      const columnsInRow = row === 0 ? Math.min(columns, childIds.length) : childIds.length - columns;
+      nodePositions[childId] = {
+        x: columnsInRow <= 1 ? 50 : 20 + (60 / (columnsInRow - 1)) * column,
+        y: row === 0 ? 65 : 86
+      };
+    });
+    workspace.stageLayouts = {
+      [`focus:${rootId}|target:root|trail:${rootId}`]: {
+        pan: { x: 18, y: -12 },
+        nodePositions
+      }
+    };
+  }
 
   return workspace;
 }
@@ -1252,9 +1274,9 @@ function assertNoPageIssues(pageIssues, scenarioName) {
 }
 
 async function collectVisibleStageNodeBoxes(stage, scenarioName, expectedNodeCount) {
-  const stageBox = await stage.boundingBox();
-  if (!stageBox) {
-    throw new Error(`Growth stage is not measurable on ${scenarioName}`);
+  const viewportBox = await stage.getByTestId("dialogue-stage-viewport").boundingBox();
+  if (!viewportBox) {
+    throw new Error(`Growth stage viewport is not measurable on ${scenarioName}`);
   }
 
   const nodeBoxes = await stage.locator('[data-testid^="dialogue-stage-node-"]').evaluateAll((nodes) =>
@@ -1278,12 +1300,12 @@ async function collectVisibleStageNodeBoxes(stage, scenarioName, expectedNodeCou
 
   for (const node of nodeBoxes) {
     const clipped =
-      node.left < stageBox.x ||
-      node.right > stageBox.x + stageBox.width ||
-      node.top < stageBox.y ||
-      node.bottom > stageBox.y + stageBox.height;
+      node.left < viewportBox.x ||
+      node.right > viewportBox.x + viewportBox.width ||
+      node.top < viewportBox.y ||
+      node.bottom > viewportBox.y + viewportBox.height;
     if (clipped) {
-      throw new Error(`Growth stage node is clipped on ${scenarioName}: ${JSON.stringify({ stageBox, node })}`);
+      throw new Error(`Growth stage node is clipped on ${scenarioName}: ${JSON.stringify({ viewportBox, node })}`);
     }
   }
 
@@ -1361,6 +1383,21 @@ async function mockDeferredSynthesis(page) {
 }
 
 async function ensureActiveElement(page, expected) {
+  await page.waitForFunction(
+    (target) => {
+      const active = document.activeElement;
+      if (!(active instanceof HTMLElement)) {
+        return false;
+      }
+      return (
+        active.id === target.id ||
+        active.getAttribute("data-testid") === target.testId ||
+        (target.text ? active.textContent?.includes(target.text) : false)
+      );
+    },
+    expected
+  );
+
   const active = await page.evaluate(() => ({
     id: document.activeElement?.id || "",
     testId: document.activeElement?.getAttribute("data-testid") || "",
@@ -1693,7 +1730,9 @@ async function ensureGrowthLayoutMatrix(browser) {
   const scenarios = [
     { name: "desktop", viewport: { width: 1440, height: 980 } },
     { name: "tablet", viewport: { width: 1024, height: 900 } },
-    { name: "mobile-390", viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true }
+    { name: "mobile-390", viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true },
+    { name: "mobile-360", viewport: { width: 360, height: 740 }, hasTouch: true, isMobile: true },
+    { name: "mobile-320", viewport: { width: 320, height: 740 }, hasTouch: true, isMobile: true }
   ];
   const stageNodeChecks = {};
 
@@ -1728,6 +1767,56 @@ async function ensureGrowthLayoutMatrix(browser) {
   };
 }
 
+async function ensureGrowthWideLayoutCompatibility(browser) {
+  const expectedNodeCount = 6;
+  const imported = await createScenarioPage(browser, createGrowthWorkspace(4, { withWideStageLayout: true }), {
+    viewport: { width: 320, height: 740 },
+    hasTouch: true,
+    isMobile: true
+  });
+  const importedStage = imported.page.getByTestId("dialogue-stage");
+  const importedNodeBoxes = await collectVisibleStageNodeBoxes(
+    importedStage,
+    "Growth imported wide layout on mobile-320",
+    expectedNodeCount
+  );
+  assertNoPageIssues(imported.pageIssues, "Growth imported wide layout on mobile-320");
+  await imported.context.close();
+
+  const dragged = await createScenarioPage(browser, createGrowthWorkspace(4), {
+    viewport: { width: 1440, height: 980 }
+  });
+  const draggedStage = dragged.page.getByTestId("dialogue-stage");
+  const dragTarget = draggedStage.locator('[data-testid^="dialogue-stage-node-"]').nth(1);
+  const dragTargetBox = await dragTarget.boundingBox();
+  if (!dragTargetBox) {
+    throw new Error("Growth desktop drag target is not measurable");
+  }
+  await dragged.page.mouse.move(dragTargetBox.x + dragTargetBox.width / 2, dragTargetBox.y + dragTargetBox.height / 2);
+  await dragged.page.mouse.down();
+  await dragged.page.mouse.move(dragTargetBox.x + dragTargetBox.width / 2 + 36, dragTargetBox.y + dragTargetBox.height / 2 - 18);
+  await dragged.page.mouse.up();
+  await dragged.page.setViewportSize({ width: 320, height: 740 });
+  await dragged.page.waitForFunction(() => window.matchMedia("(max-width: 980px)").matches);
+  await dragged.page.waitForTimeout(80);
+  const draggedNodeBoxes = await collectVisibleStageNodeBoxes(
+    draggedStage,
+    "Growth desktop drag then mobile-320",
+    expectedNodeCount
+  );
+  assertNoPageIssues(dragged.pageIssues, "Growth desktop drag then mobile-320");
+  await dragged.context.close();
+
+  return {
+    name: "growth-wide-layout-compatibility",
+    passed: true,
+    stageNodeChecks: {
+      "imported-wide-mobile-320": { nodeCount: importedNodeBoxes.length, nodes: importedNodeBoxes },
+      "desktop-drag-mobile-320": { nodeCount: draggedNodeBoxes.length, nodes: draggedNodeBoxes }
+    }
+  };
+}
+
 async function runInteractionScenarios(browser) {
   return [
     await ensureSynthesisPendingFocusFlow(browser),
@@ -1737,7 +1826,8 @@ async function runInteractionScenarios(browser) {
     await ensureNextStepChoiceDockLayout(browser),
     await ensureRetrievalDebugPreview(browser),
     await ensureGrowthPerspectiveFlow(browser),
-    await ensureGrowthLayoutMatrix(browser)
+    await ensureGrowthLayoutMatrix(browser),
+    await ensureGrowthWideLayoutCompatibility(browser)
   ];
 }
 

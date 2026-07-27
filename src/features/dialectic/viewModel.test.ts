@@ -160,6 +160,7 @@ describe("deriveDialogueView", () => {
     if (candidateLimit === 4) {
       expect(new Set(growthNodes.map((node) => node.seedY)).size).toBeGreaterThan(1);
       expect(new Set(growthNodes.map((node) => node.compactSeedY)).size).toBeGreaterThan(1);
+      expect(growthNodes.map((node) => node.compactSeedY)).toEqual([60, 60, 74, 74, 88]);
     }
   });
 

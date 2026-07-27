@@ -167,6 +167,87 @@ describe("BubbleStage", () => {
     expect(screen.getByTestId("dialogue-stage-node-merge")).toHaveStyle({ left: "50%", top: "88%" });
   });
 
+  it("does not let an imported wide Growth position override the compact seed", () => {
+    stubPointerMode("coarse", true);
+    useDialogueUiStore.setState({
+      stageLayouts: {
+        "focus:growth-import": {
+          pan: { x: 18, y: -12 },
+          nodePositions: {
+            "growth-merge": { x: 80, y: 65 }
+          }
+        }
+      }
+    });
+    const nodes: DialogueStageNode[] = [
+      {
+        id: "growth-root",
+        label: "主题",
+        kind: "user",
+        relation: "focus",
+        isGrowthPerspective: true,
+        seedX: 50,
+        seedY: 40
+      },
+      {
+        id: "growth-merge",
+        label: "合并",
+        kind: "assistant",
+        relation: "child",
+        isGrowthPerspective: true,
+        seedX: 80,
+        seedY: 65,
+        compactSeedX: 50,
+        compactSeedY: 88
+      }
+    ];
+
+    render(<BubbleStage layoutKey="focus:growth-import" nodes={nodes} focusNodeId="growth-root" onSelect={vi.fn()} />);
+
+    expect(screen.getByTestId("dialogue-stage-node-growth-merge")).toHaveStyle({ left: "50%", top: "88%" });
+  });
+
+  it("stores narrow Growth drags separately from the wide layout", () => {
+    stubPointerMode("coarse", true);
+    const nodes: DialogueStageNode[] = [
+      {
+        id: "growth-root",
+        label: "主题",
+        kind: "user",
+        relation: "focus",
+        isGrowthPerspective: true,
+        seedX: 50,
+        seedY: 40
+      },
+      {
+        id: "growth-merge",
+        label: "合并",
+        kind: "assistant",
+        relation: "child",
+        isGrowthPerspective: true,
+        seedX: 80,
+        seedY: 65,
+        compactSeedX: 50,
+        compactSeedY: 88
+      }
+    ];
+
+    render(<BubbleStage layoutKey="focus:growth-compact-drag" nodes={nodes} focusNodeId="growth-root" onSelect={vi.fn()} />);
+
+    mockViewportRect(screen.getByTestId("dialogue-stage-viewport"));
+    const merge = screen.getByTestId("dialogue-stage-node-growth-merge");
+    fireEvent.pointerDown(merge, { button: 0, pointerId: 10, clientX: 200, clientY: 264 });
+    fireEvent.pointerMove(window, { pointerId: 10, clientX: 240, clientY: 246 });
+    fireEvent.pointerUp(window, { pointerId: 10, clientX: 240, clientY: 246 });
+
+    const layout = useDialogueUiStore.getState().stageLayouts["focus:growth-compact-drag"] as {
+      nodePositions: Record<string, { x: number; y: number }>;
+      compact?: { nodePositions: Record<string, { x: number; y: number }> };
+    };
+    expect(layout.nodePositions).toEqual({});
+    expect(layout.compact?.nodePositions["growth-merge"]).toEqual({ x: 60, y: 82 });
+  });
+
   it("persists stage pan independently from node positions", () => {
     const nodes: DialogueStageNode[] = [
       {

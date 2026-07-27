@@ -494,7 +494,7 @@ function getCompactGrowthPosition(index: number, count: number): StageSeed {
   const rowCount = Math.ceil(count / 2);
   const row = Math.floor(index / 2);
   const isFinalUnpairedChild = count % 2 === 1 && index === count - 1;
-  const y = rowCount === 1 ? 72 : 62 + (26 / (rowCount - 1)) * row;
+  const y = rowCount === 1 ? 72 : 60 + (28 / (rowCount - 1)) * row;
 
   return {
     x: isFinalUnpairedChild ? 50 : index % 2 === 0 ? 20 : 80,
