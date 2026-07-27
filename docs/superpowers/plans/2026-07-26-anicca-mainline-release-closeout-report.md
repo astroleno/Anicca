@@ -2,11 +2,11 @@
 
 Date: 2026-07-26
 
-Validated source commit: `e65a07238f9ea78a75a33cbdbc57ed72616938e0`
+Validated source commit: `eeb94b1e75d007ce6e158ac7310d5c66fc1c9816`
 
 Release branch: `codex/anicca-mainline-release-closeout`
 
-Remote validated-source commit: `e65a07238f9ea78a75a33cbdbc57ed72616938e0` (verified with `git ls-remote` after push)
+Remote validated-source commit: `eeb94b1e75d007ce6e158ac7310d5c66fc1c9816` (verified with `git ls-remote` after push)
 
 Push status: validated source is pushed to the release branch. This report is a separate evidence-only commit on that same branch.
 
@@ -60,7 +60,7 @@ The production smoke summary and current screenshots are under `artifacts/visual
 - Growth perspective screenshots cover `desktop-growth-perspectives.png`, `mobile-390-growth-perspectives.png`, and `mobile-320-growth-perspectives.png`; the two mobile images are stage-only captures. Separate `mobile-390-growth-composer.png` and `mobile-320-growth-composer.png` captures preserve the composer evidence.
 - `growth-perspective-flow.stageNodeChecks` records five Growth stage nodes in desktop, 390px mobile, and 320px mobile viewports; their bounding boxes are pairwise non-overlapping. Each node also receives programmatic focus and a click before the scenario capture.
 - `growth-layout-matrix.stageNodeChecks` validates actual, unclipped, pairwise non-overlapping stage boxes for `candidateLimit` 1–4 across desktop, 1024px tablet, and 390px/360px/320px mobile viewports. Clipping is measured against the actual `dialogue-stage-viewport` overflow boundary.
-- `growth-wide-layout-compatibility.stageNodeChecks` validates the six-node `candidateLimit=4` stage at 320px after importing a legacy wide-layout workspace and after a real desktop node drag followed by a 320px viewport change.
+- `growth-wide-layout-compatibility.stageNodeChecks` validates the six-node `candidateLimit=4` stage at 320px after importing a legacy wide-layout workspace and after a real desktop node drag followed by a 320px viewport change. Both cases must match a fresh compact baseline node-for-node within `0.01px`; the current evidence records `0px` deltas.
 - The summary uses repository-relative artifact paths and contains no local absolute paths or provider credentials.
 
 Manual review of the refreshed Growth desktop evidence found all three artwork responses plus the merge node separately rendered and visible. The automated smoke also found no horizontal overflow or inaccessible Growth control.
@@ -68,6 +68,7 @@ Manual review of the refreshed Growth desktop evidence found all three artwork r
 ## Corrective findings resolved
 
 - Growth children without `branchType` now use dedicated wide and compact layouts. Five-child sessions (four artwork responses plus merge) use a multi-row grid; narrow stages reserve dynamic height for additional rows, and 1024px dense stages reduce card dimensions to preserve gaps. Legacy top-level persisted coordinates remain wide-only; compact Growth drags and pans persist independently, so imports and desktop edits cannot override responsive compact seeds.
+- Node-drag preview transforms are transient: their CSS offsets reset on pointer completion or cancellation, gesture-effect cleanup, and layout-key changes, so no desktop drag delta can survive into a compact Growth layout.
 - Test TypeScript explicitly overrides production test exclusions, includes ambient shader declarations, uses the ES2022 test library, and loads the WebGPU types already supplied by `@types/three`.
 - Branch and synthesis parsers reject blank normalized text/summary; blank, emoji-only, and punctuation-only labels fall back to their Chinese contract label.
 - Provider status `408` and every numeric `500`–`599` status, including recursive `cause` / `response` wrappers, map to the retryable `provider_unreachable` response (`503`) unless a more specific classification applies.
