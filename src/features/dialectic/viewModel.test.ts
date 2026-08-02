@@ -1,5 +1,7 @@
 import { BranchGraphStore } from "@/store/branchGraph";
 import { deriveDialogueView } from "@/features/dialectic/viewModel";
+import { projectGrowthSessionToGraph } from "@/features/growth/graphProjection";
+import { runGrowthSession } from "@/features/growth/orchestrator";
 
 describe("deriveDialogueView", () => {
   it("uses lineageParentId for synthesis breadcrumb and source projection", () => {
@@ -50,7 +52,7 @@ describe("deriveDialogueView", () => {
     expect(rootView.composerTarget).toMatchObject({ nodeId: null, kind: "root" });
   });
 
-  it("derives stable short labels for user nodes from their text", () => {
+  it("derives stable short labels and full previews for user nodes from their text", () => {
     const store = new BranchGraphStore();
     const rootUserId = store.createUserNode("这个方向还值不值得继续投入？");
     const { thesisId } = store.createAssistantPair(rootUserId, {
@@ -68,6 +70,11 @@ describe("deriveDialogueView", () => {
     ]);
     expect(view.sidebarItems.find((item) => item.id === rootUserId)?.label).toBe("这个方向还值不值得继续投…");
     expect(view.sidebarItems.find((item) => item.id === followupId)?.label).toBe("如果继续，最小可验证范围…");
+    expect(view.sidebarItems.find((item) => item.id === rootUserId)?.summary).toBe("这个方向还值不值得继续投入？");
+    expect(view.stageNodes.find((node) => node.id === followupId)).toMatchObject({
+      label: "如果继续，最小可验证范围…",
+      preview: "如果继续，最小可验证范围是什么？"
+    });
   });
 
   it("binds synthesis action to a fixed thesis/antithesis pair", () => {
@@ -109,14 +116,52 @@ describe("deriveDialogueView", () => {
     const byId = Object.fromEntries(view.stageNodes.map((node) => [node.id, node]));
 
     expect(byId[rootUserId]).toMatchObject({ relation: "ancestor", seedX: 50, seedY: 18 });
-    expect(byId[thesisId]).toMatchObject({ relation: "source", seedX: 30, seedY: 34 });
+    expect(byId[thesisId]).toMatchObject({
+      relation: "source",
+      seedX: 30,
+      seedY: 34,
+      preview: "继续",
+      summary: "继续推进"
+    });
     expect(byId[antithesisId]).toMatchObject({ relation: "source", seedX: 70, seedY: 34 });
     expect(byId[synthesisId]).toMatchObject({
       relation: "focus",
       displayRole: "synthesis-record",
       seedX: 50,
-      seedY: 62
+      seedY: 62,
+      preview: "主线收束",
+      summary: "主线收束"
     });
+  });
+
+  it.each([1, 2, 3, 4])("assigns non-overlapping multi-row Growth seeds for candidateLimit=%i", (candidateLimit) => {
+    const store = new BranchGraphStore();
+    const session = runGrowthSession({
+      text: "也许要换个角度继续推进",
+      requestId: `growth_stage_layout_${candidateLimit}`,
+      candidateLimit
+    });
+    const projection = projectGrowthSessionToGraph(store, session);
+
+    const view = deriveDialogueView(store.getGraph(), projection.userNodeId);
+    const growthNodeIds = [...projection.responseNodeIds, projection.synthesisNodeId].filter(
+      (nodeId): nodeId is string => Boolean(nodeId)
+    );
+    const growthNodes = view.stageNodes.filter((node) => growthNodeIds.includes(node.id));
+
+    expect(growthNodes).toHaveLength(growthNodeIds.length);
+    expect(new Set(growthNodes.map((node) => `${node.seedX}:${node.seedY}`)).size).toBe(growthNodeIds.length);
+    expect(growthNodes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ compactSeedX: expect.any(Number), compactSeedY: expect.any(Number) })
+    ]));
+    expect(new Set(growthNodes.map((node) => `${node.compactSeedX}:${node.compactSeedY}`)).size)
+      .toBe(growthNodeIds.length);
+
+    if (candidateLimit === 4) {
+      expect(new Set(growthNodes.map((node) => node.seedY)).size).toBeGreaterThan(1);
+      expect(new Set(growthNodes.map((node) => node.compactSeedY)).size).toBeGreaterThan(1);
+      expect(growthNodes.map((node) => node.compactSeedY)).toEqual([60, 60, 74, 74, 88]);
+    }
   });
 
   it("does not render synthesis as a permanent third stage child when its parent user is focused", () => {

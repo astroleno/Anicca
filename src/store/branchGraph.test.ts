@@ -2,6 +2,15 @@ import { createEmptyGraph } from "@/types/anicca";
 import { BranchGraphStore } from "@/store/branchGraph";
 
 describe("BranchGraphStore", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-04-29T12:00:00.000Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("creates a child user under an assistant branch", () => {
     const store = new BranchGraphStore();
     const rootId = store.createUserNode("root");
@@ -60,5 +69,21 @@ describe("BranchGraphStore", () => {
     store.setGraph(graph);
 
     expect(store.getGraph().nodes[rootId]?.text).toBe("manual");
+  });
+
+  it("keeps independent roots as multiple graph entries", () => {
+    const store = new BranchGraphStore();
+    const firstRootId = store.createUserNode("first topic");
+    const secondRootId = store.createUserNode("second topic");
+    const { thesisId } = store.createAssistantPair(firstRootId, {
+      thesis: { text: "first thesis" },
+      antithesis: { text: "first antithesis" }
+    });
+
+    const graph = store.getGraph();
+
+    expect(graph.entryIds).toEqual([firstRootId, secondRootId]);
+    expect(graph.nodes[firstRootId].children).toContain(thesisId);
+    expect(graph.nodes[secondRootId].children).toEqual([]);
   });
 });

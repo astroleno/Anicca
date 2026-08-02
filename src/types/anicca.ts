@@ -1,5 +1,6 @@
 // Anicca 对话域核心类型定义
 // 说明：Dialectic V2 以 local-first graph 作为主线真相源。
+import type { GrowthNodeMeta } from "@/features/growth/types";
 
 export const ANICCA_GRAPH_VERSION = "anicca-dialectic-v2";
 
@@ -18,6 +19,7 @@ export interface AniccaNodeMeta {
   label?: string; // UI 短标签
   sourceNodeIds?: string[]; // 合节点的双来源 assistant
   lineageParentId?: string; // 合节点共享的上游 user anchor
+  growth?: GrowthNodeMeta; // A2A growth provenance, namespaced to keep dialectic metadata stable
 }
 
 export interface AniccaNode {
@@ -55,9 +57,19 @@ export interface StagePan {
   y: number;
 }
 
+export type StageLayoutMode = "wide" | "compact";
+
+export interface StageLayoutViewport {
+  pan: StagePan;
+  nodePositions: Record<string, StagePoint>;
+}
+
 export interface StageLayoutView {
   pan: StagePan;
   nodePositions: Record<string, StagePoint>;
+  // Legacy persisted layouts remain the wide view. Compact coordinates are opt-in
+  // so importing an older workspace falls back to the responsive Growth seeds.
+  compact?: StageLayoutViewport;
 }
 
 export type StageLayouts = Record<string, StageLayoutView>;

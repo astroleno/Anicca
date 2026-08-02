@@ -6,10 +6,12 @@ import styles from "./DialogueShell.module.css";
 
 type ConversationPanelProps = {
   node: DialogueNodeDetail | null;
+  pendingBranchPrompt?: string | null;
   synthesisAction: DialogueSynthesisAction | null;
   synthesisPending: boolean;
   synthesisBlocked: boolean;
   synthesisPendingSourceLabel?: string | null;
+  suppressSynthesisAction?: boolean;
   roundtablePending: boolean;
   roundtablePendingSourceLabel?: string | null;
   roundtableSummonButtonRef?: Ref<HTMLButtonElement>;
@@ -23,10 +25,12 @@ type ConversationPanelProps = {
 
 export function ConversationPanel({
   node,
+  pendingBranchPrompt = null,
   synthesisAction,
   synthesisPending,
   synthesisBlocked,
   synthesisPendingSourceLabel = null,
+  suppressSynthesisAction = false,
   roundtablePending,
   roundtablePendingSourceLabel = null,
   roundtableSummonButtonRef,
@@ -42,14 +46,15 @@ export function ConversationPanel({
     ? `正在从「${roundtablePendingSourceLabel}」召集圆桌`
     : "正在召集圆桌";
   const isSynthesisRecord = node?.displayRole === "synthesis-record";
+  const hasPendingRootBranches = Boolean(!node && pendingBranchPrompt);
   const synthesisPendingHint = synthesisPendingSourceLabel
     ? `正在沿「${synthesisPendingSourceLabel}」收束正与反`
     : "正在收束正与反";
   const synthesisBlockedHint = synthesisPendingSourceLabel
     ? `等待另一条谱系收束完成：${synthesisPendingSourceLabel}`
     : "等待当前生成完成";
-  const panelEyebrow = isSynthesisRecord ? "合流记录" : "当前节点";
-  const panelTitle = isSynthesisRecord ? "一次正反合流" : node ? node.label : "等待主题";
+  const panelEyebrow = hasPendingRootBranches ? "生成中" : isSynthesisRecord ? "合流记录" : "当前节点";
+  const panelTitle = hasPendingRootBranches ? "正在生成正反" : isSynthesisRecord ? "一次正反合流" : node ? node.label : "等待主题";
 
   return (
     <section className={styles.panel} aria-labelledby="conversation-panel-heading" data-testid="dialogue-panel">
@@ -93,29 +98,43 @@ export function ConversationPanel({
           ) : null}
         </>
       ) : (
-        <p className={styles.panelMuted}>从一个主题开始，或沿已有分支继续展开。</p>
+        hasPendingRootBranches ? (
+          <div className={styles.panelBody} role="status" aria-live="polite" data-testid="dialogue-panel-pending-branches">
+            <p>{pendingBranchPrompt}</p>
+            <p className={styles.panelMuted}>母题已进入舞台，正在生成正与反。</p>
+          </div>
+        ) : (
+          <p className={styles.panelMuted}>从一个主题开始，或沿已有分支继续展开。</p>
+        )
       )}
 
       {synthesisAction ? (
         synthesisAction.available ? (
-          <div className={styles.panelActionRow}>
-            <button
-              type="button"
-              className={styles.primaryButton}
-              onClick={() => onGenerateSynthesis(synthesisAction)}
-              disabled={synthesisPending || synthesisBlocked}
-              aria-busy={synthesisPending ? "true" : undefined}
-            >
-              {synthesisPending ? "收束中..." : "记录合流"}
-            </button>
-            <span className={styles.panelActionHint}>
-              {synthesisPending
-                ? synthesisPendingHint
-                : synthesisBlocked
-                  ? synthesisBlockedHint
-                  : synthesisAction.label}
-            </span>
-          </div>
+          suppressSynthesisAction ? (
+            <div className={styles.panelEventRow} data-testid="dialogue-panel-decision-delegated">
+              <span className={styles.panelEventPill}>正反已就位</span>
+              <span className={styles.panelActionHint}>下一步在决策台选择。</span>
+            </div>
+          ) : (
+            <div className={styles.panelActionRow}>
+              <button
+                type="button"
+                className={styles.primaryButton}
+                onClick={() => onGenerateSynthesis(synthesisAction)}
+                disabled={synthesisPending || synthesisBlocked}
+                aria-busy={synthesisPending ? "true" : undefined}
+              >
+                {synthesisPending ? "合流中..." : "合流记录"}
+              </button>
+              <span className={styles.panelActionHint}>
+                {synthesisPending
+                  ? synthesisPendingHint
+                  : synthesisBlocked
+                    ? synthesisBlockedHint
+                    : synthesisAction.label}
+              </span>
+            </div>
+          )
         ) : (
           <div className={styles.panelEventRow}>
             <span className={styles.panelEventPill}>已发生一次合流</span>
@@ -152,7 +171,7 @@ export function ConversationPanel({
             role={roundtablePending ? "status" : undefined}
             aria-live={roundtablePending ? "polite" : undefined}
           >
-            {roundtablePending ? roundtablePendingHint : "作为 sidecar artifact 保存，不直接写入主图。"}
+            {roundtablePending ? roundtablePendingHint : "圆桌会作为旁路记录保存，不改变这条谱系。"}
           </span>
         </div>
       ) : null}

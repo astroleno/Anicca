@@ -1,6 +1,6 @@
 "use client";
 
-import { PointerEvent as ReactPointerEvent, useEffect, useRef, useState, type CSSProperties } from "react";
+import { PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { useDialogueUiStore } from "@/features/dialectic/store";
 import { DialogueStageNode } from "@/features/dialectic/viewModel";
 import { StagePan, StagePoint } from "@/types/anicca";
@@ -11,13 +11,28 @@ type BubbleStageProps = {
   nodes: DialogueStageNode[];
   focusNodeId: string | null;
   onSelect: (nodeId: string) => void;
+  onPrimaryAction?: (nodeId: string | null) => void;
   convergenceEventId?: string | null;
   eventNodeId?: string | null;
+  pendingPreview?: StagePendingPreview | null;
   emptyAction?: {
     label: string;
     onTrigger: () => void;
   } | null;
 };
+
+type StagePendingPreview =
+  | {
+      kind: "branches";
+      anchorNodeId: string | null;
+      prompt: string;
+    }
+  | {
+      kind: "synthesis";
+      thesisId: string;
+      antithesisId: string;
+      label: string;
+    };
 
 type ActiveStageGesture =
   | {
@@ -41,15 +56,23 @@ const NODE_MIN_X_PERCENT = 12;
 const NODE_MAX_X_PERCENT = 88;
 const NODE_MIN_Y_PERCENT = 12;
 const NODE_MAX_Y_PERCENT = 84;
+const GROWTH_NODE_MAX_Y_PERCENT = 90;
+
+const RELATION_LABELS: Record<DialogueStageNode["relation"], string> = {
+  focus: "当前焦点",
+  ancestor: "上游节点",
+  child: "下游节点",
+  source: "合流来源"
+};
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
-function clampNodePosition(position: StagePoint) {
+function clampNodePosition(position: StagePoint, maxY = NODE_MAX_Y_PERCENT) {
   return {
     x: clamp(position.x, NODE_MIN_X_PERCENT, NODE_MAX_X_PERCENT),
-    y: clamp(position.y, NODE_MIN_Y_PERCENT, NODE_MAX_Y_PERCENT)
+    y: clamp(position.y, NODE_MIN_Y_PERCENT, maxY)
   };
 }
 
@@ -62,13 +85,27 @@ function buildStageCurve(from: StagePoint, to: StagePoint) {
   return `M ${from.x} ${from.y} Q ${midX} ${controlY} ${to.x} ${to.y}`;
 }
 
+function buildStageNodeAriaLabel(node: DialogueStageNode) {
+  const parts = [node.preview || node.label];
+  if (node.branchType) {
+    parts.push(`${node.branchType}方`);
+  }
+  parts.push(RELATION_LABELS[node.relation]);
+  if (node.summary && node.summary !== node.preview && node.summary !== node.label) {
+    parts.push(node.summary);
+  }
+  return parts.filter(Boolean).join("，");
+}
+
 export function BubbleStage({
   layoutKey,
   nodes,
   focusNodeId,
   onSelect,
+  onPrimaryAction,
   convergenceEventId = null,
   eventNodeId = null,
+  pendingPreview = null,
   emptyAction = null
 }: BubbleStageProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -80,12 +117,19 @@ export function BubbleStage({
   const setStagePan = useDialogueUiStore((state) => state.setStagePan);
   const [gesture, setGesture] = useState<ActiveStageGesture | null>(null);
   const [isCoarsePointer, setIsCoarsePointer] = useState(false);
+  const [isNarrowViewport, setIsNarrowViewport] = useState(false);
   const livePanRef = useRef<StagePan | null>(null);
   const didDragRef = useRef(false);
   const suppressClickUntilRef = useRef(0);
   const canPanStage = nodes.length > 0;
   const hasThesis = nodes.some((node) => node.branchType === "正");
   const hasAntithesis = nodes.some((node) => node.branchType === "反");
+  const hasGrowthPerspectives = nodes.some((node) => node.isGrowthPerspective);
+  const growthChildCount = nodes.filter((node) => node.isGrowthPerspective && node.relation === "child").length;
+  const growthCompactRows = Math.ceil(growthChildCount / 2);
+  const growthStageMinHeight = growthCompactRows >= 3
+    ? `${115 + Math.max(0, growthCompactRows - 3) * 55}vh`
+    : "94vh";
   const hasSynthesisRecord = Boolean(convergenceEventId) || nodes.some((node) => node.branchType === "合");
   const relationshipHint = isCoarsePointer
     ? hasSynthesisRecord
@@ -94,14 +138,17 @@ export function BubbleStage({
         ? "点选节点查看正与反。"
         : null
     : hasSynthesisRecord
-      ? "整理舞台只影响布局；已记录一次正反合流。"
+      ? "已留下合流记录。"
       : hasThesis && hasAntithesis
-        ? "整理舞台只影响布局；是否记录合流由同一母题下的正反成对关系决定。"
+        ? "正反已生成。"
         : null;
   const emptyStageHint = isCoarsePointer
-    ? "给它一个母题，它会先长出正与反；点选节点查看谱系。"
-    : "给它一个母题，它会先长出正与反；生成后可整理舞台布局。";
-  const resolvedPan = stageLayout?.pan || DEFAULT_STAGE_PAN;
+    ? "写下母题，点选节点查看谱系。"
+    : "写下母题，让正反开始生成。";
+  const usesCompactGrowthLayout = isNarrowViewport && hasGrowthPerspectives;
+  const stageLayoutMode = usesCompactGrowthLayout ? "compact" : "wide";
+  const stageLayoutViewport = stageLayoutMode === "compact" ? stageLayout?.compact : stageLayout;
+  const resolvedPan = stageLayoutViewport?.pan || DEFAULT_STAGE_PAN;
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
@@ -124,10 +171,39 @@ export function BubbleStage({
     return () => mediaQuery.removeListener(updatePointerMode);
   }, []);
 
-  const getNodePosition = (node: DialogueStageNode): StagePoint =>
-    clampNodePosition(stageLayout?.nodePositions[node.id] || { x: node.seedX, y: node.seedY });
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return;
+    }
 
-  const setTrackPanPreview = (pan: StagePan) => {
+    const mediaQuery = window.matchMedia("(max-width: 980px)");
+    const updateViewportMode = () => {
+      setIsNarrowViewport(mediaQuery.matches);
+    };
+
+    updateViewportMode();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", updateViewportMode);
+      return () => mediaQuery.removeEventListener("change", updateViewportMode);
+    }
+
+    mediaQuery.addListener(updateViewportMode);
+    return () => mediaQuery.removeListener(updateViewportMode);
+  }, []);
+
+  const getNodePosition = (node: DialogueStageNode): StagePoint => {
+    const defaultPosition = usesCompactGrowthLayout && node.compactSeedX !== undefined && node.compactSeedY !== undefined
+      ? { x: node.compactSeedX, y: node.compactSeedY }
+      : { x: node.seedX, y: node.seedY };
+
+    return clampNodePosition(
+      stageLayoutViewport?.nodePositions[node.id] || defaultPosition,
+      node.isGrowthPerspective ? GROWTH_NODE_MAX_Y_PERCENT : NODE_MAX_Y_PERCENT
+    );
+  };
+
+  const setTrackPanPreview = useCallback((pan: StagePan) => {
     const track = trackRef.current;
     if (!track) {
       return;
@@ -135,9 +211,9 @@ export function BubbleStage({
 
     track.style.setProperty("--stage-pan-x", `${pan.x}px`);
     track.style.setProperty("--stage-pan-y", `${pan.y}px`);
-  };
+  }, []);
 
-  const setNodeDragPreview = (nodeId: string, offsetX: number, offsetY: number) => {
+  const setNodeDragPreview = useCallback((nodeId: string, offsetX: number, offsetY: number) => {
     const node = nodeRefs.current[nodeId];
     if (!node) {
       return;
@@ -145,15 +221,20 @@ export function BubbleStage({
 
     node.style.setProperty("--stage-node-drag-x", `${offsetX}px`);
     node.style.setProperty("--stage-node-drag-y", `${offsetY}px`);
-  };
+  }, []);
+
+  const clearNodeDragPreview = useCallback((nodeId: string) => {
+    setNodeDragPreview(nodeId, 0, 0);
+  }, [setNodeDragPreview]);
 
   useEffect(() => {
+    Object.keys(nodeRefs.current).forEach(clearNodeDragPreview);
     setGesture(null);
     livePanRef.current = null;
     didDragRef.current = false;
     suppressClickUntilRef.current = 0;
     activePointerTargetRef.current = null;
-  }, [layoutKey]);
+  }, [clearNodeDragPreview, layoutKey]);
 
   useEffect(() => {
     if (!gesture) {
@@ -206,18 +287,20 @@ export function BubbleStage({
       }
 
       if (gesture.kind === "node") {
+        clearNodeDragPreview(gesture.nodeId);
         const viewport = viewportRef.current;
         const rect = viewport?.getBoundingClientRect();
+        const draggedNode = nodes.find((node) => node.id === gesture.nodeId);
         const nextPosition = rect?.width && rect.height
           ? clampNodePosition({
               x: gesture.startPosition.x + ((event.clientX - gesture.startClientX) / rect.width) * 100,
               y: gesture.startPosition.y + ((event.clientY - gesture.startClientY) / rect.height) * 100
-            })
+            }, draggedNode?.isGrowthPerspective ? GROWTH_NODE_MAX_Y_PERCENT : NODE_MAX_Y_PERCENT)
           : gesture.startPosition;
 
-        setStageNodePosition(layoutKey, gesture.nodeId, nextPosition);
+        setStageNodePosition(layoutKey, gesture.nodeId, nextPosition, stageLayoutMode);
       } else {
-        setStagePan(layoutKey, livePanRef.current || gesture.startPan);
+        setStagePan(layoutKey, livePanRef.current || gesture.startPan, stageLayoutMode);
       }
 
       if (didDragRef.current) {
@@ -243,11 +326,24 @@ export function BubbleStage({
     window.addEventListener("pointercancel", handlePointerUp);
 
     return () => {
+      if (gesture.kind === "node") {
+        clearNodeDragPreview(gesture.nodeId);
+      }
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
       window.removeEventListener("pointercancel", handlePointerUp);
     };
-  }, [gesture, layoutKey, setStageNodePosition, setStagePan]);
+  }, [
+    clearNodeDragPreview,
+    gesture,
+    layoutKey,
+    nodes,
+    setNodeDragPreview,
+    setStageNodePosition,
+    setStagePan,
+    setTrackPanPreview,
+    stageLayoutMode
+  ]);
 
   const handleStagePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (!canPanStage || event.button !== 0 || event.target !== event.currentTarget) {
@@ -296,12 +392,13 @@ export function BubbleStage({
     });
   };
 
-  const handleNodeClick = (nodeId: string) => {
+  const handleNodeClick = (node: DialogueStageNode) => {
     if (performance.now() < suppressClickUntilRef.current) {
       return;
     }
 
-    onSelect(nodeId);
+    onSelect(node.id);
+    onPrimaryAction?.(node.id);
   };
 
   const positionedNodes = nodes.map((node) => ({
@@ -309,6 +406,36 @@ export function BubbleStage({
     position: getNodePosition(node)
   }));
   const focusStageNode = positionedNodes.find(({ node }) => node.relation === "focus") || null;
+  const pendingAnchor = pendingPreview?.kind === "branches"
+    ? positionedNodes.find(({ node }) => node.id === pendingPreview.anchorNodeId) || focusStageNode
+    : null;
+  const pendingAnchorPosition = pendingAnchor?.position || { x: 50, y: 42 };
+  const pendingBranchNodes = pendingPreview?.kind === "branches"
+    ? {
+        thesis: clampNodePosition({ x: pendingAnchorPosition.x - 20, y: pendingAnchorPosition.y + 28 }),
+        antithesis: clampNodePosition({ x: pendingAnchorPosition.x + 20, y: pendingAnchorPosition.y + 28 }),
+        anchor: pendingAnchorPosition,
+        prompt: pendingPreview.prompt.trim() || "新的母题"
+      }
+    : null;
+  const pendingSynthesisSources = pendingPreview?.kind === "synthesis"
+    ? {
+        thesis: positionedNodes.find(({ node }) => node.id === pendingPreview.thesisId) || null,
+        antithesis: positionedNodes.find(({ node }) => node.id === pendingPreview.antithesisId) || null,
+        label: pendingPreview.label
+      }
+    : null;
+  const pendingSynthesisMark = pendingSynthesisSources?.thesis && pendingSynthesisSources.antithesis
+    ? {
+        thesis: pendingSynthesisSources.thesis,
+        antithesis: pendingSynthesisSources.antithesis,
+        label: pendingSynthesisSources.label,
+        center: {
+          x: (pendingSynthesisSources.thesis.position.x + pendingSynthesisSources.antithesis.position.x) / 2,
+          y: (pendingSynthesisSources.thesis.position.y + pendingSynthesisSources.antithesis.position.y) / 2 + 12
+        }
+      }
+    : null;
   const relationshipLinks = focusStageNode
     ? positionedNodes
         .filter(({ node }) => node.id !== focusStageNode.node.id && ["ancestor", "child", "source"].includes(node.relation))
@@ -357,6 +484,10 @@ export function BubbleStage({
       className={styles.stagePanel}
       aria-labelledby="dialogue-stage-heading"
       data-testid="dialogue-stage"
+      data-layout={hasGrowthPerspectives ? "growth" : undefined}
+      data-growth-compact-rows={hasGrowthPerspectives ? growthCompactRows : undefined}
+      data-growth-density={growthChildCount >= 5 ? "dense" : undefined}
+      style={{ "--growth-stage-min-height": growthStageMinHeight } as CSSProperties}
     >
       <div className={styles.stageHeader}>
         <p className={styles.eyebrow}>舞台</p>
@@ -448,16 +579,102 @@ export function BubbleStage({
                 ) : null}
               </svg>
             ) : null}
-            {!nodes.length ? (
-              <>
-                <div className={styles.emptyStageCluster} aria-hidden="true">
-                  <div className={[styles.emptyStageBlob, styles.emptyStageRoot].join(" ")}>
-                    <span>主题</span>
+            {pendingBranchNodes ? (
+              <div
+                className={styles.stagePendingLayer}
+                data-testid="dialogue-stage-pending-branches"
+                role="status"
+                aria-live="polite"
+              >
+                <svg className={styles.stagePendingRelations} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                  <path
+                    className={[styles.stagePendingPath, styles.stagePendingPathThesis].join(" ")}
+                    d={buildStageCurve(pendingBranchNodes.anchor, pendingBranchNodes.thesis)}
+                    vectorEffect="non-scaling-stroke"
+                  />
+                  <path
+                    className={[styles.stagePendingPath, styles.stagePendingPathAntithesis].join(" ")}
+                    d={buildStageCurve(pendingBranchNodes.anchor, pendingBranchNodes.antithesis)}
+                    vectorEffect="non-scaling-stroke"
+                  />
+                </svg>
+                {!nodes.length ? (
+                  <div
+                    className={[styles.stagePendingGhost, styles.stagePendingRoot].join(" ")}
+                    style={{ left: `${pendingBranchNodes.anchor.x}%`, top: `${pendingBranchNodes.anchor.y}%` }}
+                    aria-hidden="true"
+                  >
+                    <strong>{pendingBranchNodes.prompt}</strong>
+                    <small>母题</small>
                   </div>
-                  <div className={[styles.emptyStageBlob, styles.emptyStageThesis].join(" ")}>
+                ) : null}
+                <div
+                  className={[styles.stagePendingGhost, styles.stagePendingThesis].join(" ")}
+                  style={{ left: `${pendingBranchNodes.thesis.x}%`, top: `${pendingBranchNodes.thesis.y}%` }}
+                  data-testid="dialogue-stage-pending-thesis"
+                  aria-hidden="true"
+                >
+                  <strong>正</strong>
+                  <small>正在生成</small>
+                </div>
+                <div
+                  className={[styles.stagePendingGhost, styles.stagePendingAntithesis].join(" ")}
+                  style={{ left: `${pendingBranchNodes.antithesis.x}%`, top: `${pendingBranchNodes.antithesis.y}%` }}
+                  data-testid="dialogue-stage-pending-antithesis"
+                  aria-hidden="true"
+                >
+                  <strong>反</strong>
+                  <small>正在生成</small>
+                </div>
+                <p className={styles.stagePendingCaption}>正在让问题分岔，正与反会在这里落位。</p>
+              </div>
+            ) : null}
+            {pendingSynthesisMark ? (
+              <div
+                className={styles.stagePendingLayer}
+                data-testid="dialogue-stage-pending-synthesis"
+                role="status"
+                aria-live="polite"
+              >
+                <svg className={styles.stagePendingRelations} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                  <path
+                    className={[styles.stagePendingPath, styles.stagePendingPathThesis].join(" ")}
+                    d={buildStageCurve(pendingSynthesisMark.thesis.position, pendingSynthesisMark.center)}
+                    vectorEffect="non-scaling-stroke"
+                  />
+                  <path
+                    className={[styles.stagePendingPath, styles.stagePendingPathAntithesis].join(" ")}
+                    d={buildStageCurve(pendingSynthesisMark.antithesis.position, pendingSynthesisMark.center)}
+                    vectorEffect="non-scaling-stroke"
+                  />
+                </svg>
+                <div
+                  className={[styles.stagePendingGhost, styles.stagePendingSynthesis].join(" ")}
+                  style={{ left: `${pendingSynthesisMark.center.x}%`, top: `${pendingSynthesisMark.center.y}%` }}
+                  data-testid="dialogue-stage-pending-synthesis-node"
+                  aria-hidden="true"
+                >
+                  <strong>合</strong>
+                  <small>合流中</small>
+                </div>
+                <p className={styles.stagePendingCaption}>正在收束「{pendingSynthesisMark.label}」。</p>
+              </div>
+            ) : null}
+            {!nodes.length && !pendingBranchNodes ? (
+              <>
+                <div className={styles.emptyStageCluster}>
+                  <button
+                    type="button"
+                    className={[styles.emptyStageBlob, styles.emptyStageRoot, styles.emptyStageRootButton].join(" ")}
+                    onClick={() => onPrimaryAction?.(null)}
+                  >
+                    <span>主题</span>
+                    <small>点此输入</small>
+                  </button>
+                  <div className={[styles.emptyStageBlob, styles.emptyStageThesis].join(" ")} aria-hidden="true">
                     <span>正</span>
                   </div>
-                  <div className={[styles.emptyStageBlob, styles.emptyStageAntithesis].join(" ")}>
+                  <div className={[styles.emptyStageBlob, styles.emptyStageAntithesis].join(" ")} aria-hidden="true">
                     <span>反</span>
                   </div>
                   <p className={styles.emptyStageHint} data-testid="dialogue-empty-stage-hint">
@@ -501,6 +718,7 @@ export function BubbleStage({
                   data-testid={`dialogue-stage-node-${node.id}`}
                   data-event-state={node.id === eventNodeId ? "synthesis-reveal" : undefined}
                   data-display-role={node.displayRole}
+                  aria-label={buildStageNodeAriaLabel(node)}
                   style={
                     {
                       left: `${position.x}%`,
@@ -509,11 +727,14 @@ export function BubbleStage({
                       "--stage-node-drag-y": "0px"
                     } as CSSProperties
                   }
-                  onClick={() => handleNodeClick(node.id)}
+                  onClick={() => handleNodeClick(node)}
                   onPointerDown={(event) => handleNodePointerDown(event, node)}
                 >
                   <span className={styles.stageNodeInner}>
-                    <strong>{node.label}</strong>
+                    <strong>
+                      <span className={styles.stageNodeTextFull}>{node.label}</span>
+                      <span className={styles.stageNodeTextShort}>{node.label}</span>
+                    </strong>
                     {node.branchType ? <small>{node.branchType}</small> : null}
                   </span>
                 </button>

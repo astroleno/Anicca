@@ -35,10 +35,14 @@
     "src/**/*.tsx",
     "src/**/*.wgsl",
     "next-env.d.ts",
-    ".next/types/**/*.ts"
-, "src/app/combined/page.tsx.backup"  ],
+    ".next/types/**/*.ts",
+    "src/app/combined/page.tsx.backup"
+  ],
   "exclude": [
     "node_modules",
-    "ref/**/*"
+    "ref/**/*",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "src/**/__tests__/**"
   ]
 }

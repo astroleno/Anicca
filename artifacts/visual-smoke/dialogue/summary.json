@@ -1,0 +1,1406 @@
+{
+  "baseUrl": "http://127.0.0.1:3211",
+  "serverMode": "start",
+  "generatedAt": "2026-07-27T13:55:37.117Z",
+  "viewports": [
+    {
+      "name": "desktop",
+      "viewport": {
+        "width": 1440,
+        "height": 980
+      },
+      "screenshotPath": "artifacts/visual-smoke/dialogue/desktop.png"
+    },
+    {
+      "name": "tablet",
+      "viewport": {
+        "width": 1024,
+        "height": 900
+      },
+      "screenshotPath": "artifacts/visual-smoke/dialogue/tablet.png"
+    },
+    {
+      "name": "tablet-touch",
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "screenshotPath": "artifacts/visual-smoke/dialogue/tablet-touch.png"
+    },
+    {
+      "name": "mobile-390",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshotPath": "artifacts/visual-smoke/dialogue/mobile-390-initial.png",
+      "captures": {
+        "initial": {
+          "screenshotPath": "artifacts/visual-smoke/dialogue/mobile-390-initial.png",
+          "scrollMetrics": {
+            "windowScrollY": 0,
+            "docScrollTop": 0,
+            "bodyScrollTop": 0,
+            "shellScrollTop": 0,
+            "docScrollHeight": 844,
+            "docClientHeight": 844,
+            "bodyScrollHeight": 844,
+            "bodyClientHeight": 844,
+            "shellScrollHeight": 1708,
+            "shellClientHeight": 844
+          }
+        },
+        "composer": {
+          "screenshotPath": "artifacts/visual-smoke/dialogue/mobile-390-composer.png",
+          "scrollMetrics": {
+            "windowScrollY": 0,
+            "docScrollTop": 0,
+            "bodyScrollTop": 0,
+            "shellScrollTop": 864,
+            "docScrollHeight": 844,
+            "docClientHeight": 844,
+            "bodyScrollHeight": 844,
+            "bodyClientHeight": 844,
+            "shellScrollHeight": 1708,
+            "shellClientHeight": 844
+          }
+        }
+      }
+    },
+    {
+      "name": "mobile-360",
+      "viewport": {
+        "width": 360,
+        "height": 740
+      },
+      "screenshotPath": "artifacts/visual-smoke/dialogue/mobile-360-initial.png",
+      "captures": {
+        "initial": {
+          "screenshotPath": "artifacts/visual-smoke/dialogue/mobile-360-initial.png",
+          "scrollMetrics": {
+            "windowScrollY": 0,
+            "docScrollTop": 0,
+            "bodyScrollTop": 0,
+            "shellScrollTop": 0,
+            "docScrollHeight": 740,
+            "docClientHeight": 740,
+            "bodyScrollHeight": 740,
+            "bodyClientHeight": 740,
+            "shellScrollHeight": 1676,
+            "shellClientHeight": 740
+          }
+        },
+        "composer": {
+          "screenshotPath": "artifacts/visual-smoke/dialogue/mobile-360-composer.png",
+          "scrollMetrics": {
+            "windowScrollY": 0,
+            "docScrollTop": 0,
+            "bodyScrollTop": 0,
+            "shellScrollTop": 936,
+            "docScrollHeight": 740,
+            "docClientHeight": 740,
+            "bodyScrollHeight": 740,
+            "bodyClientHeight": 740,
+            "shellScrollHeight": 1676,
+            "shellClientHeight": 740
+          }
+        }
+      }
+    },
+    {
+      "name": "mobile-320",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "screenshotPath": "artifacts/visual-smoke/dialogue/mobile-320-initial.png",
+      "captures": {
+        "initial": {
+          "screenshotPath": "artifacts/visual-smoke/dialogue/mobile-320-initial.png",
+          "scrollMetrics": {
+            "windowScrollY": 0,
+            "docScrollTop": 0,
+            "bodyScrollTop": 0,
+            "shellScrollTop": 0,
+            "docScrollHeight": 740,
+            "docClientHeight": 740,
+            "bodyScrollHeight": 740,
+            "bodyClientHeight": 740,
+            "shellScrollHeight": 1676,
+            "shellClientHeight": 740
+          }
+        },
+        "composer": {
+          "screenshotPath": "artifacts/visual-smoke/dialogue/mobile-320-composer.png",
+          "scrollMetrics": {
+            "windowScrollY": 0,
+            "docScrollTop": 0,
+            "bodyScrollTop": 0,
+            "shellScrollTop": 936,
+            "docScrollHeight": 740,
+            "docClientHeight": 740,
+            "bodyScrollHeight": 740,
+            "bodyClientHeight": 740,
+            "shellScrollHeight": 1676,
+            "shellClientHeight": 740
+          }
+        }
+      }
+    },
+    {
+      "name": "mobile-touch-390",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshotPath": "artifacts/visual-smoke/dialogue/mobile-touch-390-initial.png",
+      "captures": {
+        "initial": {
+          "screenshotPath": "artifacts/visual-smoke/dialogue/mobile-touch-390-initial.png",
+          "scrollMetrics": {
+            "windowScrollY": 0,
+            "docScrollTop": 0,
+            "bodyScrollTop": 0,
+            "shellScrollTop": 0,
+            "docScrollHeight": 844,
+            "docClientHeight": 844,
+            "bodyScrollHeight": 844,
+            "bodyClientHeight": 844,
+            "shellScrollHeight": 1708,
+            "shellClientHeight": 844
+          }
+        },
+        "composer": {
+          "screenshotPath": "artifacts/visual-smoke/dialogue/mobile-touch-390-composer.png",
+          "scrollMetrics": {
+            "windowScrollY": 0,
+            "docScrollTop": 0,
+            "bodyScrollTop": 0,
+            "shellScrollTop": 864,
+            "docScrollHeight": 844,
+            "docClientHeight": 844,
+            "bodyScrollHeight": 844,
+            "bodyClientHeight": 844,
+            "shellScrollHeight": 1708,
+            "shellClientHeight": 844
+          }
+        }
+      }
+    }
+  ],
+  "interactionScenarios": [
+    {
+      "name": "synthesis-pending-focus",
+      "passed": true
+    },
+    {
+      "name": "synthesis-stale-completion",
+      "passed": true
+    },
+    {
+      "name": "roundtable-drawer-focus-return",
+      "passed": true
+    },
+    {
+      "name": "empty-root-pending-state",
+      "passed": true,
+      "screenshot": "artifacts/visual-smoke/dialogue/desktop-pending-empty-root.png"
+    },
+    {
+      "name": "next-step-choice-dock-layout",
+      "passed": true,
+      "screenshots": {
+        "desktop": "artifacts/visual-smoke/dialogue/desktop-choice-dock.png",
+        "mobile": "artifacts/visual-smoke/dialogue/mobile-320-choice-dock.png"
+      }
+    },
+    {
+      "name": "retrieval-debug-preview",
+      "passed": true,
+      "screenshots": {
+        "desktop": "artifacts/visual-smoke/dialogue/desktop-retrieval-debug.png",
+        "mobile": "artifacts/visual-smoke/dialogue/mobile-360-retrieval-debug.png"
+      }
+    },
+    {
+      "name": "growth-perspective-flow",
+      "passed": true,
+      "screenshots": {
+        "desktop": "artifacts/visual-smoke/dialogue/desktop-growth-perspectives.png",
+        "mobile-390": "artifacts/visual-smoke/dialogue/mobile-390-growth-perspectives.png",
+        "mobile-320": "artifacts/visual-smoke/dialogue/mobile-320-growth-perspectives.png"
+      },
+      "composerScreenshots": {
+        "mobile-390": "artifacts/visual-smoke/dialogue/mobile-390-growth-composer.png",
+        "mobile-320": "artifacts/visual-smoke/dialogue/mobile-320-growth-composer.png"
+      },
+      "stageNodeChecks": {
+        "desktop": {
+          "nodeCount": 5,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-user_ms3ahc45_5qb3t4",
+              "left": 617.11376953125,
+              "right": 794.07373046875,
+              "top": 305.4731140136719,
+              "bottom": 482.43310546875,
+              "width": 176.9599609375,
+              "height": 176.95999145507812
+            },
+            {
+              "testId": "dialogue-stage-node-asst_ms3ahc45_lge1l1",
+              "left": 345.46875,
+              "right": 495.46875,
+              "top": 494.5625,
+              "bottom": 626.5625,
+              "width": 150,
+              "height": 132
+            },
+            {
+              "testId": "dialogue-stage-node-asst_ms3ahc45_d5sqe0",
+              "left": 915.71875,
+              "right": 1065.71875,
+              "top": 494.5625,
+              "bottom": 626.5625,
+              "width": 150,
+              "height": 132
+            },
+            {
+              "testId": "dialogue-stage-node-asst_ms3ahc45_4o4l72",
+              "left": 345.46875,
+              "right": 495.46875,
+              "top": 647.828125,
+              "bottom": 779.828125,
+              "width": 150,
+              "height": 132
+            },
+            {
+              "testId": "dialogue-stage-node-asst_ms3ahc45_r299jn",
+              "left": 915.71875,
+              "right": 1065.71875,
+              "top": 647.828125,
+              "bottom": 779.828125,
+              "width": 150,
+              "height": 132
+            }
+          ]
+        },
+        "mobile-390": {
+          "nodeCount": 5,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-user_ms3ahd2f_jy84ah",
+              "left": 126.68000030517578,
+              "right": 263.3200149536133,
+              "top": 158.96124267578125,
+              "bottom": 295.60125732421875,
+              "width": 136.6400146484375,
+              "height": 136.6400146484375
+            },
+            {
+              "testId": "dialogue-stage-node-asst_ms3ahd2f_kinhba",
+              "left": 29.1875,
+              "right": 141.1875,
+              "top": 323.5625,
+              "bottom": 427.5625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-asst_ms3ahd2f_lez5t0",
+              "left": 248.796875,
+              "right": 360.796875,
+              "top": 323.5625,
+              "bottom": 427.5625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-asst_ms3ahd2f_x52zlx",
+              "left": 29.1875,
+              "right": 141.1875,
+              "top": 531.140625,
+              "bottom": 635.140625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-asst_ms3ahd2f_35q9rc",
+              "left": 248.796875,
+              "right": 360.796875,
+              "top": 531.140625,
+              "bottom": 635.140625,
+              "width": 112,
+              "height": 104
+            }
+          ]
+        },
+        "mobile-320": {
+          "nodeCount": 5,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-user_ms3ahent_hi3df9",
+              "left": 91.68000030517578,
+              "right": 228.32001495361328,
+              "top": 47.86749267578125,
+              "bottom": 184.50750732421875,
+              "width": 136.6400146484375,
+              "height": 136.6400146484375
+            },
+            {
+              "testId": "dialogue-stage-node-asst_ms3ahent_zt3nv1",
+              "left": 15.1875,
+              "right": 127.1875,
+              "top": 192.90625,
+              "bottom": 296.90625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-asst_ms3ahent_zmzel1",
+              "left": 192.796875,
+              "right": 304.796875,
+              "top": 192.90625,
+              "bottom": 296.90625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-asst_ms3ahent_0hp0zo",
+              "left": 15.1875,
+              "right": 127.1875,
+              "top": 373.109375,
+              "bottom": 477.109375,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-asst_ms3ahent_yiqbi5",
+              "left": 192.796875,
+              "right": 304.796875,
+              "top": 373.109375,
+              "bottom": 477.109375,
+              "width": 112,
+              "height": 104
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "growth-layout-matrix",
+      "passed": true,
+      "stageNodeChecks": {
+        "candidate-1-desktop": {
+          "candidateLimit": 1,
+          "nodeCount": 2,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-growth_matrix_root_1",
+              "left": 617.11376953125,
+              "right": 794.07373046875,
+              "top": 305.4731140136719,
+              "bottom": 482.43310546875,
+              "width": 176.9599609375,
+              "height": 176.95999145507812
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_1_1",
+              "left": 630.59375,
+              "right": 780.59375,
+              "top": 541.203125,
+              "bottom": 673.203125,
+              "width": 150,
+              "height": 132
+            }
+          ]
+        },
+        "candidate-1-tablet": {
+          "candidateLimit": 1,
+          "nodeCount": 2,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-growth_matrix_root_1",
+              "left": 373.5199890136719,
+              "right": 550.47998046875,
+              "top": 287.7074890136719,
+              "bottom": 464.66748046875,
+              "width": 176.95999145507812,
+              "height": 176.95999145507812
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_1_1",
+              "left": 387,
+              "right": 537,
+              "top": 517.546875,
+              "bottom": 649.546875,
+              "width": 150,
+              "height": 132
+            }
+          ]
+        },
+        "candidate-1-mobile-390": {
+          "candidateLimit": 1,
+          "nodeCount": 2,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-growth_matrix_root_1",
+              "left": 126.68000030517578,
+              "right": 263.3200149536133,
+              "top": 341.96124267578125,
+              "bottom": 478.60125732421875,
+              "width": 136.6400146484375,
+              "height": 136.6400146484375
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_1_1",
+              "left": 139,
+              "right": 251,
+              "top": 595.515625,
+              "bottom": 699.515625,
+              "width": 112,
+              "height": 104
+            }
+          ]
+        },
+        "candidate-1-mobile-360": {
+          "candidateLimit": 1,
+          "nodeCount": 2,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-growth_matrix_root_1",
+              "left": 111.68000030517578,
+              "right": 248.32001495361328,
+              "top": 302.86749267578125,
+              "bottom": 439.50750732421875,
+              "width": 136.6400146484375,
+              "height": 136.6400146484375
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_1_1",
+              "left": 124,
+              "right": 236,
+              "top": 525.125,
+              "bottom": 629.125,
+              "width": 112,
+              "height": 104
+            }
+          ]
+        },
+        "candidate-1-mobile-320": {
+          "candidateLimit": 1,
+          "nodeCount": 2,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-growth_matrix_root_1",
+              "left": 91.68000030517578,
+              "right": 228.32001495361328,
+              "top": 302.86749267578125,
+              "bottom": 439.50750732421875,
+              "width": 136.6400146484375,
+              "height": 136.6400146484375
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_1_1",
+              "left": 104,
+              "right": 216,
+              "top": 525.125,
+              "bottom": 629.125,
+              "width": 112,
+              "height": 104
+            }
+          ]
+        },
+        "candidate-2-desktop": {
+          "candidateLimit": 2,
+          "nodeCount": 4,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-growth_matrix_root_2",
+              "left": 617.11376953125,
+              "right": 794.07373046875,
+              "top": 305.4731140136719,
+              "bottom": 482.43310546875,
+              "width": 176.9599609375,
+              "height": 176.95999145507812
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_2_1",
+              "left": 630.59375,
+              "right": 780.59375,
+              "top": 494.5625,
+              "bottom": 626.5625,
+              "width": 150,
+              "height": 132
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_2_2",
+              "left": 345.46875,
+              "right": 495.46875,
+              "top": 634.5,
+              "bottom": 766.5,
+              "width": 150,
+              "height": 132
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_synthesis_2",
+              "left": 915.71875,
+              "right": 1065.71875,
+              "top": 634.5,
+              "bottom": 766.5,
+              "width": 150,
+              "height": 132
+            }
+          ]
+        },
+        "candidate-2-tablet": {
+          "candidateLimit": 2,
+          "nodeCount": 4,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-growth_matrix_root_2",
+              "left": 373.5199890136719,
+              "right": 550.47998046875,
+              "top": 287.7074890136719,
+              "bottom": 464.66748046875,
+              "width": 176.95999145507812,
+              "height": 176.95999145507812
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_2_1",
+              "left": 387,
+              "right": 537,
+              "top": 472.1875,
+              "bottom": 604.1875,
+              "width": 150,
+              "height": 132
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_2_2",
+              "left": 199.796875,
+              "right": 349.796875,
+              "top": 608.265625,
+              "bottom": 740.265625,
+              "width": 150,
+              "height": 132
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_synthesis_2",
+              "left": 574.1875,
+              "right": 724.1875,
+              "top": 608.265625,
+              "bottom": 740.265625,
+              "width": 150,
+              "height": 132
+            }
+          ]
+        },
+        "candidate-2-mobile-390": {
+          "candidateLimit": 2,
+          "nodeCount": 4,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-growth_matrix_root_2",
+              "left": 126.68000030517578,
+              "right": 263.3200149536133,
+              "top": 341.96124267578125,
+              "bottom": 478.60125732421875,
+              "width": 136.6400146484375,
+              "height": 136.6400146484375
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_2_1",
+              "left": 29.1875,
+              "right": 141.1875,
+              "top": 506.5625,
+              "bottom": 610.5625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_2_2",
+              "left": 248.796875,
+              "right": 360.796875,
+              "top": 506.5625,
+              "bottom": 610.5625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_synthesis_2",
+              "left": 139,
+              "right": 251,
+              "top": 714.140625,
+              "bottom": 818.140625,
+              "width": 112,
+              "height": 104
+            }
+          ]
+        },
+        "candidate-2-mobile-360": {
+          "candidateLimit": 2,
+          "nodeCount": 4,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-growth_matrix_root_2",
+              "left": 111.68000030517578,
+              "right": 248.32001495361328,
+              "top": 302.86749267578125,
+              "bottom": 439.50750732421875,
+              "width": 136.6400146484375,
+              "height": 136.6400146484375
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_2_1",
+              "left": 23.1875,
+              "right": 135.1875,
+              "top": 447.90625,
+              "bottom": 551.90625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_2_2",
+              "left": 224.796875,
+              "right": 336.796875,
+              "top": 447.90625,
+              "bottom": 551.90625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_synthesis_2",
+              "left": 124,
+              "right": 236,
+              "top": 628.109375,
+              "bottom": 732.109375,
+              "width": 112,
+              "height": 104
+            }
+          ]
+        },
+        "candidate-2-mobile-320": {
+          "candidateLimit": 2,
+          "nodeCount": 4,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-growth_matrix_root_2",
+              "left": 91.68000030517578,
+              "right": 228.32001495361328,
+              "top": 302.86749267578125,
+              "bottom": 439.50750732421875,
+              "width": 136.6400146484375,
+              "height": 136.6400146484375
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_2_1",
+              "left": 15.1875,
+              "right": 127.1875,
+              "top": 447.90625,
+              "bottom": 551.90625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_2_2",
+              "left": 192.796875,
+              "right": 304.796875,
+              "top": 447.90625,
+              "bottom": 551.90625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_synthesis_2",
+              "left": 104,
+              "right": 216,
+              "top": 628.109375,
+              "bottom": 732.109375,
+              "width": 112,
+              "height": 104
+            }
+          ]
+        },
+        "candidate-3-desktop": {
+          "candidateLimit": 3,
+          "nodeCount": 5,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-growth_matrix_root_3",
+              "left": 617.11376953125,
+              "right": 794.07373046875,
+              "top": 305.4731140136719,
+              "bottom": 482.43310546875,
+              "width": 176.9599609375,
+              "height": 176.95999145507812
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_3_1",
+              "left": 345.46875,
+              "right": 495.46875,
+              "top": 494.5625,
+              "bottom": 626.5625,
+              "width": 150,
+              "height": 132
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_3_2",
+              "left": 915.71875,
+              "right": 1065.71875,
+              "top": 494.5625,
+              "bottom": 626.5625,
+              "width": 150,
+              "height": 132
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_3_3",
+              "left": 345.46875,
+              "right": 495.46875,
+              "top": 647.828125,
+              "bottom": 779.828125,
+              "width": 150,
+              "height": 132
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_synthesis_3",
+              "left": 915.71875,
+              "right": 1065.71875,
+              "top": 647.828125,
+              "bottom": 779.828125,
+              "width": 150,
+              "height": 132
+            }
+          ]
+        },
+        "candidate-3-tablet": {
+          "candidateLimit": 3,
+          "nodeCount": 5,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-growth_matrix_root_3",
+              "left": 373.5199890136719,
+              "right": 550.47998046875,
+              "top": 287.7074890136719,
+              "bottom": 464.66748046875,
+              "width": 176.95999145507812,
+              "height": 176.95999145507812
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_3_1",
+              "left": 199.796875,
+              "right": 349.796875,
+              "top": 472.1875,
+              "bottom": 604.1875,
+              "width": 150,
+              "height": 132
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_3_2",
+              "left": 574.1875,
+              "right": 724.1875,
+              "top": 472.1875,
+              "bottom": 604.1875,
+              "width": 150,
+              "height": 132
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_3_3",
+              "left": 199.796875,
+              "right": 349.796875,
+              "top": 621.234375,
+              "bottom": 753.234375,
+              "width": 150,
+              "height": 132
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_synthesis_3",
+              "left": 574.1875,
+              "right": 724.1875,
+              "top": 621.234375,
+              "bottom": 753.234375,
+              "width": 150,
+              "height": 132
+            }
+          ]
+        },
+        "candidate-3-mobile-390": {
+          "candidateLimit": 3,
+          "nodeCount": 5,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-growth_matrix_root_3",
+              "left": 126.68000030517578,
+              "right": 263.3200149536133,
+              "top": 341.96124267578125,
+              "bottom": 478.60125732421875,
+              "width": 136.6400146484375,
+              "height": 136.6400146484375
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_3_1",
+              "left": 29.1875,
+              "right": 141.1875,
+              "top": 506.5625,
+              "bottom": 610.5625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_3_2",
+              "left": 248.796875,
+              "right": 360.796875,
+              "top": 506.5625,
+              "bottom": 610.5625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_3_3",
+              "left": 29.1875,
+              "right": 141.1875,
+              "top": 714.140625,
+              "bottom": 818.140625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_synthesis_3",
+              "left": 248.796875,
+              "right": 360.796875,
+              "top": 714.140625,
+              "bottom": 818.140625,
+              "width": 112,
+              "height": 104
+            }
+          ]
+        },
+        "candidate-3-mobile-360": {
+          "candidateLimit": 3,
+          "nodeCount": 5,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-growth_matrix_root_3",
+              "left": 111.68000030517578,
+              "right": 248.32001495361328,
+              "top": 302.86749267578125,
+              "bottom": 439.50750732421875,
+              "width": 136.6400146484375,
+              "height": 136.6400146484375
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_3_1",
+              "left": 23.1875,
+              "right": 135.1875,
+              "top": 447.90625,
+              "bottom": 551.90625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_3_2",
+              "left": 224.796875,
+              "right": 336.796875,
+              "top": 447.90625,
+              "bottom": 551.90625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_3_3",
+              "left": 23.1875,
+              "right": 135.1875,
+              "top": 628.109375,
+              "bottom": 732.109375,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_synthesis_3",
+              "left": 224.796875,
+              "right": 336.796875,
+              "top": 628.109375,
+              "bottom": 732.109375,
+              "width": 112,
+              "height": 104
+            }
+          ]
+        },
+        "candidate-3-mobile-320": {
+          "candidateLimit": 3,
+          "nodeCount": 5,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-growth_matrix_root_3",
+              "left": 91.68000030517578,
+              "right": 228.32001495361328,
+              "top": 302.86749267578125,
+              "bottom": 439.50750732421875,
+              "width": 136.6400146484375,
+              "height": 136.6400146484375
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_3_1",
+              "left": 15.1875,
+              "right": 127.1875,
+              "top": 447.90625,
+              "bottom": 551.90625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_3_2",
+              "left": 192.796875,
+              "right": 304.796875,
+              "top": 447.90625,
+              "bottom": 551.90625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_3_3",
+              "left": 15.1875,
+              "right": 127.1875,
+              "top": 628.109375,
+              "bottom": 732.109375,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_synthesis_3",
+              "left": 192.796875,
+              "right": 304.796875,
+              "top": 628.109375,
+              "bottom": 732.109375,
+              "width": 112,
+              "height": 104
+            }
+          ]
+        },
+        "candidate-4-desktop": {
+          "candidateLimit": 4,
+          "nodeCount": 6,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-growth_matrix_root_4",
+              "left": 617.11376953125,
+              "right": 794.07373046875,
+              "top": 305.4731140136719,
+              "bottom": 482.43310546875,
+              "width": 176.9599609375,
+              "height": 176.95999145507812
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_1",
+              "left": 345.46875,
+              "right": 495.46875,
+              "top": 494.5625,
+              "bottom": 626.5625,
+              "width": 150,
+              "height": 132
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_2",
+              "left": 630.59375,
+              "right": 780.59375,
+              "top": 494.5625,
+              "bottom": 626.5625,
+              "width": 150,
+              "height": 132
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_3",
+              "left": 915.71875,
+              "right": 1065.71875,
+              "top": 494.5625,
+              "bottom": 626.5625,
+              "width": 150,
+              "height": 132
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_4",
+              "left": 345.46875,
+              "right": 495.46875,
+              "top": 634.5,
+              "bottom": 766.5,
+              "width": 150,
+              "height": 132
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_synthesis_4",
+              "left": 915.71875,
+              "right": 1065.71875,
+              "top": 634.5,
+              "bottom": 766.5,
+              "width": 150,
+              "height": 132
+            }
+          ]
+        },
+        "candidate-4-tablet": {
+          "candidateLimit": 4,
+          "nodeCount": 6,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-growth_matrix_root_4",
+              "left": 391.44000244140625,
+              "right": 532.5599975585938,
+              "top": 305.62750244140625,
+              "bottom": 446.74749755859375,
+              "width": 141.1199951171875,
+              "height": 141.1199951171875
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_1",
+              "left": 219.796875,
+              "right": 329.796875,
+              "top": 490.1875,
+              "bottom": 586.1875,
+              "width": 110,
+              "height": 96
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_2",
+              "left": 407,
+              "right": 517,
+              "top": 490.1875,
+              "bottom": 586.1875,
+              "width": 110,
+              "height": 96
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_3",
+              "left": 594.1875,
+              "right": 704.1875,
+              "top": 490.1875,
+              "bottom": 586.1875,
+              "width": 110,
+              "height": 96
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_4",
+              "left": 219.796875,
+              "right": 329.796875,
+              "top": 626.265625,
+              "bottom": 722.265625,
+              "width": 110,
+              "height": 96
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_synthesis_4",
+              "left": 594.1875,
+              "right": 704.1875,
+              "top": 626.265625,
+              "bottom": 722.265625,
+              "width": 110,
+              "height": 96
+            }
+          ]
+        },
+        "candidate-4-mobile-390": {
+          "candidateLimit": 4,
+          "nodeCount": 6,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-growth_matrix_root_4",
+              "left": 126.68000030517578,
+              "right": 263.3200149536133,
+              "top": 412.86749267578125,
+              "bottom": 549.5075073242188,
+              "width": 136.6400146484375,
+              "height": 136.6400146484375
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_1",
+              "left": 29.1875,
+              "right": 141.1875,
+              "top": 612.90625,
+              "bottom": 716.90625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_2",
+              "left": 248.796875,
+              "right": 360.796875,
+              "top": 612.90625,
+              "bottom": 716.90625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_3",
+              "left": 29.1875,
+              "right": 141.1875,
+              "top": 741.5,
+              "bottom": 845.5,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_4",
+              "left": 248.796875,
+              "right": 360.796875,
+              "top": 741.5,
+              "bottom": 845.5,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_synthesis_4",
+              "left": 139,
+              "right": 251,
+              "top": 870.109375,
+              "bottom": 974.109375,
+              "width": 112,
+              "height": 104
+            }
+          ]
+        },
+        "candidate-4-mobile-360": {
+          "candidateLimit": 4,
+          "nodeCount": 6,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-growth_matrix_root_4",
+              "left": 111.68000030517578,
+              "right": 248.32001495361328,
+              "top": 365.02374267578125,
+              "bottom": 501.66375732421875,
+              "width": 136.6400146484375,
+              "height": 136.6400146484375
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_1",
+              "left": 23.1875,
+              "right": 135.1875,
+              "top": 541.140625,
+              "bottom": 645.140625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_2",
+              "left": 224.796875,
+              "right": 336.796875,
+              "top": 541.140625,
+              "bottom": 645.140625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_3",
+              "left": 23.1875,
+              "right": 135.1875,
+              "top": 653,
+              "bottom": 757,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_4",
+              "left": 224.796875,
+              "right": 336.796875,
+              "top": 653,
+              "bottom": 757,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_synthesis_4",
+              "left": 124,
+              "right": 236,
+              "top": 764.859375,
+              "bottom": 868.859375,
+              "width": 112,
+              "height": 104
+            }
+          ]
+        },
+        "candidate-4-mobile-320": {
+          "candidateLimit": 4,
+          "nodeCount": 6,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-growth_matrix_root_4",
+              "left": 91.68000030517578,
+              "right": 228.32001495361328,
+              "top": 365.02374267578125,
+              "bottom": 501.66375732421875,
+              "width": 136.6400146484375,
+              "height": 136.6400146484375
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_1",
+              "left": 15.1875,
+              "right": 127.1875,
+              "top": 541.140625,
+              "bottom": 645.140625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_2",
+              "left": 192.796875,
+              "right": 304.796875,
+              "top": 541.140625,
+              "bottom": 645.140625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_3",
+              "left": 15.1875,
+              "right": 127.1875,
+              "top": 653,
+              "bottom": 757,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_4",
+              "left": 192.796875,
+              "right": 304.796875,
+              "top": 653,
+              "bottom": 757,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_synthesis_4",
+              "left": 104,
+              "right": 216,
+              "top": 764.859375,
+              "bottom": 868.859375,
+              "width": 112,
+              "height": 104
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "growth-wide-layout-compatibility",
+      "passed": true,
+      "stageNodeChecks": {
+        "imported-wide-mobile-320": {
+          "nodeCount": 6,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-growth_matrix_root_4",
+              "left": 91.68000030517578,
+              "right": 228.32001495361328,
+              "top": 365.02374267578125,
+              "bottom": 501.66375732421875,
+              "width": 136.6400146484375,
+              "height": 136.6400146484375
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_1",
+              "left": 15.1875,
+              "right": 127.1875,
+              "top": 541.140625,
+              "bottom": 645.140625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_2",
+              "left": 192.796875,
+              "right": 304.796875,
+              "top": 541.140625,
+              "bottom": 645.140625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_3",
+              "left": 15.1875,
+              "right": 127.1875,
+              "top": 653,
+              "bottom": 757,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_4",
+              "left": 192.796875,
+              "right": 304.796875,
+              "top": 653,
+              "bottom": 757,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_synthesis_4",
+              "left": 104,
+              "right": 216,
+              "top": 764.859375,
+              "bottom": 868.859375,
+              "width": 112,
+              "height": 104
+            }
+          ]
+        },
+        "desktop-drag-mobile-320": {
+          "nodeCount": 6,
+          "nodes": [
+            {
+              "testId": "dialogue-stage-node-growth_matrix_root_4",
+              "left": 91.68000030517578,
+              "right": 228.32001495361328,
+              "top": 365.02374267578125,
+              "bottom": 501.66375732421875,
+              "width": 136.6400146484375,
+              "height": 136.6400146484375
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_1",
+              "left": 15.1875,
+              "right": 127.1875,
+              "top": 541.140625,
+              "bottom": 645.140625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_2",
+              "left": 192.796875,
+              "right": 304.796875,
+              "top": 541.140625,
+              "bottom": 645.140625,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_3",
+              "left": 15.1875,
+              "right": 127.1875,
+              "top": 653,
+              "bottom": 757,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_response_4_4",
+              "left": 192.796875,
+              "right": 304.796875,
+              "top": 653,
+              "bottom": 757,
+              "width": 112,
+              "height": 104
+            },
+            {
+              "testId": "dialogue-stage-node-growth_matrix_synthesis_4",
+              "left": 104,
+              "right": 216,
+              "top": 764.859375,
+              "bottom": 868.859375,
+              "width": 112,
+              "height": 104
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

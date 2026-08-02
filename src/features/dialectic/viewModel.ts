@@ -24,13 +24,19 @@ export type DialogueSidebarItem = {
 export type DialogueStageNode = {
   id: string;
   label: string;
+  preview?: string;
+  summary?: string;
   kind: AniccaNode["kind"];
   branchType?: BranchType;
   displayRole?: "node" | "synthesis-record";
+  isGrowthPerspective?: boolean;
   relation: "focus" | "ancestor" | "child" | "source";
   // Seed coordinates define the default composition before per-snapshot drag state takes over.
   seedX: number;
   seedY: number;
+  // Narrow stages use a separate seed grid so dense Growth sessions keep real card spacing.
+  compactSeedX?: number;
+  compactSeedY?: number;
 };
 
 export type DialogueSourceNode = {
@@ -105,6 +111,15 @@ function getNodeLabel(node: AniccaNode): string {
     return "主题";
   }
   return "节点";
+}
+
+function getNodePreview(node: AniccaNode): string | undefined {
+  const text = (node.text || node.meta?.summary || node.meta?.label || "").trim().replace(/\s+/g, " ");
+  if (!text) {
+    return undefined;
+  }
+
+  return text;
 }
 
 function getBreadcrumbParentId(graph: Graph, node: AniccaNode): string | null {
@@ -202,7 +217,7 @@ function buildSidebarItems(graph: Graph, focusNodeId: string | null, breadcrumbI
       kind: node.kind,
       branchType: node.branchType,
       displayRole: "node",
-      summary: node.meta?.summary,
+      summary: node.meta?.summary || (node.kind === "user" ? getNodePreview(node) : undefined),
       isFocused: node.id === focusNodeId,
       isOnFocusedPath: focusPath.has(node.id),
       sourceLabels
@@ -235,7 +250,7 @@ function buildSidebarItems(graph: Graph, focusNodeId: string | null, breadcrumbI
           kind: eventNode.kind,
           branchType: eventNode.branchType,
           displayRole: "synthesis-event",
-          summary: eventNode.meta?.summary,
+          summary: eventNode.meta?.summary || getNodePreview(eventNode),
           isFocused: eventNode.id === focusNodeId,
           isOnFocusedPath: focusPath.has(eventNode.id),
           sourceLabels: eventSourceLabels
@@ -466,6 +481,68 @@ function getFallbackChildPosition(index: number, count: number): StageSeed {
   };
 }
 
+type GrowthStageSeed = {
+  wide: StageSeed;
+  compact: StageSeed;
+};
+
+function getCompactGrowthPosition(index: number, count: number): StageSeed {
+  if (count <= 1) {
+    return { x: 50, y: 72 };
+  }
+
+  const rowCount = Math.ceil(count / 2);
+  const row = Math.floor(index / 2);
+  const isFinalUnpairedChild = count % 2 === 1 && index === count - 1;
+  const y = rowCount === 1 ? 72 : 60 + (28 / (rowCount - 1)) * row;
+
+  return {
+    x: isFinalUnpairedChild ? 50 : index % 2 === 0 ? 20 : 80,
+    y
+  };
+}
+
+function getGrowthChildPosition(index: number, count: number): GrowthStageSeed {
+  if (count <= 1) {
+    return { wide: { x: 50, y: 72 }, compact: { x: 50, y: 72 } };
+  }
+
+  if (count === 2) {
+    const wide = index === 0 ? { x: 20, y: 72 } : { x: 80, y: 72 };
+    return { wide, compact: wide };
+  }
+
+  if (count === 3) {
+    const wide = [
+      { x: 50, y: 65 },
+      { x: 20, y: 86 },
+      { x: 80, y: 86 }
+    ][index];
+    return { wide, compact: getCompactGrowthPosition(index, count) };
+  }
+
+  if (count === 4) {
+    const wide = [
+      { x: 20, y: 65 },
+      { x: 80, y: 65 },
+      { x: 20, y: 88 },
+      { x: 80, y: 88 }
+    ][index];
+    return { wide, compact: getCompactGrowthPosition(index, count) };
+  }
+
+  const columns = Math.ceil(count / 2);
+  const row = Math.floor(index / columns);
+  const column = index % columns;
+  const columnsInRow = row === 0 ? Math.min(columns, count) : count - columns;
+  const x = columnsInRow <= 1 ? 50 : 20 + (60 / (columnsInRow - 1)) * column;
+
+  return {
+    wide: { x, y: row === 0 ? 65 : 86 },
+    compact: getCompactGrowthPosition(index, count)
+  };
+}
+
 function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStageNode[] {
   if (!focusNodeId || !graph.nodes[focusNodeId]) {
     return [];
@@ -482,8 +559,11 @@ function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStag
     nodes.push({
       id: ancestor.id,
       label: getNodeLabel(ancestor),
+      preview: getNodePreview(ancestor),
+      summary: ancestor.meta?.summary,
       kind: ancestor.kind,
       branchType: ancestor.branchType,
+      isGrowthPerspective: Boolean(ancestor.meta?.growth),
       relation: "ancestor",
       seedX: 50,
       seedY: preset.ancestorStartY + index * preset.ancestorStepY
@@ -493,8 +573,11 @@ function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStag
   nodes.push({
     id: focusNode.id,
     label: getNodeLabel(focusNode),
+    preview: getNodePreview(focusNode),
+    summary: focusNode.meta?.summary,
     kind: focusNode.kind,
     branchType: focusNode.branchType,
+    isGrowthPerspective: Boolean(focusNode.meta?.growth),
     displayRole: focusNode.kind === "assistant" && focusNode.branchType === "合" ? "synthesis-record" : "node",
     relation: "focus",
     seedX: preset.focus.x,
@@ -512,8 +595,11 @@ function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStag
       nodes.push({
         id: source.id,
         label: getNodeLabel(source),
+        preview: getNodePreview(source),
+        summary: source.meta?.summary,
         kind: source.kind,
         branchType: source.branchType,
+        isGrowthPerspective: Boolean(source.meta?.growth),
         relation: "source",
         seedX: sourcePosition.x,
         seedY: sourcePosition.y
@@ -522,15 +608,27 @@ function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStag
   }
 
   const childIds = getDisplayChildren(graph, focusNode);
+  const growthChildren = childIds.filter((childId) => {
+    const child = graph.nodes[childId];
+    return Boolean(child.meta?.growth) && !child.branchType;
+  });
   childIds.forEach((childId, index) => {
     const child = graph.nodes[childId];
     let position: StageSeed | null = null;
+    let compactPosition: StageSeed | null = null;
 
     if (focusNode.kind === "user") {
       position =
         child.branchType === "正" ? preset.childPositions[0] :
         child.branchType === "反" ? preset.childPositions[1] :
-        preset.childPositions[2] || null;
+        child.branchType === "合" ? preset.childPositions[2] || null :
+        null;
+    }
+
+    if (!position && child.meta?.growth && !child.branchType) {
+      const growthPosition = getGrowthChildPosition(growthChildren.indexOf(childId), growthChildren.length);
+      position = growthPosition.wide;
+      compactPosition = growthPosition.compact;
     }
 
     if (!position) {
@@ -540,11 +638,16 @@ function buildStageNodes(graph: Graph, focusNodeId: string | null): DialogueStag
     nodes.push({
       id: child.id,
       label: getNodeLabel(child),
+      preview: getNodePreview(child),
+      summary: child.meta?.summary,
       kind: child.kind,
       branchType: child.branchType,
+      isGrowthPerspective: Boolean(child.meta?.growth),
       relation: "child",
       seedX: position.x,
-      seedY: position.y
+      seedY: position.y,
+      compactSeedX: compactPosition?.x,
+      compactSeedY: compactPosition?.y
     });
   });
 

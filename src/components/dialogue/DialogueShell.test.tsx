@@ -1,6 +1,11 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { DialogueShell, isDialogueDemoWorkspaceEnabled } from "@/components/dialogue/DialogueShell";
+import {
+  DialogueShell,
+  isDialogueDemoWorkspaceEnabled,
+  isDialogueRetrievalDebugPreviewEnabled,
+  setDialogueWorkspaceRetrievalContextEnabledForTests
+} from "@/components/dialogue/DialogueShell";
 import { useDialogueUiStore } from "@/features/dialectic/store";
 import {
   DialogueTelemetryEvent,
@@ -20,6 +25,8 @@ import {
 } from "@/lib/persist/workspaces";
 import { branchGraphStore } from "@/store/branchGraph";
 import { createEmptyGraph } from "@/types/anicca";
+import { PersistedWorkspaceSnapshot } from "@/types/workspace";
+import { createDeferred } from "../../../tests/deferred";
 
 function resetWorkspace(focusedNodeId: string | null = null) {
   branchGraphStore.setGraph(createEmptyGraph());
@@ -115,30 +122,75 @@ function seedActiveWorkspaceFromCurrentGraph() {
   setActiveWorkspaceId("workspace_test");
 }
 
+function readFetchBody(fetchMock: ReturnType<typeof vi.fn>, callIndex = 0) {
+  const [, init] = fetchMock.mock.calls[callIndex] as [string, RequestInit];
+  return JSON.parse(String(init.body || "{}"));
+}
+
+function normalizeRequestId<T extends { requestId?: unknown }>(body: T) {
+  return {
+    ...body,
+    requestId: "<requestId>"
+  };
+}
+
+function normalizeRetrievalContextIds<T extends { contextMessages?: Array<{ content?: string }> }>(body: T) {
+  return {
+    ...body,
+    contextMessages: body.contextMessages?.map((message) => ({
+      ...message,
+      content: message.content?.startsWith("相关谱系片段:")
+        ? normalizeRetrievalContextContent(message.content)
+        : message.content
+    }))
+  };
+}
+
+function normalizeRetrievalContextContent(content: string) {
+  const normalized = content.replace(/\b(?:user|asst)_[a-z0-9_]+/g, "<nodeId>");
+  const [header, ...lines] = normalized.split("\n");
+  const nodeLines = lines.filter((line) => line.startsWith("NODE ")).sort();
+  const edgeLines = lines.filter((line) => line.startsWith("EDGE ")).sort();
+  return [header, ...nodeLines, ...edgeLines].join("\n");
+}
+
 describe("DialogueShell", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    setDialogueWorkspaceRetrievalContextEnabledForTests(false);
     resetDialogueTelemetrySinkForTests();
     window.history.replaceState({}, "", "/dialogue");
     resetWorkspace();
   });
 
   it("shows composer and synthesis affordance from the derived view model", async () => {
-    const { rootUserId } = seedPair();
+    const user = userEvent.setup();
+    const { rootUserId, thesisId } = seedPair();
     useDialogueUiStore.setState({ focusedNodeId: rootUserId });
     vi.stubGlobal("fetch", vi.fn());
 
     render(<DialogueShell />);
 
-    expect(await screen.findByText("记录合流")).toBeInTheDocument();
-    expect(screen.getByText("将开启")).toBeInTheDocument();
-    expect(screen.getByText("新的主题")).toBeInTheDocument();
+    expect((await screen.findAllByText("合流记录")).length).toBeGreaterThan(0);
+    expect(screen.getByText("主决策")).toBeInTheDocument();
+    expect(screen.getByText("正反已生成")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("先选择推进、暂缓，或留下合流记录。")).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("把当前母题推进到下一轮。")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "开启新主题" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /继续推进正方/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /暂缓判断反方/ })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /合流记录/ }).length).toBeGreaterThan(0);
+
+    await user.click(screen.getByRole("button", { name: /继续推进正方/ }));
+
+    expect(useDialogueUiStore.getState().focusedNodeId).toBe(thesisId);
+    expect(screen.getByText("将续写到")).toBeInTheDocument();
   });
 
   it("loads a demo workspace from the empty-state action", async () => {
     const user = userEvent.setup();
+    window.history.replaceState({}, "", "/dialogue?demo=1");
     vi.stubGlobal("fetch", vi.fn());
 
     render(<DialogueShell />);
@@ -149,6 +201,378 @@ describe("DialogueShell", () => {
     expect(screen.queryByTestId("dialogue-stage-node-asst_synthesis_1")).not.toBeInTheDocument();
     expect(useDialogueUiStore.getState().focusedNodeId).toBe("user_root_1");
     expect(branchGraphStore.getGraph().entryIds).toEqual(["user_root_1"]);
+  });
+
+  it("runs the artwork perspective command locally without calling the branch route", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: /点此输入/ }));
+    await user.type(screen.getByLabelText("输入"), "也许要换个角度继续推进？");
+    const growthButton = screen.getByRole("button", { name: "画作视角" });
+    expect(growthButton).toBeEnabled();
+    await user.click(growthButton);
+
+    await waitFor(() => {
+      expect(branchGraphStore.getGraph().entryIds).toHaveLength(1);
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    const graph = branchGraphStore.getGraph();
+    const rootId = graph.entryIds[0];
+    const growthNodes = Object.values(graph.nodes).filter((node) => node.meta?.growth?.operator);
+
+    expect(graph.nodes[rootId]).toMatchObject({
+      kind: "user",
+      text: "也许要换个角度继续推进？",
+      meta: { growth: { eventId: expect.stringMatching(/^event_growth_req_/) } }
+    });
+    expect(growthNodes.length).toBeGreaterThanOrEqual(3);
+    expect(growthNodes.map((node) => node.meta?.growth?.operator)).toEqual(
+      expect.arrayContaining(["merge_promote"])
+    );
+    expect(Object.values(graph.edges)).toEqual(
+      expect.arrayContaining([expect.objectContaining({ reason: expect.stringMatching(/^growth:/) })])
+    );
+    expect(screen.getByRole("status")).toHaveTextContent("画作视角已生成：只回应当前事件，不写长期记忆。");
+  });
+
+  it("writes artwork perspectives under the selected assistant without reordering canonical siblings", async () => {
+    const user = userEvent.setup();
+    const { rootUserId, thesisId, antithesisId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: thesisId });
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    await user.type(await screen.findByLabelText("输入"), "继续拆小");
+    await user.click(screen.getByRole("button", { name: "画作视角" }));
+
+    await waitFor(() => {
+      expect(branchGraphStore.getGraph().nodes[rootUserId].children).toEqual([thesisId, antithesisId]);
+    });
+
+    const graph = branchGraphStore.getGraph();
+    const growthUser = Object.values(graph.nodes).find((node) => node.kind === "user" && node.text === "继续拆小");
+    expect(growthUser?.parents).toEqual([thesisId]);
+    expect(Object.values(graph.edges)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ from: thesisId, to: growthUser?.id, reason: "continue" }),
+        expect.objectContaining({ from: growthUser?.id, reason: expect.stringMatching(/^growth:/) })
+      ])
+    );
+  });
+
+  it("returns from artwork perspectives to canonical choices without leaving pending state", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    await user.type(await screen.findByLabelText("输入"), "换一个角度");
+    await user.click(screen.getByRole("button", { name: "画作视角" }));
+    await waitFor(() => {
+      expect(useDialogueUiStore.getState().focusedNodeId).not.toBe(rootUserId);
+    });
+
+    await user.click(
+      within(screen.getByTestId("dialogue-sidebar")).getByRole("button", { name: /要不要继续这个项目/ })
+    );
+
+    expect(screen.getByTestId("dialogue-decision-context")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /继续推进正方/ })).toBeEnabled();
+    expect(useDialogueUiStore.getState().pending).toEqual({ branches: null, synthesis: null });
+    expect(screen.getByText("画作视角")).toBeInTheDocument();
+  });
+
+  it("locks the /api/branches request body for parent-context continuations", async () => {
+    const user = userEvent.setup();
+    const { thesisId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: thesisId });
+    const fetchMock = vi.fn(async (_url, init) => {
+      const body = JSON.parse(String((init as RequestInit).body || "{}"));
+      return new Response(
+        JSON.stringify({
+          requestId: body.requestId,
+          thesis: { text: "拆小", summary: "拆小推进", label: "拆小", stance: "正" },
+          antithesis: { text: "降速", summary: "降速观察", label: "降速", stance: "反" }
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<DialogueShell />);
+
+    await user.type(await screen.findByLabelText("输入"), "下一步怎么拆");
+    await user.click(screen.getByRole("button", { name: "生成正 / 反" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("/api/branches", expect.any(Object));
+    });
+    expect(normalizeRequestId(readFetchBody(fetchMock))).toMatchInlineSnapshot(`
+      {
+        "contextMessages": [
+          {
+            "content": "要不要继续这个项目",
+            "role": "user",
+          },
+          {
+            "content": "继续：继续推进；暂停：暂停重构",
+            "role": "assistant",
+          },
+        ],
+        "requestId": "<requestId>",
+        "userText": "下一步怎么拆",
+      }
+    `);
+  });
+
+  it("adds flagged retrieval context to the /api/branches request body", async () => {
+    setDialogueWorkspaceRetrievalContextEnabledForTests(true);
+    const user = userEvent.setup();
+    const { thesisId } = seedPair();
+    const relatedRootId = branchGraphStore.createUserNode("下一步怎么拆的参考");
+    branchGraphStore.createAssistantPair(relatedRootId, {
+      thesis: { text: "先列一张拆分清单", summary: "拆分参考", label: "拆分" },
+      antithesis: { text: "先延后拆分", summary: "延后参考", label: "延后" }
+    });
+    useDialogueUiStore.setState({ focusedNodeId: thesisId });
+    const fetchMock = vi.fn(async (_url, init) => {
+      const body = JSON.parse(String((init as RequestInit).body || "{}"));
+      return new Response(
+        JSON.stringify({
+          requestId: body.requestId,
+          thesis: { text: "拆小", summary: "拆小推进", label: "拆小", stance: "正" },
+          antithesis: { text: "降速", summary: "降速观察", label: "降速", stance: "反" }
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<DialogueShell />);
+
+    await user.type(await screen.findByLabelText("输入"), "下一步怎么拆");
+    await user.click(screen.getByRole("button", { name: "生成正 / 反" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("/api/branches", expect.any(Object));
+    });
+    expect(normalizeRetrievalContextIds(normalizeRequestId(readFetchBody(fetchMock)))).toMatchInlineSnapshot(`
+      {
+        "contextMessages": [
+          {
+            "content": "要不要继续这个项目",
+            "role": "user",
+          },
+          {
+            "content": "继续：继续推进；暂停：暂停重构",
+            "role": "assistant",
+          },
+          {
+            "content": "相关谱系片段:
+      NODE [<nodeId>] kind=assistant branch=antithesis label=延后 summary=延后参考
+      NODE [<nodeId>] kind=assistant branch=thesis label=拆分 summary=拆分参考
+      NODE [<nodeId>] kind=user label=下一步怎么拆的参考
+      EDGE [<nodeId>] --antithesis--> [<nodeId>] confidence=explicit reason=反
+      EDGE [<nodeId>] --thesis--> [<nodeId>] confidence=explicit reason=正",
+            "role": "system",
+          },
+        ],
+        "requestId": "<requestId>",
+        "userText": "下一步怎么拆",
+      }
+    `);
+  });
+
+  it("locks the /api/synthesis request body from the current sibling pair", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    const fetchMock = vi.fn(async (_url, init) => {
+      const body = JSON.parse(String((init as RequestInit).body || "{}"));
+      return new Response(
+        JSON.stringify({
+          requestId: body.requestId,
+          synthesis: { text: "重开主线", summary: "主线重开", label: "重开", stance: "合" }
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<DialogueShell />);
+
+    const synthesisButtons = await screen.findAllByRole("button", { name: /合流记录/ });
+    await user.click(synthesisButtons[0]);
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("/api/synthesis", expect.any(Object));
+    });
+    expect(normalizeRequestId(readFetchBody(fetchMock))).toMatchInlineSnapshot(`
+      {
+        "antithesis": {
+          "label": "暂停",
+          "stance": "反",
+          "summary": "暂停重构",
+          "text": "暂停",
+        },
+        "contextMessages": [
+          {
+            "content": "要不要继续这个项目",
+            "role": "user",
+          },
+          {
+            "content": "继续：继续推进；暂停：暂停重构",
+            "role": "assistant",
+          },
+        ],
+        "requestId": "<requestId>",
+        "thesis": {
+          "label": "继续",
+          "stance": "正",
+          "summary": "继续推进",
+          "text": "继续",
+        },
+      }
+    `);
+  });
+
+  it("adds flagged retrieval context to the /api/synthesis request body", async () => {
+    setDialogueWorkspaceRetrievalContextEnabledForTests(true);
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    const relatedRootId = branchGraphStore.createUserNode("继续 暂停 的历史参考");
+    branchGraphStore.createAssistantPair(relatedRootId, {
+      thesis: { text: "继续但压缩范围", summary: "继续参考", label: "继续参考" },
+      antithesis: { text: "暂停并复盘", summary: "暂停参考", label: "暂停参考" }
+    });
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    const fetchMock = vi.fn(async (_url, init) => {
+      const body = JSON.parse(String((init as RequestInit).body || "{}"));
+      return new Response(
+        JSON.stringify({
+          requestId: body.requestId,
+          synthesis: { text: "重开主线", summary: "主线重开", label: "重开", stance: "合" }
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<DialogueShell />);
+
+    const synthesisButtons = await screen.findAllByRole("button", { name: /合流记录/ });
+    await user.click(synthesisButtons[0]);
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("/api/synthesis", expect.any(Object));
+    });
+    expect(normalizeRetrievalContextIds(normalizeRequestId(readFetchBody(fetchMock)))).toMatchInlineSnapshot(`
+      {
+        "antithesis": {
+          "label": "暂停",
+          "stance": "反",
+          "summary": "暂停重构",
+          "text": "暂停",
+        },
+        "contextMessages": [
+          {
+            "content": "要不要继续这个项目",
+            "role": "user",
+          },
+          {
+            "content": "继续：继续推进；暂停：暂停重构",
+            "role": "assistant",
+          },
+          {
+            "content": "相关谱系片段:
+      NODE [<nodeId>] kind=assistant branch=antithesis label=暂停参考 summary=暂停参考
+      NODE [<nodeId>] kind=assistant branch=thesis label=继续参考 summary=继续参考
+      NODE [<nodeId>] kind=user label=继续 暂停 的历史参考",
+            "role": "system",
+          },
+        ],
+        "requestId": "<requestId>",
+        "thesis": {
+          "label": "继续",
+          "stance": "正",
+          "summary": "继续推进",
+          "text": "继续",
+        },
+      }
+    `);
+  });
+
+  it("keeps the empty start focused on the stage prompt until the user opens input", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    await screen.findByTestId("dialogue-stage");
+    expect(screen.queryByTestId("dialogue-composer")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "载入示例谱系" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /点此输入/ }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("dialogue-composer")).toBeInTheDocument();
+      expect(screen.getByLabelText("输入")).toHaveFocus();
+    });
+  });
+
+  it("keeps an empty-root branch request visible across stage, lineage, and panel", async () => {
+    const user = userEvent.setup();
+    const fetchDeferred = createDeferred<Response>();
+    vi.stubGlobal("fetch", vi.fn(() => fetchDeferred.promise));
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: /点此输入/ }));
+    await user.type(screen.getByLabelText("输入"), "这个方向还值得投入吗");
+    await user.click(screen.getByRole("button", { name: "开启新主题" }));
+
+    expect(screen.getByTestId("dialogue-stage-pending-branches")).toHaveTextContent("这个方向还值得投入吗");
+    expect(screen.getByTestId("dialogue-sidebar")).toHaveTextContent("正在生成正与反");
+    expect(screen.getByTestId("dialogue-panel-pending-branches")).toHaveTextContent("母题已进入舞台");
+
+    fetchDeferred.resolve(
+      new Response(
+        JSON.stringify({
+          requestId: useDialogueUiStore.getState().pending.branches?.requestId,
+          thesis: { text: "继续", summary: "继续推进", label: "继续", stance: "正" },
+          antithesis: { text: "暂停", summary: "暂停重构", label: "暂停", stance: "反" }
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
+      )
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("dialogue-panel-pending-branches")).not.toBeInTheDocument();
+      expect(branchGraphStore.getGraph().entryIds).toHaveLength(1);
+    });
   });
 
   it("boots from the active workspace registry instead of the legacy single snapshot key", async () => {
@@ -176,10 +600,67 @@ describe("DialogueShell", () => {
     expect(localStorage.getItem("anicca_workspace_v2")).toBeNull();
   });
 
-  it("limits the demo workspace action to localhost or explicit demo query", () => {
-    expect(isDialogueDemoWorkspaceEnabled({ hostname: "localhost", search: "" })).toBe(true);
+  it("limits the demo workspace action to an explicit demo query", () => {
+    expect(isDialogueDemoWorkspaceEnabled({ hostname: "localhost", search: "" })).toBe(false);
     expect(isDialogueDemoWorkspaceEnabled({ hostname: "anicca.app", search: "?demo=1" })).toBe(true);
     expect(isDialogueDemoWorkspaceEnabled({ hostname: "anicca.app", search: "" })).toBe(false);
+  });
+
+  it("limits retrieval debug preview to an explicit debug query", () => {
+    expect(isDialogueRetrievalDebugPreviewEnabled({ search: "" })).toBe(false);
+    expect(isDialogueRetrievalDebugPreviewEnabled({ search: "?retrievalDebug=1" })).toBe(true);
+    expect(isDialogueRetrievalDebugPreviewEnabled({ search: "?retrievalDebug=0" })).toBe(false);
+  });
+
+  it("renders query-enabled retrieval context preview without changing generation defaults", async () => {
+    const user = userEvent.setup();
+    window.history.replaceState({}, "", "/dialogue?retrievalDebug=1");
+    const { thesisId } = seedPair();
+    const relatedRootId = branchGraphStore.createUserNode("下一步怎么拆的参考");
+    branchGraphStore.createAssistantPair(relatedRootId, {
+      thesis: { text: "先列一张拆分清单", summary: "拆分参考", label: "拆分" },
+      antithesis: { text: "先延后拆分", summary: "延后参考", label: "延后" }
+    });
+    useDialogueUiStore.setState({ focusedNodeId: thesisId });
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    await user.type(await screen.findByLabelText("输入"), "下一步怎么拆");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("dialogue-retrieval-debug")).toHaveTextContent("相关谱系片段:");
+    });
+    expect(screen.getByTestId("dialogue-retrieval-debug")).toHaveTextContent("拆分参考");
+    expect(screen.getByTestId("dialogue-retrieval-debug")).toHaveTextContent("query");
+    expect(screen.getByTestId("dialogue-retrieval-debug")).toHaveTextContent("omitted");
+    expect(screen.getByTestId("dialogue-retrieval-debug")).toHaveTextContent("coverage exclusion active");
+    expect(screen.getByTestId("dialogue-retrieval-debug")).not.toHaveTextContent("要不要继续这个项目");
+  });
+
+  it("keeps retrieval debug preview hidden by default", async () => {
+    const { thesisId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: thesisId });
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    await screen.findByTestId("dialogue-stage");
+    expect(screen.queryByTestId("dialogue-retrieval-debug")).not.toBeInTheDocument();
+  });
+
+  it("explains empty retrieval preview results", async () => {
+    window.history.replaceState({}, "", "/dialogue?retrievalDebug=1");
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<DialogueShell />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("dialogue-retrieval-debug")).toHaveTextContent("无可注入片段");
+    });
+    expect(screen.getByTestId("dialogue-retrieval-debug")).toHaveTextContent("query");
+    expect(screen.getByTestId("dialogue-retrieval-debug")).toHaveTextContent("(empty)");
+    expect(screen.getByTestId("dialogue-retrieval-debug")).toHaveTextContent("empty query");
   });
 
   it("keeps mobile reading and keyboard order aligned as stage, lineage, panel, then composer", async () => {
@@ -207,7 +688,10 @@ describe("DialogueShell", () => {
     seedActiveWorkspaceFromCurrentGraph();
     vi.stubGlobal("fetch", vi.fn());
 
-    const createObjectURL = vi.fn(() => "blob:workspace");
+    const createObjectURL = vi.fn((blob: Blob) => {
+      void blob;
+      return "blob:workspace";
+    });
     const revokeObjectURL = vi.fn();
     vi.stubGlobal("URL", {
       createObjectURL,
@@ -255,7 +739,7 @@ describe("DialogueShell", () => {
       focusedNodeId: "user_import_source",
       composerParentId: "user_import_source",
       stageLayouts: {}
-    };
+    } satisfies PersistedWorkspaceSnapshot;
     const file = new File(
       [serializeWorkspaceBundle({ entry: sourceEntry, snapshot: sourceSnapshot })],
       "workspace.json",
@@ -351,7 +835,7 @@ describe("DialogueShell", () => {
     await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
     await user.click(screen.getByRole("button", { name: "作为追问继续" }));
 
-    const composerInput = screen.getByPlaceholderText("把当前母题推进到下一轮。");
+    const composerInput = screen.getByLabelText("输入");
     expect(composerInput).toHaveValue("作为追问继续的问题");
     await waitFor(() => {
       expect(composerInput).toHaveFocus();
@@ -504,6 +988,7 @@ describe("DialogueShell", () => {
 
     render(<DialogueShell />);
 
+    expect(await screen.findByText("圆桌会作为旁路记录保存，不改变这条谱系。")).toBeInTheDocument();
     await user.click(await screen.findByRole("button", { name: "召集圆桌讨论此节点" }));
 
     const pendingButton = screen.getByRole("button", { name: "圆桌生成中..." });
@@ -546,44 +1031,40 @@ describe("DialogueShell", () => {
     const { rootUserId, thesisId } = seedPair();
     useDialogueUiStore.setState({ focusedNodeId: rootUserId });
     seedActiveWorkspaceFromCurrentGraph();
-    let resolveRoundtable: (() => void) | null = null;
+    const roundtableDeferred = createDeferred<void>();
     vi.stubGlobal(
       "fetch",
-      vi.fn(
-        (_url, init) =>
-          new Promise<Response>((resolve) => {
-            resolveRoundtable = () => {
-              const body = JSON.parse(String((init as RequestInit).body || "{}"));
-              resolve(
-                new Response(
-                  JSON.stringify({
-                    requestId: body.requestId,
-                    state: {
-                      topic: "roundtable topic",
-                      participants: [],
-                      rounds: [],
-                      currentQuestion: "q1",
-                      nextQuestion: "q2",
-                      lastCoreTension: "t",
-                      status: "active"
-                    }
-                  }),
-                  {
-                    status: 200,
-                    headers: { "Content-Type": "application/json" }
-                  }
-                )
-              );
-            };
-          })
-      )
+      vi.fn((_url, init) => {
+        const body = JSON.parse(String((init as RequestInit).body || "{}"));
+        return roundtableDeferred.promise.then(
+          () =>
+            new Response(
+              JSON.stringify({
+                requestId: body.requestId,
+                state: {
+                  topic: "roundtable topic",
+                  participants: [],
+                  rounds: [],
+                  currentQuestion: "q1",
+                  nextQuestion: "q2",
+                  lastCoreTension: "t",
+                  status: "active"
+                }
+              }),
+              {
+                status: 200,
+                headers: { "Content-Type": "application/json" }
+              }
+            )
+        );
+      })
     );
 
     render(<DialogueShell />);
 
     await user.click(await screen.findByRole("button", { name: "召集圆桌讨论此节点" }));
     await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
-    resolveRoundtable?.();
+    roundtableDeferred.resolve();
 
     await waitFor(() => {
       expect(loadWorkspaceRecord("workspace_test")?.snapshot.artifacts?.roundtables).toBeTruthy();
@@ -673,13 +1154,8 @@ describe("DialogueShell", () => {
       }
     });
 
-    let resolveRoundtable: ((value: Response) => void) | null = null;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(() => new Promise<Response>((resolve) => {
-        resolveRoundtable = resolve;
-      }))
-    );
+    const roundtableDeferred = createDeferred<Response>();
+    vi.stubGlobal("fetch", vi.fn(() => roundtableDeferred.promise));
 
     render(<DialogueShell />);
 
@@ -691,7 +1167,7 @@ describe("DialogueShell", () => {
     });
     expect(screen.getByRole("button", { name: "召集圆桌讨论此节点" })).toBeEnabled();
 
-    resolveRoundtable?.(
+    roundtableDeferred.resolve(
       new Response(
         JSON.stringify({
           requestId: "req_roundtable",
@@ -824,23 +1300,15 @@ describe("DialogueShell", () => {
     const { thesisId } = seedPair();
     useDialogueUiStore.setState({ focusedNodeId: thesisId });
     seedActiveWorkspaceFromCurrentGraph();
-    let resolveFetch: ((value: Response) => void) | null = null;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockImplementation(
-        () =>
-          new Promise<Response>((resolve) => {
-            resolveFetch = resolve;
-          })
-      )
-    );
+    const fetchDeferred = createDeferred<Response>();
+    vi.stubGlobal("fetch", vi.fn(() => fetchDeferred.promise));
 
     render(<DialogueShell />);
 
     await user.type(screen.getByLabelText("输入"), "继续的话下一步做什么");
     await user.click(screen.getByRole("button", { name: "生成正 / 反" }));
 
-    resolveFetch?.(
+    fetchDeferred.resolve(
       new Response(
         JSON.stringify({
           requestId: useDialogueUiStore.getState().pending.branches?.requestId,
@@ -881,21 +1349,13 @@ describe("DialogueShell", () => {
     const { rootUserId } = seedPair();
     useDialogueUiStore.setState({ focusedNodeId: rootUserId });
     seedActiveWorkspaceFromCurrentGraph();
-    let resolveFetch: ((value: Response) => void) | null = null;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockImplementation(
-        () =>
-          new Promise<Response>((resolve) => {
-            resolveFetch = resolve;
-          })
-      )
-    );
+    const fetchDeferred = createDeferred<Response>();
+    vi.stubGlobal("fetch", vi.fn(() => fetchDeferred.promise));
 
     render(<DialogueShell />);
 
-    await user.click(screen.getByRole("button", { name: "记录合流" }));
-    resolveFetch?.(
+    await user.click(screen.getByRole("button", { name: /合流记录/ }));
+    fetchDeferred.resolve(
       new Response(
         JSON.stringify({
           requestId: useDialogueUiStore.getState().pending.synthesis?.requestId,
@@ -933,21 +1393,13 @@ describe("DialogueShell", () => {
     const { rootUserId } = seedPair();
     useDialogueUiStore.setState({ focusedNodeId: rootUserId });
     seedActiveWorkspaceFromCurrentGraph();
-    let resolveFetch: ((value: Response) => void) | null = null;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockImplementation(
-        () =>
-          new Promise<Response>((resolve) => {
-            resolveFetch = resolve;
-          })
-      )
-    );
+    const fetchDeferred = createDeferred<Response>();
+    vi.stubGlobal("fetch", vi.fn(() => fetchDeferred.promise));
 
     render(<DialogueShell />);
 
-    await user.click(screen.getByRole("button", { name: "记录合流" }));
-    resolveFetch?.(
+    await user.click(screen.getByRole("button", { name: /合流记录/ }));
+    fetchDeferred.resolve(
       new Response(
         JSON.stringify({
           requestId: useDialogueUiStore.getState().pending.synthesis?.requestId,
@@ -1033,17 +1485,8 @@ describe("DialogueShell", () => {
     });
     const { thesisId, antithesisId } = seedPair();
     useDialogueUiStore.setState({ focusedNodeId: thesisId });
-
-    let resolveFetch: ((value: Response) => void) | null = null;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockImplementation(
-        () =>
-          new Promise<Response>((resolve) => {
-            resolveFetch = resolve;
-          })
-      )
-    );
+    const fetchDeferred = createDeferred<Response>();
+    vi.stubGlobal("fetch", vi.fn(() => fetchDeferred.promise));
 
     render(<DialogueShell />);
 
@@ -1056,7 +1499,7 @@ describe("DialogueShell", () => {
     expect(within(composer).getByText("继续")).toBeInTheDocument();
     expect(within(composer).queryByText("暂停")).not.toBeInTheDocument();
 
-    resolveFetch?.(
+    fetchDeferred.resolve(
       new Response(
         JSON.stringify({
           requestId: useDialogueUiStore.getState().pending.branches?.requestId,
@@ -1077,7 +1520,7 @@ describe("DialogueShell", () => {
     const childUserId = branchGraphStore.getGraph().nodes[thesisId].children[0];
     expect(branchGraphStore.getGraph().nodes[childUserId]?.text).toBe("继续的话下一步做什么");
     expect(useDialogueUiStore.getState().focusedNodeId).toBe(antithesisId);
-    expect(screen.getByRole("status")).toHaveTextContent("正反已生成，当前焦点保持不变。");
+    expect(screen.getByRole("status")).toHaveTextContent("正反已生成：继续推进、暂缓判断，或留下合流记录。");
     expect(events.some((event) => event.name === "continuation_created")).toBe(true);
   });
 
@@ -1091,27 +1534,19 @@ describe("DialogueShell", () => {
     });
     useDialogueUiStore.setState({ focusedNodeId: rootUserId });
     seedActiveWorkspaceFromCurrentGraph();
-    let resolveFetch: ((value: Response) => void) | null = null;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockImplementation(
-        () =>
-          new Promise<Response>((resolve) => {
-            resolveFetch = resolve;
-          })
-      )
-    );
+    const fetchDeferred = createDeferred<Response>();
+    vi.stubGlobal("fetch", vi.fn(() => fetchDeferred.promise));
 
     render(<DialogueShell />);
 
-    await user.click(screen.getByRole("button", { name: "记录合流" }));
+    await user.click(screen.getByRole("button", { name: /合流记录/ }));
     await user.click(within(screen.getByTestId("dialogue-sidebar")).getByRole("button", { name: /另一个问题/ }));
 
-    expect(screen.queryByRole("button", { name: "收束中..." })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "记录合流" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "合流中..." })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /合流记录/ })).toBeDisabled();
     expect(screen.getByText("等待另一条谱系收束完成：继续 / 暂停")).toBeInTheDocument();
 
-    resolveFetch?.(
+    fetchDeferred.resolve(
       new Response(
         JSON.stringify({
           requestId: useDialogueUiStore.getState().pending.synthesis?.requestId,
@@ -1134,35 +1569,27 @@ describe("DialogueShell", () => {
     });
 
     expect(useDialogueUiStore.getState().focusedNodeId).toBe(otherRootId);
-    expect(screen.getByRole("status")).toHaveTextContent("合流已生成，当前焦点保持不变。");
+    expect(screen.getByRole("status")).toHaveTextContent("合流已生成：查看合流记录，或基于它继续追问。");
+    expect(screen.getByTestId("dialogue-flow-status")).toHaveTextContent("合流已生成：查看合流记录，或基于它继续追问。");
   });
 
   it("makes pending states exclusive and exposes synthesis busy feedback", async () => {
     const user = userEvent.setup();
     const { rootUserId } = seedPair();
     useDialogueUiStore.setState({ focusedNodeId: rootUserId });
-
-    let resolveFetch: ((value: Response) => void) | null = null;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockImplementation(
-        () =>
-          new Promise<Response>((resolve) => {
-            resolveFetch = resolve;
-          })
-      )
-    );
+    const fetchDeferred = createDeferred<Response>();
+    vi.stubGlobal("fetch", vi.fn(() => fetchDeferred.promise));
 
     render(<DialogueShell />);
 
-    await user.click(screen.getByRole("button", { name: "记录合流" }));
+    await user.click(screen.getByRole("button", { name: /合流记录/ }));
 
     expect(useDialogueUiStore.getState().pending.branches).toBeNull();
     expect(useDialogueUiStore.getState().pending.synthesis).not.toBeNull();
-    expect(screen.getByRole("button", { name: "收束中..." })).toHaveAttribute("aria-busy", "true");
-    expect(screen.getByRole("button", { name: "收束中" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "合流中..." })).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByRole("button", { name: "合流中" })).toBeDisabled();
 
-    resolveFetch?.(
+    fetchDeferred.resolve(
       new Response(
         JSON.stringify({
           requestId: useDialogueUiStore.getState().pending.synthesis?.requestId,

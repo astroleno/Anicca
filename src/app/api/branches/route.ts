@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDefaultModel } from "@/lib/openai/client";
 import { generateText } from "@/lib/openai/generateText";
-import { parseFirstJsonObject } from "@/lib/openai/parseFirstJsonObject";
+import { parseStrictJsonObject } from "@/lib/openai/parseStrictJsonObject";
+import { describeProviderFailure } from "@/lib/openai/providerErrors";
+import { normalizeDialecticLabel, normalizeDialecticSummary } from "@/features/dialectic/outputContract";
 
 type ContextMessage = {
   role?: string;
@@ -39,25 +41,11 @@ function invalidModelOutput(requestId: string, details: string) {
   return NextResponse.json({ requestId, error: "invalid_model_output", details }, { status: 502 });
 }
 
-function describeProviderFailure(error: unknown): string {
-  const message =
-    typeof error === "object" && error && "message" in error && typeof error.message === "string"
-      ? error.message
-      : "";
-
-  if (!process.env.OPENAI_API_KEY) {
-    return "openai_api_key_missing";
-  }
-
-  if (/401|unauthorized|incorrect api key|invalid api key/i.test(message)) {
-    return "provider_auth_failed";
-  }
-
-  if (/fetch failed|network|timeout|econnrefused|enotfound|connection/i.test(message)) {
-    return "provider_unreachable";
-  }
-
-  return "provider_runtime_error";
+function getErrorInfo(error: unknown) {
+  return {
+    message: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined
+  };
 }
 
 function parseBranch(value: unknown, stance: DialecticBranch["stance"]): DialecticBranch | null {
@@ -75,10 +63,16 @@ function parseBranch(value: unknown, stance: DialecticBranch["stance"]): Dialect
     return null;
   }
 
+  const text = candidate.text.trim();
+  const summary = normalizeDialecticSummary(candidate.summary);
+  if (!text || !summary) {
+    return null;
+  }
+
   return {
-    text: candidate.text.trim(),
-    summary: candidate.summary.trim(),
-    label: candidate.label.trim(),
+    text,
+    summary,
+    label: normalizeDialecticLabel(candidate.label, stance === "正" ? "正向" : "反向", stance),
     stance
   };
 }
@@ -89,7 +83,7 @@ function buildBranchesPrompt(userText: string, contextMessages: unknown): string
     "你负责为同一个问题生成一对结构化的正反分支。",
     "只返回一个 JSON object，不要 markdown，不要解释，不要代码围栏。",
     "schema={\"thesis\":{\"text\":\"\",\"summary\":\"\",\"label\":\"\",\"stance\":\"正\"},\"antithesis\":{\"text\":\"\",\"summary\":\"\",\"label\":\"\",\"stance\":\"反\"}}",
-    "summary 必须是单行摘要，label 必须是简短标签。",
+    "summary 必须是单行摘要，label 必须是 8 个字符以内的中文短标签；不要在 label 中写解释、冒号、下划线或长短语。",
     serializedContext ? `历史上下文:\n${serializedContext}` : "",
     `当前用户输入:\n${userText}`
   ];
@@ -98,10 +92,19 @@ function buildBranchesPrompt(userText: string, contextMessages: unknown): string
 }
 
 export async function POST(req: NextRequest) {
+  let body: Record<string, unknown>;
+  try {
+    const parsedBody: unknown = await req.json();
+    body = parsedBody && typeof parsedBody === "object" && !Array.isArray(parsedBody)
+      ? (parsedBody as Record<string, unknown>)
+      : {};
+  } catch {
+    return NextResponse.json({ error: "invalid JSON body" }, { status: 400 });
+  }
+
   let requestId = "";
 
   try {
-    const body = await req.json();
     requestId = typeof body?.requestId === "string" ? body.requestId.trim() : "";
     const userText = typeof body?.userText === "string" ? body.userText.trim() : "";
     const model = getDefaultModel(typeof body?.model === "string" ? body.model : undefined);
@@ -120,7 +123,7 @@ export async function POST(req: NextRequest) {
       maxOutputTokens: 1200
     });
 
-    const parsed = outputText ? parseFirstJsonObject(outputText) : null;
+    const parsed = outputText ? parseStrictJsonObject(outputText) : null;
     if (!parsed) {
       console.warn("/api/branches invalid model output", { requestId, outputText: outputText.slice(0, 500) });
       return invalidModelOutput(requestId, "expected thesis/antithesis JSON object");
@@ -134,15 +137,16 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ requestId, thesis, antithesis });
-  } catch (error: any) {
-    console.error("/api/branches error", { requestId, message: error?.message, stack: error?.stack });
+  } catch (error: unknown) {
+    console.error("/api/branches error", { requestId, ...getErrorInfo(error) });
+    const failure = describeProviderFailure(error);
     return NextResponse.json(
       {
         requestId,
         error: "branches_failed",
-        details: describeProviderFailure(error)
+        details: failure.details
       },
-      { status: 500 }
+      { status: failure.status }
     );
   }
 }

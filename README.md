@@ -294,6 +294,9 @@ npm run dev
 
 ## 十、验证门
 
+- `npm run lint`
+- `npm run typecheck`
+- `npm run typecheck:test`
 - `npm test`
 - `npm run build`
 - `npm run test:visual-dialogue`

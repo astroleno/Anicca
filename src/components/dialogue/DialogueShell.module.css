@@ -5,26 +5,27 @@
   --line: rgba(255, 255, 255, 0.1);
   --text: #f3f8fa;
   --muted: rgba(226, 239, 244, 0.68);
-  --thesis: #23d9a1;
+  --thesis: #58b79a;
   --thesis-deep: #0f5c45;
-  --antithesis: #f15f7c;
+  --antithesis: #c76a78;
   --antithesis-deep: #681d38;
-  --synthesis: #f1bf58;
+  --synthesis: #b99a5c;
   --synthesis-deep: #8f5f11;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
+  --mobile-composer-reserve: calc(176px + var(--safe-bottom));
   position: relative;
   min-height: 100dvh;
   overflow: hidden;
   color: var(--text);
   font-family: "Avenir Next", "Helvetica Neue", sans-serif;
   background:
-    radial-gradient(circle at 18% 18%, rgba(35, 217, 161, 0.15), transparent 24%),
-    radial-gradient(circle at 82% 22%, rgba(241, 95, 124, 0.13), transparent 22%),
-    radial-gradient(circle at 58% 74%, rgba(241, 191, 88, 0.11), transparent 20%),
-    linear-gradient(180deg, #071116 0%, #03080c 56%, #010406 100%);
+    radial-gradient(circle at 18% 18%, rgba(88, 183, 154, 0.1), transparent 24%),
+    radial-gradient(circle at 82% 22%, rgba(199, 106, 120, 0.085), transparent 22%),
+    radial-gradient(circle at 58% 74%, rgba(185, 154, 92, 0.085), transparent 20%),
+    linear-gradient(180deg, #061012 0%, #03080a 56%, #010405 100%);
 }
 
 .ambient,
@@ -67,12 +68,13 @@
   top: calc(18px + var(--safe-top));
   left: calc(24px + var(--safe-left));
   z-index: 4;
-  max-width: 320px;
+  max-width: 280px;
   padding: 0;
   border: 0;
   background: none;
   backdrop-filter: none;
   box-shadow: none;
+  opacity: 0.72;
 }
 
 .workspaceBar {
@@ -80,16 +82,26 @@
   top: calc(18px + var(--safe-top));
   left: 50%;
   z-index: 4;
-  width: min(430px, calc(100vw - 430px));
+  width: min(392px, calc(100vw - 444px));
   transform: translateX(-50%);
-  padding: 8px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.055);
-  border-radius: 20px;
-  background: linear-gradient(180deg, rgba(9, 24, 30, 0.38), rgba(7, 19, 25, 0.08));
-  backdrop-filter: blur(12px);
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.042);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(9, 24, 30, 0.22), rgba(7, 19, 25, 0.055));
+  backdrop-filter: blur(10px);
   box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    0 10px 28px rgba(0, 0, 0, 0.055),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  opacity: 0.62;
+  transition:
+    opacity 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
+
+.workspaceBar:hover,
+.workspaceBar:focus-within {
+  opacity: 1;
 }
 
 .workspaceBarHeader {
@@ -106,7 +118,7 @@
 .workspaceBarCurrent strong {
   display: block;
   margin-top: 2px;
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   line-height: 1.3;
 }
 
@@ -241,9 +253,31 @@
 .workspaceStatus {
   min-height: 20px;
   margin: 6px 0 0;
-  color: rgba(226, 239, 244, 0.6);
+  color: rgba(226, 239, 244, 0.68);
   font-size: 0.7rem;
   line-height: 1.45;
+}
+
+.flowStatus {
+  position: fixed;
+  left: 50%;
+  bottom: calc(88px + var(--safe-bottom));
+  z-index: 7;
+  max-width: min(420px, calc(100vw - 32px));
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid rgba(226, 239, 244, 0.1);
+  border-radius: 999px;
+  background: rgba(6, 16, 21, 0.76);
+  color: rgba(226, 239, 244, 0.78);
+  font-size: 0.76rem;
+  line-height: 1.35;
+  pointer-events: none;
+  box-shadow:
+    0 12px 36px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
 }
 
 .bootPanel {
@@ -281,49 +315,18 @@
 .hero h1 {
   margin: 0;
   max-width: 17ch;
-  font-size: clamp(1.05rem, 1.36vw, 1.24rem);
+  font-size: clamp(0.95rem, 1.1vw, 1.08rem);
   line-height: 1.24;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
 
 .heroCopy {
-  max-width: 30ch;
-  margin: 8px 0 0;
-  color: rgba(226, 239, 244, 0.5);
-  font-size: 0.74rem;
+  max-width: 28ch;
+  margin: 6px 0 0;
+  color: rgba(226, 239, 244, 0.42);
+  font-size: 0.7rem;
   line-height: 1.5;
-}
-
-.heroActions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 10px;
-}
-
-.heroActionButton {
-  min-height: 32px;
-  padding: 7px 11px;
-  border: 1px solid rgba(255, 255, 255, 0.075);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.035);
-  color: rgba(226, 239, 244, 0.72);
-  font: inherit;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  box-shadow: none;
-}
-
-.heroActionButton:hover {
-  border-color: rgba(255, 255, 255, 0.18);
-}
-
-.heroActionLink {
-  display: inline-flex;
-  align-items: center;
-  text-decoration: none;
 }
 
 .hiddenFileInput {
@@ -373,10 +376,10 @@
 .stageViewport {
   position: absolute;
   inset:
-    clamp(110px, 14vh, 140px)
-    clamp(300px, 22vw, 348px)
-    clamp(154px, 21vh, 204px)
-    clamp(242px, 19vw, 300px);
+    clamp(104px, 13vh, 132px)
+    clamp(248px, 18vw, 300px)
+    clamp(148px, 19vh, 188px)
+    clamp(210px, 16vw, 260px);
   overflow: hidden;
   touch-action: none;
 }
@@ -525,7 +528,6 @@
   width: min(460px, 78vw);
   height: min(340px, 46vh);
   transform: translate(-50%, -50%);
-  pointer-events: none;
 }
 
 .emptyStageBlob {
@@ -555,6 +557,32 @@
   color: #091114;
 }
 
+.emptyStageRootButton {
+  animation: none;
+  border: 0;
+  font: inherit;
+  cursor: text;
+  pointer-events: auto;
+}
+
+.emptyStageRootButton small {
+  display: block;
+  margin-top: 5px;
+  color: rgba(9, 17, 20, 0.62);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+}
+
+.emptyStageRootButton:hover,
+.emptyStageRootButton:focus-visible {
+  outline: none;
+  box-shadow:
+    0 34px 88px rgba(0, 0, 0, 0.3),
+    inset 0 -18px 28px rgba(0, 0, 0, 0.16),
+    inset 0 10px 24px rgba(255, 255, 255, 0.24),
+    0 0 0 3px rgba(226, 239, 244, 0.12);
+}
+
 .emptyStageThesis {
   left: 28%;
   top: 63%;
@@ -580,13 +608,13 @@
 .stageRelationshipHint {
   position: absolute;
   left: 50%;
-  top: 0;
+  top: clamp(92px, 13vh, 126px);
   transform: translateX(-50%);
-  width: min(420px, 72vw);
+  width: min(390px, 62vw);
   margin: 0;
   text-align: center;
-  color: rgba(226, 239, 244, 0.54);
-  font-size: 0.82rem;
+  color: rgba(226, 239, 244, 0.58);
+  font-size: 0.76rem;
   line-height: 1.5;
   letter-spacing: 0.04em;
   pointer-events: none;
@@ -644,21 +672,21 @@
       calc(-50% + var(--stage-node-drag-y))
     )
     scale(var(--stage-node-scale));
-  width: 124px;
-  height: 124px;
+  width: 150px;
+  height: 132px;
   padding: 0;
   border: 1px solid transparent;
   border-radius: 42% 58% 54% 46% / 48% 44% 56% 52%;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.05));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.045));
   color: inherit;
   cursor: grab;
   user-select: none;
   touch-action: manipulation;
   will-change: transform;
   box-shadow:
-    0 26px 70px rgba(0, 0, 0, 0.25),
-    inset 0 -16px 24px rgba(0, 0, 0, 0.2),
-    inset 0 10px 24px rgba(255, 255, 255, 0.12);
+    0 22px 58px rgba(0, 0, 0, 0.22),
+    inset 0 -14px 22px rgba(0, 0, 0, 0.22),
+    inset 0 8px 20px rgba(255, 255, 255, 0.075);
   transition:
     transform 220ms ease,
     border-color 220ms ease,
@@ -676,15 +704,15 @@
 
 .stageNode::before {
   inset: 8px;
-  background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.18) 22%, transparent 42%);
-  opacity: 0.7;
+  background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.12) 22%, transparent 45%);
+  opacity: 0.46;
 }
 
 .stageNode::after {
   inset: -8px;
   z-index: -1;
-  filter: blur(18px);
-  opacity: 0.72;
+  filter: blur(16px);
+  opacity: 0.48;
 }
 
 .stageNode:active {
@@ -701,14 +729,35 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 16px;
+  overflow: hidden;
+  padding: 17px;
   text-align: center;
 }
 
 .stageNodeInner strong {
   max-width: 100%;
-  font-size: 1rem;
-  line-height: 1.15;
+  max-height: 4.9em;
+  overflow: hidden;
+  font-size: 0.82rem;
+  line-height: 1.22;
+  overflow-wrap: anywhere;
+}
+
+.stageNodeTextFull,
+.stageNodeTextShort {
+  display: inline;
+}
+
+.stageNodeTextShort {
+  display: none;
+}
+
+.stageNodeInner > span {
+  max-height: 2.6em;
+  overflow: hidden;
+  color: rgba(243, 248, 250, 0.78);
+  font-size: 0.68rem;
+  line-height: 1.3;
   overflow-wrap: anywhere;
 }
 
@@ -720,15 +769,19 @@
 }
 
 .stageNodeUser {
-  width: 118px;
-  height: 118px;
+  width: 158px;
+  height: 158px;
   border-radius: 50%;
   background: linear-gradient(145deg, rgba(243, 244, 246, 0.88), rgba(157, 173, 181, 0.9));
   color: #0a1115;
 }
 
+.stageNodeUser .stageNodeInner > span {
+  color: rgba(10, 17, 21, 0.62);
+}
+
 .stageNodeUser::after {
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0));
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0));
 }
 
 .stageNodeThesis {
@@ -736,7 +789,7 @@
 }
 
 .stageNodeThesis::after {
-  background: radial-gradient(circle, rgba(35, 217, 161, 0.42), rgba(35, 217, 161, 0));
+  background: radial-gradient(circle, rgba(35, 217, 161, 0.28), rgba(35, 217, 161, 0));
 }
 
 .stageNodeAntithesis {
@@ -744,12 +797,12 @@
 }
 
 .stageNodeAntithesis::after {
-  background: radial-gradient(circle, rgba(241, 95, 124, 0.38), rgba(241, 95, 124, 0));
+  background: radial-gradient(circle, rgba(241, 95, 124, 0.26), rgba(241, 95, 124, 0));
 }
 
 .stageNodeSynthesis {
-  width: 104px;
-  height: 104px;
+  width: 118px;
+  height: 94px;
   border-style: solid;
   border-color: rgba(241, 191, 88, 0.24);
   background:
@@ -779,9 +832,9 @@
   --stage-node-scale: 1.12;
   border-color: rgba(255, 255, 255, 0.34);
   box-shadow:
-    0 34px 90px rgba(0, 0, 0, 0.32),
-    inset 0 -18px 24px rgba(0, 0, 0, 0.18),
-    inset 0 10px 24px rgba(255, 255, 255, 0.18);
+    0 30px 76px rgba(0, 0, 0, 0.28),
+    inset 0 -16px 22px rgba(0, 0, 0, 0.2),
+    inset 0 8px 22px rgba(255, 255, 255, 0.12);
 }
 
 .stageNodeSynthesis.stageNodeFocused {
@@ -790,8 +843,8 @@
 }
 
 .stageNodeSynthesisRecord {
-  width: 112px;
-  height: 58px;
+  width: 136px;
+  height: 68px;
   border-radius: 999px;
   background:
     linear-gradient(90deg, rgba(241, 191, 88, 0.18), rgba(241, 191, 88, 0.04)),
@@ -825,7 +878,7 @@
 }
 
 .stageNodeSynthesisRecord .stageNodeInner strong {
-  font-size: 0.84rem;
+  font-size: 0.74rem;
 }
 
 .stageNodeSynthesisRecord .stageNodeInner small {
@@ -873,12 +926,134 @@
   opacity: 0.86;
 }
 
+.stagePendingLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.stagePendingRelations {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+
+.stagePendingPath {
+  fill: none;
+  stroke-width: 1.78;
+  stroke-linecap: round;
+  stroke-dasharray: 5 3;
+  filter: drop-shadow(0 0 10px rgba(226, 239, 244, 0.16));
+  animation:
+    relationTrace 1.2s cubic-bezier(0.16, 1, 0.3, 1) both,
+    relationFlow 2.4s linear infinite;
+}
+
+.stagePendingPathThesis {
+  stroke: rgba(35, 217, 161, 0.72);
+}
+
+.stagePendingPathAntithesis {
+  stroke: rgba(241, 95, 124, 0.72);
+}
+
+.stagePendingGhost {
+  position: absolute;
+  display: grid;
+  width: 112px;
+  height: 88px;
+  align-content: center;
+  justify-items: center;
+  gap: 6px;
+  transform: translate(-50%, -50%);
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 42% 58% 54% 46% / 48% 44% 56% 52%;
+  color: rgba(243, 248, 250, 0.9);
+  text-align: center;
+  overflow: hidden;
+  box-shadow:
+    0 22px 58px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  animation: pendingPulse 1.8s ease-in-out infinite;
+}
+
+.stagePendingGhost::after {
+  content: "";
+  position: absolute;
+  inset: 10%;
+  border-radius: inherit;
+  background: linear-gradient(115deg, transparent 18%, rgba(255, 255, 255, 0.18) 48%, transparent 76%);
+  opacity: 0.6;
+  transform: translateX(-140%);
+  animation: pendingShimmer 2.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  pointer-events: none;
+}
+
+.stagePendingGhost strong {
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+  max-height: 3.6em;
+  overflow: hidden;
+  font-size: 0.82rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.stagePendingGhost small {
+  position: relative;
+  z-index: 1;
+  color: rgba(226, 239, 244, 0.68);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+}
+
+.stagePendingRoot {
+  width: 138px;
+  height: 138px;
+  border-radius: 50%;
+  background: rgba(226, 239, 244, 0.13);
+}
+
+.stagePendingThesis {
+  border-color: rgba(35, 217, 161, 0.26);
+  background: linear-gradient(155deg, rgba(35, 217, 161, 0.38), rgba(15, 92, 69, 0.3));
+}
+
+.stagePendingAntithesis {
+  border-color: rgba(241, 95, 124, 0.26);
+  background: linear-gradient(155deg, rgba(241, 95, 124, 0.38), rgba(104, 29, 56, 0.3));
+}
+
+.stagePendingSynthesis {
+  width: 108px;
+  height: 74px;
+  border-radius: 999px;
+  background: linear-gradient(150deg, rgba(241, 191, 88, 0.24), rgba(68, 49, 25, 0.24));
+  color: rgba(255, 236, 196, 0.92);
+}
+
+.stagePendingCaption {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  width: min(360px, 74vw);
+  transform: translateX(-50%);
+  margin: 0;
+  color: rgba(226, 239, 244, 0.68);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
 .sidebar {
   position: absolute;
   left: calc(24px + var(--safe-left));
   top: calc(228px + var(--safe-top));
   z-index: 4;
-  width: min(248px, calc(100vw - 32px));
+  width: min(276px, calc(100vw - 32px));
   padding: 10px;
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 26px;
@@ -887,6 +1062,17 @@
   box-shadow:
     0 14px 38px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  opacity: 0.58;
+  transition:
+    opacity 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.sidebar:hover,
+.sidebar:focus-within {
+  opacity: 1;
 }
 
 .sidebarHeader {
@@ -935,6 +1121,13 @@
   backdrop-filter: blur(12px);
 }
 
+.sidebarPendingItem {
+  border-color: rgba(226, 239, 244, 0.18);
+  background:
+    linear-gradient(90deg, rgba(226, 239, 244, 0.09), rgba(226, 239, 244, 0.03)),
+    rgba(7, 19, 25, 0.54);
+}
+
 .sidebarItemFocused {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.18);
@@ -962,6 +1155,8 @@
 .sidebarItemLabel {
   font-size: 0.96rem;
   font-weight: 600;
+  line-height: 1.24;
+  overflow-wrap: anywhere;
 }
 
 .sidebarItemEventMarker,
@@ -983,6 +1178,12 @@
 .panelMuted,
 .panelActionHint {
   color: var(--muted);
+}
+
+.sidebarItemSummary {
+  font-size: 0.76rem;
+  line-height: 1.38;
+  overflow-wrap: anywhere;
 }
 
 .sourceBadgeRow {
@@ -1019,6 +1220,17 @@
   box-shadow:
     0 16px 42px rgba(0, 0, 0, 0.11),
     inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  opacity: 0.66;
+  transition:
+    opacity 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.panel:hover,
+.panel:focus-within {
+  opacity: 1;
 }
 
 .panelHeader h2 {
@@ -1110,6 +1322,83 @@
   font-weight: 700;
 }
 
+.retrievalDebugPanel {
+  position: absolute;
+  right: calc(24px + var(--safe-right));
+  bottom: calc(116px + var(--safe-bottom));
+  z-index: 6;
+  width: min(420px, calc(100vw - 32px));
+  max-height: min(34dvh, 360px);
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid rgba(88, 183, 154, 0.18);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(7, 19, 25, 0.9), rgba(5, 11, 13, 0.82)),
+    rgba(7, 19, 25, 0.9);
+  color: rgba(226, 239, 244, 0.88);
+  font-size: 0.72rem;
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.055);
+  backdrop-filter: blur(18px);
+}
+
+.retrievalDebugHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  color: rgba(243, 248, 250, 0.9);
+  font-weight: 700;
+}
+
+.retrievalDebugHeader small {
+  color: rgba(226, 239, 244, 0.58);
+  font-weight: 500;
+}
+
+.retrievalDebugStats {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+
+.retrievalDebugStats div {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.retrievalDebugStats dt {
+  color: rgba(226, 239, 244, 0.52);
+}
+
+.retrievalDebugStats dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.retrievalDebugNotes {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 10px;
+  padding-left: 18px;
+  color: rgba(255, 232, 177, 0.78);
+}
+
+.retrievalDebugPanel pre,
+.retrievalDebugPanel p {
+  margin: 0;
+}
+
+.retrievalDebugPanel pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.45;
+}
+
 .roundtableDrawer {
   position: absolute;
   right: calc(24px + var(--safe-right));
@@ -1161,24 +1450,34 @@
   bottom: calc(18px + var(--safe-bottom));
   z-index: 5;
   transform: translateX(-50%);
-  width: min(760px, calc(100vw - 220px));
+  width: min(720px, calc(100vw - 232px));
   display: grid;
-  grid-template-columns: 132px minmax(0, 1fr) auto;
-  gap: 12px;
-  align-items: end;
-  padding: 10px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 24px;
-  background: linear-gradient(180deg, rgba(11, 26, 32, 0.68), rgba(7, 19, 25, 0.38));
-  backdrop-filter: blur(18px);
+  grid-template-columns: 122px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 7px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.052);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(11, 26, 32, 0.52), rgba(7, 19, 25, 0.28));
+  backdrop-filter: blur(16px);
   box-shadow:
-    0 16px 48px rgba(0, 0, 0, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    0 12px 36px rgba(0, 0, 0, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.composer[data-empty-start="true"] {
+  width: min(560px, calc(100vw - 232px));
+  opacity: 0.76;
+}
+
+.composer[data-empty-start="true"]:focus-within {
+  opacity: 1;
 }
 
 .composerMeta,
 .composerField,
-.composerActions {
+.composerActions,
+.composerChoiceBar {
   min-width: 0;
 }
 
@@ -1197,30 +1496,164 @@
   color: var(--muted);
 }
 
+.composerChoiceBar {
+  grid-column: 2 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.composerChoiceButton {
+  display: flex;
+  min-height: 38px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.088);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.048);
+  color: rgba(243, 248, 250, 0.9);
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: left;
+}
+
+.composerChoiceButton small {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  color: rgba(226, 239, 244, 0.58);
+  font-size: 0.64rem;
+  font-weight: 500;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composerChoiceMobileLabel {
+  display: none;
+}
+
+.composerDecisionContext {
+  display: none;
+}
+
+.composerChoiceButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.composer[data-mode="choice"] {
+  width: min(820px, calc(100vw - 260px));
+  grid-template-columns: 132px minmax(0, 1fr) auto;
+  grid-template-areas:
+    "meta choice choice"
+    "field field actions";
+  align-items: stretch;
+  padding: 9px;
+  border-radius: 28px;
+  border-color: rgba(226, 239, 244, 0.1);
+  background:
+    linear-gradient(135deg, rgba(35, 217, 161, 0.07), transparent 32%),
+    linear-gradient(225deg, rgba(241, 95, 124, 0.07), transparent 30%),
+    linear-gradient(180deg, rgba(11, 26, 32, 0.64), rgba(7, 19, 25, 0.38));
+}
+
+.composer[data-mode="choice"] .composerMeta {
+  grid-area: meta;
+  align-self: center;
+  padding: 0 4px;
+}
+
+.composer[data-mode="choice"] .composerTarget span {
+  max-width: 18ch;
+  color: rgba(226, 239, 244, 0.72);
+  line-height: 1.35;
+}
+
+.composer[data-mode="choice"] .composerChoiceBar {
+  grid-area: choice;
+  grid-column: auto;
+  align-self: stretch;
+}
+
+.composer[data-mode="choice"] .composerChoiceButton {
+  min-height: 46px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.038));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055);
+}
+
+.composer[data-mode="choice"] .composerChoiceButton[data-choice="thesis"] {
+  border-color: rgba(35, 217, 161, 0.17);
+  background:
+    linear-gradient(180deg, rgba(35, 217, 161, 0.1), rgba(35, 217, 161, 0.036)),
+    rgba(255, 255, 255, 0.038);
+}
+
+.composer[data-mode="choice"] .composerChoiceButton[data-choice="antithesis"] {
+  border-color: rgba(241, 95, 124, 0.17);
+  background:
+    linear-gradient(180deg, rgba(241, 95, 124, 0.095), rgba(241, 95, 124, 0.034)),
+    rgba(255, 255, 255, 0.038);
+}
+
+.composer[data-mode="choice"] .composerChoiceButton[data-choice="synthesis"] {
+  border-color: rgba(241, 191, 88, 0.18);
+  background:
+    linear-gradient(180deg, rgba(241, 191, 88, 0.105), rgba(241, 191, 88, 0.038)),
+    rgba(255, 255, 255, 0.038);
+}
+
+.composer[data-mode="choice"] .composerField {
+  grid-area: field;
+}
+
+.composer[data-mode="choice"] .composerActions {
+  grid-area: actions;
+}
+
 .composerField {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0;
 }
 
 .composerLabel {
-  font-size: 0.72rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: rgba(220, 235, 242, 0.52);
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .composer textarea {
   box-sizing: border-box;
   width: 100%;
-  min-height: 68px;
-  resize: none;
-  padding: 14px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  min-height: 46px;
+  max-height: 132px;
+  resize: vertical;
+  padding: 11px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.074);
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   color: inherit;
   font: inherit;
+  line-height: 1.35;
+  transition:
+    min-height 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
+
+.composer textarea:focus {
+  min-height: 88px;
+  background: rgba(255, 255, 255, 0.055);
 }
 
 .composerActions {
@@ -1228,7 +1661,7 @@
   flex-direction: column;
   align-items: flex-end;
   justify-self: end;
-  gap: 10px;
+  gap: 6px;
 }
 
 .errorPanel {
@@ -1258,7 +1691,13 @@
 .secondaryButton,
 .breadcrumbButton,
 .sidebarItem,
+.sidebarSynthesisEvent,
 .panelSourceCard,
+.composerChoiceButton,
+.workspaceBarButton,
+.workspaceBarGhostButton,
+.workspaceRecentItem,
+.workspaceOverflowItem,
 .stageNode {
   transition:
     transform 180ms ease,
@@ -1284,7 +1723,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 40px;
+  min-height: 44px;
   padding: 10px 16px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 999px;
@@ -1297,9 +1736,25 @@
 .secondaryButton:hover:not(:disabled),
 .breadcrumbButton:hover,
 .sidebarItem:hover,
-.panelSourceCard:hover {
+.sidebarSynthesisEvent:hover,
+.panelSourceCard:hover,
+.composerChoiceButton:hover:not(:disabled) {
   transform: translateY(-1px);
   border-color: rgba(255, 255, 255, 0.18);
+}
+
+.primaryButton:active:not(:disabled),
+.secondaryButton:active:not(:disabled),
+.breadcrumbButton:active,
+.sidebarItem:active,
+.sidebarSynthesisEvent:active,
+.panelSourceCard:active,
+.composerChoiceButton:active:not(:disabled),
+.workspaceBarButton:active,
+.workspaceBarGhostButton:active,
+.workspaceRecentItem:active,
+.workspaceOverflowItem:active {
+  transform: translateY(1px) scale(0.99);
 }
 
 .primaryButton:disabled {
@@ -1316,9 +1771,9 @@
 .sidebarItem:focus-visible,
 .sidebarSynthesisEvent:focus-visible,
 .panelSourceCard:focus-visible,
+.composerChoiceButton:focus-visible,
 .primaryButton:focus-visible,
 .secondaryButton:focus-visible,
-.heroActionButton:focus-visible,
 .workspaceBarButton:focus-visible,
 .workspaceBarGhostButton:focus-visible,
 .workspaceRecentItem:focus-visible,
@@ -1402,6 +1857,16 @@
 }
 
 @media (min-width: 981px) and (max-width: 1280px) {
+  .stagePanel[data-layout="growth"][data-growth-density="dense"] .stageNode:not(.stageNodeUser) {
+    width: 110px;
+    height: 96px;
+  }
+
+  .stagePanel[data-layout="growth"][data-growth-density="dense"] .stageNodeUser {
+    width: 126px;
+    height: 126px;
+  }
+
   .hero {
     display: none;
   }
@@ -1473,15 +1938,45 @@
 
   .stageViewport {
     inset:
-      clamp(110px, 14vh, 136px)
-      268px
-      clamp(132px, 16vh, 164px)
-      172px;
+      clamp(104px, 13vh, 128px)
+      250px
+      clamp(126px, 15vh, 154px)
+      150px;
   }
 
   .composer {
     width: min(640px, calc(100vw - 226px));
     bottom: calc(14px + var(--safe-bottom));
+  }
+}
+
+@media (min-width: 981px) {
+  .workspace[data-mode="choice"] .sidebar,
+  .workspace[data-mode="choice"] .panel {
+    opacity: 0.42;
+    border-color: rgba(255, 255, 255, 0.045);
+    background: linear-gradient(180deg, rgba(8, 21, 27, 0.34), rgba(7, 19, 25, 0.07));
+    box-shadow: none;
+  }
+
+  .workspace[data-mode="choice"] .sidebar {
+    width: min(244px, calc(100vw - 32px));
+  }
+
+  .workspace[data-mode="choice"] .panel {
+    width: min(276px, calc(100vw - 32px));
+  }
+
+  .workspace[data-mode="choice"] .sidebar:hover,
+  .workspace[data-mode="choice"] .sidebar:focus-within,
+  .workspace[data-mode="choice"] .panel:hover,
+  .workspace[data-mode="choice"] .panel:focus-within {
+    opacity: 0.96;
+    border-color: rgba(255, 255, 255, 0.09);
+    background: linear-gradient(180deg, rgba(8, 21, 27, 0.5), rgba(7, 19, 25, 0.16));
+    box-shadow:
+      0 14px 38px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.045);
   }
 }
 
@@ -1491,14 +1986,28 @@
     min-height: 100dvh;
     overflow-x: hidden;
     overflow-y: auto;
-    padding-bottom: calc(12px + var(--safe-bottom));
+    padding-bottom: var(--mobile-composer-reserve);
+    scroll-padding-bottom: var(--mobile-composer-reserve);
     -webkit-overflow-scrolling: touch;
+  }
+
+  .flowStatus {
+    position: fixed;
+    left: calc(18px + var(--safe-left));
+    right: calc(18px + var(--safe-right));
+    bottom: calc(118px + var(--safe-bottom));
+    z-index: 7;
+    max-width: none;
+    transform: none;
+    margin: 0;
+    text-align: center;
   }
 
   .workspaceBar,
   .hero,
   .sidebar,
   .panel,
+  .retrievalDebugPanel,
   .roundtableDrawer {
     position: relative;
     top: auto;
@@ -1507,6 +2016,18 @@
     width: auto;
     max-height: none;
     margin: 16px 18px 0;
+  }
+
+  .workspaceBar,
+  .sidebar,
+  .panel {
+    opacity: 1;
+  }
+
+  .retrievalDebugPanel {
+    bottom: auto;
+    z-index: 4;
+    max-height: 260px;
   }
 
   .workspaceBar {
@@ -1560,7 +2081,7 @@
     display: grid;
     grid-template-rows: auto auto 1fr auto;
     gap: 0;
-    padding: 10px 0 0;
+    padding: 10px 0 var(--mobile-composer-reserve);
     min-height: auto;
   }
 
@@ -1571,13 +2092,18 @@
   .stagePanel {
     position: relative;
     width: 100%;
-    min-height: 55vh;
+    min-height: 58vh;
   }
 
   .stageCanvas {
     position: relative;
     width: 100%;
-    min-height: 55vh;
+    min-height: 58vh;
+  }
+
+  .stagePanel[data-layout="growth"],
+  .stagePanel[data-layout="growth"] .stageCanvas {
+    min-height: var(--growth-stage-min-height, 94vh);
   }
 
   .stageViewport {
@@ -1597,6 +2123,8 @@
 
   .panel {
     order: 3;
+    margin-bottom: calc(var(--mobile-composer-reserve) + 18px);
+    scroll-margin-bottom: var(--mobile-composer-reserve);
     background: linear-gradient(180deg, rgba(8, 21, 27, 0.5), rgba(7, 19, 25, 0.16));
   }
 
@@ -1630,15 +2158,15 @@
   }
 
   .sidebarItem {
-    flex: 0 0 auto;
-    width: auto;
-    min-width: max-content;
+    flex: 0 0 min(286px, 78vw);
+    width: min(286px, 78vw);
+    min-width: 0;
     scroll-snap-align: start;
-    flex-direction: row;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
     gap: 8px;
     padding: 10px 14px !important;
-    border-radius: 999px;
+    border-radius: 18px;
     background: rgba(7, 19, 25, 0.62);
     border-color: rgba(255, 255, 255, 0.08);
   }
@@ -1708,13 +2236,18 @@
   }
 
   .sidebarItemMain {
-    width: auto;
+    width: 100%;
     gap: 8px;
   }
 
-  .sidebarItemSummary,
   .sidebarItem .sourceBadgeRow {
     display: none;
+  }
+
+  .sidebarItemSummary {
+    display: block;
+    font-size: 0.72rem;
+    line-height: 1.36;
   }
 
   .sidebarSynthesisEvent .sourceBadgeRow {
@@ -1737,21 +2270,38 @@
 
   .composer {
     order: 4;
-    position: relative;
-    left: auto;
-    right: auto;
-    bottom: auto;
+    position: fixed;
+    left: calc(18px + var(--safe-left));
+    right: calc(18px + var(--safe-right));
+    bottom: calc(10px + var(--safe-bottom));
+    z-index: 8;
     transform: none;
     width: auto;
-    margin: 14px 18px 12px;
+    margin: 0;
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
       "meta meta"
+      "choice choice"
       "field actions";
     gap: 6px;
     align-items: center;
     padding: 8px;
     border-radius: 20px;
+  }
+
+  .composer[data-mode="choice"] {
+    width: auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "meta meta"
+      "choice choice"
+      "field actions";
+    padding: 8px;
+    border-radius: 20px;
+  }
+
+  .composer[data-empty-start="true"] {
+    width: auto;
   }
 
   .composerMeta {
@@ -1788,11 +2338,30 @@
   }
 
   .composerTarget span {
-    max-width: min(260px, 62vw);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
     font-size: 0.78rem;
+    line-height: 1.28;
+  }
+
+  .composer[data-mode="choice"] .composerTarget span {
+    max-width: none;
+  }
+
+  .composerChoiceBar {
+    grid-area: choice;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .composerChoiceButton {
+    min-height: 40px;
+    padding: 7px 9px;
+  }
+
+  .composerChoiceButton small {
+    font-size: 0.58rem;
   }
 
   .composerField {
@@ -1802,9 +2371,13 @@
 
   .composer textarea {
     min-height: 44px;
-    max-height: 44px;
+    max-height: 112px;
     padding: 11px 12px;
     border-radius: 16px;
+  }
+
+  .composer textarea:focus {
+    min-height: 82px;
   }
 
   .composerActions {
@@ -1826,11 +2399,15 @@
 }
 
 @media (max-width: 680px) {
+  .shell {
+    --mobile-composer-reserve: 0px;
+    padding-bottom: 0;
+  }
+
   .workspaceBar,
   .hero,
   .sidebar,
   .panel,
-  .composer,
   .roundtableDrawer {
     margin-left: 12px;
     margin-right: 12px;
@@ -1862,10 +2439,6 @@
   }
 
   .heroCopy {
-    display: none;
-  }
-
-  .heroActions {
     display: none;
   }
 
@@ -1933,57 +2506,349 @@
   }
 
   .stagePanel {
-    min-height: 42vh;
+    min-height: 54vh;
   }
 
   .stageCanvas {
-    min-height: 42vh;
+    min-height: 54vh;
   }
 
   .stageViewport {
     inset: 12px 12px 40px;
   }
 
+  .stageRelationshipHint {
+    display: none;
+  }
+
+  .workspace {
+    padding-bottom: 0;
+  }
+
   .emptyStageHint {
     bottom: 52px;
   }
 
+  .emptyStageAction {
+    min-height: 34px;
+    padding: 8px 12px;
+    border-color: rgba(255, 255, 255, 0.07);
+    background: rgba(7, 19, 25, 0.24);
+    color: rgba(226, 239, 244, 0.56);
+    font-size: 0.72rem;
+    box-shadow: none;
+  }
+
   .stageNode {
-    width: 82px;
-    height: 82px;
+    width: 112px;
+    height: 104px;
   }
 
   .stageNodeUser {
-    width: 86px;
-    height: 86px;
+    width: 122px;
+    height: 122px;
   }
 
   .stageNodeSynthesis {
-    width: 72px;
-    height: 72px;
+    width: 96px;
+    height: 74px;
   }
 
   .stageNodeSynthesisRecord {
-    width: 92px;
-    height: 44px;
+    width: 104px;
+    height: 54px;
   }
 
-  .composer {
+  .stageNodeInner {
+    padding: 12px;
+  }
+
+  .stageNodeInner strong {
+    font-size: 0.68rem;
+    line-height: 1.18;
+  }
+
+  .stageNodeInner > span {
+    display: none;
+  }
+
+  .stageNodeTextFull {
+    display: none;
+  }
+
+  .stageNodeTextShort {
+    display: inline;
+  }
+
+  .stagePendingGhost {
+    width: 88px;
+    height: 70px;
+    padding: 10px;
+  }
+
+  .stagePendingRoot {
+    width: 108px;
+    height: 108px;
+  }
+
+  .stagePendingCaption {
+    bottom: 2px;
+    font-size: 0.72rem;
+  }
+
+  .composer,
+  .composer[data-mode="choice"] {
+    position: relative;
     left: auto;
     right: auto;
+    bottom: auto;
+    z-index: 4;
+    transform: none;
+    width: auto;
+    margin: 18px 12px calc(16px + var(--safe-bottom));
     gap: 6px;
     padding: 6px;
     border-radius: 18px;
   }
 
+  .composer[data-empty-start="true"] {
+    width: auto;
+    opacity: 0.7;
+  }
+
   .composerTarget span {
-    max-width: min(220px, 56vw);
+    max-width: none;
+  }
+
+  .composer:not([data-mode="choice"]) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "meta"
+      "field"
+      "actions";
+  }
+
+  .composer:not([data-mode="choice"]) .composerActions {
+    width: 100%;
+    justify-self: stretch;
+    align-items: stretch;
+  }
+
+  .composer:not([data-mode="choice"]) .primaryButton {
+    width: 100%;
+  }
+
+  .composer:not([data-mode="choice"]) .composerMeta {
+    padding: 4px 8px 1px;
+  }
+
+  .composer:not([data-mode="choice"]) .composerTarget {
+    gap: 4px;
+  }
+
+  .composer:not([data-mode="choice"]) .composerTarget strong {
+    color: rgba(243, 248, 250, 0.92);
+    font-size: 0.72rem;
+    letter-spacing: 0;
+  }
+
+  .composerChoiceBar {
+    gap: 5px;
+  }
+
+  .composerChoiceButton {
+    min-height: 38px;
+    padding: 7px 8px;
+    border-radius: 14px;
+    font-size: 0.68rem;
+  }
+
+  .composerChoiceButton small {
+    display: none;
+  }
+
+  .composer[data-mode="choice"] {
+    order: 1;
+    position: sticky;
+    bottom: calc(10px + var(--safe-bottom));
+    z-index: 7;
+    margin: -2px 12px 14px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "meta"
+      "context"
+      "choice";
+    gap: 8px;
+    padding: 10px;
+    border-radius: 22px;
+    border-color: rgba(226, 239, 244, 0.13);
+    background:
+      linear-gradient(180deg, rgba(9, 18, 20, 0.94), rgba(5, 11, 13, 0.82)),
+      radial-gradient(circle at 50% 120%, rgba(185, 154, 92, 0.14), transparent 54%);
+    box-shadow:
+      0 18px 46px rgba(0, 0, 0, 0.34),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  .composer[data-mode="choice"] .composerMeta {
+    align-self: stretch;
+    padding: 1px 4px 4px;
+    text-align: center;
+  }
+
+  .composer[data-mode="choice"] .composerTarget {
+    justify-content: center;
+  }
+
+  .composer[data-mode="choice"] .composerTarget strong {
+    display: inline-flex;
+    align-self: center;
+    min-height: 20px;
+    align-items: center;
+    padding: 2px 8px;
+    border: 1px solid rgba(226, 239, 244, 0.08);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.035);
+    color: rgba(226, 239, 244, 0.58);
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+  }
+
+  .composer[data-mode="choice"] .composerTarget span {
+    width: 100%;
+    max-width: none;
+    overflow: hidden;
+    color: rgba(243, 248, 250, 0.92);
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.25;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .composer[data-mode="choice"] .composerDecisionContext {
+    grid-area: context;
+    display: grid;
+    gap: 7px;
+    padding: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.058);
+    border-radius: 15px;
+    background:
+      linear-gradient(90deg, rgba(35, 217, 161, 0.055), rgba(241, 95, 124, 0.05)),
+      rgba(255, 255, 255, 0.028);
+  }
+
+  .composerDecisionPrompt {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: baseline;
+    gap: 7px;
+    margin: 0;
+    color: rgba(226, 239, 244, 0.72);
+    text-align: left;
+  }
+
+  .composerDecisionPrompt span {
+    color: rgba(226, 239, 244, 0.54);
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+  }
+
+  .composerDecisionPrompt strong {
+    min-width: 0;
+    overflow: hidden;
+    color: rgba(243, 248, 250, 0.94);
+    font-size: 0.78rem;
+    line-height: 1.24;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .composerDecisionBranches {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .composerDecisionBranches span {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+    padding: 7px 8px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.032);
+    color: rgba(226, 239, 244, 0.76);
+    font-size: 0.66rem;
+    line-height: 1.28;
+    overflow-wrap: anywhere;
+  }
+
+  .composerDecisionBranches b {
+    color: rgba(243, 248, 250, 0.88);
+    font-size: 0.62rem;
+    line-height: 1;
+  }
+
+  .composer[data-mode="choice"] .composerChoiceBar {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .composer[data-mode="choice"] .composerChoiceButton {
+    min-height: 46px;
+    align-items: center;
+    padding: 9px 6px;
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.052);
+    font-size: 0.78rem;
+    text-align: center;
+  }
+
+  .composer[data-mode="choice"] .composerChoiceButton[data-choice="thesis"] {
+    border-color: rgba(35, 217, 161, 0.2);
+    background:
+      linear-gradient(180deg, rgba(35, 217, 161, 0.12), rgba(35, 217, 161, 0.04)),
+      rgba(255, 255, 255, 0.04);
+  }
+
+  .composer[data-mode="choice"] .composerChoiceButton[data-choice="antithesis"] {
+    border-color: rgba(241, 95, 124, 0.2);
+    background:
+      linear-gradient(180deg, rgba(241, 95, 124, 0.11), rgba(241, 95, 124, 0.04)),
+      rgba(255, 255, 255, 0.04);
+  }
+
+  .composer[data-mode="choice"] .composerChoiceButton[data-choice="synthesis"] {
+    border-color: rgba(241, 191, 88, 0.22);
+    background:
+      linear-gradient(180deg, rgba(241, 191, 88, 0.12), rgba(241, 191, 88, 0.045)),
+      rgba(255, 255, 255, 0.04);
+  }
+
+  .composer[data-mode="choice"] .composerChoiceDesktopLabel,
+  .composer[data-mode="choice"] .composerChoiceButton small,
+  .composer[data-mode="choice"] .composerField,
+  .composer[data-mode="choice"] .composerActions {
+    display: none;
+  }
+
+  .composer[data-mode="choice"] .composerChoiceMobileLabel {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .composer textarea {
     min-height: 44px;
-    max-height: 44px;
+    max-height: 112px;
     padding: 11px 11px;
+  }
+
+  .composer textarea:focus {
+    min-height: 82px;
   }
 
   .composer .primaryButton {
@@ -1994,8 +2859,25 @@
   }
 
   .panel {
+    margin-bottom: 18px;
+    scroll-margin-bottom: 24px;
     max-height: none;
     overflow: visible;
+  }
+
+  .sidebarItem {
+    flex-basis: min(246px, 68vw);
+    width: min(246px, 68vw);
+  }
+
+  .sidebarSynthesisEvent {
+    min-width: max-content;
+    border-radius: 999px;
+  }
+
+  .sidebarSynthesisTitle {
+    max-width: 108px;
+    white-space: nowrap;
   }
 
   .roundtableDrawer {
@@ -2042,6 +2924,43 @@
   .workspaceRecentList::-webkit-scrollbar-thumb {
     border-radius: 999px;
     background: rgba(226, 239, 244, 0.26);
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar::after {
+    display: none;
+  }
+
+  .breadcrumb,
+  .sidebarTree {
+    flex-direction: column;
+    overflow-x: visible;
+    padding-inline: 12px;
+    scroll-snap-type: none;
+    scrollbar-width: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .breadcrumb {
+    gap: 6px;
+  }
+
+  .sidebarTree {
+    gap: 8px;
+  }
+
+  .sidebarItem,
+  .sidebarSynthesisEvent {
+    flex: 0 1 auto;
+    width: auto;
+    min-width: 0;
+    scroll-snap-align: none;
+  }
+
+  .sidebarSynthesisEvent {
+    border-radius: 18px;
   }
 }
 
@@ -2099,6 +3018,31 @@
   }
 }
 
+@keyframes pendingPulse {
+  0%,
+  100% {
+    opacity: 0.62;
+    transform: translate(-50%, -50%) scale(0.96);
+    filter: saturate(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.03);
+    filter: saturate(1.16);
+  }
+}
+
+@keyframes pendingShimmer {
+  0%,
+  42% {
+    transform: translateX(-140%);
+  }
+  76%,
+  100% {
+    transform: translateX(140%);
+  }
+}
+
 @keyframes synthesisReveal {
   0% {
     opacity: 0;
@@ -2141,6 +3085,9 @@
   .stageNodeSource::after,
   .stageNodeAncestor::after,
   .stageRelationPath,
+  .stagePendingPath,
+  .stagePendingGhost,
+  .stagePendingGhost::after,
   .stageConvergenceMark,
   .stageConvergenceDot,
   .stageNodeSynthesisEvent {
@@ -2151,7 +3098,16 @@
   .secondaryButton,
   .breadcrumbButton,
   .sidebarItem,
+  .sidebarSynthesisEvent,
   .panelSourceCard,
+  .composerChoiceButton,
+  .workspaceBar,
+  .workspaceBarButton,
+  .workspaceBarGhostButton,
+  .workspaceRecentItem,
+  .workspaceOverflowItem,
+  .sidebar,
+  .panel,
   .stageNode,
   .ambient,
   .ambientSecondary,

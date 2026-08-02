@@ -5,6 +5,7 @@ import {
   startTransition,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore
@@ -15,7 +16,7 @@ import {
   buildWorkspaceResumedEvent,
   emitDialogueTelemetry
 } from "@/lib/analytics/dialogue";
-import { buildParentContext } from "@/chat/context";
+import { buildWorkspaceContext } from "@/chat/workspaceContext";
 import { BranchSidebar } from "@/components/dialogue/BranchSidebar";
 import { BubbleStage } from "@/components/dialogue/BubbleStage";
 import { ConversationPanel } from "@/components/dialogue/ConversationPanel";
@@ -28,6 +29,8 @@ import {
   DialogueSynthesisAction,
   deriveDialogueView
 } from "@/features/dialectic/viewModel";
+import { projectGrowthSessionToGraph } from "@/features/growth/graphProjection";
+import { runGrowthSession } from "@/features/growth/orchestrator";
 import { RoundtableState } from "@/features/roundtable/types";
 import {
   exportWorkspaceBundle,
@@ -88,10 +91,64 @@ type RoundtablePendingRequest = {
   focusSnapshotId: string;
 };
 
+const DIALOGUE_WORKSPACE_RETRIEVAL_CONTEXT_DEFAULT_ENABLED = false;
+let dialogueWorkspaceRetrievalContextEnabled = DIALOGUE_WORKSPACE_RETRIEVAL_CONTEXT_DEFAULT_ENABLED;
+
+export function setDialogueWorkspaceRetrievalContextEnabledForTests(enabled: boolean) {
+  dialogueWorkspaceRetrievalContextEnabled = enabled;
+}
+
+function isDialogueWorkspaceRetrievalContextEnabled() {
+  return dialogueWorkspaceRetrievalContextEnabled;
+}
+
 export function isDialogueDemoWorkspaceEnabled(locationLike: DialogueLocationLike) {
   const params = new URLSearchParams(locationLike.search);
-  const isLocalHost = ["localhost", "127.0.0.1", "::1"].includes(locationLike.hostname);
-  return isLocalHost || params.get("demo") === "1";
+  return params.get("demo") === "1";
+}
+
+export function isDialogueRetrievalDebugPreviewEnabled(locationLike: Pick<Location, "search">) {
+  const params = new URLSearchParams(locationLike.search);
+  return params.get("retrievalDebug") === "1";
+}
+
+function buildSynthesisRetrievalQueryText(thesisNode: Graph["nodes"][string], antithesisNode: Graph["nodes"][string]) {
+  return [
+    thesisNode.meta?.label || thesisNode.branchType,
+    thesisNode.meta?.summary,
+    antithesisNode.meta?.label || antithesisNode.branchType,
+    antithesisNode.meta?.summary
+  ]
+    .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+    .join(" ");
+}
+
+function buildRetrievalDebugPreviewQueryText(input: {
+  draft: string;
+  currentNode: ReturnType<typeof deriveDialogueView>["currentNode"];
+  graph: Graph;
+  synthesisAction: DialogueSynthesisAction | null;
+}) {
+  const draft = input.draft.trim();
+  if (draft) {
+    return draft;
+  }
+
+  if (input.synthesisAction?.available) {
+    const thesisNode = input.graph.nodes[input.synthesisAction.thesisId];
+    const antithesisNode = input.graph.nodes[input.synthesisAction.antithesisId];
+    if (thesisNode && antithesisNode) {
+      return buildSynthesisRetrievalQueryText(thesisNode, antithesisNode);
+    }
+  }
+
+  return [
+    input.currentNode?.label,
+    input.currentNode?.summary,
+    input.currentNode?.text
+  ]
+    .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+    .join(" ");
 }
 
 function getRoundtablePendingSourceLabel(graph: Graph, sourceNodeId: string | null): string | null {
@@ -117,6 +174,23 @@ function getRoundtablePendingSourceLabel(graph: Graph, sourceNodeId: string | nu
   }
 
   return "节点";
+}
+
+function getShortPromptLabel(text: string) {
+  const firstLine = text.trim().replace(/\s+/g, " ");
+  if (!firstLine) {
+    return "待生成母题";
+  }
+  return firstLine.length > 14 ? `${firstLine.slice(0, 14)}…` : firstLine;
+}
+
+function getPlainTextSnippet(text: string | undefined, maxLength = 36): string {
+  const normalized = (text || "").trim().replace(/\s+/g, " ");
+  if (!normalized) {
+    return "";
+  }
+
+  return normalized.length > maxLength ? `${normalized.slice(0, maxLength)}…` : normalized;
 }
 
 function formatDialogueError(error: unknown): DialogueErrorState {
@@ -330,6 +404,16 @@ function getDialogueNodeLabel(graph: Graph, nodeId: string): string {
   return "节点";
 }
 
+function getDialogueNodeSnippet(graph: Graph, nodeId: string, fallback = "暂无摘要"): string {
+  const node = graph.nodes[nodeId];
+  const snippet = getPlainTextSnippet(
+    node?.meta?.summary || node?.text || node?.meta?.label,
+    34
+  );
+
+  return snippet || fallback;
+}
+
 function getComposerTargetFromNodeId(graph: Graph, nodeId: string | null): DialogueComposerTarget {
   if (!nodeId) {
     return {
@@ -381,7 +465,9 @@ export function DialogueShell() {
     branchGraphStore.getSnapshot.bind(branchGraphStore)
   );
   const [draft, setDraft] = useState("");
+  const [emptyComposerOpen, setEmptyComposerOpen] = useState(false);
   const [demoWorkspaceEnabled, setDemoWorkspaceEnabled] = useState(false);
+  const [retrievalDebugPreviewEnabled, setRetrievalDebugPreviewEnabled] = useState(false);
   const [workspaceReady, setWorkspaceReady] = useState(() => branchGraphStore.getGraph().entryIds.length > 0);
   const [workspaceEntries, setWorkspaceEntries] = useState<WorkspaceRegistryEntry[]>([]);
   const [roundtableArtifact, setRoundtableArtifact] = useState<WorkspaceRoundtableArtifact | null>(null);
@@ -451,9 +537,11 @@ export function DialogueShell() {
     }
 
     setDemoWorkspaceEnabled(isDialogueDemoWorkspaceEnabled(window.location));
+    setRetrievalDebugPreviewEnabled(isDialogueRetrievalDebugPreviewEnabled(window.location));
   }, []);
 
   const view = deriveDialogueView(graphSnapshot.graph, focusedNodeId);
+  const isEmptyWorkspace = graphSnapshot.graph.entryIds.length === 0;
   const isBranchPending = pending.branches !== null;
   const isSynthesisPending = pending.synthesis !== null;
   const hasPendingRequest = isBranchPending || isSynthesisPending;
@@ -466,6 +554,7 @@ export function DialogueShell() {
   const composerTarget = frozenComposerTarget || view.composerTarget;
   const composerTargetFrozenReason = pending.branches ? "branches" : pending.synthesis ? "synthesis" : null;
   const composerTargetFrozen = Boolean(frozenComposerTarget);
+  const shouldShowComposer = !isEmptyWorkspace || emptyComposerOpen || draft.trim().length > 0 || hasPendingRequest || Boolean(errorState);
 
   const beginRoundtablePending = (request: RoundtablePendingRequest) => {
     roundtablePendingRef.current = request;
@@ -484,6 +573,24 @@ export function DialogueShell() {
     clearRoundtablePending();
     setRoundtableArtifact(null);
   };
+
+  const focusComposerSoon = useCallback(() => {
+    setEmptyComposerOpen(true);
+    window.setTimeout(() => {
+      composerTextareaRef.current?.focus();
+    }, 0);
+  }, []);
+
+  const handleDraftChange = useCallback((value: string) => {
+    if (isEmptyWorkspace) {
+      setEmptyComposerOpen(true);
+    }
+    setDraft(value);
+  }, [isEmptyWorkspace]);
+
+  useEffect(() => {
+    setEmptyComposerOpen(false);
+  }, [workspaceId]);
 
   useEffect(() => {
     if (view.focusNodeId !== focusedNodeId) {
@@ -550,6 +657,11 @@ export function DialogueShell() {
       setFocusedNodeId(nodeId);
       setErrorState(null);
     });
+  };
+
+  const handleSelectStageNode = (nodeId: string) => {
+    handleSelectNode(nodeId);
+    focusComposerSoon();
   };
 
   const handleLoadDemoWorkspace = () => {
@@ -769,9 +881,15 @@ export function DialogueShell() {
     });
 
     try {
-      const contextMessages = targetId
-        ? serializeContextMessages(buildParentContext(targetId, "").messages)
-        : [];
+      const contextMessages = serializeContextMessages(
+        buildWorkspaceContext({
+          targetId,
+          queryText: text,
+          systemPrelude: "",
+          graph: graphSnapshot.graph,
+          retrieval: { enabled: isDialogueWorkspaceRetrievalContextEnabled() }
+        }).messages
+      );
       const response = await postJson<BranchesResponse>("/api/branches", {
         requestId,
         userText: text,
@@ -808,7 +926,7 @@ export function DialogueShell() {
           setFocusedNodeId(userNodeId);
         });
       } else {
-        setWorkspaceStatus("正反已生成，当前焦点保持不变。");
+        setWorkspaceStatus("正反已生成：继续推进、暂缓判断，或留下合流记录。");
       }
     } catch (error: unknown) {
       const activePending = useDialogueUiStore.getState().pending.branches;
@@ -817,6 +935,30 @@ export function DialogueShell() {
       }
 
       clearPending("branches");
+      setErrorState(formatDialogueError(error));
+    }
+  };
+
+  const handleGrowthSubmit = () => {
+    const text = draft.trim();
+    if (!text || hasPendingRequest) {
+      return;
+    }
+
+    try {
+      const requestId = createClientId("growth_req");
+      const session = runGrowthSession({ text, requestId });
+      const projection = projectGrowthSessionToGraph(branchGraphStore, session, {
+        targetAssistantId: view.composerTarget.nodeId
+      });
+
+      setDraft("");
+      setErrorState(null);
+      setWorkspaceStatus("画作视角已生成：只回应当前事件，不写长期记忆。");
+      startTransition(() => {
+        setFocusedNodeId(projection.userNodeId);
+      });
+    } catch (error: unknown) {
       setErrorState(formatDialogueError(error));
     }
   };
@@ -1017,7 +1159,15 @@ export function DialogueShell() {
     });
 
     try {
-      const contextMessages = serializeContextMessages(buildParentContext(action.thesisId, "").messages);
+      const contextMessages = serializeContextMessages(
+        buildWorkspaceContext({
+          targetId: action.thesisId,
+          queryText: buildSynthesisRetrievalQueryText(thesisNode, antithesisNode),
+          systemPrelude: "",
+          graph,
+          retrieval: { enabled: isDialogueWorkspaceRetrievalContextEnabled() }
+        }).messages
+      );
       const response = await postJson<SynthesisResponse>("/api/synthesis", {
         requestId,
         thesis: {
@@ -1064,7 +1214,7 @@ export function DialogueShell() {
           document.getElementById("conversation-panel-heading")?.focus();
         }, 0);
       } else {
-        setWorkspaceStatus("合流已生成，当前焦点保持不变。");
+        setWorkspaceStatus("合流已生成：查看合流记录，或基于它继续追问。");
       }
     } catch (error: unknown) {
       const activePending = useDialogueUiStore.getState().pending.synthesis;
@@ -1097,6 +1247,112 @@ export function DialogueShell() {
     relevantSynthesisAction && hasPendingRequest && !isSynthesisPendingForCurrentAction
   );
   const synthesisPendingSourceLabel = pending.synthesis?.sourceLabel || null;
+  const pendingRootPrompt = pending.branches && !pending.branches.composerTargetId && isEmptyWorkspace
+    ? draft.trim()
+    : null;
+  const pendingRootSidebar = pendingRootPrompt
+    ? {
+        label: getShortPromptLabel(pendingRootPrompt),
+        summary: "正在生成正与反。"
+      }
+    : null;
+  const stagePendingPreview = pending.branches
+    ? {
+        kind: "branches" as const,
+        anchorNodeId: pending.branches.composerTargetId,
+        prompt: draft
+      }
+    : pending.synthesis && relevantSynthesisAction && pending.synthesis.synthesisActionKey === relevantSynthesisAction.key
+      ? {
+          kind: "synthesis" as const,
+          thesisId: relevantSynthesisAction.thesisId,
+          antithesisId: relevantSynthesisAction.antithesisId,
+          label: pending.synthesis.sourceLabel || relevantSynthesisAction.label
+        }
+      : null;
+  const nextStepChoice =
+    view.currentNode?.kind === "user" &&
+    composerTarget.kind === "root" &&
+    relevantSynthesisAction?.available
+      ? {
+          currentLabel: getPlainTextSnippet(view.currentNode.text || view.currentNode.label, 30) || view.currentNode.label,
+          thesisLabel: getDialogueNodeLabel(graphSnapshot.graph, relevantSynthesisAction.thesisId),
+          antithesisLabel: getDialogueNodeLabel(graphSnapshot.graph, relevantSynthesisAction.antithesisId),
+          thesisSummary: getDialogueNodeSnippet(graphSnapshot.graph, relevantSynthesisAction.thesisId),
+          antithesisSummary: getDialogueNodeSnippet(graphSnapshot.graph, relevantSynthesisAction.antithesisId),
+          synthesisLabel: relevantSynthesisAction.label,
+          synthesisBusy: isSynthesisPendingForCurrentAction,
+          synthesisDisabled: hasPendingRequest || synthesisBlockedByOtherPending,
+          onSelectThesis: () => handleSelectStageNode(relevantSynthesisAction.thesisId),
+          onSelectAntithesis: () => handleSelectStageNode(relevantSynthesisAction.antithesisId),
+          onSynthesize: () => handleGenerateSynthesis(relevantSynthesisAction)
+        }
+      : null;
+  const flowStatusHandledInContext = Boolean(
+    (nextStepChoice && workspaceStatus?.startsWith("正反已生成")) ||
+    workspaceStatus?.startsWith("画作视角已生成")
+  );
+  const retrievalDebugPreview = useMemo(() => {
+    if (!retrievalDebugPreviewEnabled) {
+      return null;
+    }
+
+    const targetId = composerTarget.nodeId || view.focusNodeId;
+    const queryText = buildRetrievalDebugPreviewQueryText({
+      draft,
+      currentNode: view.currentNode,
+      graph: graphSnapshot.graph,
+      synthesisAction: relevantSynthesisAction
+    });
+    const built = buildWorkspaceContext({
+      targetId,
+      queryText,
+      systemPrelude: "",
+      graph: graphSnapshot.graph,
+      retrieval: {
+        enabled: true,
+        maxNodes: 6,
+        maxEdges: 10,
+        charBudget: 900
+      }
+    });
+    const subgraph = built.retrieval?.subgraph;
+    const omitted = subgraph?.omitted || {
+      matches: 0,
+      nodes: 0,
+      edges: 0,
+      excludedNodes: 0,
+      danglingEdges: 0,
+      duplicateEdges: 0
+    };
+    const notes = [
+      !queryText.trim() ? "empty query" : null,
+      queryText.trim() && !subgraph?.seedMatches.length ? "no seed matches" : null,
+      built.coverage.coveredNodeIds.length > 0 ? "coverage exclusion active" : null,
+      omitted.excludedNodes > 0 ? "retrieval hits were excluded by coverage" : null,
+      omitted.matches || omitted.nodes || omitted.edges ? "result was clamped by retrieval limits" : null,
+      !built.retrieval?.message && (subgraph?.nodes.length || 0) > 0 ? "render produced empty content" : null,
+      ...(subgraph?.warnings || []).map((warning) => `warning: ${warning}`)
+    ].filter((note): note is string => Boolean(note));
+
+    return {
+      content: built.retrieval?.message?.content || "",
+      queryText,
+      coveredNodeCount: built.coverage.coveredNodeIds.length,
+      nodeCount: subgraph?.nodes.length || 0,
+      edgeCount: subgraph?.edges.length || 0,
+      omitted,
+      notes
+    };
+  }, [
+    composerTarget.nodeId,
+    draft,
+    graphSnapshot.graph,
+    relevantSynthesisAction,
+    retrievalDebugPreviewEnabled,
+    view.currentNode,
+    view.focusNodeId
+  ]);
 
   if (!workspaceReady) {
     return (
@@ -1125,11 +1381,6 @@ export function DialogueShell() {
         <p className={styles.heroCopy}>
           把它放进场里，先长出正与反；等张力清楚了，再触发一次合流并留下记录。
         </p>
-        <div className={styles.heroActions}>
-          <a className={`${styles.heroActionButton} ${styles.heroActionLink}`} href="/roundtable">
-            圆桌实验页
-          </a>
-        </div>
       </header>
 
       <WorkspaceBar
@@ -1155,17 +1406,28 @@ export function DialogueShell() {
         className={styles.hiddenFileInput}
         onChange={handleImportWorkspace}
       />
+      {workspaceStatus && !flowStatusHandledInContext ? (
+        <p className={styles.flowStatus} aria-hidden="true" data-testid="dialogue-flow-status">
+          {workspaceStatus}
+        </p>
+      ) : null}
 
-      <div className={styles.workspace}>
+      <div className={styles.workspace} data-mode={nextStepChoice ? "choice" : undefined}>
         <BubbleStage
           layoutKey={view.focusSnapshotId}
           nodes={view.stageNodes}
           focusNodeId={view.focusNodeId}
           convergenceEventId={relevantSynthesisAction?.synthesisId || null}
           eventNodeId={synthesisRevealId}
-          onSelect={handleSelectNode}
+          pendingPreview={stagePendingPreview}
+          onSelect={handleSelectStageNode}
+          onPrimaryAction={(nodeId) => {
+            if (!nodeId) {
+              focusComposerSoon();
+            }
+          }}
           emptyAction={
-            demoWorkspaceEnabled && graphSnapshot.graph.entryIds.length === 0
+            demoWorkspaceEnabled && isEmptyWorkspace
               ? {
                   label: "载入示例谱系",
                   onTrigger: handleLoadDemoWorkspace
@@ -1173,13 +1435,20 @@ export function DialogueShell() {
               : null
           }
         />
-        <BranchSidebar breadcrumb={view.breadcrumb} items={view.sidebarItems} onSelect={handleSelectNode} />
+        <BranchSidebar
+          breadcrumb={view.breadcrumb}
+          items={view.sidebarItems}
+          pendingRoot={pendingRootSidebar}
+          onSelect={handleSelectNode}
+        />
         <ConversationPanel
           node={view.currentNode}
+          pendingBranchPrompt={pendingRootPrompt}
           synthesisAction={relevantSynthesisAction}
           synthesisPending={isSynthesisPendingForCurrentAction}
           synthesisBlocked={synthesisBlockedByOtherPending}
           synthesisPendingSourceLabel={synthesisPendingSourceLabel}
+          suppressSynthesisAction={Boolean(nextStepChoice && !hasPendingRequest)}
           roundtablePending={roundtablePending}
           roundtablePendingSourceLabel={roundtablePendingSourceLabel}
           roundtableSummonButtonRef={roundtableSummonButtonRef}
@@ -1195,18 +1464,64 @@ export function DialogueShell() {
             }
           }}
         />
-        <DialogueComposer
-          target={composerTarget}
-          value={draft}
-          disabled={hasPendingRequest}
-          pendingAction={pendingAction}
-          targetFrozen={composerTargetFrozen}
-          targetFrozenReason={composerTargetFrozenReason}
-          errorState={errorState}
-          textareaRef={composerTextareaRef}
-          onChange={setDraft}
-          onSubmit={handleSubmit}
-        />
+        {retrievalDebugPreview ? (
+          <aside className={styles.retrievalDebugPanel} data-testid="dialogue-retrieval-debug" aria-label="Retrieval debug preview">
+            <div className={styles.retrievalDebugHeader}>
+              <span>retrieval_context preview</span>
+              <small>
+                nodes {retrievalDebugPreview.nodeCount} · edges {retrievalDebugPreview.edgeCount} · excluded {retrievalDebugPreview.coveredNodeCount}
+              </small>
+            </div>
+            <dl className={styles.retrievalDebugStats}>
+              <div>
+                <dt>query</dt>
+                <dd>{retrievalDebugPreview.queryText || "(empty)"}</dd>
+              </div>
+              <div>
+                <dt>omitted</dt>
+                <dd>
+                  matches {retrievalDebugPreview.omitted.matches} · nodes {retrievalDebugPreview.omitted.nodes} · edges {retrievalDebugPreview.omitted.edges}
+                </dd>
+              </div>
+              <div>
+                <dt>graph hygiene</dt>
+                <dd>
+                  dangling {retrievalDebugPreview.omitted.danglingEdges} · duplicate {retrievalDebugPreview.omitted.duplicateEdges}
+                </dd>
+              </div>
+            </dl>
+            {retrievalDebugPreview.notes.length ? (
+              <ul className={styles.retrievalDebugNotes}>
+                {retrievalDebugPreview.notes.map((note) => (
+                  <li key={note}>{note}</li>
+                ))}
+              </ul>
+            ) : null}
+            {retrievalDebugPreview.content ? (
+              <pre>{retrievalDebugPreview.content}</pre>
+            ) : (
+              <p>无可注入片段</p>
+            )}
+          </aside>
+        ) : null}
+        {shouldShowComposer ? (
+          <DialogueComposer
+            target={composerTarget}
+            value={draft}
+            disabled={hasPendingRequest}
+            pendingAction={pendingAction}
+            nextStepChoice={nextStepChoice}
+            isEmptyStart={isEmptyWorkspace}
+            emptyStartOpen={emptyComposerOpen}
+            targetFrozen={composerTargetFrozen}
+            targetFrozenReason={composerTargetFrozenReason}
+            errorState={errorState}
+            textareaRef={composerTextareaRef}
+            onChange={handleDraftChange}
+            onSubmit={handleSubmit}
+            onGrowthSubmit={handleGrowthSubmit}
+          />
+        ) : null}
       </div>
 
       {roundtableArtifact ? (
