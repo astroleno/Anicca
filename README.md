@@ -10,12 +10,13 @@
 
 `/newframe`、`/raymarching`、`/liquid`、`/mochi` 继续保留为视觉 / shader 实验入口，但不再承担主产品职责。
 
-当前集成状态（2026-04-29）：
+当前集成状态（2026-08-09）：
 
-- `codex/dialectic-v2-mainline` 已 fast-forward 合入 Unit 1（`cb55f90`）与 continuation（`18ee162`）。
-- Phase 2 workspace registry + import/export + create/rename/switch + telemetry 已完成并并入 mainline。
-- mainline 已完成 legacy `anicca_workspace_v2` migration browser smoke 与 workspace manual QA（create / rename / switch / export / import / malformed import / mobile）。
-- Phase 2 状态：`closed`（2026-04-29）。
+- `0.1.0` release tag 已指向 mainline closeout `14acf489`。
+- Phase 2 workspace registry + import/export + create/rename/switch + telemetry 已关闭。
+- `/dialogue` 已接入珍珠质感 Metaball renderer，并保留 DOM 交互、reduced-motion 与 WebGL fallback。
+- Roundtable 已作为 opt-in sidecar 并入对话场，具备持久化、深挖、错误恢复与 stale-response 防护。
+- GitHub Actions 已覆盖 lint、双 TypeScript、全量 Vitest、production build 与 Chromium visual smoke。
 
 ---
 
@@ -54,7 +55,7 @@
 ```
 ┌──────────────────────────────────────────────┐
 │                /dialogue 页面                │
-│  Hero / Sidebar / Bubble Stage / Panel / Composer │
+│ Hero / Sidebar / Metaball Stage / Panel / Composer │
 ├──────────────────────────────────────────────┤
 │             Dialectic View Model             │
 │  breadcrumb / sidebar tree / synthesis affordance │
@@ -224,10 +225,11 @@ active workspace key 单独保存：
 `/dialogue` 当前是一个舞台优先的主线壳：
 
 - 左侧：谱系树、breadcrumb、当前 focus path
-- 中央：bubble stage，用于展示当前节点及其 lineage / source 关系
+- 中央：Three.js raymarching Metaball stage，用连续液桥展示节点接近关系；真实按钮仍承担点击、拖拽、键盘与无障碍语义
 - 右侧：当前节点详情、来源节点、显式 synthesis affordance
 - 底部：persistent composer，可从 root 或当前 assistant 继续展开
 - 顶部：workspace bar，支持新建、重命名、切换最近工作区，以及导出/导入当前 bundle
+- 旁路：Roundtable Theater 作为当前节点的持久化 sidecar，可深挖、收起或把下一问带回主线，不直接写入 canonical `正 / 反 / 合`
 
 核心交互：
 
@@ -238,9 +240,11 @@ active workspace key 单独保存：
 
 ---
 
-## 七、实验渲染与视觉探索
+## 七、主线渲染与视觉实验
 
-当前仓库仍然保留一组实验型视觉入口，用于继续探索液态气泡、raymarching 和 WebGPU 表现：
+`/dialogue` 已接入主线专用 Metaball renderer：最多 8 个可见曲面、52 步 raymarch、珍珠 Fresnel 材质，desktop DPR 上限 1.25、mobile 上限 0.9。WebGL 不可用或 context lost 时自动回退到 CSS blob；reduced-motion 会冻结材质时间，但不会冻结几何和 DOM 交互。
+
+仓库仍保留一组隔离的实验入口，用于继续探索其他液态气泡、raymarching 和 WebGPU 表现：
 
 - `ref/mochi.ts`
 - `/newframe`
@@ -248,7 +252,7 @@ active workspace key 单独保存：
 - `/liquid`
 - `/mochi`
 
-这些实验可以继续演化，但默认不直接改写 `/dialogue` 的主产品 contract。
+这些实验可以继续演化，但不参与 `/dialogue` 的 renderer 生命周期，也不直接改写主产品 contract。
 
 ---
 
@@ -274,8 +278,8 @@ active workspace key 单独保存：
 
 仍在后续计划中的能力：
 
-- 更强视觉层回接评估
 - 可选云同步、分享与部署能力
+- 持续追踪真实 Provider 的结构漂移、失败率与长尾延迟
 
 ---
 
@@ -312,6 +316,9 @@ GitHub Actions 会在每个 pull request 和 `main` push 上运行双通道门�
 - tablet / mobile 下 shell 是否仍可操作
 - stale response 是否被丢弃
 - `合` 的 breadcrumb / sidebar / panel / composer 是否保持一致
+- Metaball 靠近融合、拉远分离时 graph node/edge 数量是否保持不变
+- WebGL disabled 与 context lost 时 CSS fallback 是否仍可点击、聚焦和阅读
+- Roundtable drawer 的深挖成功/失败、焦点返回、移动端布局与 reduced-motion 是否可用
 
 ---
 
@@ -320,7 +327,7 @@ GitHub Actions 会在每个 pull request 和 `main` push 上运行双通道门�
 - 阶段一：稳定 `/dialogue` 主线，包括 graph、request matching、workspace restore、ports rollout
 - 阶段二：workspace registry foundation（`closed`，2026-04-29）
 - 阶段三：workspace bundle import / export（`closed`，2026-04-29）
-- 阶段四：在不破坏主线 contract 的前提下评估是否把更强的视觉层重新接回 `/dialogue`
+- 阶段四：主线 Metaball renderer 与 Roundtable sidecar（`closed`，2026-08-09）
 - 阶段五：可选云同步、分享与部署能力
 
 ---
