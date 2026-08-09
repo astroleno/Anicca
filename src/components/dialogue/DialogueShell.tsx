@@ -545,6 +545,11 @@ export function DialogueShell() {
     setRoundtableArtifact(artifact);
   }, []);
 
+  const openRoundtableArtifact = useCallback((artifact: WorkspaceRoundtableArtifact) => {
+    setVisibleRoundtableArtifact(artifact);
+    window.setTimeout(() => roundtableDrawerRef.current?.focus(), 0);
+  }, [setVisibleRoundtableArtifact]);
+
   const refreshWorkspaceRegistryView = useCallback((preferredWorkspaceId?: string | null) => {
     const entries = listRecentWorkspaces();
     setWorkspaceEntries(entries);
@@ -692,14 +697,6 @@ export function DialogueShell() {
 
     return () => window.clearTimeout(timeout);
   }, [synthesisRevealId]);
-
-  useEffect(() => {
-    if (!roundtableArtifact) {
-      return;
-    }
-
-    roundtableDrawerRef.current?.focus();
-  }, [roundtableArtifact]);
 
   const handleSelectNode = (nodeId: string) => {
     startTransition(() => {
@@ -1076,7 +1073,7 @@ export function DialogueShell() {
       }
       if (useDialogueUiStore.getState().focusedNodeId === activeRequest.sourceNodeId) {
         setWorkspaceStatus(null);
-        setVisibleRoundtableArtifact(artifact);
+        openRoundtableArtifact(artifact);
       } else {
         setWorkspaceStatus(`圆桌已保存：${getDialogueNodeLabel(branchGraphStore.getGraph(), activeRequest.sourceNodeId)}`);
       }
@@ -1139,11 +1136,12 @@ export function DialogueShell() {
       }
 
       setErrorState(null);
-      if (
-        roundtableArtifactRef.current?.id === updatedArtifact.id &&
-        useDialogueUiStore.getState().focusedNodeId === activeRequest.sourceNodeId
-      ) {
+      const artifactStillVisible = roundtableArtifactRef.current?.id === updatedArtifact.id;
+      const focusStillAtSource = useDialogueUiStore.getState().focusedNodeId === activeRequest.sourceNodeId;
+      if (artifactStillVisible) {
         setVisibleRoundtableArtifact(updatedArtifact);
+      }
+      if (artifactStillVisible && focusStillAtSource) {
         setWorkspaceStatus("圆桌已深挖一轮：可以带回主线，或继续旁路讨论。");
       } else {
         setWorkspaceStatus("圆桌深挖结果已保存。");
@@ -1564,7 +1562,7 @@ export function DialogueShell() {
           onOpenSavedRoundtable={() => {
             if (latestSavedRoundtableArtifact) {
               roundtableReturnFocusRef.current = roundtableSavedButtonRef.current;
-              setVisibleRoundtableArtifact(latestSavedRoundtableArtifact);
+              openRoundtableArtifact(latestSavedRoundtableArtifact);
             }
           }}
         />
