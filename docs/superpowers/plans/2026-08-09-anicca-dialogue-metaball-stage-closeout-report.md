@@ -3,7 +3,9 @@
 - Date: 2026-08-09
 - Branch: `codex/anicca-dialogue-metaball-stage`
 - Base: `14acf48990590ea16ca96c63bb594e03c181eef7`
-Implementation head before this report: `020ed9c1491db90c2c17c2846022d03d0379eea7`
+- Initial closeout source: `020ed9c1491db90c2c17c2846022d03d0379eea7`
+- Corrective validation source (review round 1): `7ddb42810e3af59efb4c462b37df805b25565b03`
+- Current corrective validated source: `f4e5523411d09ed2024d48b16ce1f0b6b890810f`
 
 ## Outcome
 
@@ -29,6 +31,7 @@ Repository closeout work additionally adds GitHub Actions CI, publishes the hist
 | `2123e05` | Deterministic OpenAI-compatible mock and explicit live/mock evaluation reporting |
 | `dffe545` | Preserve drawer and focus intent when Roundtable deepen completes asynchronously |
 | `7ddb428` | Include failed attempts and retry backoff in end-to-end evaluation latency |
+| `f4e5523` | Refresh visible Roundtable data without coupling content updates to drawer focus |
 
 ## Architecture and data boundary
 
@@ -54,8 +57,8 @@ Environment:
 | Gate | Evidence |
 | --- | --- |
 | `git diff --check` | exit 0 |
-| Roundtable route + DialogueShell | 2 files / 52 tests passed |
-| `npm run check` | exit 0; 32 files / 268 tests passed; production and test TypeScript 0 errors |
+| Roundtable route + DialogueShell | 2 files / 53 tests passed |
+| `npm run check` | exit 0; 32 files / 269 tests passed; production and test TypeScript 0 errors |
 | Lint | 0 errors; 33 pre-existing warnings; renderer, Roundtable and CI-owned files 0 warnings |
 | `npm run build` | exit 0; 15 application routes generated, including `/dialogue` and `/roundtable` |
 | `DIALOGUE_SMOKE_SERVER_MODE=start npm run test:visual-dialogue` | exit 0; 7 viewports and 15 interaction scenarios, no failed scenario |
@@ -93,7 +96,7 @@ Human-reviewed screenshots:
 
 The newly generated closeout evidence remains ignored by Git; screenshots, local absolute paths, reference archives and `.superpowers/` are not part of the source commits. The tracked `artifacts/visual-smoke/dialogue/summary.json` is a legacy 2026-07-27 snapshot and is not claimed as current evidence. After the branch is pushed, the current-HEAD GitHub Actions `visual-dialogue` artifact is the merge gate.
 
-The Roundtable regression matrix additionally covers a deepen response completing after the user closes the drawer, brings the question back to the main line or selects another node. In all three cases the result is persisted without reopening or replacing the drawer and without stealing focus.
+The Roundtable regression matrix additionally covers a deepen response completing after the user closes the drawer, brings the question back to the main line, selects another node or focuses the composer on the source node. Closed/promoted drawers stay closed. A drawer that remains visible is refreshed to the persisted state without stealing focus, and a consecutive deepen request is verified to use that refreshed state.
 
 Residual visual boundaries are explicit: the automated fusion gate verifies projected geometry and `data-fused-pairs`, while liquid-bridge pixel continuity remains human-reviewed rather than pixel-diff asserted. GPU frame time, dropped frames and power use have not been measured on physical mobile hardware.
 
