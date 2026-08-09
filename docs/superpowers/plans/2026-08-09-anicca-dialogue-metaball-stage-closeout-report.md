@@ -6,6 +6,7 @@
 - Initial closeout source: `020ed9c1491db90c2c17c2846022d03d0379eea7`
 - Corrective validation source (review round 1): `7ddb42810e3af59efb4c462b37df805b25565b03`
 - Current corrective validated source: `f4e5523411d09ed2024d48b16ce1f0b6b890810f`
+- Merged-main validated source: `89ac29089c6de61e0a4775383b7d54d05f80eb49`
 
 ## Outcome
 
@@ -32,6 +33,7 @@ Repository closeout work additionally adds GitHub Actions CI, publishes the hist
 | `dffe545` | Preserve drawer and focus intent when Roundtable deepen completes asynchronously |
 | `7ddb428` | Include failed attempts and retry backoff in end-to-end evaluation latency |
 | `f4e5523` | Refresh visible Roundtable data without coupling content updates to drawer focus |
+| `89ac290` | Exclude ignored generated artifacts from Vitest discovery after local merge |
 
 ## Architecture and data boundary
 
@@ -58,7 +60,7 @@ Environment:
 | --- | --- |
 | `git diff --check` | exit 0 |
 | Roundtable route + DialogueShell | 2 files / 53 tests passed |
-| `npm run check` | exit 0; 32 files / 269 tests passed; production and test TypeScript 0 errors |
+| `npm run check` | exit 0; 33 files / 270 tests passed; production and test TypeScript 0 errors |
 | Lint | 0 errors; 33 pre-existing warnings; renderer, Roundtable and CI-owned files 0 warnings |
 | `npm run build` | exit 0; 15 application routes generated, including `/dialogue` and `/roundtable` |
 | `DIALOGUE_SMOKE_SERVER_MODE=start npm run test:visual-dialogue` | exit 0; 7 viewports and 15 interaction scenarios, no failed scenario |
@@ -108,6 +110,8 @@ Residual visual boundaries are explicit: the automated fusion gate verifies proj
 - `visual-dialogue`: clean install, Chromium runtime, production build, production visual smoke and 14-day artifact upload.
 
 Vitest is capped at two workers with 10-second test/hook timeouts. This removes the previously observed full-suite-only 5-second contention timeout while retaining file-level parallel execution.
+
+Vitest also excludes `artifacts/**` explicitly. Generated or ignored review packages can remain on disk without being mistaken for repository test sources; `tests/vitestConfig.test.ts` keeps this discovery boundary under version control.
 
 ## Release and repository recovery
 
