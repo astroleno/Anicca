@@ -119,8 +119,9 @@ Vitest also excludes `artifacts/**` explicitly. Generated or ignored review pack
 - Remote `codex/anicca-mainline-release-closeout` was verified as an ancestor of `origin/main` and deleted.
 - The primary repository's damaged `.git` directory is preserved at `/Users/aitoshuu/Documents/GitHub/Anicca-git-object-backup-20260809` (40 MB).
 - A verified healthy recovery clone remains at `/Users/aitoshuu/Documents/GitHub/Anicca-git-repair-20260809` (43 MB).
-- The primary worktree remains detached at the release baseline and retains the user's untracked `.superpowers/` and implementation plan.
-- This feature worktree remains attached to `codex/anicca-dialogue-metaball-stage` with a clean index.
+- The primary worktree is attached to `main` at merged validation head `53db94a0a1c5525bf5feba0b8fa59b1e8e079340`, 19 commits ahead of `origin/main` before this documentation-only correction, and retains the user's untracked `.superpowers/` and implementation plan.
+- The feature branch `codex/anicca-dialogue-metaball-stage` and its worktree were deleted after the local fast-forward merge; `84f37cc` is verified as an ancestor of `main`.
+- The `main` push and current-HEAD CI `quality` / `visual-dialogue` artifacts remain pending. Mock evaluation and the latest visual evidence under ignored local `artifacts/` paths will not be retained by that push.
 
 ## Provider evaluation gates
 
