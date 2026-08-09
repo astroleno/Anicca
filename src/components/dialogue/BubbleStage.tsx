@@ -4,7 +4,12 @@ import { PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef, useS
 import { useDialogueUiStore } from "@/features/dialectic/store";
 import { DialogueStageNode } from "@/features/dialectic/viewModel";
 import { StagePan, StagePoint } from "@/types/anicca";
+import {
+  DialogueMetaballLayer,
+  type DialogueMetaballRendererState
+} from "./DialogueMetaballLayer";
 import styles from "./DialogueShell.module.css";
+import type { MetaballRole } from "./metaball/model";
 
 type BubbleStageProps = {
   layoutKey: string;
@@ -76,15 +81,6 @@ function clampNodePosition(position: StagePoint, maxY = NODE_MAX_Y_PERCENT) {
   };
 }
 
-function buildStageCurve(from: StagePoint, to: StagePoint) {
-  const midX = (from.x + to.x) / 2;
-  const midY = (from.y + to.y) / 2;
-  const bend = clamp(Math.abs(from.x - to.x) * 0.18 + Math.abs(from.y - to.y) * 0.08, 4, 10);
-  const controlY = from.y <= to.y ? midY - bend : midY + bend;
-
-  return `M ${from.x} ${from.y} Q ${midX} ${controlY} ${to.x} ${to.y}`;
-}
-
 function buildStageNodeAriaLabel(node: DialogueStageNode) {
   const parts = [node.preview || node.label];
   if (node.branchType) {
@@ -95,6 +91,15 @@ function buildStageNodeAriaLabel(node: DialogueStageNode) {
     parts.push(node.summary);
   }
   return parts.filter(Boolean).join("，");
+}
+
+function getMetaballRole(node: DialogueStageNode): MetaballRole {
+  if (node.kind === "user") return "user";
+  if (node.branchType === "正") return "thesis";
+  if (node.branchType === "反") return "antithesis";
+  if (node.branchType === "合" || node.displayRole === "synthesis-record") return "synthesis";
+  if (node.isGrowthPerspective) return "growth";
+  return "neutral";
 }
 
 export function BubbleStage({
@@ -118,6 +123,8 @@ export function BubbleStage({
   const [gesture, setGesture] = useState<ActiveStageGesture | null>(null);
   const [isCoarsePointer, setIsCoarsePointer] = useState(false);
   const [isNarrowViewport, setIsNarrowViewport] = useState(false);
+  const [metaballRendererState, setMetaballRendererState] =
+    useState<DialogueMetaballRendererState>("loading");
   const livePanRef = useRef<StagePan | null>(null);
   const didDragRef = useRef(false);
   const suppressClickUntilRef = useRef(0);
@@ -132,15 +139,17 @@ export function BubbleStage({
     : "94vh";
   const hasSynthesisRecord = Boolean(convergenceEventId) || nodes.some((node) => node.branchType === "合");
   const relationshipHint = isCoarsePointer
-    ? hasSynthesisRecord
-      ? "点选节点查看谱系；这条谱系已留下合流记录。"
-      : hasThesis && hasAntithesis
-        ? "点选节点查看正与反。"
+    ? hasThesis && hasAntithesis
+      ? hasSynthesisRecord
+        ? "点选液滴查看正与反。合流记录已保留。"
+        : "点选液滴查看正与反。"
+      : hasSynthesisRecord
+        ? "合流记录已保留。"
         : null
     : hasSynthesisRecord
-      ? "已留下合流记录。"
+      ? "合流记录已保留。"
       : hasThesis && hasAntithesis
-        ? "正反已生成。"
+        ? "拖动液滴，靠近时会自然融合。"
         : null;
   const emptyStageHint = isCoarsePointer
     ? "写下母题，点选节点查看谱系。"
@@ -436,49 +445,6 @@ export function BubbleStage({
         }
       }
     : null;
-  const relationshipLinks = focusStageNode
-    ? positionedNodes
-        .filter(({ node }) => node.id !== focusStageNode.node.id && ["ancestor", "child", "source"].includes(node.relation))
-        .map(({ node, position }) => {
-          const sourceFirst = node.relation === "source";
-          const from = sourceFirst ? position : focusStageNode.position;
-          const to = sourceFirst ? focusStageNode.position : position;
-          return {
-            fromId: sourceFirst ? node.id : focusStageNode.node.id,
-            toId: sourceFirst ? focusStageNode.node.id : node.id,
-            d: buildStageCurve(from, to),
-            relation: node.relation,
-            branchType: node.branchType,
-            lineRole: node.relation,
-            eventState: eventNodeId && (node.id === eventNodeId || focusStageNode.node.id === eventNodeId)
-              ? "synthesis-reveal"
-              : undefined
-          };
-        })
-    : [];
-  const hasVisibleConvergenceNode = Boolean(
-    convergenceEventId && positionedNodes.some(({ node }) => node.id === convergenceEventId)
-  );
-  const convergenceSources = convergenceEventId && !hasVisibleConvergenceNode
-    ? [
-        positionedNodes.find(({ node }) => node.branchType === "正" && ["child", "source"].includes(node.relation)),
-        positionedNodes.find(({ node }) => node.branchType === "反" && ["child", "source"].includes(node.relation))
-      ]
-    : [];
-  const convergenceCenter = convergenceSources[0] && convergenceSources[1]
-    ? {
-        x: (convergenceSources[0].position.x + convergenceSources[1].position.x) / 2,
-        y: (convergenceSources[0].position.y + convergenceSources[1].position.y) / 2
-      }
-    : null;
-  const convergenceMark = convergenceCenter && convergenceSources[0] && convergenceSources[1]
-    ? {
-        ...convergenceCenter,
-        thesisPath: buildStageCurve(convergenceSources[0].position, convergenceCenter),
-        antithesisPath: buildStageCurve(convergenceSources[1].position, convergenceCenter)
-      }
-    : null;
-
   return (
     <section
       className={styles.stagePanel}
@@ -524,61 +490,12 @@ export function BubbleStage({
             }
             onPointerDown={handleStagePointerDown}
             data-testid="dialogue-stage-track"
+            data-metaball-renderer={metaballRendererState}
           >
-            {relationshipLinks.length ? (
-              <svg
-                className={styles.stageRelations}
-                viewBox="0 0 100 100"
-                preserveAspectRatio="none"
-                aria-hidden="true"
-                data-testid="dialogue-stage-relations"
-              >
-                {relationshipLinks.map((link) => (
-                  <path
-                    key={`${link.fromId}-${link.toId}`}
-                    data-testid={`dialogue-stage-relation-${link.fromId}-${link.toId}`}
-                    className={[
-                      styles.stageRelationPath,
-                      link.relation === "source" ? styles.stageRelationSource : "",
-                      link.relation === "ancestor" ? styles.stageRelationLineage : "",
-                      link.eventState ? styles.stageRelationEvent : "",
-                      link.branchType === "正" ? styles.stageRelationThesis : "",
-                      link.branchType === "反" ? styles.stageRelationAntithesis : "",
-                      link.branchType === "合" ? styles.stageRelationSynthesis : ""
-                    ].join(" ")}
-                    data-event-state={link.eventState}
-                    data-line-role={link.lineRole}
-                    data-branch-type={link.branchType}
-                    d={link.d}
-                    vectorEffect="non-scaling-stroke"
-                  />
-                ))}
-                {convergenceMark ? (
-                  <>
-                    <path
-                      className={[styles.stageConvergenceMark, styles.stageConvergenceMarkThesis].join(" ")}
-                      data-testid="dialogue-stage-convergence-mark-thesis"
-                      d={convergenceMark.thesisPath}
-                      vectorEffect="non-scaling-stroke"
-                    />
-                    <path
-                      className={[styles.stageConvergenceMark, styles.stageConvergenceMarkAntithesis].join(" ")}
-                      data-testid="dialogue-stage-convergence-mark-antithesis"
-                      d={convergenceMark.antithesisPath}
-                      vectorEffect="non-scaling-stroke"
-                    />
-                    <circle
-                      className={styles.stageConvergenceDot}
-                      data-testid="dialogue-stage-convergence-dot"
-                      cx={convergenceMark.x}
-                      cy={convergenceMark.y}
-                      r="1.65"
-                      vectorEffect="non-scaling-stroke"
-                    />
-                  </>
-                ) : null}
-              </svg>
-            ) : null}
+            <DialogueMetaballLayer
+              hostRef={trackRef}
+              onStateChange={setMetaballRendererState}
+            />
             {pendingBranchNodes ? (
               <div
                 className={styles.stagePendingLayer}
@@ -586,22 +503,14 @@ export function BubbleStage({
                 role="status"
                 aria-live="polite"
               >
-                <svg className={styles.stagePendingRelations} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-                  <path
-                    className={[styles.stagePendingPath, styles.stagePendingPathThesis].join(" ")}
-                    d={buildStageCurve(pendingBranchNodes.anchor, pendingBranchNodes.thesis)}
-                    vectorEffect="non-scaling-stroke"
-                  />
-                  <path
-                    className={[styles.stagePendingPath, styles.stagePendingPathAntithesis].join(" ")}
-                    d={buildStageCurve(pendingBranchNodes.anchor, pendingBranchNodes.antithesis)}
-                    vectorEffect="non-scaling-stroke"
-                  />
-                </svg>
                 {!nodes.length ? (
                   <div
                     className={[styles.stagePendingGhost, styles.stagePendingRoot].join(" ")}
                     style={{ left: `${pendingBranchNodes.anchor.x}%`, top: `${pendingBranchNodes.anchor.y}%` }}
+                    data-testid="dialogue-stage-pending-root"
+                    data-metaball-surface="empty-root"
+                    data-metaball-role="user"
+                    data-metaball-relation="focus"
                     aria-hidden="true"
                   >
                     <strong>{pendingBranchNodes.prompt}</strong>
@@ -612,6 +521,9 @@ export function BubbleStage({
                   className={[styles.stagePendingGhost, styles.stagePendingThesis].join(" ")}
                   style={{ left: `${pendingBranchNodes.thesis.x}%`, top: `${pendingBranchNodes.thesis.y}%` }}
                   data-testid="dialogue-stage-pending-thesis"
+                  data-metaball-surface="pending-thesis"
+                  data-metaball-role="thesis"
+                  data-metaball-relation="child"
                   aria-hidden="true"
                 >
                   <strong>正</strong>
@@ -621,6 +533,9 @@ export function BubbleStage({
                   className={[styles.stagePendingGhost, styles.stagePendingAntithesis].join(" ")}
                   style={{ left: `${pendingBranchNodes.antithesis.x}%`, top: `${pendingBranchNodes.antithesis.y}%` }}
                   data-testid="dialogue-stage-pending-antithesis"
+                  data-metaball-surface="pending-antithesis"
+                  data-metaball-role="antithesis"
+                  data-metaball-relation="child"
                   aria-hidden="true"
                 >
                   <strong>反</strong>
@@ -636,22 +551,13 @@ export function BubbleStage({
                 role="status"
                 aria-live="polite"
               >
-                <svg className={styles.stagePendingRelations} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-                  <path
-                    className={[styles.stagePendingPath, styles.stagePendingPathThesis].join(" ")}
-                    d={buildStageCurve(pendingSynthesisMark.thesis.position, pendingSynthesisMark.center)}
-                    vectorEffect="non-scaling-stroke"
-                  />
-                  <path
-                    className={[styles.stagePendingPath, styles.stagePendingPathAntithesis].join(" ")}
-                    d={buildStageCurve(pendingSynthesisMark.antithesis.position, pendingSynthesisMark.center)}
-                    vectorEffect="non-scaling-stroke"
-                  />
-                </svg>
                 <div
                   className={[styles.stagePendingGhost, styles.stagePendingSynthesis].join(" ")}
                   style={{ left: `${pendingSynthesisMark.center.x}%`, top: `${pendingSynthesisMark.center.y}%` }}
                   data-testid="dialogue-stage-pending-synthesis-node"
+                  data-metaball-surface="pending-synthesis"
+                  data-metaball-role="synthesis"
+                  data-metaball-relation="decorative"
                   aria-hidden="true"
                 >
                   <strong>合</strong>
@@ -667,14 +573,31 @@ export function BubbleStage({
                     type="button"
                     className={[styles.emptyStageBlob, styles.emptyStageRoot, styles.emptyStageRootButton].join(" ")}
                     onClick={() => onPrimaryAction?.(null)}
+                    data-metaball-surface="empty-root"
+                    data-metaball-role="user"
+                    data-metaball-relation="focus"
                   >
                     <span>主题</span>
                     <small>点此输入</small>
                   </button>
-                  <div className={[styles.emptyStageBlob, styles.emptyStageThesis].join(" ")} aria-hidden="true">
+                  <div
+                    className={[styles.emptyStageBlob, styles.emptyStageThesis].join(" ")}
+                    data-testid="dialogue-empty-stage-thesis"
+                    data-metaball-surface="pending-thesis"
+                    data-metaball-role="thesis"
+                    data-metaball-relation="decorative"
+                    aria-hidden="true"
+                  >
                     <span>正</span>
                   </div>
-                  <div className={[styles.emptyStageBlob, styles.emptyStageAntithesis].join(" ")} aria-hidden="true">
+                  <div
+                    className={[styles.emptyStageBlob, styles.emptyStageAntithesis].join(" ")}
+                    data-testid="dialogue-empty-stage-antithesis"
+                    data-metaball-surface="pending-antithesis"
+                    data-metaball-role="antithesis"
+                    data-metaball-relation="decorative"
+                    aria-hidden="true"
+                  >
                     <span>反</span>
                   </div>
                   <p className={styles.emptyStageHint} data-testid="dialogue-empty-stage-hint">
@@ -718,6 +641,9 @@ export function BubbleStage({
                   data-testid={`dialogue-stage-node-${node.id}`}
                   data-event-state={node.id === eventNodeId ? "synthesis-reveal" : undefined}
                   data-display-role={node.displayRole}
+                  data-metaball-surface={node.id}
+                  data-metaball-role={getMetaballRole(node)}
+                  data-metaball-relation={node.relation}
                   aria-label={buildStageNodeAriaLabel(node)}
                   style={
                     {

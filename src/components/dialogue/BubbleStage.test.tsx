@@ -3,6 +3,31 @@ import { BubbleStage } from "@/components/dialogue/BubbleStage";
 import { useDialogueUiStore } from "@/features/dialectic/store";
 import { DialogueStageNode } from "@/features/dialectic/viewModel";
 
+const metaballLayerMock = vi.hoisted(() => ({
+  state: "ready" as "loading" | "ready" | "fallback"
+}));
+
+vi.mock("./DialogueMetaballLayer", async () => {
+  const React = await vi.importActual<typeof import("react")>("react");
+
+  return {
+    DialogueMetaballLayer: ({
+      onStateChange
+    }: {
+      onStateChange(state: "loading" | "ready" | "fallback"): void;
+    }) => {
+      React.useEffect(() => {
+        onStateChange(metaballLayerMock.state);
+      }, [onStateChange]);
+
+      return React.createElement("canvas", {
+        "aria-hidden": "true",
+        "data-testid": "dialogue-metaball-canvas"
+      });
+    }
+  };
+});
+
 function resetStageStore() {
   useDialogueUiStore.setState({
     workspaceSessionId: "ws_test",
@@ -54,6 +79,7 @@ function stubPointerMode(pointer: "fine" | "coarse", narrow = false) {
 describe("BubbleStage", () => {
   beforeEach(() => {
     resetStageStore();
+    metaballLayerMock.state = "ready";
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
@@ -358,10 +384,48 @@ describe("BubbleStage", () => {
       />
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /主题/ }));
+    const root = screen.getByRole("button", { name: /主题/ });
+    fireEvent.click(root);
 
     expect(onPrimaryAction).toHaveBeenCalledWith(null);
+    expect(root).toHaveAttribute("data-metaball-surface", "empty-root");
+    expect(root).toHaveAttribute("data-metaball-role", "user");
+    expect(screen.getByTestId("dialogue-empty-stage-thesis")).toHaveAttribute(
+      "data-metaball-surface",
+      "pending-thesis"
+    );
+    expect(screen.getByTestId("dialogue-empty-stage-antithesis")).toHaveAttribute(
+      "data-metaball-surface",
+      "pending-antithesis"
+    );
   });
+
+  it.each(["ready", "fallback"] as const)(
+    "keeps DOM interaction and accessible names available in %s renderer state",
+    (rendererState) => {
+      metaballLayerMock.state = rendererState;
+      const nodes: DialogueStageNode[] = [
+        {
+          id: "root",
+          label: "主题",
+          preview: "要不要继续这个项目？",
+          kind: "user",
+          relation: "focus",
+          seedX: 50,
+          seedY: 50
+        }
+      ];
+
+      render(<BubbleStage layoutKey="focus:root" nodes={nodes} focusNodeId="root" onSelect={vi.fn()} />);
+
+      const track = screen.getByTestId("dialogue-stage-track");
+      const root = screen.getByRole("button", { name: /要不要继续这个项目/ });
+      expect(track).toHaveAttribute("data-metaball-renderer", rendererState);
+      expect(root).toBeEnabled();
+      expect(root.className).toContain("stageNode");
+      expect(screen.getByTestId("dialogue-metaball-canvas")).toBeInTheDocument();
+    }
+  );
 
   it("uses tap-and-scroll language for coarse pointers", () => {
     stubPointerMode("coarse");
@@ -396,10 +460,10 @@ describe("BubbleStage", () => {
 
     render(<BubbleStage layoutKey="focus:root" nodes={nodes} focusNodeId="root" onSelect={vi.fn()} />);
 
-    expect(screen.getByText("点选节点查看正与反。")).toBeInTheDocument();
+    expect(screen.getByText("点选液滴查看正与反。")).toBeInTheDocument();
   });
 
-  it("describes dragging as stage organization rather than synthesis logic", () => {
+  it("describes the visual fusion behavior without implying graph synthesis", () => {
     const nodes: DialogueStageNode[] = [
       {
         id: "root",
@@ -431,10 +495,10 @@ describe("BubbleStage", () => {
 
     render(<BubbleStage layoutKey="focus:root" nodes={nodes} focusNodeId="root" onSelect={vi.fn()} />);
 
-    expect(screen.getByText("正反已生成。")).toBeInTheDocument();
+    expect(screen.getByText("拖动液滴，靠近时会自然融合。")).toBeInTheDocument();
   });
 
-  it("renders lineage connectors between focus and visible related nodes", () => {
+  it("renders semantic metaball surfaces without stage relationship lines", () => {
     const nodes: DialogueStageNode[] = [
       {
         id: "root",
@@ -466,9 +530,15 @@ describe("BubbleStage", () => {
 
     render(<BubbleStage layoutKey="focus:root" nodes={nodes} focusNodeId="root" onSelect={vi.fn()} />);
 
-    expect(screen.getByTestId("dialogue-stage-relations")).toBeInTheDocument();
-    expect(screen.getByTestId("dialogue-stage-relation-root-thesis")).toBeInTheDocument();
-    expect(screen.getByTestId("dialogue-stage-relation-root-antithesis")).toBeInTheDocument();
+    expect(screen.queryByTestId("dialogue-stage-relations")).not.toBeInTheDocument();
+    expect(screen.getByTestId("dialogue-stage-track").querySelector("svg")).toBeNull();
+    expect(screen.getByTestId("dialogue-metaball-canvas")).toBeInTheDocument();
+    expect(screen.getByTestId("dialogue-stage-node-root")).toHaveAttribute("data-metaball-role", "user");
+    expect(screen.getByTestId("dialogue-stage-node-thesis")).toHaveAttribute("data-metaball-role", "thesis");
+    expect(screen.getByTestId("dialogue-stage-node-antithesis")).toHaveAttribute(
+      "data-metaball-role",
+      "antithesis"
+    );
   });
 
   it("renders in-stage pending feedback while branches are generating", () => {
@@ -495,8 +565,15 @@ describe("BubbleStage", () => {
     );
 
     expect(screen.getByTestId("dialogue-stage-pending-branches")).toHaveTextContent("正在让问题分岔");
-    expect(screen.getByTestId("dialogue-stage-pending-thesis")).toBeInTheDocument();
-    expect(screen.getByTestId("dialogue-stage-pending-antithesis")).toBeInTheDocument();
+    expect(screen.getByTestId("dialogue-stage-pending-branches").querySelector("svg")).toBeNull();
+    expect(screen.getByTestId("dialogue-stage-pending-thesis")).toHaveAttribute(
+      "data-metaball-role",
+      "thesis"
+    );
+    expect(screen.getByTestId("dialogue-stage-pending-antithesis")).toHaveAttribute(
+      "data-metaball-role",
+      "antithesis"
+    );
   });
 
   it("keeps the empty start affordance hidden while a root branch request is pending", () => {
@@ -512,6 +589,10 @@ describe("BubbleStage", () => {
     );
 
     expect(screen.getByTestId("dialogue-stage-pending-branches")).toHaveTextContent("时间应该怎样被使用？");
+    expect(screen.getByTestId("dialogue-stage-pending-root")).toHaveAttribute(
+      "data-metaball-surface",
+      "empty-root"
+    );
     expect(screen.queryByRole("button", { name: /点此输入/ })).not.toBeInTheDocument();
   });
 
@@ -561,10 +642,14 @@ describe("BubbleStage", () => {
     );
 
     expect(screen.getByTestId("dialogue-stage-pending-synthesis")).toHaveTextContent("正在收束");
-    expect(screen.getByTestId("dialogue-stage-pending-synthesis-node")).toBeInTheDocument();
+    expect(screen.getByTestId("dialogue-stage-pending-synthesis").querySelector("svg")).toBeNull();
+    expect(screen.getByTestId("dialogue-stage-pending-synthesis-node")).toHaveAttribute(
+      "data-metaball-role",
+      "synthesis"
+    );
   });
 
-  it("renders a non-node convergence trace when synthesis already happened offstage", () => {
+  it("keeps an accessible convergence record without an offstage trace", () => {
     const nodes: DialogueStageNode[] = [
       {
         id: "root",
@@ -604,10 +689,10 @@ describe("BubbleStage", () => {
       />
     );
 
-    expect(screen.getByTestId("dialogue-stage-convergence-mark-thesis")).toBeInTheDocument();
-    expect(screen.getByTestId("dialogue-stage-convergence-mark-antithesis")).toBeInTheDocument();
-    expect(screen.getByTestId("dialogue-stage-convergence-dot")).toBeInTheDocument();
-    expect(screen.getByTestId("dialogue-stage-hint")).toHaveTextContent("已留下合流记录。");
+    expect(screen.queryByTestId("dialogue-stage-convergence-mark-thesis")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("dialogue-stage-convergence-mark-antithesis")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("dialogue-stage-convergence-dot")).not.toBeInTheDocument();
+    expect(screen.getByTestId("dialogue-stage-hint")).toHaveTextContent("合流记录已保留。");
     expect(screen.queryByText("合流 1 次")).not.toBeInTheDocument();
     expect(screen.queryByTestId("dialogue-stage-node-synthesis")).not.toBeInTheDocument();
   });
@@ -662,18 +747,15 @@ describe("BubbleStage", () => {
       "data-display-role",
       "synthesis-record"
     );
-    expect(screen.getByTestId("dialogue-stage-relation-thesis-synthesis")).toHaveAttribute(
-      "data-event-state",
-      "synthesis-reveal"
+    expect(screen.getByTestId("dialogue-stage-node-synthesis")).toHaveAttribute(
+      "data-metaball-role",
+      "synthesis"
     );
-    expect(screen.getByTestId("dialogue-stage-relation-thesis-synthesis")).toHaveAttribute(
-      "data-line-role",
+    expect(screen.getByTestId("dialogue-stage-node-thesis")).toHaveAttribute(
+      "data-metaball-relation",
       "source"
     );
-    expect(screen.getByTestId("dialogue-stage-relation-thesis-synthesis")).toHaveAttribute(
-      "data-branch-type",
-      "正"
-    );
+    expect(screen.queryByTestId("dialogue-stage-relations")).not.toBeInTheDocument();
   });
 
   it("clamps default and dragged node positions away from the bottom edge", () => {
