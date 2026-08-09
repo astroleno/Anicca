@@ -15,6 +15,9 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./tests/setup.ts"],
     css: true,
+    maxWorkers: 2,
+    testTimeout: 10_000,
+    hookTimeout: 10_000,
     exclude: ["node_modules/**", "ref/**", ".worktrees/**", "**/.worktrees/**"]
   }
 });

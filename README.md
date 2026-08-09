@@ -1,5 +1,7 @@
 # 无相 Anicca
 
+[![Quality](https://github.com/astroleno/Anicca/actions/workflows/quality.yml/badge.svg)](https://github.com/astroleno/Anicca/actions/workflows/quality.yml)
+
 > 当前主线入口：`/dialogue`
 
 —— 一个 local-first 的“正 / 反 / 合”对话实验空间。
@@ -300,6 +302,8 @@ npm run dev
 - `npm test`
 - `npm run build`
 - `npm run test:visual-dialogue`
+
+GitHub Actions 会在每个 pull request 和 `main` push 上运行双通道门禁：一条执行 lint、生产/测试 TypeScript、全量 Vitest 与 production build；另一条在 Chromium 中执行 production dialogue visual smoke，并保留 14 天视觉证据。
 
 主线 rollout 关注的人工检查项：
 
