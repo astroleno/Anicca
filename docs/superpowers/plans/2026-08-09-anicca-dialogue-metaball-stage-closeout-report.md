@@ -27,6 +27,8 @@ Repository closeout work additionally adds GitHub Actions CI, publishes the hist
 | `e02a093` | GitHub Actions quality/build/production visual jobs and deterministic Vitest concurrency |
 | `020ed9c` | Live-provider evaluation P50/P95/max latency reporting |
 | `2123e05` | Deterministic OpenAI-compatible mock and explicit live/mock evaluation reporting |
+| `dffe545` | Preserve drawer and focus intent when Roundtable deepen completes asynchronously |
+| `7ddb428` | Include failed attempts and retry backoff in end-to-end evaluation latency |
 
 ## Architecture and data boundary
 
@@ -52,8 +54,8 @@ Environment:
 | Gate | Evidence |
 | --- | --- |
 | `git diff --check` | exit 0 |
-| Roundtable route + DialogueShell | 2 files / 49 tests passed |
-| `npm run check` | exit 0; 31 files / 264 tests passed; production and test TypeScript 0 errors |
+| Roundtable route + DialogueShell | 2 files / 52 tests passed |
+| `npm run check` | exit 0; 32 files / 268 tests passed; production and test TypeScript 0 errors |
 | Lint | 0 errors; 33 pre-existing warnings; renderer, Roundtable and CI-owned files 0 warnings |
 | `npm run build` | exit 0; 15 application routes generated, including `/dialogue` and `/roundtable` |
 | `DIALOGUE_SMOKE_SERVER_MODE=start npm run test:visual-dialogue` | exit 0; 7 viewports and 15 interaction scenarios, no failed scenario |
@@ -89,7 +91,11 @@ Human-reviewed screenshots:
 - `artifacts/visual-smoke/dialogue/desktop-reduced-motion-roundtable-handoff.png`
 - `artifacts/visual-smoke/dialogue/mobile-320-roundtable-handoff.png`
 
-The generated evidence remains ignored by Git; screenshots, local absolute paths, reference archives and `.superpowers/` are not part of the source commits.
+The newly generated closeout evidence remains ignored by Git; screenshots, local absolute paths, reference archives and `.superpowers/` are not part of the source commits. The tracked `artifacts/visual-smoke/dialogue/summary.json` is a legacy 2026-07-27 snapshot and is not claimed as current evidence. After the branch is pushed, the current-HEAD GitHub Actions `visual-dialogue` artifact is the merge gate.
+
+The Roundtable regression matrix additionally covers a deepen response completing after the user closes the drawer, brings the question back to the main line or selects another node. In all three cases the result is persisted without reopening or replacing the drawer and without stealing focus.
+
+Residual visual boundaries are explicit: the automated fusion gate verifies projected geometry and `data-fused-pairs`, while liquid-bridge pixel continuity remains human-reviewed rather than pixel-diff asserted. GPU frame time, dropped frames and power use have not been measured on physical mobile hardware.
 
 ## CI
 
@@ -120,8 +126,9 @@ The full `/api/branches` -> `/api/synthesis` HTTP path was exercised against `sc
 - 50/50 cases passed; 0 contract failures and 0 UI quality warnings.
 - 103 provider requests were observed: 100 successful completions plus 3 injected `429` responses that exhaust the SDK retry budget once.
 - Evaluation case 6 recovered on its second application-level attempt, proving the HTTP retry and reporting path.
-- Branch latency: average 3 ms, P50 1 ms, P95 4 ms, max 49 ms.
-- Synthesis latency: average 2 ms, P50 1 ms, P95 4 ms, max 5 ms.
+- Every response records per-attempt `elapsedMs` for diagnosis and `totalElapsedMs` across failed attempts, retry backoff and the final attempt for reporting.
+- Branch end-to-end latency: average 188 ms, P50 6 ms, P95 38 ms, max 8,763 ms.
+- Synthesis end-to-end latency: average 8 ms, P50 5 ms, P95 25 ms, max 32 ms.
 - No request exceeded 60 seconds.
 - Evidence: `artifacts/dialectic-50-mock/2026-08-09/{summary.md,summary.json,records.json,records.jsonl}`. These generated records remain ignored by Git.
 - The records contain no API key or authorization header.
