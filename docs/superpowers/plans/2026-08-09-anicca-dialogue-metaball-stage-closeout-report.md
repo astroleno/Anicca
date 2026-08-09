@@ -26,6 +26,7 @@ Repository closeout work additionally adds GitHub Actions CI, publishes the hist
 | `6f59cf1` | Roundtable API hardening, sidecar theater, deepen/stale/error behavior and visual gates |
 | `e02a093` | GitHub Actions quality/build/production visual jobs and deterministic Vitest concurrency |
 | `020ed9c` | Live-provider evaluation P50/P95/max latency reporting |
+| `2123e05` | Deterministic OpenAI-compatible mock and explicit live/mock evaluation reporting |
 
 ## Architecture and data boundary
 
@@ -108,11 +109,28 @@ Vitest is capped at two workers with 10-second test/hook timeouts. This removes 
 - The primary worktree remains detached at the release baseline and retains the user's untracked `.superpowers/` and implementation plan.
 - This feature worktree remains attached to `codex/anicca-dialogue-metaball-stage` with a clean index.
 
-## Live-provider gate
+## Provider evaluation gates
 
-The 50-case harness is ready at `scripts/evals/dialectic-50-live.mjs`. It records contract pass rate, UI quality warnings, retries, slow requests, average/P50/P95/max latency and preserves partial records during a run.
+The 50-case harness at `scripts/evals/dialectic-50-live.mjs` records contract pass rate, UI quality warnings, retries, slow requests, average/P50/P95/max latency and preserves partial records during a run. `ANICCA_EVAL_MODE=mock` keeps deterministic integration evidence explicitly separate from real-provider evidence.
 
-Current status: **pending external credential**. Neither the process environment, the worktree, the primary repository nor GitHub Actions secrets contains `OPENAI_API_KEY`. No real provider request has been sent, and no live-provider result is claimed in this report. After a credential is configured, the required command is:
+### Mock integration gate: complete
+
+The full `/api/branches` -> `/api/synthesis` HTTP path was exercised against `scripts/evals/mock-openai-server.mjs`:
+
+- 50/50 cases passed; 0 contract failures and 0 UI quality warnings.
+- 103 provider requests were observed: 100 successful completions plus 3 injected `429` responses that exhaust the SDK retry budget once.
+- Evaluation case 6 recovered on its second application-level attempt, proving the HTTP retry and reporting path.
+- Branch latency: average 3 ms, P50 1 ms, P95 4 ms, max 49 ms.
+- Synthesis latency: average 2 ms, P50 1 ms, P95 4 ms, max 5 ms.
+- No request exceeded 60 seconds.
+- Evidence: `artifacts/dialectic-50-mock/2026-08-09/{summary.md,summary.json,records.json,records.jsonl}`. These generated records remain ignored by Git.
+- The records contain no API key or authorization header.
+
+This result verifies the local OpenAI-compatible transport, both Next API routes, strict structured-output parsing, retry recovery, 50-case validation and report generation. It does **not** represent real-provider content quality, failure rate or latency.
+
+### Real-provider quality gate: pending external credential
+
+Neither the process environment, the worktree, the primary repository nor GitHub Actions secrets contains `OPENAI_API_KEY`. No real provider request has been sent, and no live-provider result is claimed in this report. After a credential is configured, the required command is:
 
 ```bash
 ANICCA_EVAL_BASE_URL=http://127.0.0.1:3060 \
@@ -120,4 +138,4 @@ ANICCA_EVAL_OUTPUT_DIR=artifacts/dialectic-50-live/2026-08-09 \
 node scripts/evals/dialectic-50-live.mjs
 ```
 
-This section must be replaced with the actual 50-case pass rate, warnings, retry count and P95/long-tail findings before the overall goal is marked complete.
+The mock gate removes uncertainty from the application integration and reporting chain. Real-provider output quality and external reliability remain the only provider-evaluation risk and require a credentialed 50-case run before that original live gate can be claimed complete.
