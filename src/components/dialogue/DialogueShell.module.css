@@ -407,90 +407,52 @@
   transform: translate(var(--stage-pan-x, 0px), var(--stage-pan-y, 0px));
 }
 
+.stageMetaballCanvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 240ms ease;
+}
+
+.stageTrack[data-metaball-renderer="ready"] .stageMetaballCanvas {
+  opacity: 1;
+}
+
+.stageTrack[data-metaball-renderer="ready"] .stageNode,
+.stageTrack[data-metaball-renderer="ready"] .emptyStageBlob,
+.stageTrack[data-metaball-renderer="ready"] .stagePendingGhost {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.stageTrack[data-metaball-renderer="ready"] .stageNode::before,
+.stageTrack[data-metaball-renderer="ready"] .stageNode::after,
+.stageTrack[data-metaball-renderer="ready"] .stagePendingGhost::after {
+  opacity: 0;
+  animation: none;
+}
+
+.stageTrack[data-metaball-renderer="ready"] .stageNode:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 7px;
+}
+
+.stageTrack[data-metaball-renderer="loading"] .stageMetaballCanvas,
+.stageTrack[data-metaball-renderer="fallback"] .stageMetaballCanvas {
+  display: none;
+}
+
 .stageTrackInteractive {
   cursor: grab;
 }
 
 .stageTrackPanning {
   cursor: grabbing;
-}
-
-.stageRelations {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  overflow: visible;
-  pointer-events: none;
-}
-
-.stageRelationPath {
-  fill: none;
-  stroke: rgba(226, 239, 244, 0.64);
-  stroke-width: 1.54;
-  stroke-linecap: round;
-  stroke-dasharray: 3 2.2;
-  filter: drop-shadow(0 0 8px rgba(226, 239, 244, 0.16));
-  animation: relationTrace 1.6s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.stageRelationThesis {
-  stroke: rgba(35, 217, 161, 0.94);
-  stroke-dasharray: none;
-}
-
-.stageRelationAntithesis {
-  stroke: rgba(241, 95, 124, 0.92);
-  stroke-dasharray: 3 2.6;
-}
-
-.stageRelationSource {
-  stroke-width: 1.68;
-}
-
-.stageRelationSynthesis,
-.stageRelationConverge {
-  stroke: rgba(241, 191, 88, 0.86);
-  stroke-width: 1.48;
-  stroke-dasharray: 5 1.8;
-}
-
-.stageRelationLineage {
-  stroke: rgba(226, 239, 244, 0.58);
-  stroke-dasharray: 1.5 2.4;
-}
-
-.stageRelationEvent {
-  stroke-width: 1.56;
-  stroke-dasharray: 6 2;
-  animation:
-    relationTrace 1.4s cubic-bezier(0.16, 1, 0.3, 1) both,
-    relationFlow 2.2s linear infinite;
-}
-
-.stageConvergenceMark {
-  fill: none;
-  stroke: rgba(241, 191, 88, 0.74);
-  stroke-width: 1.36;
-  stroke-linecap: round;
-  stroke-dasharray: 4 2.6;
-  filter: drop-shadow(0 0 12px rgba(241, 191, 88, 0.24));
-  animation: convergencePulse 3.4s ease-in-out infinite;
-}
-
-.stageConvergenceMarkThesis {
-  stroke: rgba(35, 217, 161, 0.68);
-}
-
-.stageConvergenceMarkAntithesis {
-  stroke: rgba(241, 95, 124, 0.68);
-}
-
-.stageConvergenceDot {
-  fill: rgba(241, 191, 88, 0.86);
-  stroke: rgba(255, 242, 200, 0.36);
-  stroke-width: 0.52;
-  filter: drop-shadow(0 0 12px rgba(241, 191, 88, 0.32));
-  animation: convergencePulse 3.4s ease-in-out infinite;
 }
 
 .stageGlow,
@@ -931,31 +893,6 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-}
-
-.stagePendingRelations {
-  position: absolute;
-  inset: 0;
-  overflow: visible;
-}
-
-.stagePendingPath {
-  fill: none;
-  stroke-width: 1.78;
-  stroke-linecap: round;
-  stroke-dasharray: 5 3;
-  filter: drop-shadow(0 0 10px rgba(226, 239, 244, 0.16));
-  animation:
-    relationTrace 1.2s cubic-bezier(0.16, 1, 0.3, 1) both,
-    relationFlow 2.4s linear infinite;
-}
-
-.stagePendingPathThesis {
-  stroke: rgba(35, 217, 161, 0.72);
-}
-
-.stagePendingPathAntithesis {
-  stroke: rgba(241, 95, 124, 0.72);
 }
 
 .stagePendingGhost {
@@ -2988,36 +2925,6 @@
   }
 }
 
-@keyframes relationTrace {
-  from {
-    opacity: 0;
-    stroke-dashoffset: 12;
-  }
-  to {
-    opacity: 1;
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes relationFlow {
-  from {
-    stroke-dashoffset: 0;
-  }
-  to {
-    stroke-dashoffset: -16;
-  }
-}
-
-@keyframes convergencePulse {
-  0%,
-  100% {
-    opacity: 0.52;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
 @keyframes pendingPulse {
   0%,
   100% {
@@ -3084,12 +2991,8 @@
   .stageNodeFocused::after,
   .stageNodeSource::after,
   .stageNodeAncestor::after,
-  .stageRelationPath,
-  .stagePendingPath,
   .stagePendingGhost,
   .stagePendingGhost::after,
-  .stageConvergenceMark,
-  .stageConvergenceDot,
   .stageNodeSynthesisEvent {
     animation: none;
   }
