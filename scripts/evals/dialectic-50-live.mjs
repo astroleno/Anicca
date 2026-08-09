@@ -219,6 +219,21 @@ function escapeCell(value) {
   return String(value ?? "").replaceAll("|", "\\|").replaceAll("\n", " ");
 }
 
+function summarizeLatencies(values) {
+  if (!values.length) {
+    return { average: 0, p50: 0, p95: 0, max: 0 };
+  }
+
+  const sorted = [...values].sort((left, right) => left - right);
+  const percentile = (ratio) => sorted[Math.max(0, Math.ceil(sorted.length * ratio) - 1)];
+  return {
+    average: Math.round(sorted.reduce((sum, value) => sum + value, 0) / sorted.length),
+    p50: percentile(0.5),
+    p95: percentile(0.95),
+    max: sorted[sorted.length - 1]
+  };
+}
+
 function toMarkdown(summary, records) {
   const lines = [
     "# Dialectic 50 Live Test Record",
@@ -233,6 +248,8 @@ function toMarkdown(summary, records) {
     `- Failed: ${summary.failed}/${summary.totalCases}`,
     `- Quality warnings: ${summary.warningCount}`,
     `- Retried records: ${summary.retryCount}`,
+    `- Branch latency: avg ${summary.latencyMs.branches.average}ms / p50 ${summary.latencyMs.branches.p50}ms / p95 ${summary.latencyMs.branches.p95}ms / max ${summary.latencyMs.branches.max}ms`,
+    `- Synthesis latency: avg ${summary.latencyMs.synthesis.average}ms / p50 ${summary.latencyMs.synthesis.p50}ms / p95 ${summary.latencyMs.synthesis.p95}ms / max ${summary.latencyMs.synthesis.max}ms`,
     `- Slow requests > ${Math.round(summary.slowRequestThresholdMs / 1000)}s: ${summary.slowRequests.length}`,
     "",
     "## Iteration Batches",
@@ -279,7 +296,10 @@ function buildSummary(startedAt, finishedAt, records) {
   const warningCount = records.reduce((sum, record) => sum + record.validation.warnings.length, 0);
   const branchLatencies = records.map((record) => record.branchesResponse?.elapsedMs || 0).filter(Boolean);
   const synthesisLatencies = records.map((record) => record.synthesisResponse?.elapsedMs || 0).filter(Boolean);
-  const avg = (values) => (values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length) : 0);
+  const latencyMs = {
+    branches: summarizeLatencies(branchLatencies),
+    synthesis: summarizeLatencies(synthesisLatencies)
+  };
   const slowRequestThresholdMs = 60_000;
   const slowRequests = records
     .flatMap((record) => [
@@ -320,7 +340,10 @@ function buildSummary(startedAt, finishedAt, records) {
   } else {
     findings.push(`没有请求超过 ${Math.round(slowRequestThresholdMs / 1000)} 秒。`);
   }
-  findings.push(`平均耗时：branches ${avg(branchLatencies)}ms，synthesis ${avg(synthesisLatencies)}ms。`);
+  findings.push(
+    `延迟：branches avg ${latencyMs.branches.average}ms / p95 ${latencyMs.branches.p95}ms / max ${latencyMs.branches.max}ms；` +
+      `synthesis avg ${latencyMs.synthesis.average}ms / p95 ${latencyMs.synthesis.p95}ms / max ${latencyMs.synthesis.max}ms。`
+  );
   findings.push("后续迭代建议优先把 live eval 纳入回归流程，并单独追踪 provider 失败率与结构漂移率。");
 
   return {
@@ -336,9 +359,10 @@ function buildSummary(startedAt, finishedAt, records) {
     retriedRecords,
     slowRequestThresholdMs,
     slowRequests,
+    latencyMs,
     averageLatencyMs: {
-      branches: avg(branchLatencies),
-      synthesis: avg(synthesisLatencies)
+      branches: latencyMs.branches.average,
+      synthesis: latencyMs.synthesis.average
     },
     batches: iterationBatches.map((batch, index) => ({
       batch: index + 1,
