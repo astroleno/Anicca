@@ -4,10 +4,15 @@ import { performance } from "node:perf_hooks";
 
 const baseUrl = process.env.ANICCA_EVAL_BASE_URL || process.argv[2] || "http://127.0.0.1:3060";
 const outputDir = path.resolve(process.env.ANICCA_EVAL_OUTPUT_DIR || "artifacts/dialectic-50-live/latest");
+const evalMode = (process.env.ANICCA_EVAL_MODE || "live").trim().toLowerCase();
 const retryDelayMs = 1200;
 
+if (!["live", "mock"].includes(evalMode)) {
+  throw new Error(`ANICCA_EVAL_MODE must be "live" or "mock", received "${evalMode}"`);
+}
+
 const iterationBatches = [
-  { name: "baseline", note: "验证真实 API 的基本 JSON contract 和模型遵循度。" },
+  { name: "baseline", note: "验证 API 的基本 JSON contract 和模型遵循度。" },
   { name: "decision-criteria", note: "观察输出是否会自然给出判断标准，而不只是泛泛建议。" },
   { name: "constraint-aware", note: "观察正反是否能同时呈现代价、约束和权衡。" },
   { name: "operational", note: "观察合流是否能落到下一步行动。" },
@@ -235,14 +240,17 @@ function summarizeLatencies(values) {
 }
 
 function toMarkdown(summary, records) {
+  const isMock = summary.mode === "mock";
   const lines = [
-    "# Dialectic 50 Live Test Record",
+    `# Dialectic 50 ${isMock ? "Mock" : "Live"} Test Record`,
     "",
     `- Started at: ${summary.startedAt}`,
     `- Finished at: ${summary.finishedAt}`,
     `- Base URL: ${summary.baseUrl}`,
-    "- Target: live local Next API (`/api/branches` + `/api/synthesis`)",
-    "- Method: HTTP integration test with real provider responses",
+    "- Target: local Next API (`/api/branches` + `/api/synthesis`)",
+    isMock
+      ? "- Method: HTTP integration test with a deterministic local OpenAI-compatible mock provider"
+      : "- Method: HTTP integration test with real provider responses",
     `- Total cases: ${summary.totalCases}`,
     `- Passed: ${summary.passed}/${summary.totalCases}`,
     `- Failed: ${summary.failed}/${summary.totalCases}`,
@@ -323,7 +331,7 @@ function buildSummary(startedAt, finishedAt, records) {
   if (failedRecords.length) {
     findings.push(`有 ${failedRecords.length} 组未通过 contract，需要优先查看 records.json 中的 validation.problems。`);
   } else {
-    findings.push("50 组 live API contract 全部通过，模型输出均包含正、反、合三类结构化分支。");
+    findings.push(`50 组 ${evalMode} API contract 全部通过，输出均包含正、反、合三类结构化分支。`);
   }
   if (warningRecords.length) {
     findings.push(`有 ${warningRecords.length} 组出现 UI 质量警告，主要关注 label 长度、label 可读性、label 立场冗余、summary 换行或文本过长。`);
@@ -331,7 +339,11 @@ function buildSummary(startedAt, finishedAt, records) {
     findings.push("未发现 label 长度、label 可读性、label 立场冗余、summary 换行或文本过长的 UI 质量警告。");
   }
   if (retriedRecords.length) {
-    findings.push(`有 ${retriedRecords.length} 组通过重试恢复成功，应继续追踪 provider 结构漂移。`);
+    findings.push(
+      evalMode === "mock"
+        ? `有 ${retriedRecords.length} 组从 mock 限流注入中通过 HTTP 重试恢复成功。`
+        : `有 ${retriedRecords.length} 组通过重试恢复成功，应继续追踪 provider 结构漂移。`
+    );
   } else {
     findings.push("没有请求触发重试。");
   }
@@ -344,11 +356,16 @@ function buildSummary(startedAt, finishedAt, records) {
     `延迟：branches avg ${latencyMs.branches.average}ms / p95 ${latencyMs.branches.p95}ms / max ${latencyMs.branches.max}ms；` +
       `synthesis avg ${latencyMs.synthesis.average}ms / p95 ${latencyMs.synthesis.p95}ms / max ${latencyMs.synthesis.max}ms。`
   );
-  findings.push("后续迭代建议优先把 live eval 纳入回归流程，并单独追踪 provider 失败率与结构漂移率。");
+  findings.push(
+    evalMode === "mock"
+      ? "Mock 结果只验证应用 HTTP、重试、结构校验与统计链路，不代表真实 Provider 的内容质量、失败率或延迟。"
+      : "后续迭代建议优先把 live eval 纳入回归流程，并单独追踪 provider 失败率与结构漂移率。"
+  );
 
   return {
     startedAt,
     finishedAt,
+    mode: evalMode,
     baseUrl,
     outputDir,
     totalCases: records.length,
@@ -377,14 +394,14 @@ function buildSummary(startedAt, finishedAt, records) {
 async function runCase(item, index) {
   const batchIndex = batchForIndex(index);
   const batch = iterationBatches[batchIndex];
-  const requestId = `live-dialectic-50-${String(index + 1).padStart(3, "0")}`;
+  const requestId = `${evalMode}-dialectic-50-${String(index + 1).padStart(3, "0")}`;
   const branchesBody = {
     requestId,
     userText: item.userText,
     contextMessages: [
       {
         role: "system",
-        content: `live eval batch ${batchIndex + 1}: ${batch.name}; ${batch.note}`
+        content: `${evalMode} eval batch ${batchIndex + 1}: ${batch.name}; ${batch.note}`
       }
     ]
   };
