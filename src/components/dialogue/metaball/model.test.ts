@@ -31,6 +31,7 @@ describe("dialogue metaball projection", () => {
       emphasis: 0.94
     });
     expect(computeFusedPairs(nodes, 0.055)).toEqual(["a::b"]);
+    expect(computeFusedPairs([...nodes].reverse(), 0.055)).toEqual(["a::b"]);
   });
 
   it("packs fixed-size uniforms and clears unused slots", () => {

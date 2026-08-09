@@ -55,11 +55,13 @@ describe("DialogueMetaballLayer", () => {
   let nextFrameId = 0;
   let frames: Map<number, FrameRequestCallback>;
   let reducedMotion = false;
+  let webglAvailable = true;
 
   beforeEach(() => {
     frames = new Map();
     nextFrameId = 0;
     reducedMotion = false;
+    webglAvailable = true;
     rendererMocks.resize.mockReset();
     rendererMocks.render.mockReset();
     rendererMocks.dispose.mockReset();
@@ -97,6 +99,9 @@ describe("DialogueMetaballLayer", () => {
         ? rect(100, 50, 800, 600)
         : rect(350, 275, 150, 150);
     });
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() =>
+      webglAvailable ? ({} as never) : null
+    );
   });
 
   afterEach(() => {
@@ -151,6 +156,17 @@ describe("DialogueMetaballLayer", () => {
 
     render(<Harness onStateChange={onStateChange} />);
 
+    expect(onStateChange).toHaveBeenLastCalledWith("fallback");
+    expect(frames.size).toBe(0);
+  });
+
+  it("reports fallback without constructing Three when WebGL is unavailable", () => {
+    const onStateChange = vi.fn();
+    webglAvailable = false;
+
+    render(<Harness onStateChange={onStateChange} />);
+
+    expect(rendererMocks.create).not.toHaveBeenCalled();
     expect(onStateChange).toHaveBeenLastCalledWith("fallback");
     expect(frames.size).toBe(0);
   });

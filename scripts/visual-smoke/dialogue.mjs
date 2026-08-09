@@ -1166,15 +1166,27 @@ async function ensureMobileCanScrollFromStage(page, viewportName) {
 
   await page.mouse.move(box.x + box.width / 2, box.y + Math.min(box.height / 2, 180));
   await page.mouse.wheel(0, 420);
-  await page.waitForTimeout(80);
-
-  const after = await getPageScrollMetrics(page);
   const beforePosition = Math.max(
     before.windowScrollY,
     before.docScrollTop,
     before.bodyScrollTop,
     before.shellScrollTop ?? 0
   );
+  await page.waitForFunction(
+    (initialPosition) => {
+      const shell = document.querySelector('[data-testid="dialogue-shell"]');
+      return Math.max(
+        window.scrollY,
+        document.documentElement.scrollTop,
+        document.body.scrollTop,
+        shell instanceof HTMLElement ? shell.scrollTop : 0
+      ) > initialPosition + 24;
+    },
+    beforePosition,
+    { timeout: 2000 }
+  ).catch(() => {});
+
+  const after = await getPageScrollMetrics(page);
   const afterPosition = Math.max(
     after.windowScrollY,
     after.docScrollTop,
@@ -1228,7 +1240,13 @@ async function ensureTouchNodeTapSelects(page) {
     .waitFor();
 }
 
-async function createScenarioPage(browser, workspace, contextOptions = {}, routePath = "/dialogue") {
+async function createScenarioPage(
+  browser,
+  workspace,
+  contextOptions = {},
+  routePath = "/dialogue",
+  initScripts = []
+) {
   const context = await browser.newContext({
     viewport: { width: 1280, height: 900 },
     deviceScaleFactor: 1,
@@ -1238,6 +1256,10 @@ async function createScenarioPage(browser, workspace, contextOptions = {}, route
   await context.addInitScript((snapshot) => {
     window.localStorage.setItem("anicca_workspace_v2", JSON.stringify(snapshot));
   }, workspace);
+
+  for (const initScript of initScripts) {
+    await context.addInitScript(initScript);
+  }
 
   const page = await context.newPage();
   const pageIssues = [];
@@ -1265,6 +1287,271 @@ async function createScenarioPage(browser, workspace, contextOptions = {}, route
   await page.getByTestId("dialogue-panel").waitFor();
 
   return { context, page, pageIssues };
+}
+
+async function assertMetaballStage(page, scenarioName, expectedState = "ready") {
+  const track = page.getByTestId("dialogue-stage-track");
+  const canvas = page.getByTestId("dialogue-metaball-canvas");
+  await canvas.waitFor({ state: "attached" });
+  await page.waitForFunction(
+    ({ state }) =>
+      document.querySelector('[data-testid="dialogue-stage-track"]')?.getAttribute("data-metaball-renderer") === state,
+    { state: expectedState }
+  );
+
+  const svgCount = await track.locator("svg").count();
+  if (svgCount !== 0) {
+    throw new Error(`Stage SVG lines remain during ${scenarioName}: ${svgCount}`);
+  }
+
+  const metrics = await page.evaluate(() => {
+    const trackElement = document.querySelector('[data-testid="dialogue-stage-track"]');
+    const canvasElement = document.querySelector('[data-testid="dialogue-metaball-canvas"]');
+    if (!(trackElement instanceof HTMLElement) || !(canvasElement instanceof HTMLCanvasElement)) {
+      return null;
+    }
+
+    const trackRect = trackElement.getBoundingClientRect();
+    const canvasRect = canvasElement.getBoundingClientRect();
+    const canvasStyle = getComputedStyle(canvasElement);
+    return {
+      state: trackElement.dataset.metaballRenderer,
+      track: { width: trackRect.width, height: trackRect.height },
+      canvas: {
+        width: canvasRect.width,
+        height: canvasRect.height,
+        backingWidth: canvasElement.width,
+        backingHeight: canvasElement.height,
+        display: canvasStyle.display
+      }
+    };
+  });
+
+  if (!metrics) {
+    throw new Error(`Missing metaball stage metrics during ${scenarioName}`);
+  }
+
+  if (expectedState === "ready") {
+    const widthDelta = Math.abs(metrics.track.width - metrics.canvas.width);
+    const heightDelta = Math.abs(metrics.track.height - metrics.canvas.height);
+    if (widthDelta > 1 || heightDelta > 1) {
+      throw new Error(`Metaball canvas does not cover its track during ${scenarioName}: ${JSON.stringify(metrics)}`);
+    }
+
+    const scaleCap = metrics.track.width <= 640 ? 0.9 : 1.25;
+    const maxBackingWidth = Math.ceil(metrics.canvas.width * scaleCap) + 1;
+    const maxBackingHeight = Math.ceil(metrics.canvas.height * scaleCap) + 1;
+    if (
+      metrics.canvas.backingWidth > maxBackingWidth ||
+      metrics.canvas.backingHeight > maxBackingHeight
+    ) {
+      throw new Error(`Metaball backing buffer exceeds its DPR budget during ${scenarioName}: ${JSON.stringify(metrics)}`);
+    }
+  } else if (metrics.canvas.display !== "none") {
+    throw new Error(`Fallback canvas remains visible during ${scenarioName}: ${JSON.stringify(metrics)}`);
+  }
+
+  return metrics;
+}
+
+async function assertStageNodesInteractive(stage, scenarioName) {
+  const failures = await stage.locator('[data-testid^="dialogue-stage-node-"]').evaluateAll((nodes) =>
+    nodes.flatMap((node) => {
+      if (!(node instanceof HTMLButtonElement)) {
+        return [{ testId: node.getAttribute("data-testid"), reason: "not-button" }];
+      }
+      const rect = node.getBoundingClientRect();
+      if (node.disabled || node.tabIndex < 0 || rect.width < 44 || rect.height < 44) {
+        return [{
+          testId: node.dataset.testid,
+          reason: "not-interactive",
+          disabled: node.disabled,
+          tabIndex: node.tabIndex,
+          width: rect.width,
+          height: rect.height
+        }];
+      }
+      return [];
+    })
+  );
+
+  if (failures.length) {
+    throw new Error(`Stage nodes are not clickable and focusable during ${scenarioName}: ${JSON.stringify(failures)}`);
+  }
+}
+
+async function readPersistedGraphCounts(page) {
+  return page.evaluate(() => {
+    const activeWorkspaceId = window.localStorage.getItem("anicca_workspace_active_v1");
+    const raw = activeWorkspaceId
+      ? window.localStorage.getItem(`anicca_workspace_snapshot_v1:${activeWorkspaceId}`)
+      : window.localStorage.getItem("anicca_workspace_v2");
+    if (!raw) return null;
+    const snapshot = JSON.parse(raw);
+    return {
+      nodes: Object.keys(snapshot.graph?.nodes || {}).length,
+      edges: Object.keys(snapshot.graph?.edges || {}).length
+    };
+  });
+}
+
+async function ensureMetaballFusionAndSeparation(browser) {
+  const { context, page, pageIssues } = await createScenarioPage(browser, seededWorkspace, {
+    viewport: { width: 1440, height: 980 }
+  });
+  await assertMetaballStage(page, "metaball fusion and separation");
+  const pair = "asst_thesis_1::user_root_1";
+  const root = page.getByTestId("dialogue-stage-node-user_root_1");
+  const thesis = page.getByTestId("dialogue-stage-node-asst_thesis_1");
+  const rootBox = await root.boundingBox();
+  const thesisBox = await thesis.boundingBox();
+  if (!rootBox || !thesisBox) {
+    throw new Error("Metaball fusion drag targets are not measurable");
+  }
+
+  await page.waitForFunction(
+    ({ expectedPair }) =>
+      !(document.querySelector('[data-testid="dialogue-metaball-canvas"]')?.getAttribute("data-fused-pairs") || "")
+        .split(",")
+        .includes(expectedPair),
+    { expectedPair: pair }
+  );
+  const graphBefore = await readPersistedGraphCounts(page);
+  if (!graphBefore) {
+    throw new Error("Metaball fusion scenario could not read persisted graph counts before dragging");
+  }
+  const originalCenter = {
+    x: thesisBox.x + thesisBox.width / 2,
+    y: thesisBox.y + thesisBox.height / 2
+  };
+  const fusedCenter = {
+    x: rootBox.x + rootBox.width / 2 - 112,
+    y: rootBox.y + rootBox.height / 2
+  };
+  let pointerDown = false;
+
+  try {
+    await page.mouse.move(originalCenter.x, originalCenter.y);
+    await page.mouse.down();
+    pointerDown = true;
+    await page.mouse.move(fusedCenter.x, fusedCenter.y, { steps: 16 });
+    await page.waitForFunction(
+      ({ expectedPair }) =>
+        (document.querySelector('[data-testid="dialogue-metaball-canvas"]')?.getAttribute("data-fused-pairs") || "")
+          .split(",")
+          .includes(expectedPair),
+      { expectedPair: pair }
+    );
+
+    const fusedScreenshotPath = path.join(outputDir, "desktop-metaball-fused.png");
+    await page.screenshot({ path: fusedScreenshotPath, fullPage: false });
+
+    await page.mouse.move(originalCenter.x, originalCenter.y, { steps: 16 });
+    await page.waitForFunction(
+      ({ expectedPair }) =>
+        !(document.querySelector('[data-testid="dialogue-metaball-canvas"]')?.getAttribute("data-fused-pairs") || "")
+          .split(",")
+          .includes(expectedPair),
+      { expectedPair: pair }
+    );
+    await page.mouse.up();
+    pointerDown = false;
+
+    const graphAfter = await readPersistedGraphCounts(page);
+    if (!graphAfter) {
+      throw new Error("Metaball fusion scenario could not read persisted graph counts after dragging");
+    }
+    if (JSON.stringify(graphAfter) !== JSON.stringify(graphBefore)) {
+      throw new Error(`Metaball drag mutated graph counts: ${JSON.stringify({ graphBefore, graphAfter })}`);
+    }
+    assertNoPageIssues(pageIssues, "metaball fusion and separation");
+    await context.close();
+
+    return {
+      name: "metaball-fusion-separation",
+      passed: true,
+      pair,
+      graphBefore,
+      graphAfter,
+      screenshot: fusedScreenshotPath
+    };
+  } finally {
+    if (pointerDown) {
+      await page.mouse.up().catch(() => {});
+    }
+    await context.close().catch(() => {});
+  }
+}
+
+async function ensureMetaballReducedMotion(browser) {
+  const { context, page, pageIssues } = await createScenarioPage(browser, seededWorkspace, {
+    viewport: { width: 1440, height: 980 },
+    reducedMotion: "reduce"
+  });
+  await assertMetaballStage(page, "reduced-motion metaball");
+  await page.evaluate(() => document.fonts.ready);
+  const stage = page.getByTestId("dialogue-stage");
+  const first = await stage.screenshot();
+  await page.waitForTimeout(500);
+  const second = await stage.screenshot();
+  if (!first.equals(second)) {
+    throw new Error("Reduced-motion metaball stage changed across a 500ms interval");
+  }
+
+  const screenshotPath = path.join(outputDir, "desktop-metaball-reduced-motion.png");
+  await stage.screenshot({ path: screenshotPath });
+  assertNoPageIssues(pageIssues, "reduced-motion metaball");
+  await context.close();
+  return { name: "metaball-reduced-motion", passed: true, screenshot: screenshotPath };
+}
+
+async function ensureMetaballWebglFallback(browser) {
+  const disableWebgl = () => {
+    const originalGetContext = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (contextId, options) {
+      if (["webgl", "webgl2", "experimental-webgl"].includes(String(contextId))) {
+        return null;
+      }
+      return originalGetContext.call(this, contextId, options);
+    };
+  };
+  const { context, page, pageIssues } = await createScenarioPage(
+    browser,
+    seededWorkspace,
+    { viewport: { width: 1440, height: 980 } },
+    "/dialogue",
+    [disableWebgl]
+  );
+  await assertMetaballStage(page, "WebGL fallback", "fallback");
+  const root = page.getByTestId("dialogue-stage-node-user_root_1");
+  const fallbackMetrics = await root.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    return {
+      width: rect.width,
+      height: rect.height,
+      backgroundImage: style.backgroundImage,
+      backgroundColor: style.backgroundColor
+    };
+  });
+  if (
+    fallbackMetrics.width < 44 ||
+    fallbackMetrics.height < 44 ||
+    (fallbackMetrics.backgroundImage === "none" && fallbackMetrics.backgroundColor === "rgba(0, 0, 0, 0)")
+  ) {
+    throw new Error(`CSS fallback blob is not visible: ${JSON.stringify(fallbackMetrics)}`);
+  }
+
+  const thesis = page.getByTestId("dialogue-stage-node-asst_thesis_1");
+  await thesis.focus();
+  await ensureActiveElement(page, { testId: "dialogue-stage-node-asst_thesis_1" });
+  await thesis.click();
+  await page.getByRole("heading", { name: "继续" }).waitFor();
+  const screenshotPath = path.join(outputDir, "desktop-metaball-fallback.png");
+  await page.screenshot({ path: screenshotPath, fullPage: false });
+  assertNoPageIssues(pageIssues, "WebGL fallback");
+  await context.close();
+  return { name: "metaball-webgl-fallback", passed: true, screenshot: screenshotPath };
 }
 
 function assertNoPageIssues(pageIssues, scenarioName) {
@@ -1663,6 +1950,7 @@ async function ensureGrowthPerspectiveFlow(browser) {
       isMobile: scenario.name.startsWith("mobile")
     });
     const composer = page.getByTestId("dialogue-composer");
+    await assertMetaballStage(page, `growth perspectives ${scenario.name}`);
 
     await page.getByRole("button", { name: /点此输入/ }).click();
     await composer.getByLabel("输入").fill("也许要换个角度继续推进？");
@@ -1772,7 +2060,9 @@ async function ensureGrowthLayoutMatrix(browser) {
         isMobile: scenario.isMobile
       });
       const stage = page.getByTestId("dialogue-stage");
+      await assertMetaballStage(page, scenarioName);
       const nodeBoxes = await collectVisibleStageNodeBoxes(stage, scenarioName, expectedChildCount + 1);
+      await assertStageNodesInteractive(stage, scenarioName);
 
       stageNodeChecks[`candidate-${candidateLimit}-${scenario.name}`] = {
         candidateLimit,
@@ -1837,7 +2127,16 @@ async function ensureGrowthWideLayoutCompatibility(browser) {
   await dragged.page.mouse.up();
   await dragged.page.setViewportSize({ width: 320, height: 740 });
   await dragged.page.waitForFunction(() => window.matchMedia("(max-width: 980px)").matches);
-  await dragged.page.waitForTimeout(80);
+  await dragged.page.waitForFunction(
+    (expectedNodes) => expectedNodes.every((expectedNode) => {
+      const element = document.querySelector(`[data-testid="${expectedNode.testId}"]`);
+      if (!(element instanceof HTMLElement)) return false;
+      const rect = element.getBoundingClientRect();
+      return Math.abs(rect.left - expectedNode.left) <= 0.01 && Math.abs(rect.top - expectedNode.top) <= 0.01;
+    }),
+    baselineNodeBoxes,
+    { timeout: 3000 }
+  );
   const draggedNodeBoxes = await collectVisibleStageNodeBoxes(
     draggedStage,
     "Growth desktop drag then mobile-320",
@@ -1859,6 +2158,9 @@ async function ensureGrowthWideLayoutCompatibility(browser) {
 
 async function runInteractionScenarios(browser) {
   return [
+    await ensureMetaballFusionAndSeparation(browser),
+    await ensureMetaballReducedMotion(browser),
+    await ensureMetaballWebglFallback(browser),
     await ensureSynthesisPendingFocusFlow(browser),
     await ensureSynthesisStaleCompletionDoesNotStealFocus(browser),
     await ensureRoundtableDrawerReturnsFocus(browser),
@@ -1944,6 +2246,8 @@ async function runViewport(browser, viewport) {
   await composer.waitFor();
   await sidebar.waitFor();
   await workspaceBar.waitFor();
+  await assertMetaballStage(page, viewport.name);
+  await assertStageNodesInteractive(stage, viewport.name);
 
   await ensureNoHorizontalOverflow(page, viewport.name);
   await assertRegionWidth(stage, viewport.width, `${viewport.name} stage`);

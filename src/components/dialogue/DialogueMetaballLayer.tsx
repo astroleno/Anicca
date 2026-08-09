@@ -159,8 +159,22 @@ export function DialogueMetaballLayer({ hostRef, onStateChange }: Props) {
 
     onStateChange("loading");
     try {
-      renderer = createDialogueMetaballRenderer(canvas, enterFallback);
-      animationFrame = window.requestAnimationFrame(drawFrame);
+      const contextAttributes: WebGLContextAttributes = {
+        alpha: true,
+        antialias: false,
+        premultipliedAlpha: true,
+        powerPreference: "high-performance"
+      };
+      const webglContext =
+        canvas.getContext("webgl2", contextAttributes) ||
+        canvas.getContext("webgl", contextAttributes);
+
+      if (!webglContext) {
+        enterFallback();
+      } else {
+        renderer = createDialogueMetaballRenderer(canvas, enterFallback);
+        animationFrame = window.requestAnimationFrame(drawFrame);
+      }
     } catch {
       enterFallback();
     }

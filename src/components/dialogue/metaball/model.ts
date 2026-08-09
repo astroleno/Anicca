@@ -125,7 +125,7 @@ export function computeFusedPairs(nodes: DialogueMetaballNode[], smoothness: num
       const distance = Math.hypot(left.center[0] - right.center[0], left.center[1] - right.center[1]);
 
       if (distance <= left.radius + right.radius + smoothness * 2) {
-        pairs.push(`${left.id}::${right.id}`);
+        pairs.push([left.id, right.id].sort().join("::"));
       }
     }
   }
