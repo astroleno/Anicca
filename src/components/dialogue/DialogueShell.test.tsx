@@ -172,6 +172,46 @@ function normalizeRequestId<T extends { requestId?: unknown }>(body: T) {
   };
 }
 
+function createDeepenedRoundtableResponse(requestId: string) {
+  return new Response(
+    JSON.stringify({
+      requestId,
+      state: {
+        topic: "saved topic",
+        participants: [
+          {
+            name: "汉娜·阿伦特",
+            mbti: "INTJ",
+            stance: "行动需要承担公共责任。",
+            reason: "从行动与责任切入。"
+          }
+        ],
+        rounds: [
+          {
+            guidingQuestion: "第二层问题",
+            utterances: [
+              {
+                speaker: "汉娜·阿伦特",
+                action: "质疑",
+                text: "责任不能被流程吞掉。",
+                summary: "责任仍需由行动者承担。"
+              }
+            ],
+            coreTension: "流程效率与责任归属",
+            framework: "流程 -> 判断 -> 责任",
+            nextQuestion: "谁来承担下一步的判断？"
+          }
+        ],
+        currentQuestion: "谁来承担下一步的判断？",
+        nextQuestion: "谁来承担下一步的判断？",
+        lastCoreTension: "流程效率与责任归属",
+        status: "active"
+      }
+    }),
+    { status: 200, headers: { "Content-Type": "application/json" } }
+  );
+}
+
 function normalizeRetrievalContextIds<T extends { contextMessages?: Array<{ content?: string }> }>(body: T) {
   return {
     ...body,
@@ -972,45 +1012,7 @@ describe("DialogueShell", () => {
     });
 
     const requestId = readFetchBody(fetchMock).requestId;
-    deepenDeferred.resolve(
-      new Response(
-        JSON.stringify({
-          requestId,
-          state: {
-            topic: "saved topic",
-            participants: [
-              {
-                name: "汉娜·阿伦特",
-                mbti: "INTJ",
-                stance: "行动需要承担公共责任。",
-                reason: "从行动与责任切入。"
-              }
-            ],
-            rounds: [
-              {
-                guidingQuestion: "第二层问题",
-                utterances: [
-                  {
-                    speaker: "汉娜·阿伦特",
-                    action: "质疑",
-                    text: "责任不能被流程吞掉。",
-                    summary: "责任仍需由行动者承担。"
-                  }
-                ],
-                coreTension: "流程效率与责任归属",
-                framework: "流程 -> 判断 -> 责任",
-                nextQuestion: "谁来承担下一步的判断？"
-              }
-            ],
-            currentQuestion: "谁来承担下一步的判断？",
-            nextQuestion: "谁来承担下一步的判断？",
-            lastCoreTension: "流程效率与责任归属",
-            status: "active"
-          }
-        }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      )
-    );
+    deepenDeferred.resolve(createDeepenedRoundtableResponse(requestId));
 
     expect(await screen.findByText("第二层问题")).toBeInTheDocument();
     expect(screen.getByText("责任不能被流程吞掉。")).toBeInTheDocument();
@@ -1018,6 +1020,95 @@ describe("DialogueShell", () => {
       loadWorkspaceRecord("workspace_test")?.snapshot.artifacts?.roundtables?.roundtable_saved.state.nextQuestion
     ).toBe("谁来承担下一步的判断？");
     expect(screen.getByRole("status")).toHaveTextContent("圆桌已深挖一轮");
+  });
+
+  it("persists a deepen response without reopening a drawer closed while pending", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    seedSavedRoundtableArtifact(rootUserId);
+    const deepenDeferred = createDeferred<Response>();
+    const fetchMock = vi.fn(() => deepenDeferred.promise);
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: "查看最近圆桌记录" }));
+    await user.click(await screen.findByRole("button", { name: "深挖一轮" }));
+    await user.keyboard("{Escape}");
+    expect(screen.queryByTestId("dialogue-roundtable-drawer")).not.toBeInTheDocument();
+
+    deepenDeferred.resolve(createDeepenedRoundtableResponse(readFetchBody(fetchMock).requestId));
+
+    await waitFor(() => {
+      expect(
+        loadWorkspaceRecord("workspace_test")?.snapshot.artifacts?.roundtables?.roundtable_saved.state.nextQuestion
+      ).toBe("谁来承担下一步的判断？");
+    });
+    expect(screen.queryByTestId("dialogue-roundtable-drawer")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("圆桌深挖结果已保存");
+  });
+
+  it("persists a deepen response without reopening after bringing the question to the main line", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    seedSavedRoundtableArtifact(rootUserId);
+    const deepenDeferred = createDeferred<Response>();
+    const fetchMock = vi.fn(() => deepenDeferred.promise);
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: "查看最近圆桌记录" }));
+    await user.click(await screen.findByRole("button", { name: "深挖一轮" }));
+    await user.click(screen.getByRole("button", { name: "带回主线" }));
+    expect(screen.queryByTestId("dialogue-roundtable-drawer")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("输入")).toHaveValue("从保存记录继续追问");
+
+    deepenDeferred.resolve(createDeepenedRoundtableResponse(readFetchBody(fetchMock).requestId));
+
+    await waitFor(() => {
+      expect(
+        loadWorkspaceRecord("workspace_test")?.snapshot.artifacts?.roundtables?.roundtable_saved.state.nextQuestion
+      ).toBe("谁来承担下一步的判断？");
+    });
+    expect(screen.queryByTestId("dialogue-roundtable-drawer")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("输入")).toHaveValue("从保存记录继续追问");
+    expect(screen.getByRole("status")).toHaveTextContent("圆桌深挖结果已保存");
+  });
+
+  it("persists a deepen response without replacing the drawer or focus after selecting another node", async () => {
+    const user = userEvent.setup();
+    const { rootUserId, thesisId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    seedSavedRoundtableArtifact(rootUserId);
+    const deepenDeferred = createDeferred<Response>();
+    const fetchMock = vi.fn(() => deepenDeferred.promise);
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: "查看最近圆桌记录" }));
+    await user.click(await screen.findByRole("button", { name: "深挖一轮" }));
+    await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
+    const composerInput = screen.getByLabelText("输入");
+    await waitFor(() => expect(composerInput).toHaveFocus());
+
+    deepenDeferred.resolve(createDeepenedRoundtableResponse(readFetchBody(fetchMock).requestId));
+
+    await waitFor(() => {
+      expect(
+        loadWorkspaceRecord("workspace_test")?.snapshot.artifacts?.roundtables?.roundtable_saved.state.nextQuestion
+      ).toBe("谁来承担下一步的判断？");
+    });
+    expect(useDialogueUiStore.getState().focusedNodeId).toBe(thesisId);
+    expect(screen.getByTestId("dialogue-roundtable-drawer")).not.toHaveTextContent("第二层问题");
+    expect(composerInput).toHaveFocus();
+    expect(screen.getByRole("status")).toHaveTextContent("圆桌深挖结果已保存");
   });
 
   it("keeps the saved roundtable unchanged when deepen fails", async () => {

@@ -524,6 +524,7 @@ export function DialogueShell() {
   const roundtableSavedButtonRef = useRef<HTMLButtonElement | null>(null);
   const roundtableReturnFocusRef = useRef<HTMLButtonElement | null>(null);
   const roundtablePendingRef = useRef<RoundtablePendingRequest | null>(null);
+  const roundtableArtifactRef = useRef<WorkspaceRoundtableArtifact | null>(null);
   const workspaceId = useDialogueUiStore((state) => state.workspaceId);
   const workspaceSessionId = useDialogueUiStore((state) => state.workspaceSessionId);
   const focusedNodeId = useDialogueUiStore((state) => state.focusedNodeId);
@@ -538,6 +539,11 @@ export function DialogueShell() {
   const beginPending = useDialogueUiStore((state) => state.beginPending);
   const clearPending = useDialogueUiStore((state) => state.clearPending);
   const setErrorState = useDialogueUiStore((state) => state.setErrorState);
+
+  const setVisibleRoundtableArtifact = useCallback((artifact: WorkspaceRoundtableArtifact | null) => {
+    roundtableArtifactRef.current = artifact;
+    setRoundtableArtifact(artifact);
+  }, []);
 
   const refreshWorkspaceRegistryView = useCallback((preferredWorkspaceId?: string | null) => {
     const entries = listRecentWorkspaces();
@@ -614,7 +620,7 @@ export function DialogueShell() {
 
   const clearRoundtableRuntime = () => {
     clearRoundtablePending();
-    setRoundtableArtifact(null);
+    setVisibleRoundtableArtifact(null);
   };
 
   const focusComposerSoon = useCallback(() => {
@@ -1070,7 +1076,7 @@ export function DialogueShell() {
       }
       if (useDialogueUiStore.getState().focusedNodeId === activeRequest.sourceNodeId) {
         setWorkspaceStatus(null);
-        setRoundtableArtifact(artifact);
+        setVisibleRoundtableArtifact(artifact);
       } else {
         setWorkspaceStatus(`圆桌已保存：${getDialogueNodeLabel(branchGraphStore.getGraph(), activeRequest.sourceNodeId)}`);
       }
@@ -1132,9 +1138,16 @@ export function DialogueShell() {
         throw new Error("workspace_roundtable_save_failed");
       }
 
-      setRoundtableArtifact(updatedArtifact);
       setErrorState(null);
-      setWorkspaceStatus("圆桌已深挖一轮：可以带回主线，或继续旁路讨论。");
+      if (
+        roundtableArtifactRef.current?.id === updatedArtifact.id &&
+        useDialogueUiStore.getState().focusedNodeId === activeRequest.sourceNodeId
+      ) {
+        setVisibleRoundtableArtifact(updatedArtifact);
+        setWorkspaceStatus("圆桌已深挖一轮：可以带回主线，或继续旁路讨论。");
+      } else {
+        setWorkspaceStatus("圆桌深挖结果已保存。");
+      }
     } catch (error: unknown) {
       const activeRequest = roundtablePendingRef.current;
       if (!activeRequest || activeRequest.requestId !== requestId) {
@@ -1161,7 +1174,7 @@ export function DialogueShell() {
       });
     }
     setDraft(nextQuestion);
-    setRoundtableArtifact(null);
+    setVisibleRoundtableArtifact(null);
     setErrorState(null);
     setWorkspaceStatus("已填入圆桌追问，可以继续生成正 / 反。");
     window.setTimeout(() => {
@@ -1198,9 +1211,9 @@ export function DialogueShell() {
 
   const handleCloseRoundtableDrawer = useCallback(() => {
     const sourceNodeId = roundtableArtifact?.sourceNodeId || null;
-    setRoundtableArtifact(null);
+    setVisibleRoundtableArtifact(null);
     window.setTimeout(() => focusRoundtableReturnTarget(sourceNodeId), 0);
-  }, [focusRoundtableReturnTarget, roundtableArtifact?.sourceNodeId]);
+  }, [focusRoundtableReturnTarget, roundtableArtifact?.sourceNodeId, setVisibleRoundtableArtifact]);
 
   useEffect(() => {
     if (!roundtableArtifact) {
@@ -1551,7 +1564,7 @@ export function DialogueShell() {
           onOpenSavedRoundtable={() => {
             if (latestSavedRoundtableArtifact) {
               roundtableReturnFocusRef.current = roundtableSavedButtonRef.current;
-              setRoundtableArtifact(latestSavedRoundtableArtifact);
+              setVisibleRoundtableArtifact(latestSavedRoundtableArtifact);
             }
           }}
         />
