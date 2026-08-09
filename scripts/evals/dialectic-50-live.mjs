@@ -86,6 +86,7 @@ function wait(ms) {
 
 async function postJson(route, body) {
   const url = `${baseUrl}${route}`;
+  const totalStartedAt = performance.now();
   let lastResult = null;
   const attempts = [];
 
@@ -119,7 +120,11 @@ async function postJson(route, body) {
       attempts.push(lastResult);
 
       if (response.ok || ![429, 500, 502, 503, 504].includes(response.status)) {
-        return { ...lastResult, attempts };
+        return {
+          ...lastResult,
+          attempts,
+          totalElapsedMs: Math.round(performance.now() - totalStartedAt)
+        };
       }
     } catch (error) {
       lastResult = {
@@ -141,7 +146,13 @@ async function postJson(route, body) {
     }
   }
 
-  return lastResult ? { ...lastResult, attempts } : null;
+  return lastResult
+    ? {
+        ...lastResult,
+        attempts,
+        totalElapsedMs: Math.round(performance.now() - totalStartedAt)
+      }
+    : null;
 }
 
 function validateBranch(branch, stance) {
@@ -256,8 +267,8 @@ function toMarkdown(summary, records) {
     `- Failed: ${summary.failed}/${summary.totalCases}`,
     `- Quality warnings: ${summary.warningCount}`,
     `- Retried records: ${summary.retryCount}`,
-    `- Branch latency: avg ${summary.latencyMs.branches.average}ms / p50 ${summary.latencyMs.branches.p50}ms / p95 ${summary.latencyMs.branches.p95}ms / max ${summary.latencyMs.branches.max}ms`,
-    `- Synthesis latency: avg ${summary.latencyMs.synthesis.average}ms / p50 ${summary.latencyMs.synthesis.p50}ms / p95 ${summary.latencyMs.synthesis.p95}ms / max ${summary.latencyMs.synthesis.max}ms`,
+    `- Branch end-to-end latency: avg ${summary.latencyMs.branches.average}ms / p50 ${summary.latencyMs.branches.p50}ms / p95 ${summary.latencyMs.branches.p95}ms / max ${summary.latencyMs.branches.max}ms`,
+    `- Synthesis end-to-end latency: avg ${summary.latencyMs.synthesis.average}ms / p50 ${summary.latencyMs.synthesis.p50}ms / p95 ${summary.latencyMs.synthesis.p95}ms / max ${summary.latencyMs.synthesis.max}ms`,
     `- Slow requests > ${Math.round(summary.slowRequestThresholdMs / 1000)}s: ${summary.slowRequests.length}`,
     "",
     "## Iteration Batches",
@@ -302,8 +313,12 @@ function toMarkdown(summary, records) {
 function buildSummary(startedAt, finishedAt, records) {
   const passed = records.filter((record) => record.validation.ok).length;
   const warningCount = records.reduce((sum, record) => sum + record.validation.warnings.length, 0);
-  const branchLatencies = records.map((record) => record.branchesResponse?.elapsedMs || 0).filter(Boolean);
-  const synthesisLatencies = records.map((record) => record.synthesisResponse?.elapsedMs || 0).filter(Boolean);
+  const branchLatencies = records
+    .map((record) => record.branchesResponse?.totalElapsedMs || record.branchesResponse?.elapsedMs || 0)
+    .filter(Boolean);
+  const synthesisLatencies = records
+    .map((record) => record.synthesisResponse?.totalElapsedMs || record.synthesisResponse?.elapsedMs || 0)
+    .filter(Boolean);
   const latencyMs = {
     branches: summarizeLatencies(branchLatencies),
     synthesis: summarizeLatencies(synthesisLatencies)
@@ -311,11 +326,19 @@ function buildSummary(startedAt, finishedAt, records) {
   const slowRequestThresholdMs = 60_000;
   const slowRequests = records
     .flatMap((record) => [
-      { index: record.index, route: "branches", elapsedMs: record.branchesResponse?.elapsedMs || 0 },
-      { index: record.index, route: "synthesis", elapsedMs: record.synthesisResponse?.elapsedMs || 0 }
+      {
+        index: record.index,
+        route: "branches",
+        totalElapsedMs: record.branchesResponse?.totalElapsedMs || record.branchesResponse?.elapsedMs || 0
+      },
+      {
+        index: record.index,
+        route: "synthesis",
+        totalElapsedMs: record.synthesisResponse?.totalElapsedMs || record.synthesisResponse?.elapsedMs || 0
+      }
     ])
-    .filter((request) => request.elapsedMs > slowRequestThresholdMs)
-    .sort((left, right) => right.elapsedMs - left.elapsedMs);
+    .filter((request) => request.totalElapsedMs > slowRequestThresholdMs)
+    .sort((left, right) => right.totalElapsedMs - left.totalElapsedMs);
 
   const failedRecords = records.filter((record) => !record.validation.ok);
   const warningRecords = records.filter((record) => record.validation.warnings.length);
@@ -353,7 +376,7 @@ function buildSummary(startedAt, finishedAt, records) {
     findings.push(`没有请求超过 ${Math.round(slowRequestThresholdMs / 1000)} 秒。`);
   }
   findings.push(
-    `延迟：branches avg ${latencyMs.branches.average}ms / p95 ${latencyMs.branches.p95}ms / max ${latencyMs.branches.max}ms；` +
+    `端到端延迟：branches avg ${latencyMs.branches.average}ms / p95 ${latencyMs.branches.p95}ms / max ${latencyMs.branches.max}ms；` +
       `synthesis avg ${latencyMs.synthesis.average}ms / p95 ${latencyMs.synthesis.p95}ms / max ${latencyMs.synthesis.max}ms。`
   );
   findings.push(
