@@ -122,6 +122,44 @@ function seedActiveWorkspaceFromCurrentGraph() {
   setActiveWorkspaceId("workspace_test");
 }
 
+function seedSavedRoundtableArtifact(sourceNodeId: string) {
+  const record = loadWorkspaceRecord("workspace_test")!;
+  saveWorkspaceRecord({
+    id: "workspace_test",
+    title: record.entry.title,
+    snapshot: {
+      ...record.snapshot,
+      artifacts: {
+        roundtables: {
+          roundtable_saved: {
+            id: "roundtable_saved",
+            topic: "saved topic",
+            sourceNodeId,
+            createdAt: "2026-04-29T00:00:00.000Z",
+            updatedAt: "2026-04-29T00:01:00.000Z",
+            state: {
+              topic: "saved topic",
+              participants: [
+                {
+                  name: "汉娜·阿伦特",
+                  mbti: "INTJ",
+                  stance: "行动需要承担公共责任。",
+                  reason: "从行动与责任切入。"
+                }
+              ],
+              rounds: [],
+              currentQuestion: "q1",
+              nextQuestion: "从保存记录继续追问",
+              lastCoreTension: "保存下来的张力",
+              status: "active"
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
 function readFetchBody(fetchMock: ReturnType<typeof vi.fn>, callIndex = 0) {
   const [, init] = fetchMock.mock.calls[callIndex] as [string, RequestInit];
   return JSON.parse(String(init.body || "{}"));
@@ -833,7 +871,7 @@ describe("DialogueShell", () => {
     });
     // Change focus away from source to validate promotion rebinds to source lineage.
     await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
-    await user.click(screen.getByRole("button", { name: "作为追问继续" }));
+    await user.click(screen.getByRole("button", { name: "带回主线" }));
 
     const composerInput = screen.getByLabelText("输入");
     expect(composerInput).toHaveValue("作为追问继续的问题");
@@ -886,23 +924,192 @@ describe("DialogueShell", () => {
     await user.click(trigger);
 
     const drawer = await screen.findByTestId("dialogue-roundtable-drawer");
-    const heading = screen.getByRole("heading", { name: "圆桌已保存" });
+    const heading = screen.getByRole("heading", { name: "圆桌会议剧场" });
 
-    expect(screen.getByRole("region", { name: "圆桌已保存" })).toBe(drawer);
+    expect(screen.getByRole("region", { name: "圆桌会议剧场" })).toBe(drawer);
     expect(drawer).not.toHaveAttribute("aria-modal");
     expect(drawer).toHaveAttribute("aria-labelledby", "dialogue-roundtable-drawer-title");
     expect(drawer).toHaveAttribute("tabindex", "-1");
     expect(drawer).toHaveFocus();
     expect(heading).toBeInTheDocument();
     expect(drawer).toHaveTextContent("saved topic");
-    expect(screen.getByText("核心争议：保存下来的张力")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "作为追问继续" })).toBeEnabled();
+    expect(screen.getByText("核心争议")).toBeInTheDocument();
+    expect(screen.getByText("保存下来的张力")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "带回主线" })).toBeEnabled();
 
     await user.keyboard("{Escape}");
     await waitFor(() => {
       expect(screen.queryByTestId("dialogue-roundtable-drawer")).not.toBeInTheDocument();
     });
     expect(trigger).toHaveFocus();
+  });
+
+  it("deepens a saved roundtable in the theater and persists the new round", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    seedSavedRoundtableArtifact(rootUserId);
+    const deepenDeferred = createDeferred<Response>();
+    const fetchMock = vi.fn(() => deepenDeferred.promise);
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: "查看最近圆桌记录" }));
+    await user.click(await screen.findByRole("button", { name: "深挖一轮" }));
+
+    const pendingButton = screen.getByRole("button", { name: "深挖中..." });
+    expect(pendingButton).toBeDisabled();
+    expect(pendingButton).toHaveAttribute("aria-busy", "true");
+    expect(normalizeRequestId(readFetchBody(fetchMock))).toMatchObject({
+      requestId: "<requestId>",
+      command: "deepen",
+      state: {
+        topic: "saved topic",
+        nextQuestion: "从保存记录继续追问"
+      }
+    });
+
+    const requestId = readFetchBody(fetchMock).requestId;
+    deepenDeferred.resolve(
+      new Response(
+        JSON.stringify({
+          requestId,
+          state: {
+            topic: "saved topic",
+            participants: [
+              {
+                name: "汉娜·阿伦特",
+                mbti: "INTJ",
+                stance: "行动需要承担公共责任。",
+                reason: "从行动与责任切入。"
+              }
+            ],
+            rounds: [
+              {
+                guidingQuestion: "第二层问题",
+                utterances: [
+                  {
+                    speaker: "汉娜·阿伦特",
+                    action: "质疑",
+                    text: "责任不能被流程吞掉。",
+                    summary: "责任仍需由行动者承担。"
+                  }
+                ],
+                coreTension: "流程效率与责任归属",
+                framework: "流程 -> 判断 -> 责任",
+                nextQuestion: "谁来承担下一步的判断？"
+              }
+            ],
+            currentQuestion: "谁来承担下一步的判断？",
+            nextQuestion: "谁来承担下一步的判断？",
+            lastCoreTension: "流程效率与责任归属",
+            status: "active"
+          }
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    );
+
+    expect(await screen.findByText("第二层问题")).toBeInTheDocument();
+    expect(screen.getByText("责任不能被流程吞掉。")).toBeInTheDocument();
+    expect(
+      loadWorkspaceRecord("workspace_test")?.snapshot.artifacts?.roundtables?.roundtable_saved.state.nextQuestion
+    ).toBe("谁来承担下一步的判断？");
+    expect(screen.getByRole("status")).toHaveTextContent("圆桌已深挖一轮");
+  });
+
+  it("keeps the saved roundtable unchanged when deepen fails", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    seedSavedRoundtableArtifact(rootUserId);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({ error: "roundtable_failed", details: "provider_overloaded" }),
+          { status: 503, headers: { "Content-Type": "application/json" } }
+        )
+      )
+    );
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: "查看最近圆桌记录" }));
+    await user.click(await screen.findByRole("button", { name: "深挖一轮" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent("模型服务负载已满");
+    });
+    expect(screen.getByTestId("dialogue-roundtable-drawer")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "深挖一轮" })).toBeEnabled();
+    expect(
+      loadWorkspaceRecord("workspace_test")?.snapshot.artifacts?.roundtables?.roundtable_saved.state.nextQuestion
+    ).toBe("从保存记录继续追问");
+  });
+
+  it("ignores a stale deepen response after switching workspaces", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph();
+    seedSavedRoundtableArtifact(rootUserId);
+    saveWorkspaceRecord({
+      id: "workspace_other",
+      title: "Other Workspace",
+      snapshot: {
+        schemaVersion: ANICCA_WORKSPACE_SCHEMA_VERSION,
+        workspaceId: "workspace_other",
+        graph: buildRegistryGraph("user_other_root", "other workspace root"),
+        focusedNodeId: "user_other_root",
+        composerParentId: "user_other_root",
+        stageLayouts: {}
+      }
+    });
+    const deepenDeferred = createDeferred<Response>();
+    const fetchMock = vi.fn(() => deepenDeferred.promise);
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<DialogueShell />);
+
+    await user.click(await screen.findByRole("button", { name: "查看最近圆桌记录" }));
+    await user.click(await screen.findByRole("button", { name: "深挖一轮" }));
+    await user.click(await screen.findByRole("button", { name: "Other Workspace" }));
+
+    await waitFor(() => {
+      expect(useDialogueUiStore.getState().workspaceId).toBe("workspace_other");
+    });
+    expect(screen.queryByTestId("dialogue-roundtable-drawer")).not.toBeInTheDocument();
+
+    const requestId = readFetchBody(fetchMock).requestId;
+    deepenDeferred.resolve(
+      new Response(
+        JSON.stringify({
+          requestId,
+          state: {
+            topic: "saved topic",
+            participants: [],
+            rounds: [],
+            currentQuestion: "stale",
+            nextQuestion: "stale",
+            lastCoreTension: "stale",
+            status: "active"
+          }
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("dialogue-stage-node-user_other_root")).toBeInTheDocument();
+    });
+    expect(
+      loadWorkspaceRecord("workspace_test")?.snapshot.artifacts?.roundtables?.roundtable_saved.state.nextQuestion
+    ).toBe("从保存记录继续追问");
+    expect(loadWorkspaceRecord("workspace_other")?.snapshot.artifacts).toBeUndefined();
   });
 
   it("falls back to the visible roundtable action when drawer return target unmounts", async () => {

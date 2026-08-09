@@ -119,6 +119,68 @@ function cloneJson(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+function createVisualRoundtableState({ deepened = false } = {}) {
+  const firstRound = {
+    guidingQuestion: "我们该如何定义值得继续？",
+    utterances: [
+      {
+        speaker: "汉娜·阿伦特",
+        action: "陈述",
+        text: "继续意味着愿意为一次新的公共行动负责。",
+        summary: "继续必须连着责任。"
+      }
+    ],
+    coreTension: "探索空间与责任承诺",
+    framework: "探索 -> 判断 -> 承诺",
+    nextQuestion: "谁来承担继续之后的责任？"
+  };
+  const secondRound = {
+    guidingQuestion: "责任如何不被流程吞掉？",
+    utterances: [
+      {
+        speaker: "汉娜·阿伦特",
+        action: "质疑",
+        text: "流程可以协助判断，但不能替行动者承担责任。",
+        summary: "责任仍属于行动者。"
+      },
+      {
+        speaker: "赫伯特·西蒙",
+        action: "补充",
+        text: "可以把判断标准显式化，让承担责任的人看见取舍。",
+        summary: "显式标准帮助负责。"
+      }
+    ],
+    coreTension: "流程效率与责任归属",
+    framework: "标准 -> 判断 -> 行动者",
+    nextQuestion: "哪一个判断必须由人亲自做？"
+  };
+  const rounds = deepened ? [firstRound, secondRound] : [firstRound];
+  const latest = rounds[rounds.length - 1];
+
+  return {
+    topic: "roundtable topic",
+    participants: [
+      {
+        name: "汉娜·阿伦特",
+        mbti: "INTJ",
+        stance: "行动需要承担公共责任。",
+        reason: "从行动与责任切入。"
+      },
+      {
+        name: "赫伯特·西蒙",
+        mbti: "INTP",
+        stance: "判断可以被拆成可检查的过程。",
+        reason: "从决策过程切入。"
+      }
+    ],
+    rounds,
+    currentQuestion: latest.nextQuestion,
+    nextQuestion: latest.nextQuestion,
+    lastCoreTension: latest.coreTension,
+    status: "active"
+  };
+}
+
 function readTimeoutEnv(name, fallbackMs) {
   const raw = process.env[name];
   if (!raw) {
@@ -1798,6 +1860,196 @@ async function ensureRoundtableDrawerReturnsFocus(browser) {
   return { name: "roundtable-drawer-focus-return", passed: true };
 }
 
+async function ensureRoundtableDeepenSuccess(browser) {
+  const { context, page, pageIssues } = await createScenarioPage(
+    browser,
+    seededWorkspace,
+    {
+      viewport: { width: 1440, height: 980 },
+      reducedMotion: "reduce"
+    }
+  );
+  await page.route("**/api/roundtable", async (route) => {
+    const body = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        requestId: body.requestId,
+        state: createVisualRoundtableState({ deepened: body.command === "deepen" })
+      })
+    });
+  });
+
+  await page.getByRole("button", { name: "召集圆桌讨论此节点" }).click();
+  const drawer = page.getByTestId("dialogue-roundtable-drawer");
+  await drawer.waitFor();
+  await page.getByRole("heading", { name: "圆桌会议剧场" }).waitFor();
+  await page.getByRole("button", { name: "深挖一轮" }).click();
+  await drawer.getByText("责任如何不被流程吞掉？").waitFor();
+  await drawer.getByText("流程可以协助判断，但不能替行动者承担责任。").waitFor();
+
+  const first = await drawer.screenshot();
+  await page.waitForTimeout(500);
+  const second = await drawer.screenshot();
+  if (!first.equals(second)) {
+    throw new Error("Reduced-motion roundtable theater changed across a 500ms interval");
+  }
+
+  const screenshotPath = path.join(outputDir, "desktop-roundtable-theater-deepened.png");
+  await drawer.screenshot({ path: screenshotPath });
+  assertNoPageIssues(pageIssues, "roundtable deepen success");
+  await context.close();
+
+  return {
+    name: "roundtable-deepen-success",
+    passed: true,
+    reducedMotionStable: true,
+    screenshot: screenshotPath
+  };
+}
+
+async function ensureRoundtableDeepenFailure(browser) {
+  const { context, page, pageIssues } = await createScenarioPage(browser, seededWorkspace);
+  await page.route("**/api/roundtable", async (route) => {
+    const body = route.request().postDataJSON();
+    if (body.command === "deepen") {
+      await route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({
+          requestId: body.requestId,
+          error: "roundtable_failed",
+          details: "provider_overloaded"
+        })
+      });
+      return;
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        requestId: body.requestId,
+        state: createVisualRoundtableState()
+      })
+    });
+  });
+
+  await page.getByRole("button", { name: "召集圆桌讨论此节点" }).click();
+  const drawer = page.getByTestId("dialogue-roundtable-drawer");
+  await drawer.waitFor();
+  await page.getByRole("button", { name: "深挖一轮" }).click();
+  await page.getByRole("alert").filter({ hasText: "模型服务负载已满" }).waitFor();
+  await drawer.getByText("谁来承担继续之后的责任？").waitFor();
+  if (!(await page.getByRole("button", { name: "深挖一轮" }).isEnabled())) {
+    throw new Error("Roundtable deepen action did not recover after provider failure");
+  }
+
+  const screenshotPath = path.join(outputDir, "desktop-roundtable-theater-error.png");
+  await page.screenshot({ path: screenshotPath, fullPage: false });
+  const unexpectedIssues = pageIssues.filter(
+    (issue) => !(issue.type === "console:error" && issue.text.includes("status of 503"))
+  );
+  assertNoPageIssues(unexpectedIssues, "roundtable deepen failure");
+  await context.close();
+
+  return { name: "roundtable-deepen-failure", passed: true, screenshot: screenshotPath };
+}
+
+async function ensureRoundtableTheaterExitAndMobileFallback(browser) {
+  const scenarios = [
+    {
+      name: "desktop-reduced-motion",
+      context: { viewport: { width: 1440, height: 980 }, reducedMotion: "reduce" }
+    },
+    {
+      name: "mobile-320",
+      context: { viewport: { width: 320, height: 740 }, hasTouch: true, isMobile: true }
+    }
+  ];
+  const screenshots = {};
+
+  for (const scenario of scenarios) {
+    const context = await browser.newContext({ deviceScaleFactor: 1, ...scenario.context });
+    await context.addInitScript((snapshot) => {
+      window.localStorage.setItem("anicca_workspace_v2", JSON.stringify(snapshot));
+    }, seededWorkspace);
+    const page = await context.newPage();
+    const pageIssues = [];
+    page.on("console", (message) => {
+      const text = message.text();
+      if (
+        message.type() === "error" ||
+        /hydration|did not match|server rendered|text content does not match/i.test(text)
+      ) {
+        pageIssues.push({ type: `console:${message.type()}`, text });
+      }
+    });
+    page.on("pageerror", (error) => {
+      pageIssues.push({ type: "pageerror", text: error.message });
+    });
+
+    await page.goto(`${baseUrl}/roundtable`, { waitUntil: "networkidle" });
+    const handoff = page.getByTestId("roundtable-handoff");
+    const exit = page.getByTestId("roundtable-theater-exit");
+    await handoff.waitFor();
+    await exit.waitFor();
+    if ((await exit.getAttribute("href")) !== "/dialogue") {
+      throw new Error(`Roundtable theater exit has the wrong target on ${scenario.name}`);
+    }
+
+    const metrics = await page.evaluate(() => {
+      const handoffElement = document.querySelector('[data-testid="roundtable-handoff"]');
+      const exitElement = document.querySelector('[data-testid="roundtable-theater-exit"]');
+      if (!(handoffElement instanceof HTMLElement) || !(exitElement instanceof HTMLElement)) {
+        return null;
+      }
+      const handoffRect = handoffElement.getBoundingClientRect();
+      const exitRect = exitElement.getBoundingClientRect();
+      const style = getComputedStyle(handoffElement);
+      return {
+        handoff: { left: handoffRect.left, right: handoffRect.right, width: handoffRect.width },
+        exit: { width: exitRect.width, height: exitRect.height },
+        scrollWidth: document.documentElement.scrollWidth,
+        clientWidth: document.documentElement.clientWidth,
+        animationDuration: style.animationDuration,
+        transitionDuration: style.transitionDuration
+      };
+    });
+    if (!metrics) {
+      throw new Error(`Roundtable handoff metrics are missing on ${scenario.name}`);
+    }
+    if (metrics.scrollWidth > metrics.clientWidth + 1 || metrics.handoff.right > metrics.clientWidth + 1) {
+      throw new Error(`Roundtable theater overflows horizontally on ${scenario.name}: ${JSON.stringify(metrics)}`);
+    }
+    if (metrics.exit.height < 44) {
+      throw new Error(`Roundtable theater exit is smaller than 44px on ${scenario.name}: ${JSON.stringify(metrics)}`);
+    }
+    if (
+      scenario.name === "desktop-reduced-motion" &&
+      !["0s", "0ms"].includes(metrics.animationDuration)
+    ) {
+      throw new Error(`Roundtable theater still animates under reduced motion: ${JSON.stringify(metrics)}`);
+    }
+
+    const screenshotPath = path.join(outputDir, `${scenario.name}-roundtable-handoff.png`);
+    await page.screenshot({ path: screenshotPath, fullPage: true });
+    screenshots[scenario.name] = screenshotPath;
+    await exit.click();
+    await page.waitForURL("**/dialogue");
+    await page.getByTestId("dialogue-stage").waitFor();
+    assertNoPageIssues(pageIssues, `roundtable theater exit ${scenario.name}`);
+    await context.close();
+  }
+
+  return {
+    name: "roundtable-theater-exit-mobile-fallback",
+    passed: true,
+    screenshots
+  };
+}
+
 async function ensureNextStepChoiceDockLayout(browser) {
   const workspace = createWorkspaceWithoutSynthesis();
   const desktop = await createScenarioPage(browser, workspace, {
@@ -2164,6 +2416,9 @@ async function runInteractionScenarios(browser) {
     await ensureSynthesisPendingFocusFlow(browser),
     await ensureSynthesisStaleCompletionDoesNotStealFocus(browser),
     await ensureRoundtableDrawerReturnsFocus(browser),
+    await ensureRoundtableDeepenSuccess(browser),
+    await ensureRoundtableDeepenFailure(browser),
+    await ensureRoundtableTheaterExitAndMobileFallback(browser),
     await ensureEmptyRootPendingState(browser),
     await ensureNextStepChoiceDockLayout(browser),
     await ensureRetrievalDebugPreview(browser),

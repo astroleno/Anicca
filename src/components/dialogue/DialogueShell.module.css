@@ -1341,14 +1341,19 @@
   right: calc(24px + var(--safe-right));
   bottom: calc(112px + var(--safe-bottom));
   z-index: 6;
-  width: min(360px, calc(100vw - 32px));
-  max-height: min(52dvh, 420px);
+  width: min(560px, calc(100vw - 32px));
+  max-height: min(68dvh, 620px);
   overflow: auto;
-  padding: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  background: linear-gradient(180deg, rgba(10, 24, 30, 0.92), rgba(7, 19, 25, 0.76));
-  backdrop-filter: blur(18px);
+  padding: 16px;
+  border: 1px solid rgba(226, 239, 244, 0.11);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(241, 191, 88, 0.12), transparent 30%),
+    linear-gradient(180deg, rgba(10, 24, 30, 0.94), rgba(7, 19, 25, 0.82));
+  backdrop-filter: blur(20px);
+  box-shadow:
+    0 22px 70px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .roundtableDrawerHeader {
@@ -1366,16 +1371,151 @@
   margin: 12px 0 0;
   white-space: pre-wrap;
   color: rgba(243, 248, 250, 0.92);
+  font-size: 0.96rem;
+  line-height: 1.55;
 }
 
-.roundtableDrawerSummary {
-  margin: 8px 0 0;
-  color: rgba(226, 239, 244, 0.72);
-  font-size: 0.9rem;
+.roundtableParticipants {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.roundtableParticipant {
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.roundtableParticipant strong {
+  display: block;
+  overflow: hidden;
+  color: rgba(243, 248, 250, 0.92);
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.roundtableParticipant span {
+  display: -webkit-box;
+  margin-top: 4px;
+  overflow: hidden;
+  color: rgba(226, 239, 244, 0.62);
+  font-size: 0.7rem;
+  line-height: 1.32;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.roundtableRound {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.roundtableRoundHeader {
+  display: grid;
+  gap: 5px;
+}
+
+.roundtableRoundHeader span,
+.roundtableInsights span {
+  color: rgba(226, 239, 244, 0.5);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.roundtableRoundHeader strong {
+  color: rgba(243, 248, 250, 0.92);
+  font-size: 0.92rem;
+  line-height: 1.42;
+}
+
+.roundtableUtterances {
+  display: grid;
+  gap: 8px;
+}
+
+.roundtableUtterance {
+  display: grid;
+  gap: 6px;
+  padding: 10px 11px;
+  border-left: 2px solid rgba(35, 217, 161, 0.38);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.roundtableUtterance:nth-child(2n) {
+  border-left-color: rgba(241, 95, 124, 0.4);
+}
+
+.roundtableUtterance header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.roundtableUtterance strong {
+  color: rgba(243, 248, 250, 0.92);
+  font-size: 0.82rem;
+}
+
+.roundtableUtterance header span {
+  color: rgba(241, 191, 88, 0.78);
+  font-size: 0.68rem;
+}
+
+.roundtableUtterance p {
+  margin: 0;
+  color: rgba(226, 239, 244, 0.82);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.roundtableUtterance small {
+  color: rgba(226, 239, 244, 0.56);
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
+.roundtableInsights {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.roundtableInsights article {
+  min-width: 0;
+  padding: 10px 11px;
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(241, 191, 88, 0.075), rgba(241, 191, 88, 0.026)),
+    rgba(255, 255, 255, 0.032);
+}
+
+.roundtableInsights p {
+  margin: 5px 0 0;
+  color: rgba(243, 248, 250, 0.9);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.roundtableEmpty {
+  margin: 0;
+  color: rgba(226, 239, 244, 0.56);
+  font-size: 0.82rem;
+  line-height: 1.45;
 }
 
 .roundtableDrawerActions {
-  margin-top: 12px;
+  margin-top: 14px;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -2820,6 +2960,11 @@
   .roundtableDrawer {
     max-height: none;
     overflow: visible;
+  }
+
+  .roundtableParticipants,
+  .roundtableInsights {
+    grid-template-columns: 1fr;
   }
 }
 

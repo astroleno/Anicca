@@ -233,6 +233,22 @@ function formatDialogueError(error: unknown): DialogueErrorState {
     };
   }
 
+  if (message.includes("provider_rate_limited")) {
+    return {
+      title: "模型服务触发限流",
+      detail: "上游暂时拒绝了过多请求，当前图和圆桌记录都没有被改动。",
+      recovery: "等一会儿再试，或切换到负载更低的模型。"
+    };
+  }
+
+  if (message.includes("provider_overloaded")) {
+    return {
+      title: "模型服务负载已满",
+      detail: "上游当前没有容量处理这轮请求，当前图和圆桌记录都没有被改动。",
+      recovery: "稍后重试，或临时切换到其他模型服务。"
+    };
+  }
+
   if (message.startsWith("branches_failed")) {
     return {
       title: "这一轮正反没有生成出来",
@@ -379,6 +395,33 @@ function listRoundtableArtifactsForNode(
   return Object.values(roundtables)
     .filter((artifact) => artifact.sourceNodeId === sourceNodeId)
     .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+}
+
+function saveRoundtableArtifact(workspaceId: string, artifact: WorkspaceRoundtableArtifact) {
+  const record = loadWorkspaceRecord(workspaceId);
+  if (!record) {
+    return false;
+  }
+
+  saveWorkspaceRecord({
+    id: workspaceId,
+    title: record.entry.title,
+    titleSource: record.entry.titleSource,
+    createdAt: record.entry.createdAt,
+    updatedAt: artifact.updatedAt,
+    lastOpenedAt: record.entry.lastOpenedAt,
+    snapshot: {
+      ...record.snapshot,
+      artifacts: {
+        ...(record.snapshot.artifacts || {}),
+        roundtables: {
+          ...(record.snapshot.artifacts?.roundtables || {}),
+          [artifact.id]: artifact
+        }
+      }
+    }
+  });
+  return true;
 }
 
 function getDialogueNodeLabel(graph: Graph, nodeId: string): string {
@@ -1022,28 +1065,9 @@ export function DialogueShell() {
         state: response.state
       };
 
-      const record = loadWorkspaceRecord(activeRequest.workspaceId);
-      if (!record) {
+      if (!saveRoundtableArtifact(activeRequest.workspaceId, artifact)) {
         throw new Error("workspace_roundtable_save_failed");
       }
-      saveWorkspaceRecord({
-        id: activeRequest.workspaceId,
-        title: record.entry.title,
-        titleSource: record.entry.titleSource,
-        createdAt: record.entry.createdAt,
-        updatedAt: now,
-        lastOpenedAt: record.entry.lastOpenedAt,
-        snapshot: {
-          ...record.snapshot,
-          artifacts: {
-            ...(record.snapshot.artifacts || {}),
-            roundtables: {
-              ...(record.snapshot.artifacts?.roundtables || {}),
-              [artifactId]: artifact
-            }
-          }
-        }
-      });
       if (useDialogueUiStore.getState().focusedNodeId === activeRequest.sourceNodeId) {
         setWorkspaceStatus(null);
         setRoundtableArtifact(artifact);
@@ -1051,6 +1075,66 @@ export function DialogueShell() {
         setWorkspaceStatus(`圆桌已保存：${getDialogueNodeLabel(branchGraphStore.getGraph(), activeRequest.sourceNodeId)}`);
       }
       setErrorState(null);
+    } catch (error: unknown) {
+      const activeRequest = roundtablePendingRef.current;
+      if (!activeRequest || activeRequest.requestId !== requestId) {
+        return;
+      }
+      setErrorState(formatDialogueError(error));
+    } finally {
+      clearRoundtablePending(requestId);
+    }
+  };
+
+  const handleDeepenRoundtable = async () => {
+    if (!roundtableArtifact || roundtablePending || !workspaceId) {
+      return;
+    }
+
+    const requestId = createClientId("req");
+    const requestSessionId = workspaceSessionId;
+    const requestWorkspaceId = workspaceId;
+    const sourceNodeId = roundtableArtifact.sourceNodeId || view.currentNode?.id || "";
+    if (!sourceNodeId) {
+      return;
+    }
+
+    beginRoundtablePending({
+      requestId,
+      workspaceSessionId: requestSessionId,
+      workspaceId: requestWorkspaceId,
+      sourceNodeId,
+      focusSnapshotId: view.focusSnapshotId
+    });
+
+    try {
+      const response = await postJson<RoundtableResponse>("/api/roundtable", {
+        requestId,
+        command: "deepen",
+        state: roundtableArtifact.state
+      });
+      const activeRequest = roundtablePendingRef.current;
+      if (
+        !activeRequest ||
+        activeRequest.requestId !== response.requestId ||
+        activeRequest.workspaceSessionId !== useDialogueUiStore.getState().workspaceSessionId ||
+        activeRequest.sourceNodeId !== sourceNodeId
+      ) {
+        return;
+      }
+
+      const updatedArtifact: WorkspaceRoundtableArtifact = {
+        ...roundtableArtifact,
+        updatedAt: new Date().toISOString(),
+        state: response.state
+      };
+      if (!saveRoundtableArtifact(activeRequest.workspaceId, updatedArtifact)) {
+        throw new Error("workspace_roundtable_save_failed");
+      }
+
+      setRoundtableArtifact(updatedArtifact);
+      setErrorState(null);
+      setWorkspaceStatus("圆桌已深挖一轮：可以带回主线，或继续旁路讨论。");
     } catch (error: unknown) {
       const activeRequest = roundtablePendingRef.current;
       if (!activeRequest || activeRequest.requestId !== requestId) {
@@ -1238,6 +1322,13 @@ export function DialogueShell() {
   const roundtablePendingSourceLabel = getRoundtablePendingSourceLabel(
     graphSnapshot.graph,
     roundtablePendingSourceNodeId
+  );
+  const roundtableDrawerState = roundtableArtifact?.state || null;
+  const roundtableLatestRound = roundtableDrawerState?.rounds.length
+    ? roundtableDrawerState.rounds[roundtableDrawerState.rounds.length - 1]
+    : null;
+  const roundtableDrawerBusy = Boolean(
+    roundtableArtifact && roundtablePendingRequest?.sourceNodeId === roundtableArtifact.sourceNodeId
   );
   const synthesisPendingActionKey = pending.synthesis?.synthesisActionKey || null;
   const isSynthesisPendingForCurrentAction = Boolean(
@@ -1540,16 +1631,35 @@ export function DialogueShell() {
           }}
         >
           <header className={styles.roundtableDrawerHeader}>
-            <p className={styles.eyebrow}>Roundtable Artifact</p>
-            <h2 id="dialogue-roundtable-drawer-title">圆桌已保存</h2>
+            <p className={styles.eyebrow}>Roundtable Theater</p>
+            <h2 id="dialogue-roundtable-drawer-title">圆桌会议剧场</h2>
           </header>
           <p className={styles.roundtableDrawerTopic}>{roundtableArtifact.topic}</p>
-          <p className={styles.roundtableDrawerSummary}>
-            核心争议：{roundtableArtifact.state.lastCoreTension || "（无）"}
-          </p>
-          <p className={styles.roundtableDrawerSummary}>
-            下一问：{roundtableArtifact.state.nextQuestion || "（无）"}
-          </p>
+
+          <section className={styles.roundtableParticipants} aria-label="参会者">
+            {(roundtableDrawerState?.participants || []).length ? (
+              roundtableDrawerState!.participants.slice(0, 5).map((participant) => (
+                <article className={styles.roundtableParticipant} key={participant.name}>
+                  <strong>{participant.name}</strong>
+                  <span>{participant.stance}</span>
+                </article>
+              ))
+            ) : (
+              <p className={styles.roundtableEmpty}>这场圆桌还没有生成参会者。</p>
+            )}
+          </section>
+
+          <section className={styles.roundtableInsights} aria-label="圆桌结论">
+            <article>
+              <span>核心争议</span>
+              <p>{roundtableArtifact.state.lastCoreTension || roundtableLatestRound?.coreTension || "（无）"}</p>
+            </article>
+            <article>
+              <span>下一问</span>
+              <p>{roundtableArtifact.state.nextQuestion || roundtableLatestRound?.nextQuestion || "（无）"}</p>
+            </article>
+          </section>
+
           <div className={styles.roundtableDrawerActions}>
             <button
               type="button"
@@ -1557,7 +1667,16 @@ export function DialogueShell() {
               onClick={handlePromoteRoundtableAsQuestion}
               disabled={!roundtableArtifact.state.nextQuestion?.trim()}
             >
-              作为追问继续
+              带回主线
+            </button>
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              onClick={handleDeepenRoundtable}
+              disabled={roundtableArtifact.state.status !== "active" || roundtableDrawerBusy}
+              aria-busy={roundtableDrawerBusy ? "true" : undefined}
+            >
+              {roundtableDrawerBusy ? "深挖中..." : "深挖一轮"}
             </button>
             <button
               type="button"
@@ -1567,6 +1686,31 @@ export function DialogueShell() {
               收起
             </button>
           </div>
+
+          {roundtableLatestRound ? (
+            <section className={styles.roundtableRound} aria-label="最新一轮发言">
+              <div className={styles.roundtableRoundHeader}>
+                <span>最新一轮</span>
+                <strong>{roundtableLatestRound.guidingQuestion}</strong>
+              </div>
+              <div className={styles.roundtableUtterances}>
+                {roundtableLatestRound.utterances.map((utterance, index) => (
+                  <article className={styles.roundtableUtterance} key={`${utterance.speaker}-${index}`}>
+                    <header>
+                      <strong>{utterance.speaker}</strong>
+                      <span>{utterance.action}</span>
+                    </header>
+                    <p>{utterance.text}</p>
+                    {utterance.summary ? <small>{utterance.summary}</small> : null}
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : (
+            <section className={styles.roundtableRound} aria-label="最新一轮发言">
+              <p className={styles.roundtableEmpty}>圆桌已保存，下一轮深挖后会在这里展开发言现场。</p>
+            </section>
+          )}
         </aside>
       ) : null}
     </main>

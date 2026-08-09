@@ -41,6 +41,14 @@ function formatError(error: unknown) {
     return "模型服务暂时不可达，请检查网络或 baseURL。";
   }
 
+  if (message.includes("provider_rate_limited")) {
+    return "模型服务触发限流，请稍后再试或切换到负载更低的模型。";
+  }
+
+  if (message.includes("provider_overloaded")) {
+    return "模型服务负载已满，请稍后再试或临时切换到其他模型服务。";
+  }
+
   return "这轮圆桌没有完成，当前状态没有被覆盖。";
 }
 
@@ -105,8 +113,11 @@ export default function RoundtablePage() {
   const [participantName, setParticipantName] = useState("");
   const [pending, setPending] = useState<RoundtableCommand | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showLabUi, setShowLabUi] = useState(false);
 
   useEffect(() => {
+    setShowLabUi(new URLSearchParams(window.location.search).get("lab") === "1");
+
     const saved = window.localStorage.getItem(STORAGE_KEY);
     if (!saved) {
       return;
@@ -188,8 +199,23 @@ export default function RoundtablePage() {
   const active = state?.status === "active";
   const concluded = state?.status === "concluded";
 
+  if (!showLabUi) {
+    return (
+      <main className={`${styles.shell} ${styles.handoffShell}`} data-testid="roundtable-handoff">
+        <section className={styles.handoffPanel} aria-labelledby="roundtable-handoff-title">
+          <p className={styles.eyebrow}>Roundtable Theater</p>
+          <h1 id="roundtable-handoff-title">圆桌已经并入对话场。</h1>
+          <p>旁路讨论会贴在当前问题谱系旁边，不再把你带进独立后台页。</p>
+          <a className={styles.navLink} href="/dialogue" data-testid="roundtable-theater-exit">
+            回到对话场
+          </a>
+        </section>
+      </main>
+    );
+  }
+
   return (
-    <main className={styles.shell}>
+    <main className={styles.shell} data-testid="roundtable-lab">
       <div className={styles.layout}>
         <aside className={styles.side}>
           <header className={`${styles.panel} ${styles.header}`}>
@@ -224,7 +250,7 @@ export default function RoundtablePage() {
                 </button>
               ) : null}
             </div>
-            {error ? <p className={styles.error}>{error}</p> : null}
+            {error ? <p className={styles.error} role="alert">{error}</p> : null}
           </form>
 
           <section className={`${styles.panel} ${styles.section}`}>

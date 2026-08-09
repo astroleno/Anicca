@@ -91,6 +91,7 @@ export function buildRoundtablePrompt(input: {
     "- 每段 utterance 必须有 summary，对应原框架的「简言之」。",
     "- framework 必须是 ASCII 图，用矩阵、光谱、因果链、拓扑图或树形中最贴切的一种表达结构，不要只复述内容。",
     "- 主持人每轮只追一条最深裂缝，避免面面俱到。",
+    "- 不得把圆桌输出写成 canonical 正 / 反 / 合，也不得输出 thesis、antithesis、synthesis 或 branchType；圆桌只保留人物、发言、张力与问题，除非用户在主线显式选择投影。",
     `当前操作:\n${commandInstruction(input.command, input.participantName)}`,
     input.topic ? `议题:\n${input.topic}` : "",
     input.state ? `既有圆桌状态:\n${serializeState(input.state)}` : ""

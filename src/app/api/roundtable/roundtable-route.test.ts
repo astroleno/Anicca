@@ -29,6 +29,7 @@ vi.mock("@/lib/openai/client", () => ({
 
 describe("roundtable route", () => {
   beforeEach(() => {
+    vi.unstubAllEnvs();
     createResponse.mockReset();
     createChatCompletion.mockReset();
   });
@@ -98,6 +99,7 @@ describe("roundtable route", () => {
       }
     });
     expect(createResponse.mock.calls[0][0].input).toContain("李继刚");
+    expect(createResponse.mock.calls[0][0].input).toContain("不得把圆桌输出写成 canonical 正 / 反 / 合");
   });
 
   it("uses chat completions for roundtable gemini models", async () => {
@@ -212,6 +214,72 @@ describe("roundtable route", () => {
         knowledgeNetwork: "AI creativity -> novelty -> intent",
         openQuestions: ["没有主体的创造是否只是拟制？"]
       }
+    });
+  });
+
+  it("returns a caller error with the requestId when the topic is missing", async () => {
+    const response = await roundtablePost(
+      new NextRequest("http://localhost/api/roundtable", {
+        method: "POST",
+        body: JSON.stringify({
+          requestId: "req-rt-missing-topic",
+          command: "start"
+        })
+      })
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      requestId: "req-rt-missing-topic",
+      error: "topic required"
+    });
+    expect(createResponse).not.toHaveBeenCalled();
+  });
+
+  it("returns invalid_model_output with the requestId for malformed provider output", async () => {
+    createResponse.mockResolvedValue({ output_text: "not-json" });
+
+    const response = await roundtablePost(
+      new NextRequest("http://localhost/api/roundtable", {
+        method: "POST",
+        body: JSON.stringify({
+          requestId: "req-rt-invalid-output",
+          command: "start",
+          topic: "AI 是否拥有真正的创造力？"
+        })
+      })
+    );
+
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toEqual({
+      requestId: "req-rt-invalid-output",
+      error: "invalid_model_output",
+      details: "expected roundtable JSON object"
+    });
+  });
+
+  it("uses the shared provider status when the roundtable provider is overloaded", async () => {
+    vi.stubEnv("OPENAI_API_KEY", "test-key");
+    createResponse.mockRejectedValue(
+      Object.assign(new Error("429 当前分组上游负载已饱和，请稍后再试"), { status: 429 })
+    );
+
+    const response = await roundtablePost(
+      new NextRequest("http://localhost/api/roundtable", {
+        method: "POST",
+        body: JSON.stringify({
+          requestId: "req-rt-overloaded",
+          command: "start",
+          topic: "AI 是否拥有真正的创造力？"
+        })
+      })
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({
+      requestId: "req-rt-overloaded",
+      error: "roundtable_failed",
+      details: "provider_overloaded"
     });
   });
 });
