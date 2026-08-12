@@ -9,6 +9,7 @@
 - Merged-main validated source: `89ac29089c6de61e0a4775383b7d54d05f80eb49`
 - Visual CI corrective source: `31f218996df57336d99e69b8d06f38a28022d4c0`
 - Visual teardown corrective source: `514d66e99b7e082b8e71f2743580e2c70cec5ec6`
+- Bounded evidence capture source: `c421b4dd89bdb2d0307c7d41bdfaed2e5bee1500`
 
 ## Outcome
 
@@ -39,6 +40,7 @@ Repository closeout work additionally adds GitHub Actions CI, publishes the hist
 | `f604b01` | Correct the closeout report's post-merge repository state before remote validation |
 | `31f2189` | Preserve SHA-bound visual failure evidence and make drawer-open focus commit-safe |
 | `514d66e` | Own and terminate the Next server process, with an in-process timeout before the CI ceiling |
+| `c421b4d` | Capture the finite Roundtable handoff surface after CI exposed a Chromium full-page failure |
 
 ## Architecture and data boundary
 
@@ -119,6 +121,8 @@ Remote run [31314592849](https://github.com/astroleno/Anicca/actions/runs/313145
 Corrective work now makes success and failure artifacts mutually exclusive. A failed visual run publishes `artifacts/visual-smoke/dialogue-failure` with the head SHA, run ID and attempt, current and last successful step, full error stack, step history, incremental screenshots, failure screenshot, DOM snapshot, renderer/page state and server output. It never falls back to the tracked `artifacts/visual-smoke/dialogue` directory. Each viewport, interaction scenario and Playwright condition wait emits a structured marker. A current-HEAD successful remote run and its SHA-bound `dialogue-visual-smoke` artifact are still required before final closeout.
 
 Remote run [31579162076](https://github.com/astroleno/Anicca/actions/runs/31579162076) then validated the diagnostic correction at `main@667ae46`. `quality` passed. The visual log proves that all 7 viewports and all 15 interaction scenarios completed successfully by `2026-08-12T08:53:56Z`, including summary publication; however, the `npm run start` parent process retained the Next child, so the step did not exit and GitHub canceled the job at its 35-minute limit. GitHub skips later upload steps after a job-level timeout, so this run also produced no accepted artifact. The follow-up correction starts the Next CLI as the directly owned child, waits for graceful exit with a `SIGKILL` fallback, and gives the smoke process a 30-minute total timeout so failure evidence can be finalized and uploaded before the 35-minute job ceiling.
+
+Remote run [31591487209](https://github.com/astroleno/Anicca/actions/runs/31591487209) validated solution 1 at `main@d2eb9dd`: `quality` passed, the success upload was correctly skipped, and artifact `dialogue-visual-failure-31591487209-1` contains the matching head SHA, full stack and incremental evidence. It localized the failure to `interaction:roundtable-theater-exit`, where GitHub Chromium rejected a full-page `Page.captureScreenshot`; the page DOM, viewport metrics and preceding Roundtable checks were healthy. The corrective capture now targets the finite handoff element instead of the full page.
 
 Vitest is capped at two workers with 10-second test/hook timeouts. This removes the previously observed full-suite-only 5-second contention timeout while retaining file-level parallel execution.
 
