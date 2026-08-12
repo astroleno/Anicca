@@ -115,4 +115,14 @@ describe("dialogue visual smoke failure evidence", () => {
     expect(source).toContain("await stopNextServer(server)");
     expect(source).toContain("DIALOGUE_SMOKE_TOTAL_TIMEOUT_MS");
   });
+
+  it("captures the Roundtable handoff element without a full-page surface", async () => {
+    const source = await readFile(
+      path.resolve(process.cwd(), "scripts/visual-smoke/dialogue.mjs"),
+      "utf8"
+    );
+
+    expect(source).toContain("await handoff.screenshot({ path: screenshotPath })");
+    expect(source).not.toContain("await page.screenshot({ path: screenshotPath, fullPage: true })");
+  });
 });

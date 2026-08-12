@@ -2349,7 +2349,7 @@ async function ensureRoundtableTheaterExitAndMobileFallback(browser) {
     }
 
     const screenshotPath = path.join(outputDir, `${scenario.name}-roundtable-handoff.png`);
-    await page.screenshot({ path: screenshotPath, fullPage: true });
+    await handoff.screenshot({ path: screenshotPath });
     screenshots[scenario.name] = screenshotPath;
     await exit.click();
     await page.waitForURL("**/dialogue");
