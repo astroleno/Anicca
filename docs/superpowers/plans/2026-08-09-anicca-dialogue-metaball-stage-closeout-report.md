@@ -8,6 +8,7 @@
 - Current corrective validated source: `f4e5523411d09ed2024d48b16ce1f0b6b890810f`
 - Merged-main validated source: `89ac29089c6de61e0a4775383b7d54d05f80eb49`
 - Visual CI corrective source: `31f218996df57336d99e69b8d06f38a28022d4c0`
+- Visual teardown corrective source: `514d66e99b7e082b8e71f2743580e2c70cec5ec6`
 
 ## Outcome
 
@@ -37,6 +38,7 @@ Repository closeout work additionally adds GitHub Actions CI, publishes the hist
 | `89ac290` | Exclude ignored generated artifacts from Vitest discovery after local merge |
 | `f604b01` | Correct the closeout report's post-merge repository state before remote validation |
 | `31f2189` | Preserve SHA-bound visual failure evidence and make drawer-open focus commit-safe |
+| `514d66e` | Own and terminate the Next server process, with an in-process timeout before the CI ceiling |
 
 ## Architecture and data boundary
 
@@ -63,7 +65,7 @@ Environment:
 | --- | --- |
 | `git diff --check` | exit 0 |
 | Roundtable route + DialogueShell | 2 files / 53 tests passed |
-| `npm run check` | exit 0; 35 files / 273 tests passed; production and test TypeScript 0 errors |
+| `npm run check` | exit 0; 35 files / 275 tests passed; production and test TypeScript 0 errors |
 | Lint | 0 errors; 33 pre-existing warnings; renderer, Roundtable and CI-owned files 0 warnings |
 | `npm run build` | exit 0; 15 application routes generated, including `/dialogue` and `/roundtable` |
 | `DIALOGUE_SMOKE_SERVER_MODE=start npm run test:visual-dialogue` | exit 0; 7 viewports and 15 interaction scenarios, no failed scenario |
@@ -115,6 +117,8 @@ Residual visual boundaries are explicit: the automated fusion gate verifies proj
 Remote run [31314592849](https://github.com/astroleno/Anicca/actions/runs/31314592849) validated `main@f604b01`. The `quality` job passed, while `visual-dialogue` failed in both attempt 1 and attempt 2 with an unlabelled 30-second `page.waitForFunction` timeout. Both failed attempts uploaded the same 8,625,223-byte legacy directory whose tracked `summary.json` was generated on 2026-07-27, so neither artifact is accepted as evidence for `f604b01`; the visual release gate remains failed at that source.
 
 Corrective work now makes success and failure artifacts mutually exclusive. A failed visual run publishes `artifacts/visual-smoke/dialogue-failure` with the head SHA, run ID and attempt, current and last successful step, full error stack, step history, incremental screenshots, failure screenshot, DOM snapshot, renderer/page state and server output. It never falls back to the tracked `artifacts/visual-smoke/dialogue` directory. Each viewport, interaction scenario and Playwright condition wait emits a structured marker. A current-HEAD successful remote run and its SHA-bound `dialogue-visual-smoke` artifact are still required before final closeout.
+
+Remote run [31579162076](https://github.com/astroleno/Anicca/actions/runs/31579162076) then validated the diagnostic correction at `main@667ae46`. `quality` passed. The visual log proves that all 7 viewports and all 15 interaction scenarios completed successfully by `2026-08-12T08:53:56Z`, including summary publication; however, the `npm run start` parent process retained the Next child, so the step did not exit and GitHub canceled the job at its 35-minute limit. GitHub skips later upload steps after a job-level timeout, so this run also produced no accepted artifact. The follow-up correction starts the Next CLI as the directly owned child, waits for graceful exit with a `SIGKILL` fallback, and gives the smoke process a 30-minute total timeout so failure evidence can be finalized and uploaded before the 35-minute job ceiling.
 
 Vitest is capped at two workers with 10-second test/hook timeouts. This removes the previously observed full-suite-only 5-second contention timeout while retaining file-level parallel execution.
 
