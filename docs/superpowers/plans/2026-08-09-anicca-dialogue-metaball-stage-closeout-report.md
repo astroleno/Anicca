@@ -10,6 +10,7 @@
 - Visual CI corrective source: `31f218996df57336d99e69b8d06f38a28022d4c0`
 - Visual teardown corrective source: `514d66e99b7e082b8e71f2743580e2c70cec5ec6`
 - Bounded evidence capture source: `c421b4dd89bdb2d0307c7d41bdfaed2e5bee1500`
+- Remote visual validated source: `27fb98a837b2319a7ae23135d194874b9e60f839`
 
 ## Outcome
 
@@ -67,7 +68,7 @@ Environment:
 | --- | --- |
 | `git diff --check` | exit 0 |
 | Roundtable route + DialogueShell | 2 files / 53 tests passed |
-| `npm run check` | exit 0; 35 files / 275 tests passed; production and test TypeScript 0 errors |
+| `npm run check` | exit 0; 35 files / 276 tests passed; production and test TypeScript 0 errors |
 | Lint | 0 errors; 33 pre-existing warnings; renderer, Roundtable and CI-owned files 0 warnings |
 | `npm run build` | exit 0; 15 application routes generated, including `/dialogue` and `/roundtable` |
 | `DIALOGUE_SMOKE_SERVER_MODE=start npm run test:visual-dialogue` | exit 0; 7 viewports and 15 interaction scenarios, no failed scenario |
@@ -103,7 +104,7 @@ Human-reviewed screenshots:
 - `artifacts/visual-smoke/dialogue/desktop-reduced-motion-roundtable-handoff.png`
 - `artifacts/visual-smoke/dialogue/mobile-320-roundtable-handoff.png`
 
-The newly generated closeout evidence remains ignored by Git; screenshots, local absolute paths, reference archives and `.superpowers/` are not part of the source commits. The tracked `artifacts/visual-smoke/dialogue/summary.json` is a legacy 2026-07-27 snapshot and is not claimed as current evidence. After the branch is pushed, the current-HEAD GitHub Actions `visual-dialogue` artifact is the merge gate.
+The newly generated local closeout evidence remains ignored by Git; screenshots, local absolute paths, reference archives and `.superpowers/` are not part of the source commits. The tracked `artifacts/visual-smoke/dialogue/summary.json` is a legacy 2026-07-27 snapshot and is not claimed as current evidence. The canonical evidence is the SHA-bound GitHub Actions artifact recorded below.
 
 The Roundtable regression matrix additionally covers a deepen response completing after the user closes the drawer, brings the question back to the main line, selects another node or focuses the composer on the source node. Closed/promoted drawers stay closed. A drawer that remains visible is refreshed to the persisted state without stealing focus, and a consecutive deepen request is verified to use that refreshed state.
 
@@ -118,11 +119,13 @@ Residual visual boundaries are explicit: the automated fusion gate verifies proj
 
 Remote run [31314592849](https://github.com/astroleno/Anicca/actions/runs/31314592849) validated `main@f604b01`. The `quality` job passed, while `visual-dialogue` failed in both attempt 1 and attempt 2 with an unlabelled 30-second `page.waitForFunction` timeout. Both failed attempts uploaded the same 8,625,223-byte legacy directory whose tracked `summary.json` was generated on 2026-07-27, so neither artifact is accepted as evidence for `f604b01`; the visual release gate remains failed at that source.
 
-Corrective work now makes success and failure artifacts mutually exclusive. A failed visual run publishes `artifacts/visual-smoke/dialogue-failure` with the head SHA, run ID and attempt, current and last successful step, full error stack, step history, incremental screenshots, failure screenshot, DOM snapshot, renderer/page state and server output. It never falls back to the tracked `artifacts/visual-smoke/dialogue` directory. Each viewport, interaction scenario and Playwright condition wait emits a structured marker. A current-HEAD successful remote run and its SHA-bound `dialogue-visual-smoke` artifact are still required before final closeout.
+Corrective work makes success and failure artifacts mutually exclusive. A failed visual run publishes `artifacts/visual-smoke/dialogue-failure` with the head SHA, run ID and attempt, current and last successful step, full error stack, step history, incremental screenshots, failure screenshot, DOM snapshot, renderer/page state and server output. It never falls back to the tracked `artifacts/visual-smoke/dialogue` directory. Each viewport, interaction scenario and Playwright condition wait emits a structured marker.
 
 Remote run [31579162076](https://github.com/astroleno/Anicca/actions/runs/31579162076) then validated the diagnostic correction at `main@667ae46`. `quality` passed. The visual log proves that all 7 viewports and all 15 interaction scenarios completed successfully by `2026-08-12T08:53:56Z`, including summary publication; however, the `npm run start` parent process retained the Next child, so the step did not exit and GitHub canceled the job at its 35-minute limit. GitHub skips later upload steps after a job-level timeout, so this run also produced no accepted artifact. The follow-up correction starts the Next CLI as the directly owned child, waits for graceful exit with a `SIGKILL` fallback, and gives the smoke process a 30-minute total timeout so failure evidence can be finalized and uploaded before the 35-minute job ceiling.
 
 Remote run [31591487209](https://github.com/astroleno/Anicca/actions/runs/31591487209) validated solution 1 at `main@d2eb9dd`: `quality` passed, the success upload was correctly skipped, and artifact `dialogue-visual-failure-31591487209-1` contains the matching head SHA, full stack and incremental evidence. It localized the failure to `interaction:roundtable-theater-exit`, where GitHub Chromium rejected a full-page `Page.captureScreenshot`; the page DOM, viewport metrics and preceding Roundtable checks were healthy. The corrective capture now targets the finite handoff element instead of the full page.
+
+Remote run [31594776609](https://github.com/astroleno/Anicca/actions/runs/31594776609) passed both jobs at `main@27fb98a`. `quality` completed 35 files / 276 tests and generated all 15 production routes. `visual-dialogue` completed all 7 viewports and 15 interaction scenarios in production mode, then uploaded artifact `dialogue-visual-smoke-31594776609-1` (artifact ID `9140966251`, 12,594,393 bytes); failure upload was correctly skipped. The downloaded `summary.json` binds the evidence to full SHA `27fb98a837b2319a7ae23135d194874b9e60f839`, run attempt 1 and generation time `2026-08-12T12:18:31.313Z`, with no failed interaction.
 
 Vitest is capped at two workers with 10-second test/hook timeouts. This removes the previously observed full-suite-only 5-second contention timeout while retaining file-level parallel execution.
 
@@ -136,7 +139,7 @@ Vitest also excludes `artifacts/**` explicitly. Generated or ignored review pack
 - A verified healthy recovery clone remains at `/Users/aitoshuu/Documents/GitHub/Anicca-git-repair-20260809` (43 MB).
 - The primary worktree is attached to `main`; `main` and `origin/main` both pointed to `f604b012a1ccbe9950944ab878aae011a36930df` when the remote CI correction began, and the user's untracked `.superpowers/` and implementation plan remain preserved.
 - The feature branch `codex/anicca-dialogue-metaball-stage` and its worktree were deleted after the local fast-forward merge; `84f37cc` is verified as an ancestor of `main`.
-- `main@f604b01` was pushed. Remote run `31314592849` passed `quality` but failed `visual-dialogue` twice, and its artifacts were invalidated by the legacy-output contamination described above. Mock evaluation and ignored local visual evidence are not retained by Git pushes; the corrective current-HEAD remote run must supply the canonical visual artifact.
+- The historical `f604b01` artifacts were invalidated by the legacy-output contamination described above. Run `31594776609` now supplies the canonical SHA-bound remote visual artifact; Mock evaluation and ignored local visual evidence remain intentionally separate from that GitHub artifact.
 
 ## Provider evaluation gates
 
