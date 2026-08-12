@@ -66,13 +66,23 @@ jobs:
         run: npm run build
 
       - name: Run production visual smoke
+        id: visual-smoke
         run: DIALOGUE_SMOKE_SERVER_MODE=start npm run test:visual-dialogue
 
-      - name: Upload visual evidence
-        if: always()
+      - name: Upload successful visual evidence
+        if: steps.visual-smoke.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: dialogue-visual-smoke-${{ github.run_id }}
+          name: dialogue-visual-smoke-${{ github.run_id }}-${{ github.run_attempt }}
           path: artifacts/visual-smoke/dialogue
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload visual failure evidence
+        if: failure() && steps.visual-smoke.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dialogue-visual-failure-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/visual-smoke/dialogue-failure
           if-no-files-found: error
           retention-days: 14

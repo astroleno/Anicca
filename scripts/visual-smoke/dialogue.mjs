@@ -3,14 +3,18 @@ import { constants as fsConstants } from "node:fs";
 import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { chromium } from "playwright";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..", "..");
 const buildIdPath = path.join(repoRoot, ".next", "BUILD_ID");
-const finalOutputDir = path.join(repoRoot, "artifacts", "visual-smoke", "dialogue");
+const artifactRoot = path.resolve(
+  process.env.DIALOGUE_SMOKE_ARTIFACT_ROOT || path.join(repoRoot, "artifacts", "visual-smoke")
+);
+const finalOutputDir = path.join(artifactRoot, "dialogue");
+const failureOutputDir = path.join(artifactRoot, "dialogue-failure");
 let outputDir = finalOutputDir;
 let baseUrl = process.env.DIALOGUE_SMOKE_BASE_URL || "http://127.0.0.1:3211";
 const baseUrlWasProvided = Boolean(process.env.DIALOGUE_SMOKE_BASE_URL);
@@ -18,6 +22,97 @@ const requestedServerMode = process.env.DIALOGUE_SMOKE_SERVER_MODE || "dev";
 const serverReadyTimeoutMs = readTimeoutEnv("DIALOGUE_SMOKE_READY_TIMEOUT_MS", 120000);
 const pageReadyTimeoutMs = readTimeoutEnv("DIALOGUE_SMOKE_PAGE_TIMEOUT_MS", 300000);
 const portSearchLimit = Number.parseInt(process.env.DIALOGUE_SMOKE_PORT_SEARCH_LIMIT || "40", 10);
+
+function resolveHeadSha() {
+  if (process.env.GITHUB_SHA) {
+    return process.env.GITHUB_SHA;
+  }
+
+  const result = spawnSync("git", ["rev-parse", "HEAD"], {
+    cwd: repoRoot,
+    encoding: "utf8"
+  });
+  return result.status === 0 ? result.stdout.trim() : "unknown";
+}
+
+const runProgress = {
+  headSha: resolveHeadSha(),
+  runId: process.env.GITHUB_RUN_ID || "local",
+  runAttempt: process.env.GITHUB_RUN_ATTEMPT || "local",
+  startedAt: new Date().toISOString(),
+  currentStep: "startup",
+  lastSuccessfulStep: null,
+  lastViewport: null,
+  lastScenario: null,
+  failureWait: null,
+  history: [],
+  activePage: null
+};
+
+function recordProgress(event, step, details = {}) {
+  const entry = {
+    event,
+    step,
+    at: new Date().toISOString(),
+    ...details
+  };
+  runProgress.history.push(entry);
+  console.log(JSON.stringify({ visualSmoke: entry }));
+}
+
+function markStepSuccessful(step) {
+  runProgress.currentStep = step;
+  runProgress.lastSuccessfulStep = step;
+  recordProgress("complete", step);
+}
+
+async function runStep(step, operation, { allowFailure = false } = {}) {
+  const parentStep = runProgress.currentStep;
+  if (step.startsWith("viewport:")) {
+    runProgress.lastViewport = step.slice("viewport:".length);
+  } else if (step.startsWith("interaction:")) {
+    runProgress.lastScenario = step.slice("interaction:".length);
+  }
+  runProgress.currentStep = step;
+  recordProgress("start", step);
+
+  try {
+    const result = await operation();
+    runProgress.lastSuccessfulStep = step;
+    recordProgress("complete", step);
+    runProgress.currentStep = parentStep;
+    return result;
+  } catch (error) {
+    const failedStep = runProgress.currentStep === step ? step : runProgress.currentStep;
+    recordProgress(allowFailure ? "allowed-failure" : "failure", step, {
+      failedStep,
+      error: error instanceof Error ? error.message : String(error)
+    });
+    if (allowFailure) {
+      runProgress.currentStep = parentStep;
+      return undefined;
+    }
+    if (failedStep.startsWith("wait:")) {
+      runProgress.failureWait = failedStep.slice("wait:".length);
+    }
+    if (runProgress.currentStep === step) {
+      runProgress.currentStep = step;
+    }
+    throw error;
+  }
+}
+
+function setActivePage(page) {
+  runProgress.activePage = page;
+}
+
+async function waitForCondition(page, label, pageFunction, arg, options, runOptions) {
+  return runStep(
+    `wait:${label}`,
+    () => page.waitForFunction(pageFunction, arg, options),
+    runOptions
+  );
+}
 
 const viewports = [
   { name: "desktop", width: 1440, height: 980, fullPage: false },
@@ -527,10 +622,151 @@ async function publishOutputDir(tempOutputDir) {
   }
 }
 
-async function discardOutputDir(tempOutputDir) {
-  if (tempOutputDir && tempOutputDir !== finalOutputDir) {
-    await rm(tempOutputDir, { recursive: true, force: true });
+async function publishFailureOutputDir(tempOutputDir) {
+  await rm(failureOutputDir, { recursive: true, force: true });
+  await rename(tempOutputDir, failureOutputDir);
+  outputDir = failureOutputDir;
+}
+
+function serializeError(error) {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+      stack: error.stack || `${error.name}: ${error.message}`
+    };
   }
+
+  const message = String(error);
+  return { name: "NonError", message, stack: message };
+}
+
+async function captureFailurePage(page, tempOutputDir) {
+  const screenshotName = "failure-screenshot.png";
+  const domName = "failure-dom.html";
+  const stateName = "failure-page-state.json";
+  let screenshot = null;
+  let screenshotError = null;
+  let domHtml = "<!-- No active browser page was available when the visual smoke failed. -->\n";
+  let pageState = {
+    available: false,
+    reason: "No active browser page was available."
+  };
+
+  if (page && typeof page.isClosed === "function" && !page.isClosed()) {
+    try {
+      await page.screenshot({
+        path: path.join(tempOutputDir, screenshotName),
+        fullPage: false
+      });
+      screenshot = screenshotName;
+    } catch (error) {
+      screenshotError = serializeError(error);
+    }
+
+    try {
+      const snapshot = await page.evaluate(() => {
+        const track = document.querySelector('[data-testid="dialogue-stage-track"]');
+        const canvas = document.querySelector('[data-testid="dialogue-metaball-canvas"]');
+        const active = document.activeElement;
+        const canvasRect = canvas instanceof HTMLCanvasElement ? canvas.getBoundingClientRect() : null;
+
+        return {
+          domHtml: document.documentElement.outerHTML,
+          state: {
+            available: true,
+            url: window.location.href,
+            title: document.title,
+            viewport: { width: window.innerWidth, height: window.innerHeight },
+            activeElement: active instanceof HTMLElement
+              ? {
+                  tagName: active.tagName,
+                  id: active.id,
+                  testId: active.dataset.testid || null,
+                  text: active.textContent?.slice(0, 240) || ""
+                }
+              : null,
+            renderer: {
+              state: track instanceof HTMLElement ? track.dataset.metaballRenderer || null : null,
+              fusedPairs: canvas instanceof HTMLElement ? canvas.dataset.fusedPairs || null : null,
+              canvas: canvas instanceof HTMLCanvasElement && canvasRect
+                ? {
+                    width: canvasRect.width,
+                    height: canvasRect.height,
+                    backingWidth: canvas.width,
+                    backingHeight: canvas.height,
+                    display: getComputedStyle(canvas).display
+                  }
+                : null
+            },
+            stageNodes: [...document.querySelectorAll('[data-testid^="dialogue-stage-node-"]')]
+              .map((node) => ({
+                testId: node.getAttribute("data-testid"),
+                pressed: node.getAttribute("aria-pressed"),
+                disabled: node instanceof HTMLButtonElement ? node.disabled : null
+              }))
+          }
+        };
+      });
+      domHtml = snapshot.domHtml;
+      pageState = snapshot.state;
+    } catch (error) {
+      pageState = {
+        available: false,
+        reason: "Failed to collect browser page state.",
+        error: serializeError(error)
+      };
+    }
+  }
+
+  await writeFile(path.join(tempOutputDir, domName), domHtml);
+  await writeFile(path.join(tempOutputDir, stateName), JSON.stringify(pageState, null, 2));
+
+  return {
+    screenshot,
+    screenshotError,
+    dom: domName,
+    pageState: stateName
+  };
+}
+
+async function writeFailureEvidence(error, tempOutputDir, serverOutput) {
+  const browserEvidence = await captureFailurePage(runProgress.activePage, tempOutputDir);
+  const serverOutputName = serverOutput ? "failure-server-output.log" : null;
+  if (serverOutputName) {
+    await writeFile(path.join(tempOutputDir, serverOutputName), serverOutput);
+  }
+
+  const manifest = {
+    status: "failure",
+    generatedAt: new Date().toISOString(),
+    startedAt: runProgress.startedAt,
+    headSha: runProgress.headSha,
+    runId: runProgress.runId,
+    runAttempt: runProgress.runAttempt,
+    currentStep: runProgress.currentStep,
+    lastSuccessfulStep: runProgress.lastSuccessfulStep,
+    lastViewport: runProgress.lastViewport,
+    lastScenario: runProgress.lastScenario,
+    failureWait: runProgress.failureWait,
+    error: serializeError(error),
+    browserEvidence,
+    serverOutput: serverOutputName,
+    history: runProgress.history
+  };
+
+  await writeFile(
+    path.join(tempOutputDir, "failure-manifest.json"),
+    JSON.stringify(manifest, null, 2)
+  );
+  return manifest;
+}
+
+function formatFatalError(error) {
+  if (error instanceof Error) {
+    return error.stack || `${error.name}: ${error.message}`;
+  }
+  return String(error);
 }
 
 function rebaseArtifactPaths(value, tempOutputDir) {
@@ -1234,7 +1470,9 @@ async function ensureMobileCanScrollFromStage(page, viewportName) {
     before.bodyScrollTop,
     before.shellScrollTop ?? 0
   );
-  await page.waitForFunction(
+  await waitForCondition(
+    page,
+    `${viewportName}:scroll-from-stage`,
     (initialPosition) => {
       const shell = document.querySelector('[data-testid="dialogue-shell"]');
       return Math.max(
@@ -1245,8 +1483,9 @@ async function ensureMobileCanScrollFromStage(page, viewportName) {
       ) > initialPosition + 24;
     },
     beforePosition,
-    { timeout: 2000 }
-  ).catch(() => {});
+    { timeout: 2000 },
+    { allowFailure: true }
+  );
 
   const after = await getPageScrollMetrics(page);
   const afterPosition = Math.max(
@@ -1324,6 +1563,7 @@ async function createScenarioPage(
   }
 
   const page = await context.newPage();
+  setActivePage(page);
   const pageIssues = [];
   page.on("console", (message) => {
     const text = message.text();
@@ -1355,7 +1595,9 @@ async function assertMetaballStage(page, scenarioName, expectedState = "ready") 
   const track = page.getByTestId("dialogue-stage-track");
   const canvas = page.getByTestId("dialogue-metaball-canvas");
   await canvas.waitFor({ state: "attached" });
-  await page.waitForFunction(
+  await waitForCondition(
+    page,
+    `renderer:${scenarioName}:${expectedState}`,
     ({ state }) =>
       document.querySelector('[data-testid="dialogue-stage-track"]')?.getAttribute("data-metaball-renderer") === state,
     { state: expectedState }
@@ -1471,7 +1713,9 @@ async function ensureMetaballFusionAndSeparation(browser) {
     throw new Error("Metaball fusion drag targets are not measurable");
   }
 
-  await page.waitForFunction(
+  await waitForCondition(
+    page,
+    "metaball-fusion:initially-separated",
     ({ expectedPair }) =>
       !(document.querySelector('[data-testid="dialogue-metaball-canvas"]')?.getAttribute("data-fused-pairs") || "")
         .split(",")
@@ -1497,7 +1741,9 @@ async function ensureMetaballFusionAndSeparation(browser) {
     await page.mouse.down();
     pointerDown = true;
     await page.mouse.move(fusedCenter.x, fusedCenter.y, { steps: 16 });
-    await page.waitForFunction(
+    await waitForCondition(
+      page,
+      "metaball-fusion:enter-fused-state",
       ({ expectedPair }) =>
         (document.querySelector('[data-testid="dialogue-metaball-canvas"]')?.getAttribute("data-fused-pairs") || "")
           .split(",")
@@ -1509,7 +1755,9 @@ async function ensureMetaballFusionAndSeparation(browser) {
     await page.screenshot({ path: fusedScreenshotPath, fullPage: false });
 
     await page.mouse.move(originalCenter.x, originalCenter.y, { steps: 16 });
-    await page.waitForFunction(
+    await waitForCondition(
+      page,
+      "metaball-fusion:return-to-separated-state",
       ({ expectedPair }) =>
         !(document.querySelector('[data-testid="dialogue-metaball-canvas"]')?.getAttribute("data-fused-pairs") || "")
           .split(",")
@@ -1757,7 +2005,9 @@ async function mockDeferredSynthesis(page) {
 }
 
 async function ensureActiveElement(page, expected) {
-  await page.waitForFunction(
+  await waitForCondition(
+    page,
+    `active-element:${expected.id || expected.testId || expected.text || "unknown"}`,
     (target) => {
       const active = document.activeElement;
       if (!(active instanceof HTMLElement)) {
@@ -1976,6 +2226,7 @@ async function ensureRoundtableTheaterExitAndMobileFallback(browser) {
       window.localStorage.setItem("anicca_workspace_v2", JSON.stringify(snapshot));
     }, seededWorkspace);
     const page = await context.newPage();
+    setActivePage(page);
     const pageIssues = [];
     page.on("console", (message) => {
       const text = message.text();
@@ -2236,23 +2487,35 @@ async function ensureGrowthPerspectiveFlow(browser) {
       await node.evaluate((element) => {
         (element instanceof HTMLElement ? element : null)?.focus();
       });
-      await page.waitForFunction((expectedTestId) =>
-        document.activeElement?.getAttribute("data-testid") === expectedTestId,
-      testId);
+      await waitForCondition(
+        page,
+        `growth:${scenario.name}:focus:${testId}`,
+        (expectedTestId) => document.activeElement?.getAttribute("data-testid") === expectedTestId,
+        testId
+      );
       await ensureActiveElement(page, { testId });
       await node.click();
       if (testId !== rootTestId) {
-        await page.waitForFunction(([expectedRootTestId, expectedSelectedTestId]) => {
-          const stageNodeTestIds = [...document.querySelectorAll('[data-testid^="dialogue-stage-node-"]')]
-            .map((node) => node.getAttribute("data-testid"));
-          return stageNodeTestIds.length === 2 &&
-            stageNodeTestIds.includes(expectedRootTestId) &&
-            stageNodeTestIds.includes(expectedSelectedTestId);
-        }, [rootTestId, testId]);
+        await waitForCondition(
+          page,
+          `growth:${scenario.name}:select:${testId}`,
+          ([expectedRootTestId, expectedSelectedTestId]) => {
+            const stageNodeTestIds = [...document.querySelectorAll('[data-testid^="dialogue-stage-node-"]')]
+              .map((node) => node.getAttribute("data-testid"));
+            return stageNodeTestIds.length === 2 &&
+              stageNodeTestIds.includes(expectedRootTestId) &&
+              stageNodeTestIds.includes(expectedSelectedTestId);
+          },
+          [rootTestId, testId]
+        );
         await page.getByTestId(rootTestId).click();
-        await page.waitForFunction((expectedTestIds) =>
-          expectedTestIds.every((expectedTestId) => document.querySelector(`[data-testid="${expectedTestId}"]`)),
-        growthNodeTestIds);
+        await waitForCondition(
+          page,
+          `growth:${scenario.name}:restore-all-nodes`,
+          (expectedTestIds) =>
+            expectedTestIds.every((expectedTestId) => document.querySelector(`[data-testid="${expectedTestId}"]`)),
+          growthNodeTestIds
+        );
       }
     }
     await ensureNoHorizontalOverflow(page, `growth ${scenario.name}`);
@@ -2378,8 +2641,14 @@ async function ensureGrowthWideLayoutCompatibility(browser) {
   await dragged.page.mouse.move(dragTargetBox.x + dragTargetBox.width / 2 + 36, dragTargetBox.y + dragTargetBox.height / 2 - 18);
   await dragged.page.mouse.up();
   await dragged.page.setViewportSize({ width: 320, height: 740 });
-  await dragged.page.waitForFunction(() => window.matchMedia("(max-width: 980px)").matches);
-  await dragged.page.waitForFunction(
+  await waitForCondition(
+    dragged.page,
+    "growth-wide-layout:mobile-media-query",
+    () => window.matchMedia("(max-width: 980px)").matches
+  );
+  await waitForCondition(
+    dragged.page,
+    "growth-wide-layout:compact-node-positions",
     (expectedNodes) => expectedNodes.every((expectedNode) => {
       const element = document.querySelector(`[data-testid="${expectedNode.testId}"]`);
       if (!(element instanceof HTMLElement)) return false;
@@ -2409,23 +2678,31 @@ async function ensureGrowthWideLayoutCompatibility(browser) {
 }
 
 async function runInteractionScenarios(browser) {
-  return [
-    await ensureMetaballFusionAndSeparation(browser),
-    await ensureMetaballReducedMotion(browser),
-    await ensureMetaballWebglFallback(browser),
-    await ensureSynthesisPendingFocusFlow(browser),
-    await ensureSynthesisStaleCompletionDoesNotStealFocus(browser),
-    await ensureRoundtableDrawerReturnsFocus(browser),
-    await ensureRoundtableDeepenSuccess(browser),
-    await ensureRoundtableDeepenFailure(browser),
-    await ensureRoundtableTheaterExitAndMobileFallback(browser),
-    await ensureEmptyRootPendingState(browser),
-    await ensureNextStepChoiceDockLayout(browser),
-    await ensureRetrievalDebugPreview(browser),
-    await ensureGrowthPerspectiveFlow(browser),
-    await ensureGrowthLayoutMatrix(browser),
-    await ensureGrowthWideLayoutCompatibility(browser)
+  const scenarios = [
+    ["metaball-fusion-and-separation", ensureMetaballFusionAndSeparation],
+    ["metaball-reduced-motion", ensureMetaballReducedMotion],
+    ["metaball-webgl-fallback", ensureMetaballWebglFallback],
+    ["synthesis-pending-focus", ensureSynthesisPendingFocusFlow],
+    ["synthesis-stale-completion", ensureSynthesisStaleCompletionDoesNotStealFocus],
+    ["roundtable-drawer-focus-return", ensureRoundtableDrawerReturnsFocus],
+    ["roundtable-deepen-success", ensureRoundtableDeepenSuccess],
+    ["roundtable-deepen-failure", ensureRoundtableDeepenFailure],
+    ["roundtable-theater-exit", ensureRoundtableTheaterExitAndMobileFallback],
+    ["empty-root-pending-state", ensureEmptyRootPendingState],
+    ["next-step-choice-dock-layout", ensureNextStepChoiceDockLayout],
+    ["retrieval-debug-preview", ensureRetrievalDebugPreview],
+    ["growth-perspective-flow", ensureGrowthPerspectiveFlow],
+    ["growth-layout-matrix", ensureGrowthLayoutMatrix],
+    ["growth-wide-layout-compatibility", ensureGrowthWideLayoutCompatibility]
   ];
+  const results = [];
+
+  for (const [name, scenario] of scenarios) {
+    results.push(await runStep(`interaction:${name}`, () => scenario(browser)));
+    setActivePage(null);
+  }
+
+  return results;
 }
 
 async function runViewport(browser, viewport) {
@@ -2468,6 +2745,7 @@ async function runViewport(browser, viewport) {
   }
 
   const page = await context.newPage();
+  setActivePage(page);
   const pageIssues = [];
   page.on("console", (message) => {
     const text = message.text();
@@ -2602,13 +2880,11 @@ async function runViewport(browser, viewport) {
 }
 
 async function main() {
-  const serverMode = await resolveServerMode();
-  await resolveBaseUrl();
-
   let tempOutputDir = null;
   let outputPublished = false;
   let browser = null;
   let server = null;
+  let serverMode = null;
 
   const shutdown = () => {
     const child = server?.child;
@@ -2619,7 +2895,10 @@ async function main() {
 
   try {
     tempOutputDir = await prepareOutputDir();
-    server = startNextServer(serverMode);
+    markStepSuccessful("setup:prepare-output-dir");
+    serverMode = await runStep("setup:resolve-server-mode", () => resolveServerMode());
+    await runStep("setup:resolve-base-url", () => resolveBaseUrl());
+    server = await runStep("setup:start-server", () => startNextServer(serverMode));
 
     process.on("exit", shutdown);
     process.on("SIGINT", () => {
@@ -2631,46 +2910,57 @@ async function main() {
       process.exit(143);
     });
 
-    await waitForNextReady(server);
-    await waitForServer(`${baseUrl}/dialogue`, server);
-    browser = await chromium.launch({ headless: true });
+    await runStep("setup:wait-next-ready", () => waitForNextReady(server));
+    await runStep("setup:wait-dialogue-ready", () => waitForServer(`${baseUrl}/dialogue`, server));
+    browser = await runStep("setup:launch-chromium", () => chromium.launch({ headless: true }));
     const results = [];
 
     for (const viewport of viewports) {
-      results.push(await runViewport(browser, viewport));
+      results.push(await runStep(`viewport:${viewport.name}`, () => runViewport(browser, viewport)));
+      setActivePage(null);
     }
 
     const interactionScenarios = await runInteractionScenarios(browser);
 
-    await browser.close();
+    await runStep("teardown:close-browser", () => browser.close());
     browser = null;
+    setActivePage(null);
     const summary = rebaseArtifactPaths(
       {
         baseUrl,
         serverMode,
         generatedAt: new Date().toISOString(),
+        headSha: runProgress.headSha,
+        runId: runProgress.runId,
+        runAttempt: runProgress.runAttempt,
         viewports: results,
         interactionScenarios
       },
       tempOutputDir
     );
-    await writeFile(
-      path.join(outputDir, "summary.json"),
-      JSON.stringify(summary, null, 2)
+    await runStep(
+      "publish:write-summary",
+      () => writeFile(path.join(outputDir, "summary.json"), JSON.stringify(summary, null, 2))
     );
-    await publishOutputDir(tempOutputDir);
+    await runStep("publish:success-artifact", () => publishOutputDir(tempOutputDir));
     outputPublished = true;
   } catch (error) {
+    const serverOutput = server?.getOutput() || "";
+    if (!outputPublished && tempOutputDir) {
+      try {
+        await writeFailureEvidence(error, tempOutputDir, serverOutput);
+        await publishFailureOutputDir(tempOutputDir);
+        tempOutputDir = null;
+      } catch (evidenceError) {
+        console.error(`Failed to publish visual failure evidence:\n${formatFatalError(evidenceError)}`);
+      }
+    }
     if (browser) {
       await browser.close().catch(() => {});
     }
     shutdown();
-    if (!outputPublished && tempOutputDir) {
-      await discardOutputDir(tempOutputDir);
-    }
-    const output = server?.getOutput() || "";
-    if (output) {
-      console.error(output);
+    if (serverOutput) {
+      console.error(serverOutput);
     }
     throw error;
   }
@@ -2679,6 +2969,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error);
+  console.error(formatFatalError(error));
   process.exit(1);
 });

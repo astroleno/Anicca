@@ -547,8 +547,14 @@ export function DialogueShell() {
 
   const openRoundtableArtifact = useCallback((artifact: WorkspaceRoundtableArtifact) => {
     setVisibleRoundtableArtifact(artifact);
-    window.setTimeout(() => roundtableDrawerRef.current?.focus(), 0);
   }, [setVisibleRoundtableArtifact]);
+
+  useEffect(() => {
+    if (!roundtableArtifact?.id) {
+      return;
+    }
+    roundtableDrawerRef.current?.focus();
+  }, [roundtableArtifact?.id]);
 
   const refreshWorkspaceRegistryView = useCallback((preferredWorkspaceId?: string | null) => {
     const entries = listRecentWorkspaces();
