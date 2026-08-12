@@ -7,6 +7,7 @@
 - Corrective validation source (review round 1): `7ddb42810e3af59efb4c462b37df805b25565b03`
 - Current corrective validated source: `f4e5523411d09ed2024d48b16ce1f0b6b890810f`
 - Merged-main validated source: `89ac29089c6de61e0a4775383b7d54d05f80eb49`
+- Visual CI corrective source: `31f218996df57336d99e69b8d06f38a28022d4c0`
 
 ## Outcome
 
@@ -34,6 +35,8 @@ Repository closeout work additionally adds GitHub Actions CI, publishes the hist
 | `7ddb428` | Include failed attempts and retry backoff in end-to-end evaluation latency |
 | `f4e5523` | Refresh visible Roundtable data without coupling content updates to drawer focus |
 | `89ac290` | Exclude ignored generated artifacts from Vitest discovery after local merge |
+| `f604b01` | Correct the closeout report's post-merge repository state before remote validation |
+| `31f2189` | Preserve SHA-bound visual failure evidence and make drawer-open focus commit-safe |
 
 ## Architecture and data boundary
 
@@ -60,7 +63,7 @@ Environment:
 | --- | --- |
 | `git diff --check` | exit 0 |
 | Roundtable route + DialogueShell | 2 files / 53 tests passed |
-| `npm run check` | exit 0; 33 files / 270 tests passed; production and test TypeScript 0 errors |
+| `npm run check` | exit 0; 35 files / 273 tests passed; production and test TypeScript 0 errors |
 | Lint | 0 errors; 33 pre-existing warnings; renderer, Roundtable and CI-owned files 0 warnings |
 | `npm run build` | exit 0; 15 application routes generated, including `/dialogue` and `/roundtable` |
 | `DIALOGUE_SMOKE_SERVER_MODE=start npm run test:visual-dialogue` | exit 0; 7 viewports and 15 interaction scenarios, no failed scenario |
@@ -109,6 +112,10 @@ Residual visual boundaries are explicit: the automated fusion gate verifies proj
 - `quality`: `npm ci`, lint, both TypeScript gates, all Vitest tests and production build.
 - `visual-dialogue`: clean install, Chromium runtime, production build, production visual smoke and 14-day artifact upload.
 
+Remote run [31314592849](https://github.com/astroleno/Anicca/actions/runs/31314592849) validated `main@f604b01`. The `quality` job passed, while `visual-dialogue` failed in both attempt 1 and attempt 2 with an unlabelled 30-second `page.waitForFunction` timeout. Both failed attempts uploaded the same 8,625,223-byte legacy directory whose tracked `summary.json` was generated on 2026-07-27, so neither artifact is accepted as evidence for `f604b01`; the visual release gate remains failed at that source.
+
+Corrective work now makes success and failure artifacts mutually exclusive. A failed visual run publishes `artifacts/visual-smoke/dialogue-failure` with the head SHA, run ID and attempt, current and last successful step, full error stack, step history, incremental screenshots, failure screenshot, DOM snapshot, renderer/page state and server output. It never falls back to the tracked `artifacts/visual-smoke/dialogue` directory. Each viewport, interaction scenario and Playwright condition wait emits a structured marker. A current-HEAD successful remote run and its SHA-bound `dialogue-visual-smoke` artifact are still required before final closeout.
+
 Vitest is capped at two workers with 10-second test/hook timeouts. This removes the previously observed full-suite-only 5-second contention timeout while retaining file-level parallel execution.
 
 Vitest also excludes `artifacts/**` explicitly. Generated or ignored review packages can remain on disk without being mistaken for repository test sources; `tests/vitestConfig.test.ts` keeps this discovery boundary under version control.
@@ -119,9 +126,9 @@ Vitest also excludes `artifacts/**` explicitly. Generated or ignored review pack
 - Remote `codex/anicca-mainline-release-closeout` was verified as an ancestor of `origin/main` and deleted.
 - The primary repository's damaged `.git` directory is preserved at `/Users/aitoshuu/Documents/GitHub/Anicca-git-object-backup-20260809` (40 MB).
 - A verified healthy recovery clone remains at `/Users/aitoshuu/Documents/GitHub/Anicca-git-repair-20260809` (43 MB).
-- The primary worktree is attached to `main` at merged validation head `53db94a0a1c5525bf5feba0b8fa59b1e8e079340`, 19 commits ahead of `origin/main` before this documentation-only correction, and retains the user's untracked `.superpowers/` and implementation plan.
+- The primary worktree is attached to `main`; `main` and `origin/main` both pointed to `f604b012a1ccbe9950944ab878aae011a36930df` when the remote CI correction began, and the user's untracked `.superpowers/` and implementation plan remain preserved.
 - The feature branch `codex/anicca-dialogue-metaball-stage` and its worktree were deleted after the local fast-forward merge; `84f37cc` is verified as an ancestor of `main`.
-- The `main` push and current-HEAD CI `quality` / `visual-dialogue` artifacts remain pending. Mock evaluation and the latest visual evidence under ignored local `artifacts/` paths will not be retained by that push.
+- `main@f604b01` was pushed. Remote run `31314592849` passed `quality` but failed `visual-dialogue` twice, and its artifacts were invalidated by the legacy-output contamination described above. Mock evaluation and ignored local visual evidence are not retained by Git pushes; the corrective current-HEAD remote run must supply the canonical visual artifact.
 
 ## Provider evaluation gates
 
