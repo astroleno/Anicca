@@ -66,6 +66,29 @@ describe("dialogue visual smoke failure evidence", () => {
     }
   });
 
+  it("turns the total timeout into an uploadable failure instead of leaving the server alive", async () => {
+    const artifactRoot = await mkdtemp(path.join(os.tmpdir(), "anicca-visual-timeout-"));
+    const startedAt = Date.now();
+
+    try {
+      const result = await runVisualSmoke({
+        DIALOGUE_SMOKE_ARTIFACT_ROOT: artifactRoot,
+        DIALOGUE_SMOKE_SERVER_MODE: "dev",
+        DIALOGUE_SMOKE_TOTAL_TIMEOUT_MS: "1000"
+      });
+
+      expect(result.code).toBe(1);
+      expect(Date.now() - startedAt).toBeLessThan(12_000);
+      const manifest = JSON.parse(
+        await readFile(path.join(artifactRoot, "dialogue-failure", "failure-manifest.json"), "utf8")
+      );
+      expect(manifest.error.message).toContain("DIALOGUE_SMOKE_TOTAL_TIMEOUT_MS=1000");
+      expect(result.stderr).toContain(manifest.error.stack);
+    } finally {
+      await rm(artifactRoot, { recursive: true, force: true });
+    }
+  }, 15_000);
+
   it("labels every Playwright condition wait and retains browser failure diagnostics", async () => {
     const source = await readFile(
       path.resolve(process.cwd(), "scripts/visual-smoke/dialogue.mjs"),
@@ -80,5 +103,16 @@ describe("dialogue visual smoke failure evidence", () => {
     expect(source).toContain("interaction:");
     expect(source).toContain("wait:");
     expect(source.match(/\.waitForFunction\(/g)).toHaveLength(1);
+  });
+
+  it("owns the production server process and reserves time to publish failure evidence", async () => {
+    const source = await readFile(
+      path.resolve(process.cwd(), "scripts/visual-smoke/dialogue.mjs"),
+      "utf8"
+    );
+
+    expect(source).toMatch(/spawn\(\s*process\.execPath,\s*\[nextCliPath/);
+    expect(source).toContain("await stopNextServer(server)");
+    expect(source).toContain("DIALOGUE_SMOKE_TOTAL_TIMEOUT_MS");
   });
 });

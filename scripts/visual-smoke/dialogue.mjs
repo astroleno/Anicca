@@ -10,6 +10,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..", "..");
 const buildIdPath = path.join(repoRoot, ".next", "BUILD_ID");
+const nextCliPath = path.join(repoRoot, "node_modules", "next", "dist", "bin", "next");
 const artifactRoot = path.resolve(
   process.env.DIALOGUE_SMOKE_ARTIFACT_ROOT || path.join(repoRoot, "artifacts", "visual-smoke")
 );
@@ -21,6 +22,7 @@ const baseUrlWasProvided = Boolean(process.env.DIALOGUE_SMOKE_BASE_URL);
 const requestedServerMode = process.env.DIALOGUE_SMOKE_SERVER_MODE || "dev";
 const serverReadyTimeoutMs = readTimeoutEnv("DIALOGUE_SMOKE_READY_TIMEOUT_MS", 120000);
 const pageReadyTimeoutMs = readTimeoutEnv("DIALOGUE_SMOKE_PAGE_TIMEOUT_MS", 300000);
+const totalTimeoutMs = readTimeoutEnv("DIALOGUE_SMOKE_TOTAL_TIMEOUT_MS", 30 * 60 * 1000);
 const portSearchLimit = Number.parseInt(process.env.DIALOGUE_SMOKE_PORT_SEARCH_LIMIT || "40", 10);
 
 function resolveHeadSha() {
@@ -112,6 +114,26 @@ async function waitForCondition(page, label, pageFunction, arg, options, runOpti
     () => page.waitForFunction(pageFunction, arg, options),
     runOptions
   );
+}
+
+async function withTotalTimeout(operation) {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(
+        new Error(
+          `Visual smoke exceeded DIALOGUE_SMOKE_TOTAL_TIMEOUT_MS=${totalTimeoutMs} at ${runProgress.currentStep}`
+        )
+      );
+    }, totalTimeoutMs);
+    timeoutId.unref?.();
+  });
+
+  try {
+    return await Promise.race([operation(), timeout]);
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 const viewports = [
@@ -869,8 +891,8 @@ function startNextServer(serverMode) {
   const { host, port } = getBaseUrlParts(baseUrl);
   const scriptName = serverMode === "start" ? "start" : "dev";
   const child = spawn(
-    "npm",
-    ["run", scriptName, "--", "--hostname", host, "--port", String(port)],
+    process.execPath,
+    [nextCliPath, scriptName, "--hostname", host, "--port", String(port)],
     {
       cwd: repoRoot,
       env: {
@@ -903,6 +925,48 @@ function startNextServer(serverMode) {
     getExitInfo: () => exitInfo,
     getSpawnError: () => spawnError
   };
+}
+
+function waitForNextServerExit(server, timeoutMs) {
+  if (!server?.child || server.getExitInfo()) {
+    return Promise.resolve(true);
+  }
+
+  return new Promise((resolve) => {
+    const child = server.child;
+    const onExit = () => {
+      clearTimeout(timeoutId);
+      resolve(true);
+    };
+    const timeoutId = setTimeout(() => {
+      child.removeListener("exit", onExit);
+      resolve(false);
+    }, timeoutMs);
+    timeoutId.unref?.();
+    child.once("exit", onExit);
+    if (server.getExitInfo()) {
+      child.removeListener("exit", onExit);
+      clearTimeout(timeoutId);
+      resolve(true);
+    }
+  });
+}
+
+async function stopNextServer(server) {
+  const child = server?.child;
+  if (!child || server.getExitInfo()) {
+    return;
+  }
+
+  child.kill("SIGTERM");
+  if (await waitForNextServerExit(server, 5000)) {
+    return;
+  }
+
+  child.kill("SIGKILL");
+  if (!(await waitForNextServerExit(server, 5000))) {
+    throw new Error("Next server did not exit after SIGTERM and SIGKILL");
+  }
 }
 
 async function ensureNoHorizontalOverflow(page, viewportName) {
@@ -2894,56 +2958,59 @@ async function main() {
   };
 
   try {
-    tempOutputDir = await prepareOutputDir();
-    markStepSuccessful("setup:prepare-output-dir");
-    serverMode = await runStep("setup:resolve-server-mode", () => resolveServerMode());
-    await runStep("setup:resolve-base-url", () => resolveBaseUrl());
-    server = await runStep("setup:start-server", () => startNextServer(serverMode));
+    await withTotalTimeout(async () => {
+      tempOutputDir = await prepareOutputDir();
+      markStepSuccessful("setup:prepare-output-dir");
+      serverMode = await runStep("setup:resolve-server-mode", () => resolveServerMode());
+      await runStep("setup:resolve-base-url", () => resolveBaseUrl());
+      server = await runStep("setup:start-server", () => startNextServer(serverMode));
 
-    process.on("exit", shutdown);
-    process.on("SIGINT", () => {
-      shutdown();
-      process.exit(130);
-    });
-    process.on("SIGTERM", () => {
-      shutdown();
-      process.exit(143);
-    });
+      process.on("exit", shutdown);
+      process.on("SIGINT", () => {
+        shutdown();
+        process.exit(130);
+      });
+      process.on("SIGTERM", () => {
+        shutdown();
+        process.exit(143);
+      });
 
-    await runStep("setup:wait-next-ready", () => waitForNextReady(server));
-    await runStep("setup:wait-dialogue-ready", () => waitForServer(`${baseUrl}/dialogue`, server));
-    browser = await runStep("setup:launch-chromium", () => chromium.launch({ headless: true }));
-    const results = [];
+      await runStep("setup:wait-next-ready", () => waitForNextReady(server));
+      await runStep("setup:wait-dialogue-ready", () => waitForServer(`${baseUrl}/dialogue`, server));
+      browser = await runStep("setup:launch-chromium", () => chromium.launch({ headless: true }));
+      const results = [];
 
-    for (const viewport of viewports) {
-      results.push(await runStep(`viewport:${viewport.name}`, () => runViewport(browser, viewport)));
+      for (const viewport of viewports) {
+        results.push(await runStep(`viewport:${viewport.name}`, () => runViewport(browser, viewport)));
+        setActivePage(null);
+      }
+
+      const interactionScenarios = await runInteractionScenarios(browser);
+
+      await runStep("teardown:close-browser", () => browser.close());
+      browser = null;
       setActivePage(null);
-    }
-
-    const interactionScenarios = await runInteractionScenarios(browser);
-
-    await runStep("teardown:close-browser", () => browser.close());
-    browser = null;
-    setActivePage(null);
-    const summary = rebaseArtifactPaths(
-      {
-        baseUrl,
-        serverMode,
-        generatedAt: new Date().toISOString(),
-        headSha: runProgress.headSha,
-        runId: runProgress.runId,
-        runAttempt: runProgress.runAttempt,
-        viewports: results,
-        interactionScenarios
-      },
-      tempOutputDir
-    );
-    await runStep(
-      "publish:write-summary",
-      () => writeFile(path.join(outputDir, "summary.json"), JSON.stringify(summary, null, 2))
-    );
-    await runStep("publish:success-artifact", () => publishOutputDir(tempOutputDir));
-    outputPublished = true;
+      await runStep("teardown:stop-server", () => stopNextServer(server));
+      const summary = rebaseArtifactPaths(
+        {
+          baseUrl,
+          serverMode,
+          generatedAt: new Date().toISOString(),
+          headSha: runProgress.headSha,
+          runId: runProgress.runId,
+          runAttempt: runProgress.runAttempt,
+          viewports: results,
+          interactionScenarios
+        },
+        tempOutputDir
+      );
+      await runStep(
+        "publish:write-summary",
+        () => writeFile(path.join(outputDir, "summary.json"), JSON.stringify(summary, null, 2))
+      );
+      await runStep("publish:success-artifact", () => publishOutputDir(tempOutputDir));
+      outputPublished = true;
+    });
   } catch (error) {
     const serverOutput = server?.getOutput() || "";
     if (!outputPublished && tempOutputDir) {
@@ -2958,7 +3025,10 @@ async function main() {
     if (browser) {
       await browser.close().catch(() => {});
     }
-    shutdown();
+    await stopNextServer(server).catch((serverError) => {
+      console.error(`Failed to stop visual smoke server:\n${formatFatalError(serverError)}`);
+      shutdown();
+    });
     if (serverOutput) {
       console.error(serverOutput);
     }
