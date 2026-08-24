@@ -47,6 +47,7 @@ pnpm-debug.log*
 # Cache
 .eslintcache
 .cache/
+.superpowers/
 
 # App specific
 thumbs/
