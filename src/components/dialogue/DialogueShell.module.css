@@ -4143,6 +4143,12 @@
 .seedInspectorHeader .panelCloseButton { position: absolute; top: -12px; right: -12px; margin: 0; width: 44px; min-width: 44px; height: 44px; min-height: 44px; font-size: 22px; }
 .seedBody { line-height: 1.85; font-size: 15px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .seedBody p { margin: 0 0 20px; }
+.seedReadingCard { position: fixed; z-index: 45; width: 360px; max-height: 440px; display: flex; border-radius: 22px; box-shadow: 0 12px 44px rgba(55,38,76,.14); background: #faf9fc; }
+.seedReadingCard .seedInspector { position: relative; inset: auto; display: flex; flex-direction: column; width: 100%; height: auto; min-height: 0; max-height: inherit; margin: 0; padding: 22px; overflow: auto; border: 1px solid rgba(67,56,91,.1); border-radius: inherit; background: #faf9fc; backdrop-filter: none; box-shadow: none; opacity: 1; }
+.seedReadingCard .seedInspector::before { display: none; }
+.seedReadingCard .seedBody { overflow-y: auto; min-height: 48px; }
+.seedReadingCard .seedActions { flex-shrink: 0; }
+.seedReadingCard .seedSources { flex-shrink: 0; }
 .seedActions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 20px; }
 .seedActions button { min-height: 44px; flex: 1; }
 .seedActions .primaryButton { background: #584a70; color: #fff; }

@@ -14,6 +14,12 @@ export async function runSeedRecoveryAndTouch(browser, { baseUrl, outputDir, set
       await new Promise(resolve => setTimeout(resolve, 1600));
       return route.fulfill({ status: 502, json: { error: "branches_failed", details: "provider_overloaded" } });
     }
+    if (requests.length === 4) await new Promise(resolve => setTimeout(resolve, 900));
+    if (route.request().url().endsWith("/synthesis")) {
+      await new Promise(resolve => setTimeout(resolve, 350));
+      return route.fulfill({ json: { requestId: input.requestId,
+        synthesis: { text: "让尝试同时检验前提。", label: "边做边检验", summary: "在行动中检验。", stance: "合" } } });
+    }
     await route.fulfill({ json: { requestId: input.requestId,
       thesis: { text: "先做一次具体尝试。", label: "尝试", summary: "先尝试。", stance: "正" },
       antithesis: { text: "先检验隐含前提。", label: "检验", summary: "先检验。", stance: "反" }
@@ -26,14 +32,16 @@ export async function runSeedRecoveryAndTouch(browser, { baseUrl, outputDir, set
     await page.getByRole("textbox", { name: "输入", exact: true }).fill("失败后仍然保留我的想法");
     await page.getByRole("button", { name: "生成", exact: true }).click();
     await page.getByLabel("已用时间").filter({ hasText: "1 秒" }).waitFor();
+    await page.getByRole("textbox", { name: "输入", exact: true }).fill("等待时写下的下一颗想法");
     await page.screenshot({ path: path.join(outputDir, "mobile-pending-elapsed.png") });
     await page.getByRole("button", { name: "重试", exact: true }).waitFor();
-    assert.equal(await page.getByRole("textbox", { name: "输入", exact: true }).inputValue(), "失败后仍然保留我的想法");
+    assert.equal(await page.getByRole("textbox", { name: "输入", exact: true }).inputValue(), "等待时写下的下一颗想法");
     await page.screenshot({ path: path.join(outputDir, "mobile-failure-retry.png") });
     await page.getByRole("button", { name: "重试", exact: true }).click();
     await page.waitForFunction(() => document.querySelectorAll('[data-testid^="dialogue-stage-node-"]').length === 3);
     assert.equal(requests.length, 2);
     assert.equal(requests[0].userText, requests[1].userText);
+    assert.equal(await page.getByRole("textbox", { name: "输入", exact: true }).inputValue(), "等待时写下的下一颗想法", "Retry preserves the later draft");
     await page.waitForFunction(() => [...document.querySelectorAll('[data-testid^="dialogue-stage-node-"]')].every(node => Math.abs(parseFloat(node.style.translate) || 0) < .2));
     const a = await page.locator('[data-testid^="dialogue-stage-node-"][data-metaball-role="thesis"]').boundingBox();
     const b = await page.locator('[data-testid^="dialogue-stage-node-"][data-metaball-role="antithesis"]').boundingBox();
@@ -47,14 +55,21 @@ export async function runSeedRecoveryAndTouch(browser, { baseUrl, outputDir, set
       await session.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: start.x + (end.x - start.x) * step / 12, y: start.y + (end.y - start.y) * step / 12, id: 1 }] });
       await page.waitForTimeout(20);
     }
-    await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-    await page.getByRole("button", { name: "合成", exact: true }).waitFor();
-    assert.equal(requests.length, 2, "A touch bridge previews a pair without generating it");
+    await page.locator('[data-testid="dialogue-synthesis-bridge-preview"][data-armed="true"]').waitFor();
+    assert.equal(requests.length, 2, "Dwell alone does not generate");
     await page.screenshot({ path: path.join(outputDir, "mobile-touch-combination.png") });
-    await page.getByRole("button", { name: "取消组合", exact: true }).click();
+    await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await page.waitForFunction(() => document.querySelectorAll('[data-testid^="dialogue-stage-node-"]').length === 4);
+    assert.equal(requests.length, 3, "Releasing an armed pair sends exactly one synthesis request");
+    assert.equal(await page.locator("#dialogue-reading-drawer").count(), 0, "Completion does not open a card");
+    await page.getByRole("button", { name: "生成", exact: true }).click();
+    await page.getByRole("button", { name: "取消", exact: true }).click();
+    await page.waitForTimeout(1100); // Verify the late response after cancellation cannot commit.
+    assert.equal(await page.locator('[data-testid^="dialogue-stage-node-"]').count(), 4);
+    assert.equal(await page.getByRole("textbox", { name: "输入", exact: true }).inputValue(), "等待时写下的下一颗想法");
     assert.deepEqual(errors, []);
     return { name: "seed-recovery-and-touch", passed: true, requests: requests.length,
-      checks: ["elapsed-wait", "retained-draft", "retry", "long-press-drag", "explicit-confirmation"] };
+      checks: ["elapsed-wait", "editable-pending", "retry-original-preserves-new-draft", "long-press-drag", "dwell-release-synthesis", "no-auto-card", "cancel-late-response"] };
   } finally { await context.close(); }
 }
 

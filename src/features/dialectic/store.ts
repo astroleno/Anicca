@@ -41,6 +41,7 @@ type DialogueUiState = {
   setFocusedNodeId: (nodeId: string | null) => void;
   setComposerParentId: (nodeId: string | null) => void;
   setStageNodePosition: (layoutKey: string, nodeId: string, position: StagePoint, mode?: StageLayoutMode) => void;
+  ensureStageNodePositions: (layoutKey: string, wide: Record<string, StagePoint>, compact: Record<string, StagePoint>) => void;
   setStagePan: (layoutKey: string, pan: StagePan, mode?: StageLayoutMode) => void;
   beginPending: (slot: PendingSlot, pending: PendingRequest) => void;
   clearPending: (slot: PendingSlot) => void;
@@ -107,6 +108,15 @@ export const useDialogueUiStore = create<DialogueUiState>((set, get) => ({
     }),
   setFocusedNodeId: (nodeId) => set({ focusedNodeId: nodeId }),
   setComposerParentId: (nodeId) => set({ composerParentId: nodeId }),
+  ensureStageNodePositions: (layoutKey, wide, compact) => set(state => {
+    const current = getStageLayoutView(state.stageLayouts, layoutKey);
+    const narrow = getStageLayoutViewport(current, "compact");
+    if (Object.keys(wide).every(id => current.nodePositions[id]) && Object.keys(compact).every(id => narrow.nodePositions[id])) return state;
+    return { stageLayouts: { ...state.stageLayouts, [layoutKey]: {
+      ...current, nodePositions: { ...wide, ...current.nodePositions },
+      compact: { ...narrow, nodePositions: { ...compact, ...narrow.nodePositions } }
+    } } };
+  }),
   setStageNodePosition: (layoutKey, nodeId, position, mode = "wide") =>
     set((state) => {
       const currentView = getStageLayoutView(state.stageLayouts, layoutKey);

@@ -14,6 +14,7 @@ export type DialogueStageNode = {
   seedY: number;
   compactSeedX?: number;
   compactSeedY?: number;
+  originNodeIds?: string[];
 };
 
 export type DialogueSceneProjection = {

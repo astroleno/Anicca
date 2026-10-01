@@ -3,6 +3,7 @@
 import { PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useDialogueUiStore } from "@/features/dialectic/store";
 import { findSynthesisGestureCandidate } from "@/features/dialectic/gestures";
+import { placeSeeds } from "@/features/dialectic/seedPlacement";
 import { DialogueStageNode, DialogueSynthesisAction } from "@/features/dialectic/viewModel";
 import { StagePan, StagePoint } from "@/types/anicca";
 import dynamic from "next/dynamic";
@@ -24,7 +25,9 @@ type BubbleStageProps = {
   synthesisAction?: DialogueSynthesisAction | null;
   onProposeSynthesis?: (action: DialogueSynthesisAction) => void;
   resolveSynthesisAction?: (left: string, right: string) => DialogueSynthesisAction | null;
-  onPreviewSynthesis?: (action: DialogueSynthesisAction) => void;
+  onSplit?: (nodeId: string) => void;
+  onInteractionStart?: () => void;
+  generationBusy?: boolean;
   emptyAction?: {
     label: string;
     onTrigger: () => void;
@@ -119,7 +122,9 @@ export function BubbleStage({
   synthesisAction = null,
   onProposeSynthesis,
   resolveSynthesisAction,
-  onPreviewSynthesis,
+  onSplit,
+  onInteractionStart,
+  generationBusy = false,
   emptyAction = null
 }: BubbleStageProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -130,13 +135,38 @@ export function BubbleStage({
   const stageLayout = useDialogueUiStore((state) => state.stageLayouts[layoutKey] || null);
   const setStageNodePosition = useDialogueUiStore((state) => state.setStageNodePosition);
   const setStagePan = useDialogueUiStore((state) => state.setStagePan);
+  const ensurePositions = useDialogueUiStore(state => state.ensureStageNodePositions);
   const [gesture, setGesture] = useState<ActiveStageGesture | null>(null);
   const [isCoarsePointer, setIsCoarsePointer] = useState(false);
   const [isNarrowViewport, setIsNarrowViewport] = useState(false);
   const [metaballRendererState, setMetaballRendererState] =
     useState<DialogueMetaballRendererState>("loading");
   const [synthesisCandidateId, setSynthesisCandidateId] = useState<string | null>(null);
-  const [synthesisProposal, setSynthesisProposal] = useState<DialogueSynthesisAction | null>(null);
+  const [synthesisArmed, setSynthesisArmed] = useState(false);
+  const armRef = useRef<{ key: string; timer: number; ready: boolean } | null>(null);
+  const clickTimerRef = useRef<number | null>(null);
+  const pointerTypeRef = useRef("mouse");
+  const actionsRef = useRef({ onProposeSynthesis, onInteractionStart, generationBusy, onSelect, onPrimaryAction });
+  actionsRef.current = { onProposeSynthesis, onInteractionStart, generationBusy, onSelect, onPrimaryAction };
+  const resetArm = useCallback(() => {
+    if (armRef.current) window.clearTimeout(armRef.current.timer);
+    armRef.current = null;
+    setSynthesisArmed(false);
+  }, []);
+  useEffect(() => () => {
+    if (clickTimerRef.current !== null) window.clearTimeout(clickTimerRef.current);
+    if (armRef.current) window.clearTimeout(armRef.current.timer);
+  }, []);
+  useEffect(() => {
+    const cancelRead = (event: PointerEvent) => {
+      if (!(event.target as HTMLElement)?.closest?.('[data-testid^="dialogue-stage-node-"]') && clickTimerRef.current !== null) {
+        window.clearTimeout(clickTimerRef.current);
+        clickTimerRef.current = null;
+      }
+    };
+    window.addEventListener("pointerdown", cancelRead);
+    return () => window.removeEventListener("pointerdown", cancelRead);
+  }, []);
   const livePanRef = useRef<StagePan | null>(null);
   const didDragRef = useRef(false);
   const suppressClickUntilRef = useRef(0);
@@ -161,7 +191,7 @@ export function BubbleStage({
     : hasSynthesisRecord
       ? "合流记录已保留。"
       : hasThesis && hasAntithesis
-        ? "拖动正与反靠近可预览液桥；松手后仍需确认合成。"
+        ? "拖动两颗想法靠近，稍停后松手合成；移开可取消。"
         : null;
   const emptyStageHint = isCoarsePointer
     ? "写下母题，点选节点查看谱系。"
@@ -170,6 +200,13 @@ export function BubbleStage({
   const stageLayoutMode = usesCompactGrowthLayout ? "compact" : "wide";
   const stageLayoutViewport = stageLayoutMode === "compact" ? stageLayout?.compact : stageLayout;
   const resolvedPan = stageLayoutViewport?.pan || DEFAULT_STAGE_PAN;
+  const placements = useMemo(() => ({
+    wide: placeSeeds(nodes, stageLayout?.nodePositions),
+    compact: placeSeeds(nodes, stageLayout?.compact?.nodePositions, true)
+  }), [nodes, stageLayout]);
+  useEffect(() => {
+    if (nodes.length) ensurePositions(layoutKey, placements.wide, placements.compact);
+  }, [layoutKey, nodes.length, placements, ensurePositions]);
 
   useEffect(() => {
     const cancel = () => { if (touchHoldRef.current) window.clearTimeout(touchHoldRef.current.timer); touchHoldRef.current = null; };
@@ -238,7 +275,7 @@ export function BubbleStage({
       : { x: node.seedX, y: node.seedY };
 
     return clampNodePosition(
-      stageLayoutViewport?.nodePositions[node.id] || defaultPosition,
+      placements[stageLayoutMode][node.id] || defaultPosition,
       node.isGrowthPerspective ? GROWTH_NODE_MAX_Y_PERCENT : NODE_MAX_Y_PERCENT
     );
   };
@@ -250,11 +287,11 @@ export function BubbleStage({
     return {
       node,
       position: clampNodePosition(
-        stageLayoutViewport?.nodePositions[node.id] || defaultPosition,
+        placements[stageLayoutMode][node.id] || defaultPosition,
         node.isGrowthPerspective ? GROWTH_NODE_MAX_Y_PERCENT : NODE_MAX_Y_PERCENT
       )
     };
-  }), [nodes, stageLayoutViewport, usesCompactGrowthLayout]);
+  }), [nodes, placements, stageLayoutMode, usesCompactGrowthLayout]);
 
   const setTrackPanPreview = useCallback((pan: StagePan) => {
     const track = trackRef.current;
@@ -288,8 +325,9 @@ export function BubbleStage({
     suppressClickUntilRef.current = 0;
     activePointerTargetRef.current = null;
     setSynthesisCandidateId(null);
-    setSynthesisProposal(null);
-  }, [clearNodeDragPreview, layoutKey]);
+    resetArm();
+    if (clickTimerRef.current !== null) window.clearTimeout(clickTimerRef.current);
+  }, [clearNodeDragPreview, layoutKey, resetArm]);
 
   useEffect(() => {
     if (!gesture) {
@@ -314,6 +352,10 @@ export function BubbleStage({
 
       if (gesture.kind === "node") {
         if (Math.abs(event.clientX - gesture.startClientX) > 4 || Math.abs(event.clientY - gesture.startClientY) > 4) {
+          if (!didDragRef.current) {
+            actionsRef.current.onInteractionStart?.();
+            if (clickTimerRef.current !== null) window.clearTimeout(clickTimerRef.current);
+          }
           didDragRef.current = true;
         }
         const offsetX = event.clientX - gesture.startClientX;
@@ -328,7 +370,7 @@ export function BubbleStage({
           x: gesture.startPosition.x + (offsetX / rect.width) * 100,
           y: gesture.startPosition.y + (offsetY / rect.height) * 100
         }, draggedNode?.isGrowthPerspective ? GROWTH_NODE_MAX_Y_PERCENT : NODE_MAX_Y_PERCENT);
-        const candidate = findSynthesisGestureCandidate({
+        const candidate = actionsRef.current.generationBusy ? null : findSynthesisGestureCandidate({
           draggedNodeId: gesture.nodeId,
           draggedPosition: nextPosition,
           nodes: positionedNodes,
@@ -337,6 +379,17 @@ export function BubbleStage({
           viewport: rect
         });
         setSynthesisCandidateId(candidate?.counterpartNodeId || null);
+        if (!candidate || !didDragRef.current) resetArm();
+        else if (armRef.current?.key !== candidate.action.key) {
+          resetArm();
+          const arm = { key: candidate.action.key, ready: false, timer: 0 };
+          arm.timer = window.setTimeout(() => {
+            if (armRef.current !== arm || actionsRef.current.generationBusy) return;
+            arm.ready = true;
+            setSynthesisArmed(true);
+          }, 320);
+          armRef.current = arm;
+        }
         return;
       }
 
@@ -382,9 +435,9 @@ export function BubbleStage({
                 viewport: rect
               })
             : null;
-          if (didDragRef.current && candidate) {
-            if (onPreviewSynthesis) onPreviewSynthesis(candidate.action);
-            else setSynthesisProposal(candidate.action);
+          if (didDragRef.current && candidate && armRef.current?.ready &&
+            armRef.current.key === candidate.action.key && !actionsRef.current.generationBusy) {
+            actionsRef.current.onProposeSynthesis?.(candidate.action);
           }
         }
       } else if (!cancelled) {
@@ -407,15 +460,22 @@ export function BubbleStage({
       livePanRef.current = null;
       didDragRef.current = false;
       setSynthesisCandidateId(null);
+      resetArm();
       setGesture(null);
     };
 
     const handlePointerUp = (event: PointerEvent) => finishPointer(event, false);
     const handlePointerCancel = (event: PointerEvent) => finishPointer(event, true);
+    const cancelGesture = () => finishPointer({ pointerId: gesture.pointerId } as PointerEvent, true);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { event.preventDefault(); cancelGesture(); }
+    };
 
     window.addEventListener("pointermove", handlePointerMove);
     window.addEventListener("pointerup", handlePointerUp);
     window.addEventListener("pointercancel", handlePointerCancel);
+    window.addEventListener("blur", cancelGesture);
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
       if (gesture.kind === "node") {
@@ -424,6 +484,9 @@ export function BubbleStage({
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
       window.removeEventListener("pointercancel", handlePointerCancel);
+      window.removeEventListener("blur", cancelGesture);
+      window.removeEventListener("keydown", handleKeyDown);
+      resetArm();
     };
   }, [
     clearNodeDragPreview,
@@ -437,7 +500,7 @@ export function BubbleStage({
     stageLayoutMode,
     synthesisAction,
     resolveSynthesisAction,
-    onPreviewSynthesis,
+    resetArm,
     positionedNodes
   ]);
 
@@ -464,6 +527,7 @@ export function BubbleStage({
   };
 
   const handleNodePointerDown = (event: ReactPointerEvent<HTMLButtonElement>, node: DialogueStageNode) => {
+    pointerTypeRef.current = event.pointerType;
     if (event.button !== 0) {
       return;
     }
@@ -497,13 +561,17 @@ export function BubbleStage({
     });
   };
 
-  const handleNodeClick = (node: DialogueStageNode) => {
+  const handleNodeClick = (node: DialogueStageNode, detail: number) => {
     if (performance.now() < suppressClickUntilRef.current) {
       return;
     }
 
-    onSelect(node.id);
-    onPrimaryAction?.(node.id);
+    if (clickTimerRef.current !== null) window.clearTimeout(clickTimerRef.current);
+    if (detail > 1) return;
+    const select = () => { actionsRef.current.onSelect(node.id); actionsRef.current.onPrimaryAction?.(node.id); };
+    if (onSplit && detail > 0 && pointerTypeRef.current !== "touch") {
+      clickTimerRef.current = window.setTimeout(select, 260);
+    } else select();
   };
 
   const focusStageNode = positionedNodes.find(({ node }) => node.relation === "focus") || null;
@@ -665,39 +733,10 @@ export function BubbleStage({
                 role="status"
                 aria-live="polite"
                 data-testid="dialogue-synthesis-bridge-preview"
+                data-armed={synthesisArmed ? "true" : "false"}
               >
-                松手后可将这两颗 seed 合成。
+                {synthesisArmed ? "松手合成 · 移开取消" : "稍停，准备合成…"}
               </p>
-            ) : null}
-            {synthesisProposal ? (
-              <div
-                className={styles.synthesisProposal}
-                role="dialog"
-                aria-label="确认合成"
-                data-testid="dialogue-synthesis-proposal"
-              >
-                <span>液桥只是预览，确认后才会生成“合”。</span>
-                <div>
-                  <button
-                    type="button"
-                    className={styles.primaryButton}
-                    onClick={() => {
-                      const proposal = synthesisProposal;
-                      setSynthesisProposal(null);
-                      onProposeSynthesis?.(proposal);
-                    }}
-                  >
-                    确认合成
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.secondaryButton}
-                    onClick={() => setSynthesisProposal(null)}
-                  >
-                    取消
-                  </button>
-                </div>
-              </div>
             ) : null}
             {!nodes.length && !pendingBranchNodes ? (
               <>
@@ -790,7 +829,12 @@ export function BubbleStage({
                       "--stage-node-drag-y": "0px"
                     } as CSSProperties
                   }
-                  onClick={() => handleNodeClick(node)}
+                  onClick={(event) => handleNodeClick(node, event.detail)}
+                  onDoubleClick={() => {
+                    if (clickTimerRef.current !== null) window.clearTimeout(clickTimerRef.current);
+                    if (pointerTypeRef.current === "touch" || generationBusy || performance.now() < suppressClickUntilRef.current) return;
+                    onSplit?.(node.id);
+                  }}
                   onPointerDown={(event) => handleNodePointerDown(event, node)}
                   onContextMenu={(event) => event.preventDefault()}
                 >

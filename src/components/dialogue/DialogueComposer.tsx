@@ -51,8 +51,8 @@ export function DialogueComposer({
       <label className={styles.composerField}>
         <span className={styles.composerLabel}>输入</span>
         <textarea ref={textareaRef} aria-label="输入" rows={1} value={value}
-          maxLength={DIALECTIC_INPUT_MAX_LENGTH} disabled={disabled}
-          placeholder={target.nodeId ? "补充你的想法…" : "写下一个想法…"}
+          maxLength={DIALECTIC_INPUT_MAX_LENGTH}
+          placeholder={pendingAction ? "等待时，也可以继续写…" : target.nodeId ? "补充你的想法…" : "写下一个想法…"}
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {

@@ -125,8 +125,6 @@ export function DialogueMetaballLayer({ hostRef, onStateChange }: Props) {
     let surfaces: HTMLElement[] = [];
     let motionActive = false;
     let renderedNodes = cachedNodes;
-    let cursor: { center: [number, number]; active: boolean } = { center: [0, 0], active: false };
-    const smoothCursor: [number, number] = [0, 0];
     const reducedMotionQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)") ?? null;
     let prefersReducedMotion = reducedMotionQuery?.matches ?? false;
 
@@ -194,13 +192,10 @@ export function DialogueMetaballLayer({ hostRef, onStateChange }: Props) {
             ownStyles.set(element, element.getAttribute("style") || "");
           }
         }
-        smoothCursor[0] += (cursor.center[0] - smoothCursor[0]) * .18;
-        smoothCursor[1] += (cursor.center[1] - smoothCursor[1]) * .18;
         const cap = hostRect.width <= 640 ? 0.62 : 0.8;
         renderer.resize(hostRect.width, hostRect.height, Math.min(window.devicePixelRatio || 1, cap) * qualityScale);
         renderer.render(renderedNodes, prefersReducedMotion ? 0 : timestamp / 1000,
-          { center: smoothCursor, active: cursor.active && !prefersReducedMotion,
-            draggedId: pointerDown ? pressedId : null });
+          { draggedId: pointerDown ? pressedId : null });
         if (!reportedReady) {
           reportedReady = true;
           canvas.dataset.rendererState = "ready";
@@ -235,17 +230,14 @@ export function DialogueMetaballLayer({ hostRef, onStateChange }: Props) {
       activeUntil = performance.now() + 350;
       invalidate();
     };
-    const handlePointerMove = (event: PointerEvent) => {
-      if (hostRect) cursor = { center: [(event.clientX - hostRect.left - hostRect.width / 2) / hostRect.height,
-        (hostRect.height / 2 - event.clientY + hostRect.top) / hostRect.height],
-        active: event.pointerType !== "touch" && event.clientX >= hostRect.left && event.clientX <= hostRect.right && event.clientY >= hostRect.top && event.clientY <= hostRect.bottom };
+    const handlePointerMove = () => {
+      if (!pointerDown) return;
       activeUntil = performance.now() + 350;
-      if (pointerDown) invalidate(); else wake();
+      invalidate();
     };
     const handlePointerUp = () => {
       pointerDown = false;
       pressedId = null;
-      cursor.active = false;
       activeUntil = performance.now() + 350;
       invalidate();
     };

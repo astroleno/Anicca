@@ -66,7 +66,9 @@ describe("dialogue liquid renderer", () => {
     expect(DIALOGUE_METABALL_SMOOTHNESS).toBeGreaterThan(0);
     expect(source).toContain("setMaxIterations(8)");
     expect(source).toContain("let n = sin(fbm");
-    expect(source).toContain("blend(.14)");
+    expect(source).toContain("blend(s0b)");
+    expect(source).not.toContain("let mx");
+    expect(source).not.toContain("sphere(.2)");
     expect(source).toContain("sphere(s7r");
   });
 
@@ -116,7 +118,7 @@ describe("dialogue liquid renderer", () => {
       (location as unknown as { name: string }).name === `s${index}b`).at(-1)?.[1];
     renderer.render(nodes, 1);
     expect(blend(0)).toBe(0.14);
-    renderer.render(nodes, 2, { center: [0, 0], active: true, draggedId: "seed-0" });
+    renderer.render(nodes, 2, { draggedId: "seed-0" });
     expect(blend(0)).toBeCloseTo(0.3);
     expect(blend(1)).toBeCloseTo(0.3);
     expect(blend(2)).toBe(0.14);

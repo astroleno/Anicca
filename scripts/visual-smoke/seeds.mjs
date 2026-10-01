@@ -46,6 +46,12 @@ export async function runSeedViewport(browser, viewport, { baseUrl, outputDir, s
     await page.getByTestId(`dialogue-stage-node-${id}`).click();
     await page.getByRole("button", { name: "裂变", exact: true }).waitFor();
     await page.waitForFunction(() => getComputedStyle(document.getElementById("dialogue-reading-drawer")).opacity === "1");
+    const card = await page.locator("#dialogue-reading-drawer").boundingBox();
+    const composer = await page.getByTestId("dialogue-composer").boundingBox();
+    const content = await page.getByTestId("dialogue-panel").boundingBox();
+    assert(card && content && card.height > 80 && content.y >= card.y && content.y + content.height <= card.y + card.height + 1,
+      "The reading card contains its visible content");
+    assert(composer && card.y + card.height <= composer.y - 8, "Reading card leaves the composer accessible");
   };
   const close = () => page.getByRole("button", { name: "收起阅读面板" }).click();
   const combine = async (a, b) => {
@@ -53,7 +59,6 @@ export async function runSeedViewport(browser, viewport, { baseUrl, outputDir, s
     await page.getByRole("button", { name: "组合", exact: true }).click();
     const snapshot = await graph();
     await page.getByTestId("dialogue-panel").getByRole("button", { name: `${snapshot.nodes[b].branchType || "想法"} ${snapshot.nodes[b].meta?.label || snapshot.nodes[b].text.slice(0, 14)}`, exact: true }).click();
-    await page.getByRole("button", { name: "合成", exact: true }).click();
   };
   try {
     await page.goto(`${baseUrl}/dialogue`, { waitUntil: "networkidle" });
@@ -62,10 +67,15 @@ export async function runSeedViewport(browser, viewport, { baseUrl, outputDir, s
     assert(new URL(page.url()).pathname === "/dialogue");
     assert(await page.title());
     await page.getByRole("textbox", { name: "输入", exact: true }).waitFor();
+    let firstPositions;
+    const positions = () => page.locator('[data-testid^="dialogue-stage-node-"]').evaluateAll(elements =>
+      Object.fromEntries(elements.map(element => [element.dataset.metaballSurface, { left: element.style.left, top: element.style.top }])));
     for (const [index, text] of ["让独立创作与交流相互促进", "让城市的公共空间更适合停留"].entries()) {
       await page.getByRole("textbox", { name: "输入", exact: true }).fill(text);
       await page.getByRole("button", { name: "生成", exact: true }).click();
       await waitCount((index + 1) * 3);
+      if (!index) firstPositions = await positions();
+      else for (const [id, position] of Object.entries(firstPositions)) assert.deepEqual((await positions())[id], position, "Existing seeds keep their positions");
     }
     const original = await graph();
     assert.equal(original.entryIds.length, 2, "Writing again creates a separate idea");
@@ -89,6 +99,12 @@ export async function runSeedViewport(browser, viewport, { baseUrl, outputDir, s
     for (const rect of seedRects) assert(rect.left >= 0 && rect.right <= viewport.width && rect.top >= 0 && rect.bottom <= layout.height, JSON.stringify(rect));
     await page.screenshot({ path: path.join(outputDir, `${viewport.name}.png`) });
     const performance = viewport.name === "desktop" ? await measureIdle(page) : null;
+    const uniformNames = await page.evaluate(() => {
+      const gl = document.querySelector('[data-testid="dialogue-metaball-canvas"]').getContext("webgl2");
+      const program = gl.getParameter(gl.CURRENT_PROGRAM);
+      return Array.from({ length: gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS) }, (_, index) => gl.getActiveUniform(program, index).name);
+    });
+    assert(!uniformNames.includes("mx") && !uniformNames.includes("my"), "No cursor ball remains in the shader");
     await combine(positives[0].id, positives[1].id);
     await waitCount(7);
     const merged = Object.values((await graph()).nodes).find(node => node.branchType === "合");
@@ -105,8 +121,16 @@ export async function runSeedViewport(browser, viewport, { baseUrl, outputDir, s
     // Any original idea also splits without inserting another user node.
     if (await page.getByRole("button", { name: "收起阅读面板" }).isVisible()) await close();
     const root = original.entryIds[1];
-    await select(root);
-    await page.getByRole("button", { name: "裂变", exact: true }).click();
+    if (viewport.hasTouch) {
+      await select(root);
+      await page.getByRole("button", { name: "裂变", exact: true }).click();
+    } else {
+      const requestCount = requests.length;
+      await page.getByTestId(`dialogue-stage-node-${root}`).dblclick();
+      await page.waitForFunction(() => !document.getElementById("dialogue-reading-drawer"));
+      await waitCount(11);
+      assert.equal(requests.length, requestCount + 1, "Double click splits once");
+    }
     await waitCount(11);
     current = await graph();
     assert.equal(current.entryIds.length, 2);
@@ -119,7 +143,7 @@ export async function runSeedViewport(browser, viewport, { baseUrl, outputDir, s
     assert.equal(Object.keys((await graph()).nodes).length, 11);
     assert.deepEqual(issues, []);
     return { name: viewport.name, passed: true, layout, performance, requests: requests.length,
-      checks: ["new-ideas", "cross-topic-same-stance-combination", "source-provenance", "synthesis-direct-split", "idea-direct-split", "bounded-stage", "reload", "console"] };
+      checks: ["new-ideas", "stable-existing-positions", "no-cursor-ball", "local-card-clear-of-composer", "cross-topic-same-stance-combination", "source-provenance", "synthesis-direct-split", "idea-direct-split", "bounded-stage", "reload", "console"] };
   } finally { await context.close(); }
 }
 

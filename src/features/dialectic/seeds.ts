@@ -59,6 +59,7 @@ export function buildSeedScene(graph: Graph, focusId: string | null, pinnedId: s
   return visible.map((id, index) => {
     const node = graph.nodes[id];
     return { id, label: seedLabel(graph, id), preview: node.text, summary: node.meta?.summary,
+      originNodeIds: node.meta?.sourceNodeIds || node.parents,
       kind: node.kind, branchType: node.branchType, relation: id === focusId ? "focus" : "child",
       seedX: positions[index][0], seedY: positions[index][1],
       compactSeedX: visible.length <= 3 ? positions[index][0] : (index % 2 ? 73 : 27),

@@ -20,7 +20,6 @@ export function buildLiquidSpCode(slots: number = LIQUID_SEED_SLOTS): string {
       `let s${index}cb = input();`
     );
   }
-  declarations.push("let mx = input();", "let my = input();");
 
   lines.push("setMaxIterations(8);");
   lines.push("let offset = .1;");
@@ -55,10 +54,6 @@ export function buildLiquidSpCode(slots: number = LIQUID_SEED_SLOTS): string {
     }
     lines.push(`sphere(s${index}r*(1.+s${index}h*.3));`);
   }
-
-  lines.push(`displace(mx-s${slots - 1}x, my-s${slots - 1}y, 0.);`);
-  lines.push("blend(.14);");
-  lines.push("sphere(.2);");
 
   return `${declarations.join("\n")}\n${lines.join("\n")}\n`;
 }

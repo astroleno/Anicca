@@ -220,7 +220,7 @@ function createDeepenedRoundtableResponse(
 async function openReadingDrawer(user: ReturnType<typeof userEvent.setup>) {
   const id = useDialogueUiStore.getState().focusedNodeId || branchGraphStore.getGraph().entryIds[0];
   await user.click(screen.getByTestId(`dialogue-stage-node-${id}`));
-  expect(document.getElementById("dialogue-reading-drawer")).toHaveAttribute("data-open", "true");
+  await waitFor(() => expect(document.getElementById("dialogue-reading-drawer")).toHaveAttribute("data-open", "true"));
 }
 
 async function openMore(user: ReturnType<typeof userEvent.setup>) {
@@ -249,9 +249,9 @@ async function synthesizePair(user: ReturnType<typeof userEvent.setup>) {
   const left = root.children.find(id => graph.nodes[id].branchType === "正")!;
   const right = root.children.find(id => graph.nodes[id].branchType === "反")!;
   await user.click(screen.getByTestId(`dialogue-stage-node-${left}`));
-  await user.click(screen.getByRole("button", { name: "组合" }));
+  await user.click(await screen.findByRole("button", { name: "组合" }));
   await user.click(screen.getByTestId(`dialogue-stage-node-${right}`));
-  await user.click(screen.getByRole("button", { name: "合成" }));
+  await waitFor(() => expect(document.getElementById("dialogue-reading-drawer")).toBeNull());
 }
 
 describe("DialogueShell", () => {
@@ -274,7 +274,7 @@ describe("DialogueShell", () => {
     expect(screen.queryByText("主决策")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "裂变" })).not.toBeInTheDocument();
     await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
-    expect(screen.getByRole("button", { name: "裂变" })).toBeEnabled();
+    expect(await screen.findByRole("button", { name: "裂变" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "组合" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "继续写" })).toBeEnabled();
   });
@@ -292,6 +292,37 @@ describe("DialogueShell", () => {
     expect(screen.getByTestId("dialogue-stage-node-asst_synthesis_1")).toBeInTheDocument();
     expect(useDialogueUiStore.getState().focusedNodeId).toBe("user_root_1");
     expect(branchGraphStore.getGraph().entryIds).toEqual(["user_root_1"]);
+  });
+
+  it.each([false, true])("preserves a later draft and input focus on branch success (retry=%s)", async retry => {
+    const user = userEvent.setup();
+    const first = createDeferred<Response>(), second = createDeferred<Response>();
+    const fetchMock = vi.fn().mockImplementationOnce(() => first.promise).mockImplementationOnce(() => second.promise);
+    vi.stubGlobal("fetch", fetchMock);
+    render(<DialogueShell />);
+    const input = screen.getByRole("textbox", { name: "输入" });
+    await user.type(input, "想法 A");
+    await user.click(screen.getByRole("button", { name: "生成" }));
+    expect(input).toBeEnabled();
+    await user.clear(input);
+    await user.type(input, "下一颗想法 B");
+    const response = (requestId: string) => new Response(JSON.stringify({ requestId,
+      thesis: { text: "推进 A", label: "推进", summary: "继续推进", stance: "正" },
+      antithesis: { text: "检验 A", label: "检验", summary: "检验前提", stance: "反" }
+    }), { status: 200, headers: { "Content-Type": "application/json" } });
+    if (retry) {
+      first.resolve(new Response(JSON.stringify({ error: "branches_failed" }), { status: 502 }));
+      await user.click(await screen.findByRole("button", { name: "重试" }));
+      expect(readFetchBody(fetchMock, 1).userText).toBe("想法 A");
+      await user.click(input);
+      second.resolve(response(readFetchBody(fetchMock, 1).requestId));
+    } else first.resolve(response(readFetchBody(fetchMock).requestId));
+    await waitFor(() => expect(branchGraphStore.getGraph().entryIds).toHaveLength(1));
+    const graph = branchGraphStore.getGraph();
+    expect(graph.nodes[graph.entryIds[0]].text).toBe("想法 A");
+    expect(input).toHaveValue("下一颗想法 B");
+    expect(input).toHaveFocus();
+    expect(document.getElementById("dialogue-reading-drawer")).toBeNull();
   });
 
   it("runs the artwork perspective command locally without calling the branch route", async () => {
@@ -692,7 +723,7 @@ describe("DialogueShell", () => {
     const stage = await screen.findByTestId("dialogue-stage");
     const sidebar = screen.getByTestId("dialogue-sidebar");
     await userEvent.click(screen.getByTestId(`dialogue-stage-node-${rootUserId}`));
-    const panel = screen.getByTestId("dialogue-panel");
+    const panel = await screen.findByTestId("dialogue-panel");
     const composer = screen.getByTestId("dialogue-composer");
 
     expect(stage.compareDocumentPosition(sidebar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -1046,6 +1077,7 @@ describe("DialogueShell", () => {
     await moreAction(user, "查看最近圆桌记录");
     await user.click(await screen.findByRole("button", { name: "深挖一轮" }));
     await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
+    await waitFor(() => expect(useDialogueUiStore.getState().focusedNodeId).toBe(thesisId));
     const composerInput = screen.getByLabelText("输入");
     await user.click(composerInput);
     await waitFor(() => expect(composerInput).toHaveFocus());
@@ -1267,7 +1299,7 @@ describe("DialogueShell", () => {
     expect(within(sidebar).getByRole("button", { name: "合流记录：收束，来源：继续 / 暂停" })).toBeInTheDocument();
     expect(within(sidebar).getAllByText("收束").length).toBeGreaterThan(0);
     await userEvent.click(screen.getByTestId(`dialogue-stage-node-${synthesisId}`));
-    expect(screen.getByLabelText("合的来源")).toHaveTextContent("继续");
+    expect(await screen.findByLabelText("合的来源")).toHaveTextContent("继续");
     expect(screen.getByRole("button", { name: "裂变" })).toBeEnabled();
     expect(screen.queryByRole("button", { name: "合流过" })).not.toBeInTheDocument();
   });
@@ -1313,13 +1345,14 @@ describe("DialogueShell", () => {
     await moreAction(user, "召集圆桌讨论此节点");
     await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
 
+    await waitFor(() => expect(useDialogueUiStore.getState().focusedNodeId).toBe(thesisId));
     await openMore(user);
     const pendingButton = screen.getByRole("button", { name: "圆桌生成中…" });
     const pendingHint = screen.getByText("正在从「要不要继续这个项目」召集圆桌");
 
     expect(pendingButton).toBeDisabled();
     expect(pendingButton).toHaveAttribute("aria-busy", "true");
-    expect(screen.getByRole("heading", { name: "继续" })).toBeInTheDocument();
+    expect(useDialogueUiStore.getState().focusedNodeId).toBe(thesisId);
     expect(pendingHint).toHaveAttribute("role", "status");
   });
 
@@ -1362,6 +1395,7 @@ describe("DialogueShell", () => {
     await openReadingDrawer(user);
     await moreAction(user, "召集圆桌讨论此节点");
     await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
+    await waitFor(() => expect(useDialogueUiStore.getState().focusedNodeId).toBe(thesisId));
     roundtableDeferred.resolve();
 
     await waitFor(() => {
@@ -1728,11 +1762,10 @@ describe("DialogueShell", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 2400));
     expect(useDialogueUiStore.getState().focusedNodeId).toBe(synthesisId);
-    await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "收束" })).toHaveFocus();
-    });
+    expect(document.getElementById("dialogue-reading-drawer")).toBeNull();
+    await openReadingDrawer(user);
     expect(screen.getByLabelText("合的来源")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("写下一个想法…")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("补充你的想法…")).toBeInTheDocument();
   }, 9000);
 
   it("does not leave orphan child users behind on branch failure", async () => {
@@ -1856,8 +1889,8 @@ describe("DialogueShell", () => {
     await user.click(within(screen.getByTestId("dialogue-sidebar")).getByRole("button", { name: /另一个问题/ }));
 
     expect(screen.queryByRole("button", { name: "合流中..." })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "合成" })).toBeDisabled();
-    expect(screen.getByTestId("dialogue-synthesis-proposal")).toHaveTextContent("继续 / 暂停");
+    expect(screen.getByRole("button", { name: "合成中…" })).toBeDisabled();
+    expect(screen.getByTestId("dialogue-stage-pending-synthesis")).toHaveTextContent("继续 / 暂停");
 
     fetchDeferred.resolve(
       new Response(

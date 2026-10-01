@@ -22,6 +22,7 @@ import { buildWorkspaceContext } from "@/chat/workspaceContext";
 import { BranchSidebar } from "@/components/dialogue/BranchSidebar";
 import { BubbleStage } from "@/components/dialogue/BubbleStage";
 import { SeedInspector } from "@/components/dialogue/SeedInspector";
+import { SeedReadingCard } from "@/components/dialogue/SeedReadingCard";
 import { DialogueComposer } from "@/components/dialogue/DialogueComposer";
 import { WorkspaceBar } from "@/components/dialogue/WorkspaceBar";
 import { createDialogueDemoWorkspace } from "@/features/dialectic/demoWorkspace";
@@ -479,6 +480,9 @@ export function DialogueShell() {
     branchGraphStore.getSnapshot.bind(branchGraphStore)
   );
   const [draft, setDraft] = useState("");
+  const draftVersionRef = useRef(0);
+  const attentionVersionRef = useRef(0);
+  const submittedTextRef = useRef("");
   const [emptyComposerOpen, setEmptyComposerOpen] = useState(false);
   const [demoWorkspaceEnabled, setDemoWorkspaceEnabled] = useState(false);
   const [retrievalDebugPreviewEnabled, setRetrievalDebugPreviewEnabled] = useState(false);
@@ -493,11 +497,9 @@ export function DialogueShell() {
   const [guideRequest, setGuideRequest] = useState(0);
   const [combineSourceId, setCombineSourceId] = useState<string | null>(null);
   const [selectedPair, setSelectedPair] = useState<DialogueSynthesisAction | null>(null);
-  const handlePreviewSynthesis = useCallback((action: DialogueSynthesisAction) => {
-    if (useDialogueUiStore.getState().pendingAction) return;
-    setSelectedPair(action);
+  const dismissSeedCard = useCallback(() => {
     setReadingOpen(false);
-    setCombineSourceId(action.thesisId);
+    setCombineSourceId(null);
   }, []);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const composerRootRef = useRef<HTMLFormElement | null>(null);
@@ -705,8 +707,12 @@ export function DialogueShell() {
   }, []);
 
   const handleDraftChange = useCallback((value: string) => {
-    retryRef.current = null;
-    setErrorState(null);
+    draftVersionRef.current += 1;
+    attentionVersionRef.current += 1;
+    if (!useDialogueUiStore.getState().pendingAction) {
+      retryRef.current = null;
+      setErrorState(null);
+    }
     if (isEmptyWorkspace) {
       setEmptyComposerOpen(true);
     }
@@ -761,19 +767,19 @@ export function DialogueShell() {
   }, [synthesisRevealId]);
 
   const handleSelectNode = (nodeId: string) => {
+    attentionVersionRef.current += 1;
     if (combineSourceId && !selectedPair && !hasPendingRequest) {
       const pair = resolveSeedPair(combineSourceId, nodeId);
       if (pair) {
-        setSelectedPair(pair);
         setReadingOpen(false);
         setLineageOpen(false);
+        void handleGenerateSynthesis(pair);
       }
       return;
     }
     startTransition(() => {
       setFocusedNodeId(nodeId);
       if (!hasPendingRequest) setComposerParentId(nodeId);
-      setErrorState(null);
     });
     setLineageOpen(false);
     setReadingOpen(true);
@@ -993,15 +999,18 @@ export function DialogueShell() {
     }
   };
 
-  const handleSubmit = async (splitSeedId?: string) => {
-    const text = splitSeedId ? graphSnapshot.graph.nodes[splitSeedId]?.text?.trim() || "" : draft.trim();
+  const handleSubmit = async (splitSeedId?: string, retry?: { text: string; targetId: string | null; draftVersion: number }) => {
+    const text = retry?.text ?? (splitSeedId ? graphSnapshot.graph.nodes[splitSeedId]?.text?.trim() || "" : draft.trim());
     if (!text || useDialogueUiStore.getState().pendingAction) {
       return;
     }
 
     const requestId = createClientId("req");
-    const targetId = splitSeedId || composerTarget.nodeId;
-    retryRef.current = { sessionId: workspaceSessionId, run: () => { void handleSubmit(splitSeedId); } };
+    const targetId = retry ? retry.targetId : splitSeedId || composerTarget.nodeId;
+    const draftVersion = retry?.draftVersion ?? draftVersionRef.current;
+    const attentionVersion = attentionVersionRef.current;
+    submittedTextRef.current = text;
+    retryRef.current = { sessionId: workspaceSessionId, run: () => { void handleSubmit(splitSeedId, { text, targetId, draftVersion }); } };
     beginPending("branches", {
       requestId,
       workspaceSessionId,
@@ -1043,10 +1052,10 @@ export function DialogueShell() {
         }).userNodeId;
       }
       const updatedGraph = branchGraphStore.getGraph();
-      const shouldAutoFocus = shouldAutoFocusPendingResult(activePending, updatedGraph);
+      const shouldAutoFocus = attentionVersion === attentionVersionRef.current && shouldAutoFocusPendingResult(activePending, updatedGraph);
 
       clearPending("branches");
-      if (!splitSeedId) setDraft("");
+      if (!splitSeedId && draftVersion === draftVersionRef.current) setDraft("");
       retryRef.current = null;
       setErrorState(null);
       void emitDialogueTelemetry(
@@ -1110,6 +1119,8 @@ export function DialogueShell() {
 
     dialogueControllerRef.current?.cancel(activeSlot);
     clearPending(activeSlot);
+    setSelectedPair(null);
+    setCombineSourceId(null);
     setWorkspaceStatus(activeSlot === "synthesis" ? "已取消本次合流。" : "已取消本次生成，输入内容仍保留。");
   };
 
@@ -1349,6 +1360,10 @@ export function DialogueShell() {
     const rootInput = [thesisNode.text, antithesisNode.text].filter(Boolean).join("\n\n");
     if (!rootInput.trim()) return;
     retryRef.current = { sessionId: workspaceSessionId, run: () => { void handleGenerateSynthesis(action); } };
+    const attentionVersion = attentionVersionRef.current;
+    setSelectedPair(action);
+    setCombineSourceId(null);
+    setReadingOpen(false);
 
     const requestId = createClientId("req");
     beginPending("synthesis", {
@@ -1401,7 +1416,7 @@ export function DialogueShell() {
         response
       });
       const updatedGraph = branchGraphStore.getGraph();
-      const shouldAutoFocus = shouldAutoFocusPendingResult(activePending, updatedGraph);
+      const shouldAutoFocus = attentionVersion === attentionVersionRef.current && shouldAutoFocusPendingResult(activePending, updatedGraph);
 
       clearPending("synthesis");
       retryRef.current = null;
@@ -1413,13 +1428,9 @@ export function DialogueShell() {
         setComposerParentId(null);
         setWorkspaceStatus(null);
         setSynthesisRevealId(synthesisId);
-        setReadingOpen(true);
         startTransition(() => {
           setFocusedNodeId(synthesisId);
         });
-        window.setTimeout(() => {
-          document.getElementById("conversation-panel-heading")?.focus();
-        }, 0);
       } else {
         setWorkspaceStatus("合流已生成：查看合流记录，或基于它继续追问。");
       }
@@ -1430,6 +1441,7 @@ export function DialogueShell() {
       }
 
       clearPending("synthesis");
+      setSelectedPair(null);
       if (isAbortError(error)) {
         return;
       }
@@ -1459,7 +1471,7 @@ export function DialogueShell() {
     roundtableArtifact && roundtablePendingRequest?.sourceNodeId === roundtableArtifact.sourceNodeId
   );
   const pendingRootPrompt = pending.branches && !pending.branches.composerTargetId && isEmptyWorkspace
-    ? draft.trim()
+    ? submittedTextRef.current
     : null;
   const pendingRootSidebar = pendingRootPrompt
     ? {
@@ -1471,7 +1483,7 @@ export function DialogueShell() {
     ? {
         kind: "branches" as const,
         anchorNodeId: pending.branches.composerTargetId,
-        prompt: draft
+        prompt: submittedTextRef.current
       }
     : pending.synthesis && relevantSynthesisAction && pending.synthesis.synthesisActionKey === relevantSynthesisAction.key
       ? {
@@ -1628,7 +1640,9 @@ export function DialogueShell() {
           pendingPreview={stagePendingPreview}
           synthesisAction={relevantSynthesisAction}
           resolveSynthesisAction={resolveSeedPair}
-          onPreviewSynthesis={handlePreviewSynthesis}
+          onSplit={(id) => { setReadingOpen(false); void handleSubmit(id); }}
+          onInteractionStart={dismissSeedCard}
+          generationBusy={hasPendingRequest}
           onProposeSynthesis={handleGenerateSynthesis}
           onSelect={handleSelectStageNode}
           onPrimaryAction={(nodeId) => {
@@ -1666,13 +1680,8 @@ export function DialogueShell() {
             onSelect={handleSelectNode}
           />
         </div>
-        <div
-          id="dialogue-reading-drawer"
-          className={styles.readingDrawer}
-          data-open={readingOpen ? "true" : "false"}
-          inert={readingOpen ? undefined : true}
-        >
-          {readingOpen && view.currentNode ? (
+        {readingOpen && view.currentNode ? (
+          <SeedReadingCard nodeId={combineSourceId || view.currentNode.id} onDismiss={dismissSeedCard}>
             <SeedInspector key={combineSourceId || view.currentNode.id}
               graph={graphSnapshot.graph} nodeId={combineSourceId || view.currentNode.id}
               combining={Boolean(combineSourceId)} busy={hasPendingRequest}
@@ -1682,8 +1691,8 @@ export function DialogueShell() {
               onCombine={() => { setCombineSourceId(view.currentNode!.id); setSelectedPair(null); }}
               onPick={handleSelectNode}
             />
-          ) : null}
-        </div>
+          </SeedReadingCard>
+        ) : null}
         {retrievalDebugPreview ? (
           <aside className={styles.retrievalDebugPanel} data-testid="dialogue-retrieval-debug" aria-label="Retrieval debug preview">
             <div className={styles.retrievalDebugHeader}>
@@ -1723,15 +1732,6 @@ export function DialogueShell() {
               <p>无可注入片段</p>
             )}
           </aside>
-        ) : null}
-        {selectedPair ? (
-          <div className={styles.seedCombineBar} role="region" aria-label="确认合成" data-testid="dialogue-synthesis-proposal">
-            <span>{selectedPair.label}</span>
-            <button type="button" className={styles.primaryButton} disabled={hasPendingRequest}
-              onClick={() => void handleGenerateSynthesis(selectedPair)}>合成</button>
-            <button type="button" className={styles.secondaryButton} disabled={hasPendingRequest}
-              onClick={() => { setSelectedPair(null); setCombineSourceId(null); }}>取消组合</button>
-          </div>
         ) : null}
         {shouldShowComposer ? (
           <DialogueComposer

@@ -6,8 +6,8 @@ import styles from "./DialogueShell.module.css";
 const STORAGE_KEY = "anicca:seed-guide:v1";
 const STEPS = [
   ["写下一个想法", "在下方输入，生成“正”和“反”，从两种方向看它。"],
-  ["每颗想法都能继续生长", "点选液滴阅读；点“裂变”再生成正反，也可以补充自己的想法。"],
-  ["把任意两颗想法放在一起", "点“组合”选择另一颗，或拖动靠近后确认。触屏可长按液滴再拖动。"]
+  ["每颗想法都能继续生长", "单击阅读，双击直接裂变；触屏点开卡片后点“裂变”。"],
+  ["把任意两颗想法放在一起", "拖动靠近，稍停后松手合成；移开可取消。触屏先长按，也可点“组合”再选另一颗。"]
 ];
 
 export function SeedGuide({ empty, requested, pending }: { empty: boolean; requested: number; pending: boolean }) {

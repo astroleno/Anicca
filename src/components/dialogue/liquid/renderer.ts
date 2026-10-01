@@ -21,7 +21,7 @@ export function buildLiquidFragmentSource(): string {
 
 export type DialogueMetaballRenderer = {
   resize(width: number, height: number, pixelRatio: number): void;
-  render(nodes: DialogueMetaballNode[], timeSeconds: number, cursor?: { center: [number, number]; active: boolean; draggedId?: string | null }): void;
+  render(nodes: DialogueMetaballNode[], timeSeconds: number, interaction?: { draggedId?: string | null }): void;
   dispose(): void;
 };
 
@@ -110,7 +110,7 @@ export function createDialogueMetaballRenderer(
   gl.vertexAttribPointer(coordinate, 3, gl.FLOAT, false, 0, 0);
 
   const locations = new Map<string, WebGLUniformLocation | null>();
-  const uniformNames = ["time", "resolution", "opacity", "_scale", "mouse", "mx", "my"];
+  const uniformNames = ["time", "resolution", "opacity", "_scale"];
   for (let index = 0; index < LIQUID_SEED_SLOTS; index += 1) {
     for (const suffix of ["x", "y", "r", "h", "b", "cr", "cg", "cb"]) {
       uniformNames.push(`s${index}${suffix}`);
@@ -161,7 +161,7 @@ export function createDialogueMetaballRenderer(
       canvas.height = Math.max(1, Math.round(cssHeight * safePixelRatio));
     },
 
-    render(nodes, timeSeconds, cursor) {
+    render(nodes, timeSeconds, interaction) {
       if (disposed) return;
       const count = Math.min(nodes.length, MAX_DIALOGUE_METABALLS, LIQUID_SEED_SLOTS);
       gl.useProgram(program);
@@ -172,7 +172,7 @@ export function createDialogueMetaballRenderer(
       }
 
       const visibleNodes = nodes.slice(0, count);
-      const targets = liquidBlendTargets(visibleNodes, cursor?.draggedId);
+      const targets = liquidBlendTargets(visibleNodes, interaction?.draggedId);
       // time=0 is the reduced-motion path: update geometry without interpolation.
       const amount = previousTime === null || timeSeconds === 0 ? 1
         : 1 - Math.exp(-18 * Math.max(0, timeSeconds - previousTime));
@@ -213,8 +213,6 @@ export function createDialogueMetaballRenderer(
           }
         }
       }
-      set1f("mx", cursor?.active ? cursor.center[0] * 1.75 : 999);
-      set1f("my", cursor?.active ? cursor.center[1] * 1.75 : 999);
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLES, 0, 3);

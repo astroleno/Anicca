@@ -132,7 +132,7 @@ describe("DialogueMetaballLayer", () => {
     expect(rendererMocks.render).toHaveBeenCalledWith(
       [expect.objectContaining({ id: "root", radius: 0.125 })],
       1,
-      expect.objectContaining({ active: false })
+      expect.objectContaining({ draggedId: null })
     );
     expect(onStateChange).toHaveBeenLastCalledWith("ready");
     expect(canvas).toHaveAttribute("data-motion", "animated");
@@ -149,8 +149,8 @@ describe("DialogueMetaballLayer", () => {
     act(() => window.dispatchEvent(new Event("resize")));
     runNextFrame(1600);
 
-    expect(rendererMocks.render).toHaveBeenNthCalledWith(1, expect.any(Array), 0, expect.objectContaining({ active: false }));
-    expect(rendererMocks.render).toHaveBeenNthCalledWith(2, expect.any(Array), 0, expect.objectContaining({ active: false }));
+    expect(rendererMocks.render).toHaveBeenNthCalledWith(1, expect.any(Array), 0, expect.objectContaining({ draggedId: null }));
+    expect(rendererMocks.render).toHaveBeenNthCalledWith(2, expect.any(Array), 0, expect.objectContaining({ draggedId: null }));
     expect(screen.getByTestId("dialogue-metaball-canvas")).toHaveAttribute("data-motion", "reduced");
   });
 
