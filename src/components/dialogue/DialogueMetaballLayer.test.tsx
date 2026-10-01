@@ -58,6 +58,7 @@ describe("DialogueMetaballLayer", () => {
   let webglAvailable = true;
 
   beforeEach(() => {
+    vi.useFakeTimers();
     frames = new Map();
     nextFrameId = 0;
     reducedMotion = false;
@@ -95,7 +96,7 @@ describe("DialogueMetaballLayer", () => {
       dispatchEvent: vi.fn()
     }));
     vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element) {
-      return (this as HTMLElement).dataset.testid === "host"
+      return ["host", "dialogue-metaball-canvas"].includes((this as HTMLElement).dataset.testid || "")
         ? rect(100, 50, 800, 600)
         : rect(350, 275, 150, 150);
     });
@@ -105,6 +106,7 @@ describe("DialogueMetaballLayer", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
@@ -126,26 +128,45 @@ describe("DialogueMetaballLayer", () => {
 
     runNextFrame();
 
-    expect(rendererMocks.resize).toHaveBeenCalledWith(800, 600, 1.25);
+    expect(rendererMocks.resize).toHaveBeenCalledWith(800, 600, 0.8);
     expect(rendererMocks.render).toHaveBeenCalledWith(
       [expect.objectContaining({ id: "root", radius: 0.125 })],
-      1
+      1,
+      expect.objectContaining({ active: false })
     );
     expect(onStateChange).toHaveBeenLastCalledWith("ready");
     expect(canvas).toHaveAttribute("data-motion", "animated");
     expect(canvas).toHaveAttribute("data-fused-pairs", "");
   });
 
-  it("freezes shader time while continuing geometry frames for reduced motion", () => {
+  it("stops reduced-motion rendering until geometry changes", () => {
     reducedMotion = true;
     render(<Harness onStateChange={vi.fn()} />);
 
     runNextFrame(1000);
+    expect(frames.size).toBe(0);
+    expect(rendererMocks.render).toHaveBeenCalledTimes(1);
+    act(() => window.dispatchEvent(new Event("resize")));
     runNextFrame(1600);
 
-    expect(rendererMocks.render).toHaveBeenNthCalledWith(1, expect.any(Array), 0);
-    expect(rendererMocks.render).toHaveBeenNthCalledWith(2, expect.any(Array), 0);
+    expect(rendererMocks.render).toHaveBeenNthCalledWith(1, expect.any(Array), 0, expect.objectContaining({ active: false }));
+    expect(rendererMocks.render).toHaveBeenNthCalledWith(2, expect.any(Array), 0, expect.objectContaining({ active: false }));
     expect(screen.getByTestId("dialogue-metaball-canvas")).toHaveAttribute("data-motion", "reduced");
+  });
+
+  it("reuses geometry during idle material animation and releases its timer", () => {
+    const { unmount } = render(<Harness onStateChange={vi.fn()} />);
+    runNextFrame(1000);
+    const geometryReads = vi.mocked(Element.prototype.getBoundingClientRect).mock.calls.length;
+    expect(frames.size).toBe(0);
+    act(() => vi.advanceTimersByTime(90));
+    runNextFrame(1090);
+    expect(rendererMocks.render).toHaveBeenCalledTimes(2);
+    expect(Element.prototype.getBoundingClientRect).toHaveBeenCalledTimes(geometryReads);
+    unmount();
+    act(() => vi.advanceTimersByTime(1000));
+    expect(frames.size).toBe(0);
+    expect(rendererMocks.render).toHaveBeenCalledTimes(2);
   });
 
   it("reports fallback when renderer construction fails", () => {

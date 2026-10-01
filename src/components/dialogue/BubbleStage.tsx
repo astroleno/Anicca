@@ -1,15 +1,16 @@
 "use client";
 
-import { PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useDialogueUiStore } from "@/features/dialectic/store";
-import { DialogueStageNode } from "@/features/dialectic/viewModel";
+import { findSynthesisGestureCandidate } from "@/features/dialectic/gestures";
+import { DialogueStageNode, DialogueSynthesisAction } from "@/features/dialectic/viewModel";
 import { StagePan, StagePoint } from "@/types/anicca";
-import {
-  DialogueMetaballLayer,
-  type DialogueMetaballRendererState
-} from "./DialogueMetaballLayer";
+import dynamic from "next/dynamic";
+import type { DialogueMetaballRendererState } from "./DialogueMetaballLayer";
 import styles from "./DialogueShell.module.css";
 import type { MetaballRole } from "./metaball/model";
+
+const DialogueMetaballLayer = dynamic(() => import("./DialogueMetaballLayer").then(module => module.DialogueMetaballLayer), { ssr: false });
 
 type BubbleStageProps = {
   layoutKey: string;
@@ -20,6 +21,10 @@ type BubbleStageProps = {
   convergenceEventId?: string | null;
   eventNodeId?: string | null;
   pendingPreview?: StagePendingPreview | null;
+  synthesisAction?: DialogueSynthesisAction | null;
+  onProposeSynthesis?: (action: DialogueSynthesisAction) => void;
+  resolveSynthesisAction?: (left: string, right: string) => DialogueSynthesisAction | null;
+  onPreviewSynthesis?: (action: DialogueSynthesisAction) => void;
   emptyAction?: {
     label: string;
     onTrigger: () => void;
@@ -111,12 +116,17 @@ export function BubbleStage({
   convergenceEventId = null,
   eventNodeId = null,
   pendingPreview = null,
+  synthesisAction = null,
+  onProposeSynthesis,
+  resolveSynthesisAction,
+  onPreviewSynthesis,
   emptyAction = null
 }: BubbleStageProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const nodeRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const activePointerTargetRef = useRef<HTMLElement | null>(null);
+  const touchHoldRef = useRef<{ timer: number; pointerId: number; x: number; y: number } | null>(null);
   const stageLayout = useDialogueUiStore((state) => state.stageLayouts[layoutKey] || null);
   const setStageNodePosition = useDialogueUiStore((state) => state.setStageNodePosition);
   const setStagePan = useDialogueUiStore((state) => state.setStagePan);
@@ -125,6 +135,8 @@ export function BubbleStage({
   const [isNarrowViewport, setIsNarrowViewport] = useState(false);
   const [metaballRendererState, setMetaballRendererState] =
     useState<DialogueMetaballRendererState>("loading");
+  const [synthesisCandidateId, setSynthesisCandidateId] = useState<string | null>(null);
+  const [synthesisProposal, setSynthesisProposal] = useState<DialogueSynthesisAction | null>(null);
   const livePanRef = useRef<StagePan | null>(null);
   const didDragRef = useRef(false);
   const suppressClickUntilRef = useRef(0);
@@ -149,15 +161,34 @@ export function BubbleStage({
     : hasSynthesisRecord
       ? "合流记录已保留。"
       : hasThesis && hasAntithesis
-        ? "拖动液滴，靠近时会自然融合。"
+        ? "拖动正与反靠近可预览液桥；松手后仍需确认合成。"
         : null;
   const emptyStageHint = isCoarsePointer
     ? "写下母题，点选节点查看谱系。"
     : "写下母题，让正反开始生成。";
-  const usesCompactGrowthLayout = isNarrowViewport && hasGrowthPerspectives;
+  const usesCompactGrowthLayout = isNarrowViewport;
   const stageLayoutMode = usesCompactGrowthLayout ? "compact" : "wide";
   const stageLayoutViewport = stageLayoutMode === "compact" ? stageLayout?.compact : stageLayout;
   const resolvedPan = stageLayoutViewport?.pan || DEFAULT_STAGE_PAN;
+
+  useEffect(() => {
+    const cancel = () => { if (touchHoldRef.current) window.clearTimeout(touchHoldRef.current.timer); touchHoldRef.current = null; };
+    const move = (event: PointerEvent) => {
+      const hold = touchHoldRef.current;
+      if (hold && event.pointerId === hold.pointerId && Math.hypot(event.clientX - hold.x, event.clientY - hold.y) > 10) cancel();
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", cancel);
+    window.addEventListener("pointercancel", cancel);
+    window.addEventListener("blur", cancel);
+    return () => {
+      cancel();
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", cancel);
+      window.removeEventListener("pointercancel", cancel);
+      window.removeEventListener("blur", cancel);
+    };
+  }, [layoutKey]);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
@@ -212,6 +243,19 @@ export function BubbleStage({
     );
   };
 
+  const positionedNodes = useMemo(() => nodes.map((node) => {
+    const defaultPosition = usesCompactGrowthLayout && node.compactSeedX !== undefined && node.compactSeedY !== undefined
+      ? { x: node.compactSeedX, y: node.compactSeedY }
+      : { x: node.seedX, y: node.seedY };
+    return {
+      node,
+      position: clampNodePosition(
+        stageLayoutViewport?.nodePositions[node.id] || defaultPosition,
+        node.isGrowthPerspective ? GROWTH_NODE_MAX_Y_PERCENT : NODE_MAX_Y_PERCENT
+      )
+    };
+  }), [nodes, stageLayoutViewport, usesCompactGrowthLayout]);
+
   const setTrackPanPreview = useCallback((pan: StagePan) => {
     const track = trackRef.current;
     if (!track) {
@@ -243,6 +287,8 @@ export function BubbleStage({
     didDragRef.current = false;
     suppressClickUntilRef.current = 0;
     activePointerTargetRef.current = null;
+    setSynthesisCandidateId(null);
+    setSynthesisProposal(null);
   }, [clearNodeDragPreview, layoutKey]);
 
   useEffect(() => {
@@ -250,6 +296,7 @@ export function BubbleStage({
       return;
     }
 
+    const gestureRect = viewportRef.current?.getBoundingClientRect();
     const handlePointerMove = (event: PointerEvent) => {
       if (event.pointerId !== gesture.pointerId) {
         return;
@@ -260,8 +307,8 @@ export function BubbleStage({
         return;
       }
 
-      const rect = viewport.getBoundingClientRect();
-      if (!rect.width || !rect.height) {
+      const rect = gestureRect;
+      if (!rect?.width || !rect.height) {
         return;
       }
 
@@ -269,11 +316,27 @@ export function BubbleStage({
         if (Math.abs(event.clientX - gesture.startClientX) > 4 || Math.abs(event.clientY - gesture.startClientY) > 4) {
           didDragRef.current = true;
         }
+        const offsetX = event.clientX - gesture.startClientX;
+        const offsetY = event.clientY - gesture.startClientY;
         setNodeDragPreview(
           gesture.nodeId,
-          event.clientX - gesture.startClientX,
-          event.clientY - gesture.startClientY
+          offsetX,
+          offsetY
         );
+        const draggedNode = nodes.find((node) => node.id === gesture.nodeId);
+        const nextPosition = clampNodePosition({
+          x: gesture.startPosition.x + (offsetX / rect.width) * 100,
+          y: gesture.startPosition.y + (offsetY / rect.height) * 100
+        }, draggedNode?.isGrowthPerspective ? GROWTH_NODE_MAX_Y_PERCENT : NODE_MAX_Y_PERCENT);
+        const candidate = findSynthesisGestureCandidate({
+          draggedNodeId: gesture.nodeId,
+          draggedPosition: nextPosition,
+          nodes: positionedNodes,
+          action: synthesisAction,
+          resolveAction: resolveSynthesisAction,
+          viewport: rect
+        });
+        setSynthesisCandidateId(candidate?.counterpartNodeId || null);
         return;
       }
 
@@ -290,7 +353,7 @@ export function BubbleStage({
       setTrackPanPreview(nextPan);
     };
 
-    const handlePointerUp = (event: PointerEvent) => {
+    const finishPointer = (event: PointerEvent, cancelled: boolean) => {
       if (event.pointerId !== gesture.pointerId) {
         return;
       }
@@ -307,8 +370,24 @@ export function BubbleStage({
             }, draggedNode?.isGrowthPerspective ? GROWTH_NODE_MAX_Y_PERCENT : NODE_MAX_Y_PERCENT)
           : gesture.startPosition;
 
-        setStageNodePosition(layoutKey, gesture.nodeId, nextPosition, stageLayoutMode);
-      } else {
+        if (!cancelled) {
+          setStageNodePosition(layoutKey, gesture.nodeId, nextPosition, stageLayoutMode);
+          const candidate = rect?.width && rect.height
+            ? findSynthesisGestureCandidate({
+                draggedNodeId: gesture.nodeId,
+                draggedPosition: nextPosition,
+                nodes: positionedNodes,
+                action: synthesisAction,
+                resolveAction: resolveSynthesisAction,
+                viewport: rect
+              })
+            : null;
+          if (didDragRef.current && candidate) {
+            if (onPreviewSynthesis) onPreviewSynthesis(candidate.action);
+            else setSynthesisProposal(candidate.action);
+          }
+        }
+      } else if (!cancelled) {
         setStagePan(layoutKey, livePanRef.current || gesture.startPan, stageLayoutMode);
       }
 
@@ -327,12 +406,16 @@ export function BubbleStage({
       activePointerTargetRef.current = null;
       livePanRef.current = null;
       didDragRef.current = false;
+      setSynthesisCandidateId(null);
       setGesture(null);
     };
 
+    const handlePointerUp = (event: PointerEvent) => finishPointer(event, false);
+    const handlePointerCancel = (event: PointerEvent) => finishPointer(event, true);
+
     window.addEventListener("pointermove", handlePointerMove);
     window.addEventListener("pointerup", handlePointerUp);
-    window.addEventListener("pointercancel", handlePointerUp);
+    window.addEventListener("pointercancel", handlePointerCancel);
 
     return () => {
       if (gesture.kind === "node") {
@@ -340,7 +423,7 @@ export function BubbleStage({
       }
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
-      window.removeEventListener("pointercancel", handlePointerUp);
+      window.removeEventListener("pointercancel", handlePointerCancel);
     };
   }, [
     clearNodeDragPreview,
@@ -351,7 +434,11 @@ export function BubbleStage({
     setStageNodePosition,
     setStagePan,
     setTrackPanPreview,
-    stageLayoutMode
+    stageLayoutMode,
+    synthesisAction,
+    resolveSynthesisAction,
+    onPreviewSynthesis,
+    positionedNodes
   ]);
 
   const handleStagePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -361,7 +448,6 @@ export function BubbleStage({
     if (event.pointerType === "touch") {
       return;
     }
-
     event.preventDefault();
     if (typeof event.currentTarget.setPointerCapture === "function") {
       event.currentTarget.setPointerCapture(event.pointerId);
@@ -382,9 +468,19 @@ export function BubbleStage({
       return;
     }
     if (event.pointerType === "touch") {
+      const target = event.currentTarget;
+      const { pointerId, clientX, clientY } = event;
+      if (touchHoldRef.current) window.clearTimeout(touchHoldRef.current.timer);
+      touchHoldRef.current = { pointerId, x: clientX, y: clientY, timer: window.setTimeout(() => {
+        touchHoldRef.current = null;
+        target.setPointerCapture?.(pointerId);
+        activePointerTargetRef.current = target;
+        didDragRef.current = false;
+        setGesture({ kind: "node", pointerId, nodeId: node.id,
+          startClientX: clientX, startClientY: clientY, startPosition: getNodePosition(node) });
+      }, 350) };
       return;
     }
-
     event.preventDefault();
     if (typeof event.currentTarget.setPointerCapture === "function") {
       event.currentTarget.setPointerCapture(event.pointerId);
@@ -410,10 +506,6 @@ export function BubbleStage({
     onPrimaryAction?.(node.id);
   };
 
-  const positionedNodes = nodes.map((node) => ({
-    node,
-    position: getNodePosition(node)
-  }));
   const focusStageNode = positionedNodes.find(({ node }) => node.relation === "focus") || null;
   const pendingAnchor = pendingPreview?.kind === "branches"
     ? positionedNodes.find(({ node }) => node.id === pendingPreview.anchorNodeId) || focusStageNode
@@ -460,6 +552,7 @@ export function BubbleStage({
         <h2 id="dialogue-stage-heading">当前结构</h2>
       </div>
       <div className={styles.stageCanvas}>
+        <DialogueMetaballLayer hostRef={trackRef} onStateChange={setMetaballRendererState} />
         <div className={styles.stageGlow} />
         <div className={styles.stageGlowSecondary} />
         <div
@@ -492,10 +585,6 @@ export function BubbleStage({
             data-testid="dialogue-stage-track"
             data-metaball-renderer={metaballRendererState}
           >
-            <DialogueMetaballLayer
-              hostRef={trackRef}
-              onStateChange={setMetaballRendererState}
-            />
             {pendingBranchNodes ? (
               <div
                 className={styles.stagePendingLayer}
@@ -511,6 +600,7 @@ export function BubbleStage({
                     data-metaball-surface="empty-root"
                     data-metaball-role="user"
                     data-metaball-relation="focus"
+                    data-liquid-color-key={pendingBranchNodes.prompt}
                     aria-hidden="true"
                   >
                     <strong>{pendingBranchNodes.prompt}</strong>
@@ -524,6 +614,7 @@ export function BubbleStage({
                   data-metaball-surface="pending-thesis"
                   data-metaball-role="thesis"
                   data-metaball-relation="child"
+                  data-liquid-color-key={pendingBranchNodes.prompt}
                   aria-hidden="true"
                 >
                   <strong>正</strong>
@@ -536,6 +627,7 @@ export function BubbleStage({
                   data-metaball-surface="pending-antithesis"
                   data-metaball-role="antithesis"
                   data-metaball-relation="child"
+                  data-liquid-color-key={pendingBranchNodes.prompt}
                   aria-hidden="true"
                 >
                   <strong>反</strong>
@@ -558,12 +650,53 @@ export function BubbleStage({
                   data-metaball-surface="pending-synthesis"
                   data-metaball-role="synthesis"
                   data-metaball-relation="decorative"
+                  data-liquid-color-key={pendingSynthesisMark.label}
                   aria-hidden="true"
                 >
                   <strong>合</strong>
                   <small>合流中</small>
                 </div>
                 <p className={styles.stagePendingCaption}>正在收束「{pendingSynthesisMark.label}」。</p>
+              </div>
+            ) : null}
+            {synthesisCandidateId ? (
+              <p
+                className={styles.synthesisBridgePreview}
+                role="status"
+                aria-live="polite"
+                data-testid="dialogue-synthesis-bridge-preview"
+              >
+                松手后可将这两颗 seed 合成。
+              </p>
+            ) : null}
+            {synthesisProposal ? (
+              <div
+                className={styles.synthesisProposal}
+                role="dialog"
+                aria-label="确认合成"
+                data-testid="dialogue-synthesis-proposal"
+              >
+                <span>液桥只是预览，确认后才会生成“合”。</span>
+                <div>
+                  <button
+                    type="button"
+                    className={styles.primaryButton}
+                    onClick={() => {
+                      const proposal = synthesisProposal;
+                      setSynthesisProposal(null);
+                      onProposeSynthesis?.(proposal);
+                    }}
+                  >
+                    确认合成
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.secondaryButton}
+                    onClick={() => setSynthesisProposal(null)}
+                  >
+                    取消
+                  </button>
+                </div>
               </div>
             ) : null}
             {!nodes.length && !pendingBranchNodes ? (
@@ -576,6 +709,7 @@ export function BubbleStage({
                     data-metaball-surface="empty-root"
                     data-metaball-role="user"
                     data-metaball-relation="focus"
+                    data-liquid-color-key="empty-theme"
                   >
                     <span>主题</span>
                     <small>点此输入</small>
@@ -586,6 +720,7 @@ export function BubbleStage({
                     data-metaball-surface="pending-thesis"
                     data-metaball-role="thesis"
                     data-metaball-relation="decorative"
+                    data-liquid-color-key="empty-theme"
                     aria-hidden="true"
                   >
                     <span>正</span>
@@ -596,6 +731,7 @@ export function BubbleStage({
                     data-metaball-surface="pending-antithesis"
                     data-metaball-role="antithesis"
                     data-metaball-relation="decorative"
+                    data-liquid-color-key="empty-theme"
                     aria-hidden="true"
                   >
                     <span>反</span>
@@ -644,6 +780,7 @@ export function BubbleStage({
                   data-metaball-surface={node.id}
                   data-metaball-role={getMetaballRole(node)}
                   data-metaball-relation={node.relation}
+                  data-liquid-color-key={node.preview || node.label}
                   aria-label={buildStageNodeAriaLabel(node)}
                   style={
                     {
@@ -655,6 +792,7 @@ export function BubbleStage({
                   }
                   onClick={() => handleNodeClick(node)}
                   onPointerDown={(event) => handleNodePointerDown(event, node)}
+                  onContextMenu={(event) => event.preventDefault()}
                 >
                   <span className={styles.stageNodeInner}>
                     <strong>

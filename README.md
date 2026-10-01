@@ -6,15 +6,22 @@
 
 —— 一个 local-first 的“正 / 反 / 合”对话实验空间。
 
-当前主产品路径已经切到 `/dialogue`：输入一个母题，先生成 `正 / 反` 两条分叉，再在同一条谱系里决定是否收束成 `合`。workspace 会以 local-first graph 形式保存在本地，支持恢复焦点、续写父节点和追踪来源。
+当前主产品路径是 `/dialogue`：写一个想法，生成 `正 / 反`；任意两颗不同的 seed 都可以组合成 `合`，每颗 seed 都可以直接裂变出新的 `正 / 反`。workspace 以 local-first graph 保存在本地，支持恢复焦点、继续写和追踪双来源。
 
-`/newframe`、`/raymarching`、`/liquid`、`/mochi` 继续保留为视觉 / shader 实验入口，但不再承担主产品职责。
+视觉实验集中在 `/labs`，旧的 `/newframe`、`/raymarching`、`/liquid`、`/mochi` 地址会跳转到对应实验页。
 
-当前集成状态（2026-08-09）：
+当前集成状态（2026-10-01）：
 
 - `0.1.0` release tag 已指向 mainline closeout `14acf489`。
 - Phase 2 workspace registry + import/export + create/rename/switch + telemetry 已关闭。
-- `/dialogue` 已接入珍珠质感 Metaball renderer，并保留 DOM 交互、reduced-motion 与 WebGL fallback。
+- `/` 与 `/dialogue` 已切换到浅色液态主界面：全屏舞台、按需阅读/谱系面板与常驻底部输入。
+- `/dialogue` 已接入从仓库内参考源码迁移的 Shader Park 液态材质，并保留 DOM 语义层、资源清理、reduced-motion 与 WebGL fallback。
+- 想法、正、反、合均可直接裂变，或作为补充输入的父节点；同角色、跨主题也可组合。拖拽靠近给出预览，点选组合也可完成，最终写图需显式确认。
+- 常驻界面保留种子舞台与一个输入框；历史、工作区和圆桌等放入“更多”。舞台最多绘制 8 颗种子，完整历史仍保留。
+- 液态层空闲时降频、交互时恢复帧刷新，并复用几何数据；reduced-motion 下仅在场景变化时重绘。
+- 材质保留 `ref/sketch1638178` 的八步近似与粉彩色场；按压、拖动和新种子出现使用同一弹簧状态驱动液体与 DOM，不用严格表面裁剪替换原作的柔边效果。
+- 等待时显示真实已用时间，可取消；失败保留输入并支持重试原操作。初次空工作区提供可关闭的三步提示，“更多”可重新打开。
+- 触屏可长按液滴后拖动预览组合；松手只提出组合，确认后才调用模型。
 - Roundtable 已作为 opt-in sidecar 并入对话场，具备持久化、深挖、错误恢复与 stale-response 防护。
 - GitHub Actions 已覆盖 lint、双 TypeScript、全量 Vitest、production build 与 Chromium visual smoke。
 
@@ -24,10 +31,11 @@
 
 - **母题进入谱系**：用户输入一句话，它成为一个可继续展开的主题节点。
 - **两分形响应**：系统围绕同一母题生成 `正` 与 `反` 两条 assistant 分支。
-- **显式收束为合**：只有当同一母题下的 `正 / 反` 都存在时，用户才决定是否生成 `合`。
+- **自由组合为合**：任意两颗不同 seed 均可组合，保留双方角色与来源，不伪装成一正一反。
+- **直接裂变与继续写**：点“裂变”直接生成两个子节点；点“继续写”可补充文字。生成后输入框回到新想法。
 - **本地恢复工作区**：graph、焦点节点和续写目标会一起持久化，刷新后仍能回到之前的上下文。
 
-美学取向：深色舞台、漂浮光晕、低噪音 chrome，以及把注意力尽量留给 graph 本身。
+美学取向：浅色流动背景、半透明柔边种子、克制的界面 chrome 与充分留白，把注意力留给当前思考及其关系。
 
 ---
 
@@ -47,7 +55,7 @@
 - UI：React 18 + CSS Modules
 - 状态：`zustand`
 - API：`/api/branches`、`/api/synthesis`、`/api/chat`
-- 模型接入：OpenAI Responses API
+- 模型接入：OpenAI Responses / Chat Completions；正反合链路可单独配置兼容服务
 - 本地持久化：`localStorage` workspace registry（已在 mainline 生效）
 
 ### 3.2 主线分层
@@ -55,7 +63,7 @@
 ```
 ┌──────────────────────────────────────────────┐
 │                /dialogue 页面                │
-│ Hero / Sidebar / Metaball Stage / Panel / Composer │
+│  Liquid Stage / On-demand Drawers / Composer       │
 ├──────────────────────────────────────────────┤
 │             Dialectic View Model             │
 │  breadcrumb / sidebar tree / synthesis affordance │
@@ -73,10 +81,10 @@
 
 ### 3.3 实验入口
 
-- `/newframe`：旧 metaball / WebGPU 视觉实验
-- `/raymarching`、`/liquid`、`/mochi`：独立 shader / visual playground
+- `/labs/newframe`：metaball / WebGPU 视觉实验
+- `/labs/raymarching`、`/labs/liquid`、`/labs/mochi`：独立 shader / visual playground
 
-这些页面继续保留，但都不再定义主产品 contract。
+这些页面继续保留，但都不再定义主产品 contract。实验导航可回到目录和主对话页。场景只在挂载时初始化，拖动更新现有数据；退出时释放程序、材质、纹理、订阅和动画。WebGPU 异步初始化可取消，静态画布仅按需重绘。
 
 ### 3.4 关键设计哲学
 
@@ -202,18 +210,18 @@ active workspace key 单独保存：
 - `stageLayouts`：按 focus snapshot 保存 stage pan 和节点位置
 - `graph.entryIds`：多个主题入口
 - `node.branchType`：仅 assistant 节点使用，取值为 `正 | 反 | 合`
-- `meta.sourceNodeIds`：`合` 节点的双来源 assistant
-- `meta.lineageParentId`：`合` 节点共享的上游 user anchor
+- `meta.sourceNodeIds`：`合` 节点的两颗来源 seed，角色不限
+- `meta.lineageParentId`：可选的共同上游 user anchor；跨主题不强造共同母题
 
 ---
 
 ## 五、正 / 反 / 合主线流程
 
 1. 用户在 composer 输入母题。
-2. `/api/branches` 根据当前 focus 上下文返回结构化 `正 / 反`。
+2. `/api/branches` 根据显式选定的写作目标上下文返回结构化 `正 / 反`。
 3. 前端在 graph 中创建一个新的 user 节点，并挂上同母题下的两条 assistant 分支。
-4. 当同一母题同时拥有 `正` 与 `反` 时，UI 才暴露“生成合”动作。
-5. `/api/synthesis` 返回 `合` 后，前端创建一个带 `sourceNodeIds + lineageParentId` 的 synthesis assistant。
+4. 选择任意 seed 的“组合”，再选另一颗并确认；同角色、跨主题、想法和合都可以参与。
+5. `/api/synthesis` 使用两来源的真实角色与双方祖先上下文，返回 `合` 后保存 `sourceNodeIds`；存在共同母题时才保存 `lineageParentId`。直接“裂变”则把返回的正反直接挂在所选 seed 下，不插入虚构提问。
 6. active workspace snapshot 会把 graph、focus 和 composer target 一起持久化，刷新后通过 registry 恢复。
 
 这条主线的主产品 contract 就是 `正 / 反 / 合`。
@@ -222,27 +230,32 @@ active workspace key 单独保存：
 
 ## 六、界面结构与交互
 
-`/dialogue` 当前是一个舞台优先的主线壳：
+`/dialogue` 当前是一个全屏舞台优先的浅色液态主线壳：
 
-- 左侧：谱系树、breadcrumb、当前 focus path
-- 中央：Three.js raymarching Metaball stage，用连续液桥展示节点接近关系；真实按钮仍承担点击、拖拽、键盘与无障碍语义
-- 右侧：当前节点详情、来源节点、显式 synthesis affordance
-- 底部：persistent composer，可从 root 或当前 assistant 继续展开
-- 顶部：workspace bar，支持新建、重命名、切换最近工作区，以及导出/导入当前 bundle
+- 中央：Shader Park 液态种子舞台，用柔边融合和液桥表达接近关系；同位 DOM 按钮承担点选、拖拽、键盘与无障碍语义
+- 桌面侧面板 / 手机底部面板：按需阅读正文、双来源与当前节点动作，不再常驻三栏
+- 按需谱系：保留 breadcrumb、完整历史与当前 focus path；可见曲面上限不会截断 graph 历史
+- 底部：单输入框，可写新想法或基于任意 seed 继续写；直接裂变在种子面板完成
+- 顶部：紧凑 workspace 入口，支持新建、重命名、切换最近工作区，以及导出/导入当前 bundle
 - 旁路：Roundtable Theater 作为当前节点的持久化 sidecar，可深挖、收起或把下一问带回主线，不直接写入 canonical `正 / 反 / 合`
 
 核心交互：
 
 - 输入一句话，生成下一轮 `正 / 反`
 - 点击任意节点，更新 focus、panel 和 composer target
-- 当 `正 / 反` 成对存在时，显式点击生成 `合`
+- 任意两颗不同 seed 均可显式组合为 `合`；每颗 seed 都能直接裂变
+- 拖动一方靠近另一方时只显示合成候选；松手后仍由明确动作确认，不因碰撞直接改图
 - 刷新页面后，恢复上一轮 workspace state
 
 ---
 
 ## 七、主线渲染与视觉实验
 
-`/dialogue` 已接入主线专用 Metaball renderer：最多 8 个可见曲面、52 步 raymarch、珍珠 Fresnel 材质，desktop DPR 上限 1.25、mobile 上限 0.9。WebGL 不可用或 context lost 时自动回退到 CSS blob；reduced-motion 会冻结材质时间，但不会冻结几何和 DOM 交互。
+`/dialogue` 已接入主线专用液态 renderer：固定 8 个 GPU uniform 槽位，材质源码来自 [`reference/anicca-liquid-frontend`](reference/anicca-liquid-frontend/README.md)，运行时只消费场景投影，不拥有 graph。渲染器限制像素比并实现 `resize / render / dispose`；WebGL 不可用或 context lost 时自动回退到 CSS blob，reduced-motion 会冻结材质时间，但不会冻结 DOM 交互。
+
+移动 Web 使用实际 visual viewport、safe-area 与输入区高度计算可用舞台；页面失焦或进入后台时暂停动画。近期微信目标是微信内 H5，业务/API/布局层已保持平台边界；原生小程序页面、Canvas 和存储适配不在本轮实现中，微信 iOS/Android 真机尚未验收。
+
+旧版深色珍珠前端保留在 `codex/dialogue-metaball-gummy`（`5321273`）。该快照已在隔离目录通过 production build，并用浏览器确认 `/dialogue` 的 shell、舞台和 WebGL canvas 可启动，因此没有另建重复备份分支。检查旧版时应在干净的独立 clone 中切换，避免覆盖当前未提交工作；回退只取前端及必要依赖，不整体回退 API、模型配置、评测或用户数据。
 
 仓库仍保留一组隔离的实验入口，用于继续探索其他液态气泡、raymarching 和 WebGPU 表现：
 
@@ -296,6 +309,8 @@ npm run dev
 - `http://localhost:3000/dialogue` -> 正反合主线
 - `http://localhost:3000/newframe` -> 旧视觉实验入口
 
+主线视觉与交互来源见 [`reference/anicca-liquid-frontend`](reference/anicca-liquid-frontend/README.md)；生产页面没有直接加载该参考目录，而是将材质、配色和布局意图适配到现有 Next.js 架构。
+
 ---
 
 ## 十、验证门
@@ -307,16 +322,18 @@ npm run dev
 - `npm run build`
 - `npm run test:visual-dialogue`
 
+本地开发服务运行时，可用 `ANICCA_NEXT_DIST_DIR=.cache/next-seed-qa npm run build` 独立构建，再使用相同的 `ANICCA_NEXT_DIST_DIR` 配合 `DIALOGUE_SMOKE_SERVER_MODE=start` 跑视觉验收，避免共享 `.next`。当前视觉脚本以拦截 API 的方式覆盖 9 组桌面/触屏/手机/键盘视口、任意种子组合、直接裂变、持久化，以及液态融合、reduced-motion、WebGL fallback、失败重试/触屏长按、实验画布资源生命周期这 5 项专项检查，不调用真实模型。
+
 GitHub Actions 会在每个 pull request 和 `main` push 上运行双通道门禁：一条执行 lint、生产/测试 TypeScript、全量 Vitest 与 production build；另一条在 Chromium 中执行 production dialogue visual smoke，并保留 14 天视觉证据。
 
 主线 rollout 关注的人工检查项：
 
 - `/` 是否正确跳到 `/dialogue`
 - `/newframe` 是否有清晰的 legacy handoff
-- tablet / mobile 下 shell 是否仍可操作
+- desktop / tablet / 320–430px mobile 下常驻输入、按需面板和触控目标是否仍可操作
 - stale response 是否被丢弃
-- `合` 的 breadcrumb / sidebar / panel / composer 是否保持一致
-- Metaball 靠近融合、拉远分离时 graph node/edge 数量是否保持不变
+- `合` 的谱系、阅读面板、来源与 composer target 是否保持一致
+- 液态种子靠近融合、拉远分离以及候选预览时 graph node/edge 数量是否保持不变
 - WebGL disabled 与 context lost 时 CSS fallback 是否仍可点击、聚焦和阅读
 - Roundtable drawer 的深挖成功/失败、焦点返回、移动端布局与 reduced-motion 是否可用
 
@@ -328,7 +345,8 @@ GitHub Actions 会在每个 pull request 和 `main` push 上运行双通道门�
 - 阶段二：workspace registry foundation（`closed`，2026-04-29）
 - 阶段三：workspace bundle import / export（`closed`，2026-04-29）
 - 阶段四：主线 Metaball renderer 与 Roundtable sidecar（`closed`，2026-08-09）
-- 阶段五：可选云同步、分享与部署能力
+- 阶段五：浅色液态主界面、续问裂变、按需阅读与移动 Web（`implemented`，2026-10-01；微信真机待验收）
+- 阶段六：可选云同步、分享与部署能力
 
 ---
 
@@ -340,6 +358,8 @@ GitHub Actions 会在每个 pull request 和 `main` push 上运行双通道门�
 - `docs/superpowers/plans/2026-04-24-anicca-dialectic-v2-frontend-implement-plan.md`
 - `docs/superpowers/plans/2026-04-24-anicca-dialectic-v2-ports-rollout-implement-plan.md`
 - `docs/superpowers/plans/2026-04-25-anicca-dialectic-v2-workspace-phase-implement-plan.md`
+- `docs/superpowers/plans/2026-10-01-anicca-liquid-frontend-integration-plan.md`
+- `reference/anicca-liquid-frontend/README.md`
 - `ref/mochi.ts`
 
 ---

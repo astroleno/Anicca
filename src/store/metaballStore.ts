@@ -49,7 +49,6 @@ function makeInitialBalls(): Ball2D[] {
       active: true
     })
   }
-  console.log('初始球数量:', balls.length, balls.map(b => ({ id: b.id, pos: b.pos, radius: b.radius })))
   return balls
 }
 
@@ -137,17 +136,14 @@ export const useMetaballStore = create<State>((set, get) => ({
     const A = s.balls.find(x => x.id === a)
     const B = s.balls.find(x => x.id === b)
     if (!A || !B) {
-      console.log('合并失败: 找不到球', { a, b, A, B })
       return
     }
-    console.log('合并前:', s.balls.length, '个球')
     const wa = A.radius*A.radius, wb = B.radius*B.radius
     const pos: [number, number] = [ (A.pos[0]*wa + B.pos[0]*wb)/(wa+wb), (A.pos[1]*wa + B.pos[1]*wb)/(wa+wb) ]
     const radius = Math.sqrt(wa + wb)
     const idNew = s.nextId
     const C: Ball2D = { id: idNew, parent: -1, pos, radius, level: Math.max(A.level, B.level), label: `${A.label || A.id}+${B.label || B.id}`, active: true }
     const newBalls = s.balls.filter(x => x.id !== a && x.id !== b).concat([C])
-    console.log('合并后:', newBalls.length, '个球', { 新球: C })
     set({ balls: newBalls, nextId: s.nextId + 1 })
     // 合并后更新自适应缩放
     get().updateAdaptiveScale()

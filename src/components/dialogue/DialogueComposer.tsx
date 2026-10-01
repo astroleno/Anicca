@@ -1,212 +1,84 @@
 "use client";
 
-import { FormEvent, useId, type Ref } from "react";
-import { DialogueErrorState } from "@/features/dialectic/store";
-import { DialogueComposerTarget } from "@/features/dialectic/viewModel";
+import { useEffect, useState, type Ref } from "react";
+import { DIALECTIC_INPUT_MAX_LENGTH } from "@/features/dialectic/api";
+import type { DialogueErrorState } from "@/features/dialectic/store";
+import type { DialogueComposerTarget } from "@/features/dialectic/viewModel";
 import styles from "./DialogueShell.module.css";
 
-type DialogueComposerProps = {
+type Props = {
   target: DialogueComposerTarget;
   value: string;
   disabled: boolean;
   pendingAction: string | null;
-  nextStepChoice?: DialogueComposerNextStepChoice | null;
   isEmptyStart?: boolean;
   emptyStartOpen?: boolean;
   targetFrozen?: boolean;
-  targetFrozenReason?: "branches" | "synthesis" | null;
+  targetFrozenReason?: string | null;
   errorState: DialogueErrorState | null;
+  rootRef?: Ref<HTMLFormElement>;
   textareaRef?: Ref<HTMLTextAreaElement>;
-  onChange: (value: string) => void;
-  onSubmit: () => void;
-  onGrowthSubmit?: () => void;
-};
-
-type DialogueComposerNextStepChoice = {
-  currentLabel: string;
-  thesisLabel: string;
-  antithesisLabel: string;
-  thesisSummary: string;
-  antithesisSummary: string;
-  synthesisLabel: string;
-  synthesisBusy: boolean;
-  synthesisDisabled: boolean;
-  onSelectThesis: () => void;
-  onSelectAntithesis: () => void;
-  onSynthesize: () => void;
+  onChange(value: string): void;
+  onSubmit(): void;
+  onCancel?(): void;
+  onRetry?(): void;
+  onResetTarget?(): void;
 };
 
 export function DialogueComposer({
-  target,
-  value,
-  disabled,
-  pendingAction,
-  nextStepChoice = null,
-  isEmptyStart = false,
-  emptyStartOpen = true,
-  targetFrozen = false,
-  targetFrozenReason = null,
-  errorState,
-  textareaRef,
-  onChange,
-  onSubmit,
-  onGrowthSubmit
-}: DialogueComposerProps) {
-  const targetDescriptionId = useId();
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    onSubmit();
-  };
-  const isRootTarget = target.kind === "root";
-  const isSynthesisRecordTarget = target.displayRole === "synthesis-record";
-  const isNextStepChoice = Boolean(nextStepChoice && !targetFrozen && isRootTarget && !pendingAction);
-  const thesisChoiceLabel = nextStepChoice ? "继续推进（正）" : "";
-  const antithesisChoiceLabel = nextStepChoice ? "暂缓判断（反）" : "";
-  const targetVerb = targetFrozen
-    ? targetFrozenReason === "synthesis"
-      ? "正在生成合流"
-      : "正在续写到"
-    : isNextStepChoice
-      ? "主决策"
-    : isSynthesisRecordTarget
-      ? "基于这次合流"
-      : isRootTarget
-        ? "换一个问题继续"
-        : "将续写到";
-  const targetLabel = isNextStepChoice
-    ? "正反已生成"
-    : isRootTarget && !isSynthesisRecordTarget
-      ? "输入新的问题"
-      : target.label;
-  const actionLabel = isRootTarget && !pendingAction ? "开启新主题" : "生成正 / 反";
-  const composerEyebrow = isNextStepChoice ? "选择" : isRootTarget && !targetFrozen ? "新主题" : "续写";
-  const placeholder = targetFrozen
-    ? "生成还在进行，先让这次请求落稳。"
-    : isNextStepChoice
-      ? "先选择推进、暂缓，或留下合流记录。"
-    : isSynthesisRecordTarget
-      ? "基于这次合流继续追问。"
-      : isRootTarget
-        ? "输入新的问题，将开启另一条谱系。"
-        : "把当前节点推进到下一轮。";
-
+  target, value, disabled, pendingAction, isEmptyStart, errorState,
+  rootRef, textareaRef, onChange, onSubmit, onCancel, onRetry, onResetTarget
+}: Props) {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    setElapsed(0);
+    if (!pendingAction) return;
+    const started = Date.now();
+    const timer = window.setInterval(() => setElapsed(Math.floor((Date.now() - started) / 1000)), 1000);
+    return () => window.clearInterval(timer);
+  }, [pendingAction]);
   return (
-    <form
-      className={styles.composer}
-      data-mode={isNextStepChoice ? "choice" : "compose"}
-      data-empty-start={isEmptyStart ? "true" : undefined}
-      data-empty-open={emptyStartOpen ? "true" : undefined}
-      onSubmit={handleSubmit}
-      aria-busy={pendingAction ? "true" : undefined}
-      data-testid="dialogue-composer"
-    >
-      <div className={styles.composerMeta}>
-        <p className={styles.eyebrow}>{composerEyebrow}</p>
-        <div className={styles.composerTarget} id={targetDescriptionId}>
-          <strong>{targetVerb}</strong>
-          <span>{targetLabel}</span>
-          {target.branchType && !isSynthesisRecordTarget ? <small>{target.branchType}</small> : null}
+    <form ref={rootRef} className={styles.composer} data-mode="compose"
+      data-empty-start={isEmptyStart ? "true" : undefined} data-empty-open="true"
+      data-testid="dialogue-composer" aria-busy={Boolean(pendingAction)}
+      onSubmit={(event) => { event.preventDefault(); onSubmit(); }}>
+      {target.nodeId ? (
+        <div className={styles.seedComposerTarget}>
+          <span>基于「{target.label}」</span>
+          <button type="button" disabled={disabled} onClick={onResetTarget}>写新想法</button>
         </div>
-      </div>
-
-      {nextStepChoice && isNextStepChoice ? (
-        <>
-          <div
-            className={styles.composerDecisionContext}
-            data-testid="dialogue-decision-context"
-            aria-label="当前正反摘要"
-          >
-            <p className={styles.composerDecisionPrompt}>
-              <span>当前</span>
-              <strong>{nextStepChoice.currentLabel}</strong>
-            </p>
-            <div className={styles.composerDecisionBranches}>
-              <span>
-                <b>正</b>
-                {nextStepChoice.thesisSummary || nextStepChoice.thesisLabel}
-              </span>
-              <span>
-                <b>反</b>
-                {nextStepChoice.antithesisSummary || nextStepChoice.antithesisLabel}
-              </span>
-            </div>
-          </div>
-          <div className={styles.composerChoiceBar} aria-label="下一步选择">
-            <button
-              type="button"
-              className={styles.composerChoiceButton}
-              data-choice="thesis"
-              aria-label={`继续推进正方：${nextStepChoice.thesisLabel}`}
-              onClick={nextStepChoice.onSelectThesis}
-            >
-              <span className={styles.composerChoiceDesktopLabel}>{thesisChoiceLabel}</span>
-              <span className={styles.composerChoiceMobileLabel}>继续推进</span>
-            </button>
-            <button
-              type="button"
-              className={styles.composerChoiceButton}
-              data-choice="antithesis"
-              aria-label={`暂缓判断反方：${nextStepChoice.antithesisLabel}`}
-              onClick={nextStepChoice.onSelectAntithesis}
-            >
-              <span className={styles.composerChoiceDesktopLabel}>{antithesisChoiceLabel}</span>
-              <span className={styles.composerChoiceMobileLabel}>暂缓判断</span>
-            </button>
-            <button
-              type="button"
-              className={styles.composerChoiceButton}
-              data-choice="synthesis"
-              aria-label={`合流记录：${nextStepChoice.synthesisLabel}`}
-              onClick={nextStepChoice.onSynthesize}
-              disabled={nextStepChoice.synthesisDisabled}
-              aria-busy={nextStepChoice.synthesisBusy ? "true" : undefined}
-            >
-              <span className={styles.composerChoiceDesktopLabel}>
-                {nextStepChoice.synthesisBusy ? "合流中" : "合流记录"}
-              </span>
-              <span className={styles.composerChoiceMobileLabel}>
-                {nextStepChoice.synthesisBusy ? "合流中" : "合流记录"}
-              </span>
-              <small>{nextStepChoice.synthesisLabel}</small>
-            </button>
-          </div>
-        </>
       ) : null}
-
       <label className={styles.composerField}>
         <span className={styles.composerLabel}>输入</span>
-        <textarea
-          ref={textareaRef}
-          aria-describedby={targetDescriptionId}
-          value={value}
+        <textarea ref={textareaRef} aria-label="输入" rows={1} value={value}
+          maxLength={DIALECTIC_INPUT_MAX_LENGTH} disabled={disabled}
+          placeholder={target.nodeId ? "补充你的想法…" : "写下一个想法…"}
           onChange={(event) => onChange(event.target.value)}
-          placeholder={placeholder}
-          rows={3}
-          disabled={disabled}
-        />
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+              event.preventDefault();
+              if (!disabled && value.trim()) onSubmit();
+            }
+          }} />
       </label>
-
       <div className={styles.composerActions}>
-        {onGrowthSubmit ? (
-          <button
-            type="button"
-            className={styles.secondaryButton}
-            disabled={disabled || !value.trim()}
-            onClick={onGrowthSubmit}
-          >
-            画作视角
-          </button>
+        {pendingAction && onCancel ? (
+          <button type="button" className={styles.secondaryButton} onClick={onCancel}>取消</button>
         ) : null}
         <button type="submit" className={styles.primaryButton} disabled={disabled || !value.trim()}>
-          {pendingAction === "branches" ? "生成中..." : pendingAction === "synthesis" ? "合流中" : actionLabel}
+          {pendingAction === "branches" ? "生成中…" : pendingAction === "synthesis" ? "合成中…" : "生成"}
         </button>
       </div>
-
+      {pendingAction ? <div className={styles.generationProgress}>
+        <span role="status">{elapsed < 10 ? (pendingAction === "synthesis" ? "正在寻找两颗想法的新联系" : "正在展开正反两种视角") : elapsed < 30 ? "仍在等待模型返回，你可以随时取消" : "这次等待较久，取消后可以重试"}</span>
+        <span aria-label="已用时间">{elapsed} 秒</span>
+        <span className={styles.generationShimmer} aria-hidden="true" />
+      </div> : null}
       {errorState ? (
         <div className={styles.errorPanel} role="alert">
-          <strong className={styles.errorTitle}>{errorState.title}</strong>
-          <span>{errorState.detail}</span>
-          {errorState.recovery ? <small className={styles.errorRecovery}>{errorState.recovery}</small> : null}
+          <strong>{errorState.title}</strong><span>{errorState.detail}</span>
+          {errorState.recovery ? <small>{errorState.recovery}</small> : null}
+          {onRetry ? <button type="button" className={styles.secondaryButton} disabled={disabled} onClick={onRetry}>重试</button> : null}
         </div>
       ) : null}
     </form>

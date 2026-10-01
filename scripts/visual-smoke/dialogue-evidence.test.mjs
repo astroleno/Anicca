@@ -116,13 +116,13 @@ describe("dialogue visual smoke failure evidence", () => {
     expect(source).toContain("DIALOGUE_SMOKE_TOTAL_TIMEOUT_MS");
   });
 
-  it("captures the Roundtable handoff element without a full-page surface", async () => {
+  it("captures seed workflows at the actual viewport size", async () => {
     const source = await readFile(
-      path.resolve(process.cwd(), "scripts/visual-smoke/dialogue.mjs"),
+      path.resolve(process.cwd(), "scripts/visual-smoke/seeds.mjs"),
       "utf8"
     );
 
-    expect(source).toContain("await handoff.screenshot({ path: screenshotPath })");
-    expect(source).not.toContain("await page.screenshot({ path: screenshotPath, fullPage: true })");
+    expect(source).toContain("await page.screenshot({ path:");
+    expect(source).not.toContain("fullPage: true");
   });
 });

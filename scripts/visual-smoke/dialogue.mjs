@@ -5,11 +5,13 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn, spawnSync } from "node:child_process";
 import { chromium } from "playwright";
+import { runSeedViewport } from "./seeds.mjs";
+import { runCanvasLifecycle, runSeedRecoveryAndTouch } from "./soft-interactions.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..", "..");
-const buildIdPath = path.join(repoRoot, ".next", "BUILD_ID");
+const buildIdPath = path.join(repoRoot, process.env.ANICCA_NEXT_DIST_DIR || ".next", "BUILD_ID");
 const nextCliPath = path.join(repoRoot, "node_modules", "next", "dist", "bin", "next");
 const artifactRoot = path.resolve(
   process.env.DIALOGUE_SMOKE_ARTIFACT_ROOT || path.join(repoRoot, "artifacts", "visual-smoke")
@@ -20,10 +22,17 @@ let outputDir = finalOutputDir;
 let baseUrl = process.env.DIALOGUE_SMOKE_BASE_URL || "http://127.0.0.1:3211";
 const baseUrlWasProvided = Boolean(process.env.DIALOGUE_SMOKE_BASE_URL);
 const requestedServerMode = process.env.DIALOGUE_SMOKE_SERVER_MODE || "dev";
+const browserExecutablePath = process.env.DIALOGUE_SMOKE_BROWSER_EXECUTABLE_PATH;
 const serverReadyTimeoutMs = readTimeoutEnv("DIALOGUE_SMOKE_READY_TIMEOUT_MS", 120000);
 const pageReadyTimeoutMs = readTimeoutEnv("DIALOGUE_SMOKE_PAGE_TIMEOUT_MS", 300000);
 const totalTimeoutMs = readTimeoutEnv("DIALOGUE_SMOKE_TOTAL_TIMEOUT_MS", 30 * 60 * 1000);
 const portSearchLimit = Number.parseInt(process.env.DIALOGUE_SMOKE_PORT_SEARCH_LIMIT || "40", 10);
+const viewportNameFilter = new Set(
+  (process.env.DIALOGUE_SMOKE_VIEWPORT_FILTER || "").split(",").map((name) => name.trim()).filter(Boolean)
+);
+const scenarioNameFilter = new Set(
+  (process.env.DIALOGUE_SMOKE_SCENARIO_FILTER || "").split(",").map((name) => name.trim()).filter(Boolean)
+);
 
 function resolveHeadSha() {
   if (process.env.GITHUB_SHA) {
@@ -140,7 +149,17 @@ const viewports = [
   { name: "desktop", width: 1440, height: 980, fullPage: false },
   { name: "tablet", width: 1024, height: 900, fullPage: false },
   { name: "tablet-touch", width: 1024, height: 768, fullPage: false, hasTouch: true, isMobile: true },
+  { name: "mobile-430", width: 430, height: 932, fullPage: false, hasTouch: true, isMobile: true },
   { name: "mobile-390", width: 390, height: 844, fullPage: true },
+  {
+    name: "mobile-keyboard-390",
+    width: 390,
+    height: 844,
+    visualViewportHeight: 520,
+    fullPage: false,
+    hasTouch: true,
+    isMobile: true
+  },
   { name: "mobile-360", width: 360, height: 740, fullPage: true },
   { name: "mobile-320", width: 320, height: 740, fullPage: true },
   { name: "mobile-touch-390", width: 390, height: 844, fullPage: true, hasTouch: true, isMobile: true }
@@ -232,72 +251,6 @@ const seededWorkspace = {
   }
 };
 
-function cloneJson(value) {
-  return JSON.parse(JSON.stringify(value));
-}
-
-function createVisualRoundtableState({ deepened = false } = {}) {
-  const firstRound = {
-    guidingQuestion: "我们该如何定义值得继续？",
-    utterances: [
-      {
-        speaker: "汉娜·阿伦特",
-        action: "陈述",
-        text: "继续意味着愿意为一次新的公共行动负责。",
-        summary: "继续必须连着责任。"
-      }
-    ],
-    coreTension: "探索空间与责任承诺",
-    framework: "探索 -> 判断 -> 承诺",
-    nextQuestion: "谁来承担继续之后的责任？"
-  };
-  const secondRound = {
-    guidingQuestion: "责任如何不被流程吞掉？",
-    utterances: [
-      {
-        speaker: "汉娜·阿伦特",
-        action: "质疑",
-        text: "流程可以协助判断，但不能替行动者承担责任。",
-        summary: "责任仍属于行动者。"
-      },
-      {
-        speaker: "赫伯特·西蒙",
-        action: "补充",
-        text: "可以把判断标准显式化，让承担责任的人看见取舍。",
-        summary: "显式标准帮助负责。"
-      }
-    ],
-    coreTension: "流程效率与责任归属",
-    framework: "标准 -> 判断 -> 行动者",
-    nextQuestion: "哪一个判断必须由人亲自做？"
-  };
-  const rounds = deepened ? [firstRound, secondRound] : [firstRound];
-  const latest = rounds[rounds.length - 1];
-
-  return {
-    topic: "roundtable topic",
-    participants: [
-      {
-        name: "汉娜·阿伦特",
-        mbti: "INTJ",
-        stance: "行动需要承担公共责任。",
-        reason: "从行动与责任切入。"
-      },
-      {
-        name: "赫伯特·西蒙",
-        mbti: "INTP",
-        stance: "判断可以被拆成可检查的过程。",
-        reason: "从决策过程切入。"
-      }
-    ],
-    rounds,
-    currentQuestion: latest.nextQuestion,
-    nextQuestion: latest.nextQuestion,
-    lastCoreTension: latest.coreTension,
-    status: "active"
-  };
-}
-
 function readTimeoutEnv(name, fallbackMs) {
   const raw = process.env[name];
   if (!raw) {
@@ -310,216 +263,6 @@ function readTimeoutEnv(name, fallbackMs) {
   }
 
   return value;
-}
-
-function createWorkspaceWithoutSynthesis({ includeSecondRoot = false } = {}) {
-  const workspace = cloneJson(seededWorkspace);
-  workspace.workspaceSessionId = includeSecondRoot ? "ws_visual_flow_stale" : "ws_visual_flow";
-  workspace.focusedNodeId = "user_root_1";
-  workspace.graph.nodes.asst_thesis_1.children = ["user_followup_1"];
-  workspace.graph.nodes.asst_antithesis_1.children = [];
-  delete workspace.graph.nodes.asst_synthesis_1;
-  delete workspace.graph.nodes.user_followup_2;
-  delete workspace.graph.edges.e3;
-  delete workspace.graph.edges.e4;
-  delete workspace.graph.edges.e6;
-
-  if (includeSecondRoot) {
-    workspace.graph.entryIds.push("user_root_2");
-    workspace.graph.nodes.user_root_2 = {
-      id: "user_root_2",
-      kind: "user",
-      text: "另一个问题要不要先处理？",
-      createdAt: "2026-04-24T03:10:00.000Z",
-      parents: [],
-      children: ["asst_thesis_2", "asst_antithesis_2"]
-    };
-    workspace.graph.nodes.asst_thesis_2 = {
-      id: "asst_thesis_2",
-      kind: "assistant",
-      branchType: "正",
-      text: "先处理，避免阻塞。",
-      createdAt: "2026-04-24T03:11:00.000Z",
-      parents: ["user_root_2"],
-      children: [],
-      meta: {
-        label: "先处理",
-        summary: "先把阻塞拿掉。"
-      }
-    };
-    workspace.graph.nodes.asst_antithesis_2 = {
-      id: "asst_antithesis_2",
-      kind: "assistant",
-      branchType: "反",
-      text: "先不处理，保持主线。",
-      createdAt: "2026-04-24T03:12:00.000Z",
-      parents: ["user_root_2"],
-      children: [],
-      meta: {
-        label: "先不动",
-        summary: "别打断当前主线。"
-      }
-    };
-    workspace.graph.edges.e7 = { id: "e7", from: "user_root_2", to: "asst_thesis_2", reason: "正" };
-    workspace.graph.edges.e8 = { id: "e8", from: "user_root_2", to: "asst_antithesis_2", reason: "反" };
-  }
-
-  return workspace;
-}
-
-function createEmptyWorkspace() {
-  const workspace = cloneJson(seededWorkspace);
-  workspace.workspaceSessionId = "ws_visual_empty";
-  workspace.focusedNodeId = null;
-  workspace.graph.entryIds = [];
-  workspace.graph.nodes = {};
-  workspace.graph.edges = {};
-  return workspace;
-}
-
-function createGrowthWorkspace(candidateLimit, { withWideStageLayout = false } = {}) {
-  if (!Number.isInteger(candidateLimit) || candidateLimit < 1 || candidateLimit > 4) {
-    throw new Error(`Growth visual fixture requires candidateLimit 1-4, received ${candidateLimit}`);
-  }
-
-  const workspace = createEmptyWorkspace();
-  const rootId = `growth_matrix_root_${candidateLimit}`;
-  const responseIds = Array.from({ length: candidateLimit }, (_, index) => `growth_matrix_response_${candidateLimit}_${index + 1}`);
-  const synthesisId = candidateLimit >= 2 ? `growth_matrix_synthesis_${candidateLimit}` : null;
-  const childIds = synthesisId ? [...responseIds, synthesisId] : responseIds;
-
-  workspace.workspaceSessionId = `ws_growth_matrix_${candidateLimit}`;
-  workspace.focusedNodeId = rootId;
-  workspace.graph.entryIds = [rootId];
-  workspace.graph.nodes[rootId] = {
-    id: rootId,
-    kind: "user",
-    text: `Growth layout matrix ${candidateLimit}`,
-    createdAt: "2026-07-26T00:00:00.000Z",
-    parents: [],
-    children: childIds,
-    meta: { growth: { eventId: `growth_matrix_${candidateLimit}`, memoryRefIds: [] } }
-  };
-
-  responseIds.forEach((id, index) => {
-    workspace.graph.nodes[id] = {
-      id,
-      kind: "assistant",
-      text: `画作视角 ${index + 1}`,
-      createdAt: `2026-07-26T00:00:0${index + 1}.000Z`,
-      parents: [rootId],
-      children: synthesisId ? [synthesisId] : [],
-      meta: {
-        label: `视角 ${index + 1}`,
-        summary: `Growth 视角 ${index + 1}`,
-        growth: {
-          eventId: `growth_matrix_${candidateLimit}`,
-          operator: "expand",
-          artworkId: `matrix_artwork_${index + 1}`,
-          memoryRefIds: []
-        }
-      }
-    };
-  });
-
-  if (synthesisId) {
-    workspace.graph.nodes[synthesisId] = {
-      id: synthesisId,
-      kind: "assistant",
-      text: "画作合并",
-      createdAt: "2026-07-26T00:00:09.000Z",
-      parents: [rootId, ...responseIds],
-      children: [],
-      meta: {
-        label: "画作合并",
-        summary: "合并 Growth 视角",
-        sourceNodeIds: responseIds,
-        growth: {
-          eventId: `growth_matrix_${candidateLimit}`,
-          operator: "merge_promote",
-          sourceArtworkIds: responseIds,
-          memoryRefIds: []
-        }
-      }
-    };
-  }
-
-  childIds.forEach((childId, index) => {
-    workspace.graph.edges[`growth_matrix_edge_${candidateLimit}_${index + 1}`] = {
-      id: `growth_matrix_edge_${candidateLimit}_${index + 1}`,
-      from: rootId,
-      to: childId,
-      reason: childId === synthesisId ? "growth:merge_promote" : "growth:expand"
-    };
-  });
-
-  if (withWideStageLayout) {
-    const columns = Math.ceil(childIds.length / 2);
-    const nodePositions = {
-      [rootId]: { x: 50, y: 40 }
-    };
-    childIds.forEach((childId, index) => {
-      const row = Math.floor(index / columns);
-      const column = index % columns;
-      const columnsInRow = row === 0 ? Math.min(columns, childIds.length) : childIds.length - columns;
-      nodePositions[childId] = {
-        x: columnsInRow <= 1 ? 50 : 20 + (60 / (columnsInRow - 1)) * column,
-        y: row === 0 ? 65 : 86
-      };
-    });
-    workspace.stageLayouts = {
-      [`focus:${rootId}|target:root|trail:${rootId}`]: {
-        pan: { x: 18, y: -12 },
-        nodePositions
-      }
-    };
-  }
-
-  return workspace;
-}
-
-function createWorkspaceWithRetrievalMatch() {
-  const workspace = cloneJson(seededWorkspace);
-  workspace.workspaceSessionId = "ws_visual_retrieval_debug";
-  workspace.focusedNodeId = "asst_thesis_1";
-  workspace.graph.entryIds.push("user_related_1");
-  workspace.graph.nodes.user_related_1 = {
-    id: "user_related_1",
-    kind: "user",
-    text: "下一步怎么拆的参考",
-    createdAt: "2026-04-24T03:20:00.000Z",
-    parents: [],
-    children: ["asst_related_thesis_1", "asst_related_antithesis_1"]
-  };
-  workspace.graph.nodes.asst_related_thesis_1 = {
-    id: "asst_related_thesis_1",
-    kind: "assistant",
-    branchType: "正",
-    text: "先列一张拆分清单。",
-    createdAt: "2026-04-24T03:21:00.000Z",
-    parents: ["user_related_1"],
-    children: [],
-    meta: {
-      label: "拆分",
-      summary: "拆分参考"
-    }
-  };
-  workspace.graph.nodes.asst_related_antithesis_1 = {
-    id: "asst_related_antithesis_1",
-    kind: "assistant",
-    branchType: "反",
-    text: "先延后拆分。",
-    createdAt: "2026-04-24T03:22:00.000Z",
-    parents: ["user_related_1"],
-    children: [],
-    meta: {
-      label: "延后",
-      summary: "延后参考"
-    }
-  };
-  workspace.graph.edges.e_related_1 = { id: "e_related_1", from: "user_related_1", to: "asst_related_thesis_1", reason: "正" };
-  workspace.graph.edges.e_related_2 = { id: "e_related_2", from: "user_related_1", to: "asst_related_antithesis_1", reason: "反" };
-  return workspace;
 }
 
 async function buildExists() {
@@ -690,8 +433,31 @@ async function captureFailurePage(page, tempOutputDir) {
       const snapshot = await page.evaluate(() => {
         const track = document.querySelector('[data-testid="dialogue-stage-track"]');
         const canvas = document.querySelector('[data-testid="dialogue-metaball-canvas"]');
+        const composer = document.querySelector('[data-testid="dialogue-composer"]');
+        const readingDrawer = document.querySelector("#dialogue-reading-drawer");
+        const lineageDrawer = document.querySelector("#dialogue-lineage-drawer");
         const active = document.activeElement;
         const canvasRect = canvas instanceof HTMLCanvasElement ? canvas.getBoundingClientRect() : null;
+        const measureElement = (element) => {
+          if (!(element instanceof HTMLElement)) {
+            return null;
+          }
+          const rect = element.getBoundingClientRect();
+          const style = getComputedStyle(element);
+          return {
+            top: rect.top,
+            right: rect.right,
+            bottom: rect.bottom,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+            dataOpen: element.dataset.open || null,
+            computedHeight: style.height,
+            computedBottom: style.bottom,
+            opacity: style.opacity,
+            transform: style.transform
+          };
+        };
 
         return {
           domHtml: document.documentElement.outerHTML,
@@ -720,6 +486,11 @@ async function captureFailurePage(page, tempOutputDir) {
                     display: getComputedStyle(canvas).display
                   }
                 : null
+            },
+            layout: {
+              composer: measureElement(composer),
+              readingDrawer: measureElement(readingDrawer),
+              lineageDrawer: measureElement(lineageDrawer)
             },
             stageNodes: [...document.querySelectorAll('[data-testid^="dialogue-stage-node-"]')]
               .map((node) => ({
@@ -969,642 +740,6 @@ async function stopNextServer(server) {
   }
 }
 
-async function ensureNoHorizontalOverflow(page, viewportName) {
-  const metrics = await page.evaluate(() => {
-    const shell = document.querySelector('[data-testid="dialogue-shell"]');
-    const doc = document.documentElement;
-    const body = document.body;
-
-    return {
-      docScrollWidth: doc.scrollWidth,
-      docClientWidth: doc.clientWidth,
-      bodyScrollWidth: body.scrollWidth,
-      bodyClientWidth: body.clientWidth,
-      shellScrollWidth: shell instanceof HTMLElement ? shell.scrollWidth : null,
-      shellClientWidth: shell instanceof HTMLElement ? shell.clientWidth : null
-    };
-  });
-
-  const widthChecks = [
-    metrics.docScrollWidth <= metrics.docClientWidth + 1,
-    metrics.bodyScrollWidth <= metrics.bodyClientWidth + 1,
-    metrics.shellScrollWidth === null || metrics.shellScrollWidth <= metrics.shellClientWidth + 1
-  ];
-
-  if (widthChecks.includes(false)) {
-    throw new Error(`Horizontal overflow detected on ${viewportName}: ${JSON.stringify(metrics)}`);
-  }
-}
-
-async function assertRegionWidth(locator, viewportWidth, name) {
-  const box = await locator.boundingBox();
-  if (!box) {
-    throw new Error(`${name} did not render`);
-  }
-
-  if (box.x < -1 || box.x + box.width > viewportWidth + 1) {
-    throw new Error(`${name} overflowed horizontally: ${JSON.stringify(box)}`);
-  }
-}
-
-async function assertRegionMinWidth(locator, minWidth, name) {
-  const box = await locator.boundingBox();
-  if (!box) {
-    throw new Error(`${name} did not render`);
-  }
-
-  if (box.width < minWidth) {
-    throw new Error(`${name} is too narrow: ${JSON.stringify(box)}`);
-  }
-}
-
-async function assertRegionVisible(locator, viewportHeight, name) {
-  const box = await locator.boundingBox();
-  if (!box) {
-    throw new Error(`${name} did not render`);
-  }
-
-  if (box.y < -1 || box.y + box.height > viewportHeight + 1) {
-    throw new Error(`${name} was not fully visible: ${JSON.stringify(box)}`);
-  }
-}
-
-async function ensureChoiceButtonsAccessibleAndTouchable(page, minTargetSize = 44) {
-  const composer = page.getByTestId("dialogue-composer");
-  const buttons = [
-    composer.getByRole("button", { name: /继续推进正方/ }),
-    composer.getByRole("button", { name: /暂缓判断反方/ }),
-    composer.getByRole("button", { name: /合流记录/ })
-  ];
-
-  for (const [index, button] of buttons.entries()) {
-    await button.waitFor();
-    const box = await button.boundingBox();
-    if (!box) {
-      throw new Error(`Choice button ${index} did not render`);
-    }
-    if (box.width < minTargetSize || box.height < minTargetSize) {
-      throw new Error(`Choice button ${index} is below touch target size: ${JSON.stringify(box)}`);
-    }
-  }
-}
-
-async function ensureMobileChoiceContextVisible(page, viewportWidth, viewportHeight) {
-  const context = page.getByTestId("dialogue-decision-context");
-  await context.waitFor();
-  await context.filter({ hasText: "这个方向还值不值得继续投入？" }).waitFor();
-  await context.filter({ hasText: "先缩范围，再推进。" }).waitFor();
-  await context.filter({ hasText: "把摊子收住，再判断。" }).waitFor();
-  await assertRegionWidth(context, viewportWidth, "mobile choice context");
-  await assertRegionVisible(context, viewportHeight, "mobile choice context");
-
-  const metrics = await page.evaluate(() => {
-    const composer = document.querySelector('[data-testid="dialogue-composer"]');
-    const contextElement = document.querySelector('[data-testid="dialogue-decision-context"]');
-    if (!(composer instanceof HTMLElement) || !(contextElement instanceof HTMLElement)) {
-      return null;
-    }
-
-    const composerRect = composer.getBoundingClientRect();
-    const contextRect = contextElement.getBoundingClientRect();
-    const actions = [...composer.querySelectorAll("button")].flatMap((button) => {
-      const rect = button.getBoundingClientRect();
-      const style = window.getComputedStyle(button);
-      if (style.display === "none" || style.visibility === "hidden" || rect.width === 0 || rect.height === 0) {
-        return [];
-      }
-
-      return {
-        top: rect.top,
-        bottom: rect.bottom,
-        left: rect.left,
-        right: rect.right
-      };
-    });
-
-    return {
-      composer: {
-        top: composerRect.top,
-        bottom: composerRect.bottom,
-        left: composerRect.left,
-        right: composerRect.right
-      },
-      context: {
-        top: contextRect.top,
-        bottom: contextRect.bottom,
-        left: contextRect.left,
-        right: contextRect.right
-      },
-      actions
-    };
-  });
-
-  if (!metrics) {
-    throw new Error("Missing mobile choice context metrics");
-  }
-
-  const contextInsideComposer = (
-    metrics.context.top >= metrics.composer.top - 1 &&
-    metrics.context.bottom <= metrics.composer.bottom + 1 &&
-    metrics.context.left >= metrics.composer.left - 1 &&
-    metrics.context.right <= metrics.composer.right + 1
-  );
-  const actionsInsideComposer = metrics.actions.every((action) => (
-    action.top >= metrics.composer.top - 1 &&
-    action.bottom <= metrics.composer.bottom + 1 &&
-    action.left >= metrics.composer.left - 1 &&
-    action.right <= metrics.composer.right + 1
-  ));
-
-  if (!contextInsideComposer || !actionsInsideComposer) {
-    throw new Error(`Mobile choice context and actions are not in the same tray: ${JSON.stringify(metrics)}`);
-  }
-}
-
-async function ensureMobileComposerSingleColumn(page, viewportName) {
-  const metrics = await page.evaluate(() => {
-    const composer = document.querySelector('[data-testid="dialogue-composer"]');
-    if (!(composer instanceof HTMLElement)) {
-      return null;
-    }
-
-    if (composer.dataset.mode !== "compose") {
-      return { mode: composer.dataset.mode };
-    }
-
-    const textarea = composer.querySelector("textarea");
-    const submit = composer.querySelector('button[type="submit"]');
-    if (!(textarea instanceof HTMLElement) || !(submit instanceof HTMLElement)) {
-      return null;
-    }
-
-    const composerRect = composer.getBoundingClientRect();
-    const textareaRect = textarea.getBoundingClientRect();
-    const submitRect = submit.getBoundingClientRect();
-
-    return {
-      mode: composer.dataset.mode,
-      composerWidth: composerRect.width,
-      textarea: {
-        top: textareaRect.top,
-        bottom: textareaRect.bottom,
-        width: textareaRect.width
-      },
-      submit: {
-        top: submitRect.top,
-        bottom: submitRect.bottom,
-        width: submitRect.width
-      }
-    };
-  });
-
-  if (!metrics) {
-    throw new Error(`Missing composer single-column metrics on ${viewportName}`);
-  }
-
-  if (metrics.mode !== "compose") {
-    return;
-  }
-
-  const minWidth = metrics.composerWidth * 0.82;
-  if (metrics.textarea.width < minWidth || metrics.submit.width < minWidth) {
-    throw new Error(`Mobile composer controls are not full-width on ${viewportName}: ${JSON.stringify(metrics)}`);
-  }
-
-  if (metrics.submit.top < metrics.textarea.bottom + 4) {
-    throw new Error(`Mobile composer controls are still side-by-side on ${viewportName}: ${JSON.stringify(metrics)}`);
-  }
-}
-
-async function ensureEmptyRootPendingState(browser) {
-  const { context, page, pageIssues } = await createScenarioPage(browser, createEmptyWorkspace(), {
-    viewport: { width: 1280, height: 900 }
-  });
-
-  await page.route("**/api/branches", async () => {
-    await new Promise(() => {});
-  });
-
-  await page.getByRole("button", { name: /点此输入/ }).click();
-  await page.getByLabel("输入").fill("这个方向还值得投入吗");
-  await page.getByRole("button", { name: "开启新主题" }).click();
-  await page.getByTestId("dialogue-stage-pending-branches").waitFor();
-  await page.getByTestId("dialogue-stage-pending-branches").filter({ hasText: "这个方向还值得投入吗" }).waitFor();
-  await page.getByTestId("dialogue-panel-pending-branches").filter({ hasText: "母题已进入舞台" }).waitFor();
-  await page.getByTestId("dialogue-sidebar").filter({ hasText: "正在生成正与反" }).waitFor();
-  const emptyStartAffordances = await page.getByRole("button", { name: /点此输入/ }).count();
-  if (emptyStartAffordances > 0) {
-    throw new Error("Empty start affordance is still visible while root branches are pending");
-  }
-
-  const screenshotPath = path.join(outputDir, "desktop-pending-empty-root.png");
-  await page.screenshot({ path: screenshotPath, fullPage: false });
-  assertNoPageIssues(pageIssues, "empty root pending state");
-  await context.close();
-
-  return {
-    name: "empty-root-pending-state",
-    passed: true,
-    screenshot: screenshotPath
-  };
-}
-
-async function ensureMobileComposerDoesNotCoverLineage(page) {
-  const metrics = await page.evaluate(() => {
-    const composer = document.querySelector('[data-testid="dialogue-composer"]');
-    const lineageButtons = [...document.querySelectorAll('[data-testid="dialogue-sidebar"] button')];
-    if (!(composer instanceof HTMLElement) || lineageButtons.length === 0) {
-      return null;
-    }
-
-    const composerRect = composer.getBoundingClientRect();
-    const overlappingButton = lineageButtons.find((button) => {
-      if (!(button instanceof HTMLElement)) {
-        return false;
-      }
-      const lineageRect = button.getBoundingClientRect();
-      return (
-        lineageRect.left < composerRect.right &&
-        lineageRect.right > composerRect.left &&
-        lineageRect.top < composerRect.bottom &&
-        lineageRect.bottom > composerRect.top
-      );
-    });
-    const lineageRect = overlappingButton instanceof HTMLElement
-      ? overlappingButton.getBoundingClientRect()
-      : lineageButtons[0] instanceof HTMLElement
-        ? lineageButtons[0].getBoundingClientRect()
-        : null;
-
-    return {
-      overlaps: Boolean(overlappingButton),
-      composer: {
-        top: composerRect.top,
-        bottom: composerRect.bottom,
-        height: composerRect.height
-      },
-      lineage: {
-        top: lineageRect?.top,
-        bottom: lineageRect?.bottom,
-        height: lineageRect?.height
-      }
-    };
-  });
-
-  if (!metrics) {
-    throw new Error("Missing mobile composer or lineage metrics");
-  }
-
-  if (metrics.overlaps) {
-    throw new Error(`Mobile composer overlaps lineage controls: ${JSON.stringify(metrics)}`);
-  }
-}
-
-async function ensureMobileComposerDoesNotCoverPanelActions(page) {
-  await page.evaluate(() => {
-    const panel = document.querySelector('[data-testid="dialogue-panel"]');
-    if (panel instanceof HTMLElement) {
-      panel.scrollIntoView({ block: "center", inline: "nearest" });
-    }
-  });
-  await page.waitForTimeout(80);
-
-  const metrics = await page.evaluate(() => {
-    const composer = document.querySelector('[data-testid="dialogue-composer"]');
-    const panel = document.querySelector('[data-testid="dialogue-panel"]');
-    if (!(composer instanceof HTMLElement) || !(panel instanceof HTMLElement)) {
-      return null;
-    }
-
-    const composerRect = composer.getBoundingClientRect();
-    const panelActions = [...panel.querySelectorAll("button")].filter((button) => button instanceof HTMLElement);
-    const overlappingAction = panelActions.find((button) => {
-      const actionRect = button.getBoundingClientRect();
-      return (
-        actionRect.left < composerRect.right &&
-        actionRect.right > composerRect.left &&
-        actionRect.top < composerRect.bottom &&
-        actionRect.bottom > composerRect.top
-      );
-    });
-    const actionRect = overlappingAction instanceof HTMLElement
-      ? overlappingAction.getBoundingClientRect()
-      : panelActions[0] instanceof HTMLElement
-        ? panelActions[0].getBoundingClientRect()
-        : null;
-
-    return {
-      overlaps: Boolean(overlappingAction),
-      composer: {
-        top: composerRect.top,
-        bottom: composerRect.bottom,
-        height: composerRect.height
-      },
-      action: {
-        text: overlappingAction instanceof HTMLElement ? overlappingAction.textContent : panelActions[0]?.textContent,
-        top: actionRect?.top,
-        bottom: actionRect?.bottom,
-        height: actionRect?.height
-      }
-    };
-  });
-
-  if (!metrics) {
-    throw new Error("Missing mobile composer or panel action metrics");
-  }
-
-  if (metrics.overlaps) {
-    throw new Error(`Mobile composer overlaps panel actions: ${JSON.stringify(metrics)}`);
-  }
-}
-
-async function ensureMobileRootNodeHasVisibleText(page) {
-  const metrics = await page.evaluate(() => {
-    const root = document.querySelector('[data-testid="dialogue-stage-node-user_root_1"]');
-    if (!(root instanceof HTMLElement)) {
-      return null;
-    }
-
-    const textCandidates = [
-      root.querySelector('[class*="stageNodeTextFull"]'),
-      root.querySelector('[class*="stageNodeTextShort"]')
-    ].filter((element) => element instanceof HTMLElement);
-    const visibleText = textCandidates
-      .map((element) => {
-        const rect = element.getBoundingClientRect();
-        const style = getComputedStyle(element);
-        return {
-          text: element.textContent?.trim() || "",
-          display: style.display,
-          visibility: style.visibility,
-          width: rect.width,
-          height: rect.height
-        };
-      })
-      .filter(
-        (entry) =>
-          entry.text &&
-          entry.display !== "none" &&
-          entry.visibility !== "hidden" &&
-          entry.width > 0 &&
-          entry.height > 0
-      );
-
-    return {
-      rootText: root.textContent?.trim() || "",
-      visibleText
-    };
-  });
-
-  if (!metrics) {
-    throw new Error("Missing mobile root node text metrics");
-  }
-
-  if (!metrics.visibleText.length) {
-    throw new Error(`Mobile root node has no visible topic text: ${JSON.stringify(metrics)}`);
-  }
-}
-
-async function ensureStageHintDoesNotOverlapWorkspace(page, scenarioName) {
-  const metrics = await page.evaluate(() => {
-    const hint = document.querySelector('[data-testid="dialogue-stage-hint"]');
-    const workspace = document.querySelector('[data-testid="dialogue-workspace-bar"]');
-    if (!(hint instanceof HTMLElement) || !(workspace instanceof HTMLElement)) {
-      return null;
-    }
-
-    const hintRect = hint.getBoundingClientRect();
-    const workspaceRect = workspace.getBoundingClientRect();
-    const overlaps = (
-      hintRect.left < workspaceRect.right &&
-      hintRect.right > workspaceRect.left &&
-      hintRect.top < workspaceRect.bottom &&
-      hintRect.bottom > workspaceRect.top
-    );
-
-    return {
-      overlaps,
-      hint: {
-        left: hintRect.left,
-        right: hintRect.right,
-        top: hintRect.top,
-        bottom: hintRect.bottom
-      },
-      workspace: {
-        left: workspaceRect.left,
-        right: workspaceRect.right,
-        top: workspaceRect.top,
-        bottom: workspaceRect.bottom
-      }
-    };
-  });
-
-  if (metrics?.overlaps) {
-    throw new Error(`Stage relationship hint overlaps workspace chrome during ${scenarioName}: ${JSON.stringify(metrics)}`);
-  }
-}
-
-async function ensureFocusedSidebarItemFullyVisible(page, viewportName) {
-  const metrics = await page.evaluate(() => {
-    const currentItem = document.querySelector(
-      '[data-testid="dialogue-sidebar"] nav[aria-label="分支列表"] button[aria-current="true"]'
-    );
-    if (!(currentItem instanceof HTMLElement)) {
-      return null;
-    }
-
-    const rect = currentItem.getBoundingClientRect();
-    return {
-      itemText: currentItem.textContent?.trim() || "",
-      left: rect.left,
-      right: rect.right,
-      width: rect.width,
-      viewportWidth: window.innerWidth
-    };
-  });
-
-  if (!metrics) {
-    return;
-  }
-
-  if (metrics.left < -1 || metrics.right > metrics.viewportWidth + 1) {
-    throw new Error(`Focused sidebar item is clipped on ${viewportName}: ${JSON.stringify(metrics)}`);
-  }
-}
-
-async function ensureVisibleSidebarItemsNotClipped(page, viewportName) {
-  const clippedItems = await page.evaluate(() => {
-    const buttons = [...document.querySelectorAll('[data-testid="dialogue-sidebar"] nav[aria-label="分支列表"] button')];
-    return buttons.flatMap((button) => {
-      if (!(button instanceof HTMLElement)) {
-        return [];
-      }
-
-      const rect = button.getBoundingClientRect();
-      const isVisibleInViewport = (
-        rect.width > 0 &&
-        rect.height > 0 &&
-        rect.bottom > 0 &&
-        rect.top < window.innerHeight
-      );
-      if (!isVisibleInViewport) {
-        return [];
-      }
-
-      if (rect.left < -1 || rect.right > window.innerWidth + 1) {
-        return [{
-          text: button.textContent?.trim() || "",
-          left: rect.left,
-          right: rect.right,
-          width: rect.width,
-          viewportWidth: window.innerWidth
-        }];
-      }
-
-      return [];
-    });
-  });
-
-  if (clippedItems.length) {
-    throw new Error(`Visible sidebar items are clipped on ${viewportName}: ${JSON.stringify(clippedItems)}`);
-  }
-}
-
-async function getPageScrollMetrics(page) {
-  return page.evaluate(() => {
-    const shell = document.querySelector('[data-testid="dialogue-shell"]');
-    const doc = document.documentElement;
-    const body = document.body;
-    const shellElement = shell instanceof HTMLElement ? shell : null;
-
-    return {
-      windowScrollY: window.scrollY,
-      docScrollTop: doc.scrollTop,
-      bodyScrollTop: body.scrollTop,
-      shellScrollTop: shellElement?.scrollTop ?? null,
-      docScrollHeight: doc.scrollHeight,
-      docClientHeight: doc.clientHeight,
-      bodyScrollHeight: body.scrollHeight,
-      bodyClientHeight: body.clientHeight,
-      shellScrollHeight: shellElement?.scrollHeight ?? null,
-      shellClientHeight: shellElement?.clientHeight ?? null
-    };
-  });
-}
-
-async function resetPageScroll(page) {
-  await page.evaluate(() => {
-    const shell = document.querySelector('[data-testid="dialogue-shell"]');
-    window.scrollTo(0, 0);
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-    if (shell instanceof HTMLElement) {
-      shell.scrollTop = 0;
-    }
-  });
-  await page.waitForTimeout(60);
-  return getPageScrollMetrics(page);
-}
-
-async function ensureMobileCanScrollFromStage(page, viewportName) {
-  const before = await resetPageScroll(page);
-  const scrollableDistance = Math.max(
-    before.docScrollHeight - before.docClientHeight,
-    before.bodyScrollHeight - before.bodyClientHeight,
-    before.shellScrollHeight && before.shellClientHeight
-      ? before.shellScrollHeight - before.shellClientHeight
-      : 0
-  );
-
-  if (scrollableDistance < 120) {
-    throw new Error(`Mobile page does not expose enough vertical scroll on ${viewportName}: ${JSON.stringify(before)}`);
-  }
-
-  const stageViewport = page.getByTestId("dialogue-stage-viewport");
-  const box = await stageViewport.boundingBox();
-  if (!box) {
-    throw new Error(`Missing stage viewport for mobile scroll check on ${viewportName}`);
-  }
-
-  await page.mouse.move(box.x + box.width / 2, box.y + Math.min(box.height / 2, 180));
-  await page.mouse.wheel(0, 420);
-  const beforePosition = Math.max(
-    before.windowScrollY,
-    before.docScrollTop,
-    before.bodyScrollTop,
-    before.shellScrollTop ?? 0
-  );
-  await waitForCondition(
-    page,
-    `${viewportName}:scroll-from-stage`,
-    (initialPosition) => {
-      const shell = document.querySelector('[data-testid="dialogue-shell"]');
-      return Math.max(
-        window.scrollY,
-        document.documentElement.scrollTop,
-        document.body.scrollTop,
-        shell instanceof HTMLElement ? shell.scrollTop : 0
-      ) > initialPosition + 24;
-    },
-    beforePosition,
-    { timeout: 2000 },
-    { allowFailure: true }
-  );
-
-  const after = await getPageScrollMetrics(page);
-  const afterPosition = Math.max(
-    after.windowScrollY,
-    after.docScrollTop,
-    after.bodyScrollTop,
-    after.shellScrollTop ?? 0
-  );
-
-  if (afterPosition <= beforePosition + 24) {
-    throw new Error(`Mobile page did not scroll from the stage area on ${viewportName}: ${JSON.stringify({ before, after })}`);
-  }
-}
-
-async function ensureTouchViewportSemantics(page) {
-  const metrics = await page.evaluate(() => {
-    const stageViewport = document.querySelector('[data-testid="dialogue-stage-viewport"]');
-    if (!(stageViewport instanceof HTMLElement)) {
-      return null;
-    }
-
-    return {
-      touchAction: getComputedStyle(stageViewport).touchAction,
-      pageText: document.body.textContent || ""
-    };
-  });
-
-  if (!metrics) {
-    throw new Error("Missing touch viewport metrics");
-  }
-
-  if (metrics.touchAction !== "pan-y") {
-    throw new Error(`Touch viewport should allow pan-y scrolling: ${JSON.stringify(metrics)}`);
-  }
-
-  if (metrics.pageText.includes("整理舞台")) {
-    throw new Error(`Touch viewport still shows fine-pointer hint: ${JSON.stringify(metrics)}`);
-  }
-}
-
-async function ensureTouchNodeTapSelects(page) {
-  await page.getByTestId("dialogue-stage-node-asst_thesis_1").tap();
-  await page.getByRole("heading", { name: "继续" }).waitFor();
-  await page
-    .locator('[data-testid="dialogue-sidebar"] button[aria-current="true"]')
-    .filter({ hasText: "继续" })
-    .waitFor();
-  await page.getByTestId("dialogue-stage-node-user_root_1").tap();
-  await page.getByRole("heading", { name: /这个方向/ }).waitFor();
-  await page
-    .locator('[data-testid="dialogue-sidebar"] button[aria-current="true"]')
-    .filter({ hasText: "这个方向" })
-    .waitFor();
-}
-
 async function createScenarioPage(
   browser,
   workspace,
@@ -1637,7 +772,8 @@ async function createScenarioPage(
     ) {
       pageIssues.push({
         type: `console:${message.type()}`,
-        text
+        text,
+        location: message.location()
       });
     }
   });
@@ -1650,7 +786,7 @@ async function createScenarioPage(
 
   await page.goto(`${baseUrl}${routePath}`, { waitUntil: "networkidle" });
   await page.getByTestId("dialogue-stage").waitFor();
-  await page.getByTestId("dialogue-panel").waitFor();
+  await page.getByRole("textbox", { name: "输入", exact: true }).waitFor();
 
   return { context, page, pageIssues };
 }
@@ -1684,13 +820,15 @@ async function assertMetaballStage(page, scenarioName, expectedState = "ready") 
     const canvasStyle = getComputedStyle(canvasElement);
     return {
       state: trackElement.dataset.metaballRenderer,
+      viewport: { width: window.innerWidth, height: window.innerHeight },
       track: { width: trackRect.width, height: trackRect.height },
       canvas: {
         width: canvasRect.width,
         height: canvasRect.height,
         backingWidth: canvasElement.width,
         backingHeight: canvasElement.height,
-        display: canvasStyle.display
+        display: canvasStyle.display,
+        visibility: canvasStyle.visibility
       }
     };
   });
@@ -1700,10 +838,10 @@ async function assertMetaballStage(page, scenarioName, expectedState = "ready") 
   }
 
   if (expectedState === "ready") {
-    const widthDelta = Math.abs(metrics.track.width - metrics.canvas.width);
-    const heightDelta = Math.abs(metrics.track.height - metrics.canvas.height);
+    const widthDelta = Math.abs(metrics.viewport.width - metrics.canvas.width);
+    const heightDelta = Math.abs(metrics.viewport.height - metrics.canvas.height);
     if (widthDelta > 1 || heightDelta > 1) {
-      throw new Error(`Metaball canvas does not cover its track during ${scenarioName}: ${JSON.stringify(metrics)}`);
+      throw new Error(`Metaball canvas does not cover the viewport during ${scenarioName}: ${JSON.stringify(metrics)}`);
     }
 
     const scaleCap = metrics.track.width <= 640 ? 0.9 : 1.25;
@@ -1715,37 +853,11 @@ async function assertMetaballStage(page, scenarioName, expectedState = "ready") 
     ) {
       throw new Error(`Metaball backing buffer exceeds its DPR budget during ${scenarioName}: ${JSON.stringify(metrics)}`);
     }
-  } else if (metrics.canvas.display !== "none") {
+  } else if (metrics.canvas.display !== "none" && metrics.canvas.visibility !== "hidden") {
     throw new Error(`Fallback canvas remains visible during ${scenarioName}: ${JSON.stringify(metrics)}`);
   }
 
   return metrics;
-}
-
-async function assertStageNodesInteractive(stage, scenarioName) {
-  const failures = await stage.locator('[data-testid^="dialogue-stage-node-"]').evaluateAll((nodes) =>
-    nodes.flatMap((node) => {
-      if (!(node instanceof HTMLButtonElement)) {
-        return [{ testId: node.getAttribute("data-testid"), reason: "not-button" }];
-      }
-      const rect = node.getBoundingClientRect();
-      if (node.disabled || node.tabIndex < 0 || rect.width < 44 || rect.height < 44) {
-        return [{
-          testId: node.dataset.testid,
-          reason: "not-interactive",
-          disabled: node.disabled,
-          tabIndex: node.tabIndex,
-          width: rect.width,
-          height: rect.height
-        }];
-      }
-      return [];
-    })
-  );
-
-  if (failures.length) {
-    throw new Error(`Stage nodes are not clickable and focusable during ${scenarioName}: ${JSON.stringify(failures)}`);
-  }
 }
 
 async function readPersistedGraphCounts(page) {
@@ -1934,140 +1046,6 @@ function assertNoPageIssues(pageIssues, scenarioName) {
   }
 }
 
-async function collectVisibleStageNodeBoxes(stage, scenarioName, expectedNodeCount) {
-  const viewportBox = await stage.getByTestId("dialogue-stage-viewport").boundingBox();
-  if (!viewportBox) {
-    throw new Error(`Growth stage viewport is not measurable on ${scenarioName}`);
-  }
-
-  const nodeBoxes = await stage.locator('[data-testid^="dialogue-stage-node-"]').evaluateAll((nodes) =>
-    nodes.map((node) => {
-      const rect = node.getBoundingClientRect();
-      return {
-        testId: node.getAttribute("data-testid"),
-        left: rect.left,
-        right: rect.right,
-        top: rect.top,
-        bottom: rect.bottom,
-        width: rect.width,
-        height: rect.height
-      };
-    })
-  );
-
-  if (nodeBoxes.length !== expectedNodeCount) {
-    throw new Error(`Growth stage node count mismatch on ${scenarioName}: ${JSON.stringify({ expectedNodeCount, nodeBoxes })}`);
-  }
-
-  for (const node of nodeBoxes) {
-    const clipped =
-      node.left < viewportBox.x ||
-      node.right > viewportBox.x + viewportBox.width ||
-      node.top < viewportBox.y ||
-      node.bottom > viewportBox.y + viewportBox.height;
-    if (clipped) {
-      throw new Error(`Growth stage node is clipped on ${scenarioName}: ${JSON.stringify({ viewportBox, node })}`);
-    }
-  }
-
-  for (let leftIndex = 0; leftIndex < nodeBoxes.length; leftIndex += 1) {
-    for (let rightIndex = leftIndex + 1; rightIndex < nodeBoxes.length; rightIndex += 1) {
-      const left = nodeBoxes[leftIndex];
-      const right = nodeBoxes[rightIndex];
-      const overlaps =
-        left.left < right.right &&
-        left.right > right.left &&
-        left.top < right.bottom &&
-        left.bottom > right.top;
-      if (overlaps) {
-        throw new Error(`Growth stage nodes overlap on ${scenarioName}: ${JSON.stringify({ left, right })}`);
-      }
-    }
-  }
-
-  return nodeBoxes;
-}
-
-function assertStageNodePositionsMatchBaseline(actualNodes, baselineNodes, scenarioName) {
-  const baselineByTestId = new Map(baselineNodes.map((node) => [node.testId, node]));
-
-  for (const actualNode of actualNodes) {
-    const baselineNode = baselineByTestId.get(actualNode.testId);
-    if (!baselineNode) {
-      throw new Error(`Growth stage baseline is missing ${actualNode.testId} on ${scenarioName}`);
-    }
-
-    const leftDelta = Math.abs(actualNode.left - baselineNode.left);
-    const topDelta = Math.abs(actualNode.top - baselineNode.top);
-    if (leftDelta > 0.01 || topDelta > 0.01) {
-      throw new Error(
-        `Growth stage position diverged from the compact baseline on ${scenarioName}: ${JSON.stringify({
-          testId: actualNode.testId,
-          baseline: { left: baselineNode.left, top: baselineNode.top },
-          actual: { left: actualNode.left, top: actualNode.top },
-          leftDelta,
-          topDelta
-        })}`
-      );
-    }
-  }
-}
-
-async function assertFlowStatusDoesNotCoverStageNodes(page, nodeBoxes, scenarioName) {
-  const flowStatus = page.getByTestId("dialogue-flow-status");
-  if (!await flowStatus.count()) {
-    return;
-  }
-
-  const statusBox = await flowStatus.boundingBox();
-  if (!statusBox) {
-    return;
-  }
-
-  for (const node of nodeBoxes) {
-    const overlaps =
-      statusBox.x < node.right &&
-      statusBox.x + statusBox.width > node.left &&
-      statusBox.y < node.bottom &&
-      statusBox.y + statusBox.height > node.top;
-    if (overlaps) {
-      throw new Error(`Growth flow status covers a stage node on ${scenarioName}: ${JSON.stringify({ statusBox, node })}`);
-    }
-  }
-}
-
-async function mockDeferredSynthesis(page) {
-  let releaseResponse;
-  const responseReady = new Promise((resolve) => {
-    releaseResponse = resolve;
-  });
-  let requestId = null;
-
-  await page.route("**/api/synthesis", async (route) => {
-    const body = route.request().postDataJSON();
-    requestId = body.requestId;
-    await responseReady;
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        requestId,
-        synthesis: {
-          text: "保留主线，但拆开节奏。",
-          summary: "主线收束",
-          label: "收束",
-          stance: "合"
-        }
-      })
-    });
-  });
-
-  return {
-    release: () => releaseResponse(),
-    getRequestId: () => requestId
-  };
-}
-
 async function ensureActiveElement(page, expected) {
   await waitForCondition(
     page,
@@ -2099,848 +1077,6 @@ async function ensureActiveElement(page, expected) {
   ) {
     throw new Error(`Unexpected active element: ${JSON.stringify({ active, expected })}`);
   }
-}
-
-async function ensureSynthesisPendingFocusFlow(browser) {
-  const { context, page, pageIssues } = await createScenarioPage(browser, createWorkspaceWithoutSynthesis());
-  const synthesis = await mockDeferredSynthesis(page);
-
-  await page.getByTestId("dialogue-composer").getByRole("button", { name: /合流记录/ }).click();
-  await page.getByRole("button", { name: "合流中..." }).waitFor();
-  if (!synthesis.getRequestId()) {
-    throw new Error("Synthesis request did not start during pending flow scenario");
-  }
-  synthesis.release();
-  await page.getByRole("heading", { name: "一次正反合流" }).waitFor();
-  await ensureActiveElement(page, { id: "conversation-panel-heading" });
-  assertNoPageIssues(pageIssues, "synthesis pending focus flow");
-  await context.close();
-
-  return { name: "synthesis-pending-focus", passed: true };
-}
-
-async function ensureSynthesisStaleCompletionDoesNotStealFocus(browser) {
-  const { context, page, pageIssues } = await createScenarioPage(
-    browser,
-    createWorkspaceWithoutSynthesis({ includeSecondRoot: true })
-  );
-  const synthesis = await mockDeferredSynthesis(page);
-
-  await page.getByTestId("dialogue-composer").getByRole("button", { name: /合流记录/ }).click();
-  await page.getByRole("button", { name: "合流中..." }).waitFor();
-  await page.getByTestId("dialogue-sidebar").getByRole("button", { name: /另一个问题/ }).click();
-  await page.getByRole("heading", { name: /另一个问题/ }).waitFor();
-  synthesis.release();
-  await page.getByTestId("dialogue-flow-status").waitFor();
-  await page.getByTestId("dialogue-flow-status").filter({ hasText: "合流已生成：查看合流记录，或基于它继续追问。" }).waitFor();
-  await page.getByRole("heading", { name: /另一个问题/ }).waitFor();
-  assertNoPageIssues(pageIssues, "synthesis stale completion focus flow");
-  await context.close();
-
-  return { name: "synthesis-stale-completion", passed: true };
-}
-
-async function ensureRoundtableDrawerReturnsFocus(browser) {
-  const { context, page, pageIssues } = await createScenarioPage(browser, seededWorkspace);
-  await page.route("**/api/roundtable", async (route) => {
-    const body = route.request().postDataJSON();
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        requestId: body.requestId,
-        state: {
-          topic: "roundtable topic",
-          participants: [],
-          rounds: [],
-          currentQuestion: "q1",
-          nextQuestion: "作为追问继续的问题",
-          lastCoreTension: "核心张力",
-          status: "active"
-        }
-      })
-    });
-  });
-
-  await page.getByRole("button", { name: "召集圆桌讨论此节点" }).click();
-  await page.getByTestId("dialogue-roundtable-drawer").waitFor();
-  await ensureActiveElement(page, { testId: "dialogue-roundtable-drawer" });
-  await page.keyboard.press("Escape");
-  await page.getByTestId("dialogue-roundtable-drawer").waitFor({ state: "detached" });
-  await ensureActiveElement(page, { text: "召集圆桌讨论此节点" });
-  assertNoPageIssues(pageIssues, "roundtable drawer focus return");
-  await context.close();
-
-  return { name: "roundtable-drawer-focus-return", passed: true };
-}
-
-async function ensureRoundtableDeepenSuccess(browser) {
-  const { context, page, pageIssues } = await createScenarioPage(
-    browser,
-    seededWorkspace,
-    {
-      viewport: { width: 1440, height: 980 },
-      reducedMotion: "reduce"
-    }
-  );
-  await page.route("**/api/roundtable", async (route) => {
-    const body = route.request().postDataJSON();
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        requestId: body.requestId,
-        state: createVisualRoundtableState({ deepened: body.command === "deepen" })
-      })
-    });
-  });
-
-  await page.getByRole("button", { name: "召集圆桌讨论此节点" }).click();
-  const drawer = page.getByTestId("dialogue-roundtable-drawer");
-  await drawer.waitFor();
-  await page.getByRole("heading", { name: "圆桌会议剧场" }).waitFor();
-  await page.getByRole("button", { name: "深挖一轮" }).click();
-  await drawer.getByText("责任如何不被流程吞掉？").waitFor();
-  await drawer.getByText("流程可以协助判断，但不能替行动者承担责任。").waitFor();
-
-  const first = await drawer.screenshot();
-  await page.waitForTimeout(500);
-  const second = await drawer.screenshot();
-  if (!first.equals(second)) {
-    throw new Error("Reduced-motion roundtable theater changed across a 500ms interval");
-  }
-
-  const screenshotPath = path.join(outputDir, "desktop-roundtable-theater-deepened.png");
-  await drawer.screenshot({ path: screenshotPath });
-  assertNoPageIssues(pageIssues, "roundtable deepen success");
-  await context.close();
-
-  return {
-    name: "roundtable-deepen-success",
-    passed: true,
-    reducedMotionStable: true,
-    screenshot: screenshotPath
-  };
-}
-
-async function ensureRoundtableDeepenFailure(browser) {
-  const { context, page, pageIssues } = await createScenarioPage(browser, seededWorkspace);
-  await page.route("**/api/roundtable", async (route) => {
-    const body = route.request().postDataJSON();
-    if (body.command === "deepen") {
-      await route.fulfill({
-        status: 503,
-        contentType: "application/json",
-        body: JSON.stringify({
-          requestId: body.requestId,
-          error: "roundtable_failed",
-          details: "provider_overloaded"
-        })
-      });
-      return;
-    }
-
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        requestId: body.requestId,
-        state: createVisualRoundtableState()
-      })
-    });
-  });
-
-  await page.getByRole("button", { name: "召集圆桌讨论此节点" }).click();
-  const drawer = page.getByTestId("dialogue-roundtable-drawer");
-  await drawer.waitFor();
-  await page.getByRole("button", { name: "深挖一轮" }).click();
-  await page.getByRole("alert").filter({ hasText: "模型服务负载已满" }).waitFor();
-  await drawer.getByText("谁来承担继续之后的责任？").waitFor();
-  if (!(await page.getByRole("button", { name: "深挖一轮" }).isEnabled())) {
-    throw new Error("Roundtable deepen action did not recover after provider failure");
-  }
-
-  const screenshotPath = path.join(outputDir, "desktop-roundtable-theater-error.png");
-  await page.screenshot({ path: screenshotPath, fullPage: false });
-  const unexpectedIssues = pageIssues.filter(
-    (issue) => !(issue.type === "console:error" && issue.text.includes("status of 503"))
-  );
-  assertNoPageIssues(unexpectedIssues, "roundtable deepen failure");
-  await context.close();
-
-  return { name: "roundtable-deepen-failure", passed: true, screenshot: screenshotPath };
-}
-
-async function ensureRoundtableTheaterExitAndMobileFallback(browser) {
-  const scenarios = [
-    {
-      name: "desktop-reduced-motion",
-      context: { viewport: { width: 1440, height: 980 }, reducedMotion: "reduce" }
-    },
-    {
-      name: "mobile-320",
-      context: { viewport: { width: 320, height: 740 }, hasTouch: true, isMobile: true }
-    }
-  ];
-  const screenshots = {};
-
-  for (const scenario of scenarios) {
-    const context = await browser.newContext({ deviceScaleFactor: 1, ...scenario.context });
-    await context.addInitScript((snapshot) => {
-      window.localStorage.setItem("anicca_workspace_v2", JSON.stringify(snapshot));
-    }, seededWorkspace);
-    const page = await context.newPage();
-    setActivePage(page);
-    const pageIssues = [];
-    page.on("console", (message) => {
-      const text = message.text();
-      if (
-        message.type() === "error" ||
-        /hydration|did not match|server rendered|text content does not match/i.test(text)
-      ) {
-        pageIssues.push({ type: `console:${message.type()}`, text });
-      }
-    });
-    page.on("pageerror", (error) => {
-      pageIssues.push({ type: "pageerror", text: error.message });
-    });
-
-    await page.goto(`${baseUrl}/roundtable`, { waitUntil: "networkidle" });
-    const handoff = page.getByTestId("roundtable-handoff");
-    const exit = page.getByTestId("roundtable-theater-exit");
-    await handoff.waitFor();
-    await exit.waitFor();
-    if ((await exit.getAttribute("href")) !== "/dialogue") {
-      throw new Error(`Roundtable theater exit has the wrong target on ${scenario.name}`);
-    }
-
-    const metrics = await page.evaluate(() => {
-      const handoffElement = document.querySelector('[data-testid="roundtable-handoff"]');
-      const exitElement = document.querySelector('[data-testid="roundtable-theater-exit"]');
-      if (!(handoffElement instanceof HTMLElement) || !(exitElement instanceof HTMLElement)) {
-        return null;
-      }
-      const handoffRect = handoffElement.getBoundingClientRect();
-      const exitRect = exitElement.getBoundingClientRect();
-      const style = getComputedStyle(handoffElement);
-      return {
-        handoff: { left: handoffRect.left, right: handoffRect.right, width: handoffRect.width },
-        exit: { width: exitRect.width, height: exitRect.height },
-        scrollWidth: document.documentElement.scrollWidth,
-        clientWidth: document.documentElement.clientWidth,
-        animationDuration: style.animationDuration,
-        transitionDuration: style.transitionDuration
-      };
-    });
-    if (!metrics) {
-      throw new Error(`Roundtable handoff metrics are missing on ${scenario.name}`);
-    }
-    if (metrics.scrollWidth > metrics.clientWidth + 1 || metrics.handoff.right > metrics.clientWidth + 1) {
-      throw new Error(`Roundtable theater overflows horizontally on ${scenario.name}: ${JSON.stringify(metrics)}`);
-    }
-    if (metrics.exit.height < 44) {
-      throw new Error(`Roundtable theater exit is smaller than 44px on ${scenario.name}: ${JSON.stringify(metrics)}`);
-    }
-    if (
-      scenario.name === "desktop-reduced-motion" &&
-      !["0s", "0ms"].includes(metrics.animationDuration)
-    ) {
-      throw new Error(`Roundtable theater still animates under reduced motion: ${JSON.stringify(metrics)}`);
-    }
-
-    const screenshotPath = path.join(outputDir, `${scenario.name}-roundtable-handoff.png`);
-    await handoff.screenshot({ path: screenshotPath });
-    screenshots[scenario.name] = screenshotPath;
-    await exit.click();
-    await page.waitForURL("**/dialogue");
-    await page.getByTestId("dialogue-stage").waitFor();
-    assertNoPageIssues(pageIssues, `roundtable theater exit ${scenario.name}`);
-    await context.close();
-  }
-
-  return {
-    name: "roundtable-theater-exit-mobile-fallback",
-    passed: true,
-    screenshots
-  };
-}
-
-async function ensureNextStepChoiceDockLayout(browser) {
-  const workspace = createWorkspaceWithoutSynthesis();
-  const desktop = await createScenarioPage(browser, workspace, {
-    viewport: { width: 1440, height: 980 }
-  });
-  const desktopComposer = desktop.page.getByTestId("dialogue-composer");
-  await desktopComposer.waitFor();
-  await desktopComposer.getByRole("button", { name: /继续推进正方/ }).waitFor();
-  await desktopComposer.getByRole("button", { name: /暂缓判断反方/ }).waitFor();
-  await desktopComposer.getByRole("button", { name: /合流记录/ }).waitFor();
-  await ensureChoiceButtonsAccessibleAndTouchable(desktop.page, 38);
-  const desktopMode = await desktopComposer.getAttribute("data-mode");
-  if (desktopMode !== "choice") {
-    throw new Error(`Desktop composer did not enter choice mode: ${desktopMode}`);
-  }
-  await assertRegionWidth(desktopComposer, 1440, "desktop choice composer");
-  await ensureStageHintDoesNotOverlapWorkspace(desktop.page, "desktop choice dock");
-  const desktopScreenshotPath = path.join(outputDir, "desktop-choice-dock.png");
-  await desktop.page.screenshot({ path: desktopScreenshotPath, fullPage: false });
-  assertNoPageIssues(desktop.pageIssues, "desktop choice dock layout");
-  await desktop.context.close();
-
-  const mobile = await createScenarioPage(browser, workspace, {
-    viewport: { width: 320, height: 740 }
-  });
-  const mobileComposer = mobile.page.getByTestId("dialogue-composer");
-  await mobileComposer.waitFor();
-  const mobileMode = await mobileComposer.getAttribute("data-mode");
-  if (mobileMode !== "choice") {
-    throw new Error(`Mobile composer did not enter choice mode: ${mobileMode}`);
-  }
-  await assertRegionWidth(mobileComposer, 320, "mobile choice composer");
-  await assertRegionVisible(mobileComposer, 740, "mobile choice composer initial");
-  await ensureMobileChoiceContextVisible(mobile.page, 320, 740);
-  await ensureChoiceButtonsAccessibleAndTouchable(mobile.page, 44);
-  await ensureMobileRootNodeHasVisibleText(mobile.page);
-  await ensureMobileComposerDoesNotCoverLineage(mobile.page);
-  await ensureMobileComposerDoesNotCoverPanelActions(mobile.page);
-  await ensureFocusedSidebarItemFullyVisible(mobile.page, "mobile choice dock");
-  await ensureVisibleSidebarItemsNotClipped(mobile.page, "mobile choice dock");
-  await mobileComposer.scrollIntoViewIfNeeded();
-  await mobile.page.waitForTimeout(60);
-  await assertRegionVisible(mobileComposer, 740, "mobile choice composer");
-  const mobileScreenshotPath = path.join(outputDir, "mobile-320-choice-dock.png");
-  await mobile.page.screenshot({ path: mobileScreenshotPath, fullPage: false });
-  assertNoPageIssues(mobile.pageIssues, "mobile choice dock layout");
-  await mobile.context.close();
-
-  return {
-    name: "next-step-choice-dock-layout",
-    passed: true,
-    screenshots: {
-      desktop: desktopScreenshotPath,
-      mobile: mobileScreenshotPath
-    }
-  };
-}
-
-async function ensureRetrievalDebugPreview(browser) {
-  const hidden = await createScenarioPage(browser, createWorkspaceWithRetrievalMatch(), {
-    viewport: { width: 1280, height: 900 }
-  });
-  const hiddenPreviewCount = await hidden.page.getByTestId("dialogue-retrieval-debug").count();
-  if (hiddenPreviewCount !== 0) {
-    throw new Error("Retrieval debug preview rendered without ?retrievalDebug=1");
-  }
-  assertNoPageIssues(hidden.pageIssues, "retrieval debug hidden by default");
-  await hidden.context.close();
-
-  const desktop = await createScenarioPage(
-    browser,
-    createWorkspaceWithRetrievalMatch(),
-    {
-      viewport: { width: 1280, height: 900 }
-    },
-    "/dialogue?retrievalDebug=1"
-  );
-  await desktop.page.getByLabel("输入").fill("下一步怎么拆");
-  const desktopPreview = desktop.page.getByTestId("dialogue-retrieval-debug");
-  await desktopPreview.filter({ hasText: "retrieval_context preview" }).waitFor();
-  await desktopPreview.filter({ hasText: "拆分参考" }).waitFor();
-  await desktopPreview.filter({ hasText: "coverage exclusion active" }).waitFor();
-  await assertRegionWidth(desktopPreview, 1280, "desktop retrieval debug preview");
-  const desktopScreenshotPath = path.join(outputDir, "desktop-retrieval-debug.png");
-  await desktop.page.screenshot({ path: desktopScreenshotPath, fullPage: false });
-  assertNoPageIssues(desktop.pageIssues, "retrieval debug content preview");
-  await desktop.context.close();
-
-  const empty = await createScenarioPage(
-    browser,
-    createEmptyWorkspace(),
-    {
-      viewport: { width: 1280, height: 900 }
-    },
-    "/dialogue?retrievalDebug=1"
-  );
-  const emptyPreview = empty.page.getByTestId("dialogue-retrieval-debug");
-  await emptyPreview.filter({ hasText: "无可注入片段" }).waitFor();
-  await emptyPreview.filter({ hasText: "(empty)" }).waitFor();
-  await emptyPreview.filter({ hasText: "empty query" }).waitFor();
-  assertNoPageIssues(empty.pageIssues, "retrieval debug empty preview");
-  await empty.context.close();
-
-  const mobile = await createScenarioPage(
-    browser,
-    createWorkspaceWithRetrievalMatch(),
-    {
-      viewport: { width: 360, height: 740 },
-      hasTouch: true,
-      isMobile: true
-    },
-    "/dialogue?retrievalDebug=1"
-  );
-  await mobile.page.getByLabel("输入").fill("下一步怎么拆");
-  const mobilePreview = mobile.page.getByTestId("dialogue-retrieval-debug");
-  await mobilePreview.filter({ hasText: "拆分参考" }).waitFor();
-  await mobilePreview.scrollIntoViewIfNeeded();
-  await mobile.page.waitForTimeout(60);
-  await ensureNoHorizontalOverflow(mobile.page, "mobile retrieval debug preview");
-  await assertRegionWidth(mobilePreview, 360, "mobile retrieval debug preview");
-  const mobileScreenshotPath = path.join(outputDir, "mobile-360-retrieval-debug.png");
-  await mobile.page.screenshot({ path: mobileScreenshotPath, fullPage: false });
-  assertNoPageIssues(mobile.pageIssues, "mobile retrieval debug preview");
-  await mobile.context.close();
-
-  return {
-    name: "retrieval-debug-preview",
-    passed: true,
-    screenshots: {
-      desktop: desktopScreenshotPath,
-      mobile: mobileScreenshotPath
-    }
-  };
-}
-
-async function ensureGrowthPerspectiveFlow(browser) {
-  const scenarios = [
-    { name: "desktop", viewport: { width: 1440, height: 980 }, fullPage: false },
-    { name: "mobile-390", viewport: { width: 390, height: 844 }, fullPage: true },
-    { name: "mobile-320", viewport: { width: 320, height: 740 }, fullPage: true }
-  ];
-  const screenshots = {};
-  const composerScreenshots = {};
-  const stageNodeChecks = {};
-
-  for (const scenario of scenarios) {
-    const { context, page, pageIssues } = await createScenarioPage(browser, createEmptyWorkspace(), {
-      viewport: scenario.viewport,
-      hasTouch: scenario.name.startsWith("mobile"),
-      isMobile: scenario.name.startsWith("mobile")
-    });
-    const composer = page.getByTestId("dialogue-composer");
-    await assertMetaballStage(page, `growth perspectives ${scenario.name}`);
-
-    await page.getByRole("button", { name: /点此输入/ }).click();
-    await composer.getByLabel("输入").fill("也许要换个角度继续推进？");
-    const growthButton = composer.getByRole("button", { name: "画作视角" });
-    await growthButton.waitFor();
-    const growthButtonBox = await growthButton.boundingBox();
-    if (!growthButtonBox || growthButtonBox.width < 44 || growthButtonBox.height < 44) {
-      throw new Error(`Artwork perspective target is below 44px on ${scenario.name}: ${JSON.stringify(growthButtonBox)}`);
-    }
-
-    await growthButton.click();
-    await page.getByRole("status").filter({ hasText: "画作视角已生成：只回应当前事件，不写长期记忆。" }).waitFor();
-    await page.getByTestId("dialogue-sidebar").getByRole("button", { name: /画作合并/ }).waitFor();
-    const stage = page.getByTestId("dialogue-stage");
-    const growthNodeTestIds = await stage.locator('[data-testid^="dialogue-stage-node-"]').evaluateAll((nodes) =>
-      nodes.map((node) => node.getAttribute("data-testid")).filter((testId) => Boolean(testId))
-    );
-    if (growthNodeTestIds.length < 5) {
-      throw new Error(`Growth stage did not render every local perspective on ${scenario.name}: ${JSON.stringify(growthNodeTestIds)}`);
-    }
-    const nodeBoxes = await collectVisibleStageNodeBoxes(stage, scenario.name, growthNodeTestIds.length);
-    await assertFlowStatusDoesNotCoverStageNodes(page, nodeBoxes, scenario.name);
-    stageNodeChecks[scenario.name] = {
-      nodeCount: nodeBoxes.length,
-      nodes: nodeBoxes
-    };
-
-    const rootTestId = growthNodeTestIds[0];
-    for (const testId of growthNodeTestIds) {
-      const node = page.getByTestId(testId);
-      await node.evaluate((element) => {
-        (element instanceof HTMLElement ? element : null)?.focus();
-      });
-      await waitForCondition(
-        page,
-        `growth:${scenario.name}:focus:${testId}`,
-        (expectedTestId) => document.activeElement?.getAttribute("data-testid") === expectedTestId,
-        testId
-      );
-      await ensureActiveElement(page, { testId });
-      await node.click();
-      if (testId !== rootTestId) {
-        await waitForCondition(
-          page,
-          `growth:${scenario.name}:select:${testId}`,
-          ([expectedRootTestId, expectedSelectedTestId]) => {
-            const stageNodeTestIds = [...document.querySelectorAll('[data-testid^="dialogue-stage-node-"]')]
-              .map((node) => node.getAttribute("data-testid"));
-            return stageNodeTestIds.length === 2 &&
-              stageNodeTestIds.includes(expectedRootTestId) &&
-              stageNodeTestIds.includes(expectedSelectedTestId);
-          },
-          [rootTestId, testId]
-        );
-        await page.getByTestId(rootTestId).click();
-        await waitForCondition(
-          page,
-          `growth:${scenario.name}:restore-all-nodes`,
-          (expectedTestIds) =>
-            expectedTestIds.every((expectedTestId) => document.querySelector(`[data-testid="${expectedTestId}"]`)),
-          growthNodeTestIds
-        );
-      }
-    }
-    await ensureNoHorizontalOverflow(page, `growth ${scenario.name}`);
-    await assertRegionWidth(composer, scenario.viewport.width, `growth composer ${scenario.name}`);
-
-    const screenshotPath = path.join(outputDir, `${scenario.name}-growth-perspectives.png`);
-    if (scenario.name.startsWith("mobile")) {
-      await stage.scrollIntoViewIfNeeded();
-      await page.waitForTimeout(60);
-      await stage.screenshot({ path: screenshotPath });
-    } else {
-      await page.screenshot({ path: screenshotPath, fullPage: scenario.fullPage });
-    }
-    screenshots[scenario.name] = screenshotPath;
-
-    if (scenario.name.startsWith("mobile")) {
-      await composer.scrollIntoViewIfNeeded();
-      await page.waitForTimeout(60);
-      await ensureMobileComposerSingleColumn(page, `growth ${scenario.name}`);
-      await ensureMobileComposerDoesNotCoverLineage(page);
-      await ensureMobileComposerDoesNotCoverPanelActions(page);
-      const composerScreenshotPath = path.join(outputDir, `${scenario.name}-growth-composer.png`);
-      await composer.screenshot({ path: composerScreenshotPath });
-      composerScreenshots[scenario.name] = composerScreenshotPath;
-    }
-    assertNoPageIssues(pageIssues, `growth perspectives ${scenario.name}`);
-    await context.close();
-  }
-
-  return {
-    name: "growth-perspective-flow",
-    passed: true,
-    screenshots,
-    composerScreenshots,
-    stageNodeChecks
-  };
-}
-
-async function ensureGrowthLayoutMatrix(browser) {
-  const scenarios = [
-    { name: "desktop", viewport: { width: 1440, height: 980 } },
-    { name: "tablet", viewport: { width: 1024, height: 900 } },
-    { name: "mobile-390", viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true },
-    { name: "mobile-360", viewport: { width: 360, height: 740 }, hasTouch: true, isMobile: true },
-    { name: "mobile-320", viewport: { width: 320, height: 740 }, hasTouch: true, isMobile: true }
-  ];
-  const stageNodeChecks = {};
-
-  for (const candidateLimit of [1, 2, 3, 4]) {
-    const expectedChildCount = candidateLimit + (candidateLimit >= 2 ? 1 : 0);
-
-    for (const scenario of scenarios) {
-      const scenarioName = `growth matrix candidateLimit=${candidateLimit} ${scenario.name}`;
-      const { context, page, pageIssues } = await createScenarioPage(browser, createGrowthWorkspace(candidateLimit), {
-        viewport: scenario.viewport,
-        hasTouch: scenario.hasTouch,
-        isMobile: scenario.isMobile
-      });
-      const stage = page.getByTestId("dialogue-stage");
-      await assertMetaballStage(page, scenarioName);
-      const nodeBoxes = await collectVisibleStageNodeBoxes(stage, scenarioName, expectedChildCount + 1);
-      await assertStageNodesInteractive(stage, scenarioName);
-
-      stageNodeChecks[`candidate-${candidateLimit}-${scenario.name}`] = {
-        candidateLimit,
-        nodeCount: nodeBoxes.length,
-        nodes: nodeBoxes
-      };
-
-      assertNoPageIssues(pageIssues, scenarioName);
-      await context.close();
-    }
-  }
-
-  return {
-    name: "growth-layout-matrix",
-    passed: true,
-    stageNodeChecks
-  };
-}
-
-async function ensureGrowthWideLayoutCompatibility(browser) {
-  const expectedNodeCount = 6;
-  const baseline = await createScenarioPage(browser, createGrowthWorkspace(4), {
-    viewport: { width: 320, height: 740 },
-    hasTouch: true,
-    isMobile: true
-  });
-  const baselineNodeBoxes = await collectVisibleStageNodeBoxes(
-    baseline.page.getByTestId("dialogue-stage"),
-    "Growth compact baseline on mobile-320",
-    expectedNodeCount
-  );
-  assertNoPageIssues(baseline.pageIssues, "Growth compact baseline on mobile-320");
-  await baseline.context.close();
-
-  const imported = await createScenarioPage(browser, createGrowthWorkspace(4, { withWideStageLayout: true }), {
-    viewport: { width: 320, height: 740 },
-    hasTouch: true,
-    isMobile: true
-  });
-  const importedStage = imported.page.getByTestId("dialogue-stage");
-  const importedNodeBoxes = await collectVisibleStageNodeBoxes(
-    importedStage,
-    "Growth imported wide layout on mobile-320",
-    expectedNodeCount
-  );
-  assertStageNodePositionsMatchBaseline(importedNodeBoxes, baselineNodeBoxes, "Growth imported wide layout on mobile-320");
-  assertNoPageIssues(imported.pageIssues, "Growth imported wide layout on mobile-320");
-  await imported.context.close();
-
-  const dragged = await createScenarioPage(browser, createGrowthWorkspace(4), {
-    viewport: { width: 1440, height: 980 }
-  });
-  const draggedStage = dragged.page.getByTestId("dialogue-stage");
-  const dragTarget = draggedStage.locator('[data-testid^="dialogue-stage-node-"]').nth(1);
-  const dragTargetBox = await dragTarget.boundingBox();
-  if (!dragTargetBox) {
-    throw new Error("Growth desktop drag target is not measurable");
-  }
-  await dragged.page.mouse.move(dragTargetBox.x + dragTargetBox.width / 2, dragTargetBox.y + dragTargetBox.height / 2);
-  await dragged.page.mouse.down();
-  await dragged.page.mouse.move(dragTargetBox.x + dragTargetBox.width / 2 + 36, dragTargetBox.y + dragTargetBox.height / 2 - 18);
-  await dragged.page.mouse.up();
-  await dragged.page.setViewportSize({ width: 320, height: 740 });
-  await waitForCondition(
-    dragged.page,
-    "growth-wide-layout:mobile-media-query",
-    () => window.matchMedia("(max-width: 980px)").matches
-  );
-  await waitForCondition(
-    dragged.page,
-    "growth-wide-layout:compact-node-positions",
-    (expectedNodes) => expectedNodes.every((expectedNode) => {
-      const element = document.querySelector(`[data-testid="${expectedNode.testId}"]`);
-      if (!(element instanceof HTMLElement)) return false;
-      const rect = element.getBoundingClientRect();
-      return Math.abs(rect.left - expectedNode.left) <= 0.01 && Math.abs(rect.top - expectedNode.top) <= 0.01;
-    }),
-    baselineNodeBoxes,
-    { timeout: 3000 }
-  );
-  const draggedNodeBoxes = await collectVisibleStageNodeBoxes(
-    draggedStage,
-    "Growth desktop drag then mobile-320",
-    expectedNodeCount
-  );
-  assertStageNodePositionsMatchBaseline(draggedNodeBoxes, baselineNodeBoxes, "Growth desktop drag then mobile-320");
-  assertNoPageIssues(dragged.pageIssues, "Growth desktop drag then mobile-320");
-  await dragged.context.close();
-
-  return {
-    name: "growth-wide-layout-compatibility",
-    passed: true,
-    stageNodeChecks: {
-      "imported-wide-mobile-320": { nodeCount: importedNodeBoxes.length, nodes: importedNodeBoxes },
-      "desktop-drag-mobile-320": { nodeCount: draggedNodeBoxes.length, nodes: draggedNodeBoxes }
-    }
-  };
-}
-
-async function runInteractionScenarios(browser) {
-  const scenarios = [
-    ["metaball-fusion-and-separation", ensureMetaballFusionAndSeparation],
-    ["metaball-reduced-motion", ensureMetaballReducedMotion],
-    ["metaball-webgl-fallback", ensureMetaballWebglFallback],
-    ["synthesis-pending-focus", ensureSynthesisPendingFocusFlow],
-    ["synthesis-stale-completion", ensureSynthesisStaleCompletionDoesNotStealFocus],
-    ["roundtable-drawer-focus-return", ensureRoundtableDrawerReturnsFocus],
-    ["roundtable-deepen-success", ensureRoundtableDeepenSuccess],
-    ["roundtable-deepen-failure", ensureRoundtableDeepenFailure],
-    ["roundtable-theater-exit", ensureRoundtableTheaterExitAndMobileFallback],
-    ["empty-root-pending-state", ensureEmptyRootPendingState],
-    ["next-step-choice-dock-layout", ensureNextStepChoiceDockLayout],
-    ["retrieval-debug-preview", ensureRetrievalDebugPreview],
-    ["growth-perspective-flow", ensureGrowthPerspectiveFlow],
-    ["growth-layout-matrix", ensureGrowthLayoutMatrix],
-    ["growth-wide-layout-compatibility", ensureGrowthWideLayoutCompatibility]
-  ];
-  const results = [];
-
-  for (const [name, scenario] of scenarios) {
-    results.push(await runStep(`interaction:${name}`, () => scenario(browser)));
-    setActivePage(null);
-  }
-
-  return results;
-}
-
-async function runViewport(browser, viewport) {
-  const context = await browser.newContext({
-    viewport: {
-      width: viewport.width,
-      height: viewport.height
-    },
-    deviceScaleFactor: 1,
-    hasTouch: Boolean(viewport.hasTouch),
-    isMobile: Boolean(viewport.isMobile)
-  });
-
-  await context.addInitScript((snapshot) => {
-    window.localStorage.setItem("anicca_workspace_v2", JSON.stringify(snapshot));
-  }, seededWorkspace);
-
-  if (viewport.hasTouch) {
-    await context.addInitScript(() => {
-      const originalMatchMedia = window.matchMedia.bind(window);
-      window.matchMedia = (query) => {
-        if (query.includes("pointer: coarse")) {
-          return {
-            matches: true,
-            media: query,
-            onchange: null,
-            addEventListener() {},
-            removeEventListener() {},
-            addListener() {},
-            removeListener() {},
-            dispatchEvent() {
-              return true;
-            }
-          };
-        }
-
-        return originalMatchMedia(query);
-      };
-    });
-  }
-
-  const page = await context.newPage();
-  setActivePage(page);
-  const pageIssues = [];
-  page.on("console", (message) => {
-    const text = message.text();
-    if (
-      message.type() === "error" ||
-      /hydration|did not match|server rendered|text content does not match/i.test(text)
-    ) {
-      pageIssues.push({
-        type: `console:${message.type()}`,
-        text
-      });
-    }
-  });
-  page.on("pageerror", (error) => {
-    pageIssues.push({
-      type: "pageerror",
-      text: error.message
-    });
-  });
-
-  await page.goto(`${baseUrl}/dialogue`, { waitUntil: "networkidle" });
-
-  const stage = page.getByTestId("dialogue-stage");
-  const panel = page.getByTestId("dialogue-panel");
-  const composer = page.getByTestId("dialogue-composer");
-  const sidebar = page.getByTestId("dialogue-sidebar");
-  const workspaceBar = page.getByTestId("dialogue-workspace-bar");
-
-  await stage.waitFor();
-  await panel.waitFor();
-  await composer.waitFor();
-  await sidebar.waitFor();
-  await workspaceBar.waitFor();
-  await assertMetaballStage(page, viewport.name);
-  await assertStageNodesInteractive(stage, viewport.name);
-
-  await ensureNoHorizontalOverflow(page, viewport.name);
-  await assertRegionWidth(stage, viewport.width, `${viewport.name} stage`);
-  await assertRegionWidth(panel, viewport.width, `${viewport.name} panel`);
-  await assertRegionWidth(composer, viewport.width, `${viewport.name} composer`);
-  await assertRegionWidth(workspaceBar, viewport.width, `${viewport.name} workspace bar`);
-  await ensureStageHintDoesNotOverlapWorkspace(page, viewport.name);
-
-  const captures = {};
-
-  if (viewport.name.startsWith("mobile")) {
-    const initialScrollMetrics = await resetPageScroll(page);
-    const initialScreenshotPath = path.join(outputDir, `${viewport.name}-initial.png`);
-    await page.screenshot({ path: initialScreenshotPath, fullPage: false });
-    await page.screenshot({ path: path.join(outputDir, `${viewport.name}.png`), fullPage: false });
-    captures.initial = {
-      screenshotPath: initialScreenshotPath,
-      scrollMetrics: initialScrollMetrics
-    };
-
-    await assertRegionMinWidth(
-      workspaceBar,
-      viewport.width - 28,
-      `${viewport.name} workspace bar`
-    );
-
-    const mobileMetrics = await page.evaluate(() => {
-      const shell = document.querySelector('[data-testid="dialogue-shell"]');
-      if (!(shell instanceof HTMLElement)) {
-        return null;
-      }
-
-      return {
-        overflowY: getComputedStyle(shell).overflowY,
-        scrollHeight: shell.scrollHeight,
-        clientHeight: shell.clientHeight
-      };
-    });
-
-    if (!mobileMetrics) {
-      throw new Error("Missing shell metrics for mobile viewport");
-    }
-
-    if (mobileMetrics.overflowY === "hidden") {
-      throw new Error(`Mobile shell is not scrollable: ${JSON.stringify(mobileMetrics)}`);
-    }
-
-    await ensureMobileComposerDoesNotCoverLineage(page);
-    await ensureMobileComposerDoesNotCoverPanelActions(page);
-    await ensureMobileRootNodeHasVisibleText(page);
-    await ensureMobileComposerSingleColumn(page, viewport.name);
-    await ensureFocusedSidebarItemFullyVisible(page, viewport.name);
-    await ensureVisibleSidebarItemsNotClipped(page, viewport.name);
-    await ensureMobileCanScrollFromStage(page, viewport.name);
-  }
-
-  if (viewport.hasTouch) {
-    await ensureTouchViewportSemantics(page);
-  }
-
-  if (viewport.hasTouch) {
-    await ensureTouchNodeTapSelects(page);
-  }
-
-  await composer.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(60);
-
-  if (pageIssues.length) {
-    throw new Error(`Console or page errors detected on ${viewport.name}: ${JSON.stringify(pageIssues, null, 2)}`);
-  }
-
-  const screenshotPath = viewport.name.startsWith("mobile")
-    ? path.join(outputDir, `${viewport.name}-initial.png`)
-    : path.join(outputDir, `${viewport.name}.png`);
-  if (viewport.name.startsWith("mobile")) {
-    const composerScreenshotPath = path.join(outputDir, `${viewport.name}-composer.png`);
-    const composerScrollMetrics = await getPageScrollMetrics(page);
-    await page.screenshot({ path: composerScreenshotPath, fullPage: false });
-    captures.composer = {
-      screenshotPath: composerScreenshotPath,
-      scrollMetrics: composerScrollMetrics
-    };
-  } else {
-    await page.screenshot({ path: screenshotPath, fullPage: viewport.fullPage });
-  }
-  await context.close();
-
-  return {
-    name: viewport.name,
-    viewport: {
-      width: viewport.width,
-      height: viewport.height
-    },
-    screenshotPath,
-    ...(Object.keys(captures).length ? { captures } : {})
-  };
 }
 
 async function main() {
@@ -2977,15 +1113,28 @@ async function main() {
 
       await runStep("setup:wait-next-ready", () => waitForNextReady(server));
       await runStep("setup:wait-dialogue-ready", () => waitForServer(`${baseUrl}/dialogue`, server));
-      browser = await runStep("setup:launch-chromium", () => chromium.launch({ headless: true }));
+      browser = await runStep("setup:launch-chromium", () => chromium.launch({
+        headless: true,
+        ...(browserExecutablePath ? { executablePath: browserExecutablePath } : {})
+      }));
       const results = [];
 
       for (const viewport of viewports) {
-        results.push(await runStep(`viewport:${viewport.name}`, () => runViewport(browser, viewport)));
+        if (viewportNameFilter.size && !viewportNameFilter.has(viewport.name)) {
+          continue;
+        }
+        results.push(await runStep(`viewport:${viewport.name}`, () => runSeedViewport(browser, viewport, { baseUrl, outputDir, setActivePage })));
         setActivePage(null);
       }
 
-      const interactionScenarios = await runInteractionScenarios(browser);
+      // These rendering checks are independent of the former branch-only interface.
+      const interactionScenarios = [];
+      for (const [name, scenario] of [["metaball-fusion-separation", ensureMetaballFusionAndSeparation], ["metaball-reduced-motion", ensureMetaballReducedMotion], ["metaball-webgl-fallback", ensureMetaballWebglFallback]]) {
+        if (!scenarioNameFilter.size || scenarioNameFilter.has(name)) interactionScenarios.push(await runStep(`interaction:${name}`, () => scenario(browser)));
+      }
+      for (const [name, scenario] of [["seed-recovery-and-touch", runSeedRecoveryAndTouch], ["canvas-lifecycle", runCanvasLifecycle]]) {
+        if (!scenarioNameFilter.size || scenarioNameFilter.has(name)) interactionScenarios.push(await runStep(`interaction:${name}`, () => scenario(browser, { baseUrl, outputDir, setActivePage })));
+      }
 
       await runStep("teardown:close-browser", () => browser.close());
       browser = null;

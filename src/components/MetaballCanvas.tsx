@@ -1,14 +1,12 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { useMetaballStore } from '@/store/metaballStore'
+import { type Ball2D, useMetaballStore } from '@/store/metaballStore'
 import { initWebGPU } from '@/utils/webgpuInit'
 import computeWGSL from '@/shaders/metaball_compute.wgsl'
 import shadeWGSL from '@/shaders/shade_fullscreen.wgsl'
+import { ResourceScope } from '@/utils/resourceScope'
+import MetaballLabels from './MetaballLabels'
 import GSAPChatInput from './GSAPChatInput'
-
-// 为了通过类型检查，声明 WebGPU 用到的常量命名空间（运行时由浏览器提供）
-declare const GPUBufferUsage: any
-declare const GPUTextureUsage: any
 
 const K_MERGE = 1.3
 const K_UNMERGE = 1.6
@@ -17,105 +15,31 @@ const DWELL_MS = 1000
 export default function MetaballCanvas() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const balls = useMetaballStore(s => s.balls)
-  const fusionRange = useMetaballStore(s => s.fusionRange)
-  const adaptiveScale = useMetaballStore(s => s.adaptiveScale)
-  const setPos = useMetaballStore(s => s.setPos)
-  const split = useMetaballStore(s => s.split)
-  const merge = useMetaballStore(s => s.merge)
-
   // 拖拽时的靠近候选与高亮
   const [hoverMergeCandidate, setHoverMergeCandidate] = useState<number | null>(null)
 
   // Chat UI状态
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [selectedBallId, setSelectedBallId] = useState<number | null>(null)
-
+  const [renderError, setRenderError] = useState(false)
 
   useEffect(() => {
     if (!canvasRef.current) return
+    const controller = new AbortController()
     let cleanup: (() => void) | undefined
-    run(canvasRef.current, balls, fusionRange, adaptiveScale, setPos, setHoverMergeCandidate, () => hoverMergeCandidate, merge).then(stop => (cleanup = stop)).catch(console.error)
-    return () => { if (cleanup) cleanup() }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const state = useMetaballStore.getState()
+    run(canvasRef.current, state.balls, state.fusionRange, state.adaptiveScale, state.setPos, setHoverMergeCandidate, state.merge, controller.signal)
+      .then(stop => { if (controller.signal.aborted) stop(); else cleanup = stop })
+      .catch(() => { if (!controller.signal.aborted) setRenderError(true) })
+    return () => { controller.abort(); cleanup?.() }
   }, [])
-
-  // 将 NDC 坐标转换为屏幕像素坐标
-  const ndcToPixel = (ndc: [number, number]): [number, number] => {
-    if (!containerRef.current) return [0, 0]
-    const rect = containerRef.current.getBoundingClientRect()
-    const x = (ndc[0] + 1) * 0.5 * rect.width
-    const y = (1 - ndc[1]) * 0.5 * rect.height
-    return [x, y]
-  }
-
-  // 强制重新渲染序号标签
-  const [forceUpdate, setForceUpdate] = useState(0)
-  const triggerUpdate = () => setForceUpdate(prev => prev + 1)
-
-  // 容器挂载后强制更新序号标签
-  useEffect(() => {
-    if (containerRef.current) {
-      const timer = setTimeout(() => {
-        triggerUpdate()
-      }, 100)
-      return () => clearTimeout(timer)
-    }
-  }, [containerRef.current])
 
   return (
     <div ref={containerRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
       <canvas ref={canvasRef} style={{ width: '100%', height: '100%', touchAction: 'none' }} />
+      {renderError ? <p role="alert" style={{ position: 'absolute', inset: '45% 24px auto', color: '#fff', textAlign: 'center' }}>当前浏览器无法运行这个画布，请返回实验目录选择其他效果。</p> : null}
 
-
-      {/* 球体序号标签（可点击触发chat） */}
-      {balls.filter(b=>b.active!==false).map((ball) => {
-        const [x, y] = ndcToPixel(ball.pos)
-        const isHoverMerge = hoverMergeCandidate === ball.id
-
-        // 调试信息
-        console.log(`球体${ball.id}: NDC=${ball.pos}, 像素=${[x, y]}, 容器=${containerRef.current?.getBoundingClientRect()}`)
-
-        // 暂时不隐藏任何标签，先让所有序号都显示
-        // if (typeof window !== 'undefined' && (x < 20 || y < 20 || x > window.innerWidth - 20 || y > window.innerHeight - 20)) {
-        //   console.log(`球体${ball.id}被隐藏: x=${x}, y=${y}, 窗口=${window.innerWidth}x${window.innerHeight}`)
-        //   return null
-        // }
-
-        return (
-          <div key={ball.id} style={{ position: 'absolute', left: x - 20, top: y - 10, zIndex: 1000 }}>
-            <div
-              style={{
-                width: 40,
-                height: 20,
-                background: 'rgba(255, 255, 255, 0.9)',
-                border: isHoverMerge ? '2px solid #0af' : '1px solid rgba(0,0,0,0.2)',
-                borderRadius: 4,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 12,
-                fontWeight: 'bold',
-                color: '#333',
-                userSelect: 'none',
-                WebkitUserSelect: 'none',
-                MozUserSelect: 'none',
-                msUserSelect: 'none',
-                pointerEvents: 'auto', // 恢复点击功能
-                cursor: 'pointer',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-              }}
-              onClick={(e) => {
-                e.stopPropagation()
-                setSelectedBallId(ball.id)
-                setIsChatOpen(true)
-              }}
-            >
-              {ball.id}
-            </div>
-          </div>
-        )
-      })}
+      <MetaballLabels highlighted={hoverMergeCandidate} onSelect={id => { setSelectedBallId(id); setIsChatOpen(true) }} />
 
       {/* GSAP Chat Input */}
       <GSAPChatInput
@@ -133,22 +57,21 @@ export default function MetaballCanvas() {
 // 初始化并运行 WebGPU 渲染循环
 async function run(
   canvas: HTMLCanvasElement,
-  ballsInit: any[],
+  ballsInit: Ball2D[],
   fusionRangeInit: number,
   adaptiveScaleInit: number,
   setPos: (id: number, p: [number, number]) => void,
   setHoverMergeCandidate: (id: number | null) => void,
-  getHoverMergeCandidate: () => number | null,
-  merge: (a: number, b: number) => void
+  merge: (a: number, b: number) => void,
+  signal: AbortSignal
 ) {
-  const { device, context, format, configure } = await initWebGPU(canvas)
+  const { device, context, format, configure } = await initWebGPU(canvas, signal)
+  if (signal.aborted) { context.unconfigure(); device.destroy(); throw new DOMException('Aborted', 'AbortError') }
 
-  // 设备丢失监听
-  device.lost.then((info: any) => {
-    console.warn('GPU device lost:', info)
-    try { configure() } catch {}
-  })
-
+  ballsInit = useMetaballStore.getState().balls.filter(ball => ball.active !== false).slice(0, 256)
+  const resources = new ResourceScope()
+  resources.add(() => { context.unconfigure(); device.destroy() })
+  try {
   // 记录初始总“面积”（r^2 之和），用于全局归一化
   const initialTotalArea = ballsInit.reduce((acc, b) => acc + b.radius * b.radius, 0)
   let currentScale = 1.0
@@ -163,6 +86,7 @@ async function run(
   }
   resize()
   window.addEventListener('resize', resize)
+  resources.add(() => window.removeEventListener('resize', resize))
 
   // 着色器
   const csModule = device.createShaderModule({ code: computeWGSL })
@@ -176,6 +100,7 @@ async function run(
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
   })
 
+  resources.add(() => ballsBuffer.destroy())
   // 槽位映射：ballId -> slot 索引（0..count-1）
   const idToSlot = new Map<number, number>()
   let countRef = 0
@@ -189,7 +114,7 @@ async function run(
   }
 
   // 计算当前 scale（保持总面积约等于 initialTotalArea）
-  const recomputeScale = (active: any[]) => {
+  const recomputeScale = (active: Ball2D[]) => {
     const sum = active.reduce((acc, b) => acc + b.radius * b.radius, 0)
     currentScale = sum > 1e-6 ? Math.sqrt(initialTotalArea / sum) : 1.0
   }
@@ -230,7 +155,7 @@ async function run(
   device.queue.writeBuffer(ballsBuffer, 0, initArray.buffer)
 
   // 画布尺寸 / 计数
-  const SCALE = (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('Android')) ? 0.6 : 0.8
+  const SCALE = window.matchMedia('(pointer: coarse)').matches ? 0.6 : 0.8
   const texWidth = () => Math.max(256, Math.floor(canvas.width * SCALE))
   const texHeight = () => Math.max(256, Math.floor(canvas.height * SCALE))
 
@@ -238,6 +163,7 @@ async function run(
   const countBuffer = device.createBuffer({ size: 4, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST })
   const fusionRangeBuffer = device.createBuffer({ size: 4, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST })
   const adaptiveScaleBuffer = device.createBuffer({ size: 4, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST })
+  resources.add(() => { sizeBuffer.destroy(); countBuffer.destroy(); fusionRangeBuffer.destroy(); adaptiveScaleBuffer.destroy() })
   const updateSize = () => {
     device.queue.writeBuffer(sizeBuffer, 0, new Float32Array([texWidth(), texHeight()]))
   }
@@ -254,6 +180,7 @@ async function run(
       usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT
     })
   let outTex = makeOutputTex()
+  resources.add(() => outTex.destroy())
 
   // BindGroups
   const computePipeline = device.createComputePipeline({ layout: 'auto', compute: { module: csModule, entryPoint: 'main' } })
@@ -305,22 +232,28 @@ async function run(
     }
   })
 
+  resources.add(unsubscribe)
   // 交互：拖动最近的球 + 靠近合并（1s 停留自动合并）
   let dragging = false
   let draggingId = 0
   let mergeTargetId: number | null = null
-  let dwellTimer: any = null
+  let dwellTimer: ReturnType<typeof setTimeout> | null = null
 
   const clearDwell = () => { if (dwellTimer) { clearTimeout(dwellTimer); dwellTimer = null } }
 
+  let bounds = canvas.getBoundingClientRect()
+  const refreshBounds = () => { bounds = canvas.getBoundingClientRect() }
+  window.addEventListener('scroll', refreshBounds, true)
+  resources.add(() => window.removeEventListener('scroll', refreshBounds, true))
   const toNDC = (clientX: number, clientY: number): [number, number] => {
-    const rect = canvas.getBoundingClientRect()
+    const rect = bounds
     const x = (clientX - rect.left) / rect.width
     const y = (clientY - rect.top) / rect.height
     return [x * 2 - 1, (1 - y) * 2 - 1]
   }
   const onDown = (e: PointerEvent) => {
     if (e.button !== 0) return
+    refreshBounds()
     dragging = true
     canvas.setPointerCapture(e.pointerId)
     const [nx, ny] = toNDC(e.clientX, e.clientY)
@@ -334,15 +267,12 @@ async function run(
       if (d < bestD) { bestD = d; best = b.id }
     }
     draggingId = best
-    console.log(`选择拖拽球: ${draggingId}, 位置: [${nx.toFixed(3)}, ${ny.toFixed(3)}], 距离: ${Math.sqrt(bestD).toFixed(3)}`)
   }
 
   const tryUpdateMergeCandidate = () => {
     const state = useMetaballStore.getState()
     const draggingBall = state.balls.find(b => b.id === draggingId)
     if (!draggingBall) { setHoverMergeCandidate(null); mergeTargetId = null; clearDwell(); return }
-
-    console.log(`检查合并候选: 拖拽球${draggingId} (半径=${draggingBall.radius.toFixed(3)})`)
 
     // 如果已经在合并计时中，检查是否还在范围内
     if (mergeTargetId !== null) {
@@ -355,12 +285,10 @@ async function run(
         const thrOut = K_UNMERGE * (targetBall.radius * currentAdaptiveScale + draggingBall.radius * currentAdaptiveScale)
 
         if (d > thrOut) {
-          console.log(`退出合并范围: 距离=${d.toFixed(3)}, 退出阈值=${thrOut.toFixed(3)}`)
           mergeTargetId = null
           setHoverMergeCandidate(null)
           clearDwell()
         } else {
-          console.log(`继续合并计时: 距离=${d.toFixed(3)}, 退出阈值=${thrOut.toFixed(3)}`)
         }
         return
       }
@@ -379,8 +307,6 @@ async function run(
       const currentAdaptiveScale = state.adaptiveScale
       const thrIn = K_MERGE * (b.radius * currentAdaptiveScale + draggingBall.radius * currentAdaptiveScale)
 
-      console.log(`  候选球${b.id}: 距离=${d.toFixed(3)}, 阈值=${thrIn.toFixed(3)}, 半径=${b.radius.toFixed(3)}, 缩放=${currentAdaptiveScale.toFixed(3)}`)
-
       if (d < nearestDist) { nearestDist = d; nearest = b.id }
 
       if (d <= thrIn) {
@@ -394,10 +320,8 @@ async function run(
       mergeTargetId = bestCandidate
       setHoverMergeCandidate(bestCandidate)
       clearDwell()
-      console.log(`开始合并计时: 拖拽球${draggingId} 靠近球${bestCandidate}, 等待${DWELL_MS}ms`)
       dwellTimer = setTimeout(() => {
         if (mergeTargetId === bestCandidate) {
-          console.log(`合并执行: ${draggingId} + ${bestCandidate}`)
           merge(draggingId, bestCandidate)
           clearDwell()
         }
@@ -426,9 +350,19 @@ async function run(
   const onWindowUp = () => stopDrag()
   window.addEventListener('pointerup', onWindowUp)
   window.addEventListener('blur', onWindowUp)
+  resources.add(() => {
+    clearDwell()
+    canvas.removeEventListener('pointerdown', onDown)
+    canvas.removeEventListener('pointermove', onMove)
+    canvas.removeEventListener('pointerup', onUp)
+    canvas.removeEventListener('pointercancel', onUp)
+    window.removeEventListener('pointerup', onWindowUp)
+    window.removeEventListener('blur', onWindowUp)
+  })
 
   // resize 重新创建输出纹理与 bindGroups
   const onResize = () => {
+    refreshBounds()
     updateSize()
     outTex.destroy()
     outTex = makeOutputTex()
@@ -436,16 +370,21 @@ async function run(
     renderBind = getRenderBind()
   }
   window.addEventListener('resize', onResize)
+  resources.add(() => window.removeEventListener('resize', onResize))
 
   let raf = 0
+  let stopped = false
+  resources.add(() => { stopped = true; cancelAnimationFrame(raf) })
+  const wake = () => { if (!stopped && !document.hidden && !raf) raf = requestAnimationFrame(frame) }
   const frame = () => {
-    try { configure() } catch {}
+    raf = 0
+    if (stopped || document.hidden) return
     const encoder = device.createCommandEncoder()
     const cpass = encoder.beginComputePass()
     cpass.setPipeline(computePipeline)
     cpass.setBindGroup(0, computeBind)
-    const wx = Math.ceil(canvas.width / 8)
-    const wy = Math.ceil(canvas.height / 8)
+    const wx = Math.ceil(texWidth() / 8)
+    const wy = Math.ceil(texHeight() / 8)
     cpass.dispatchWorkgroups(wx, wy, 1)
     cpass.end()
 
@@ -461,22 +400,15 @@ async function run(
     rpass.end()
 
     try { device.queue.submit([encoder.finish()]) } catch {}
-    raf = requestAnimationFrame(frame)
   }
-  frame()
+  const wakeSubscription = useMetaballStore.subscribe(wake)
+  resources.add(wakeSubscription)
+  const visibility = () => { if (document.hidden) { cancelAnimationFrame(raf); raf = 0; stopDrag() } else wake() }
+  document.addEventListener('visibilitychange', visibility)
+  window.addEventListener('resize', wake)
+  resources.add(() => { document.removeEventListener('visibilitychange', visibility); window.removeEventListener('resize', wake) })
+  wake()
 
-  // 清理
-  return () => {
-    unsubscribe()
-    cancelAnimationFrame(raf)
-    window.removeEventListener('resize', resize)
-    window.removeEventListener('resize', onResize)
-    canvas.removeEventListener('pointerdown', onDown)
-    canvas.removeEventListener('pointermove', onMove)
-    canvas.removeEventListener('pointerup', onUp)
-    canvas.removeEventListener('pointercancel', onUp)
-    window.removeEventListener('pointerup', onWindowUp)
-    window.removeEventListener('blur', onWindowUp)
-    outTex.destroy(); ballsBuffer.destroy(); sizeBuffer.destroy(); countBuffer.destroy(); fusionRangeBuffer.destroy(); adaptiveScaleBuffer.destroy()
-  }
+  return resources.dispose
+  } catch (error) { resources.dispose(); throw error }
 }

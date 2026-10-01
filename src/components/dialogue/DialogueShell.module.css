@@ -15,6 +15,7 @@
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
+  --dialogue-composer-height: 112px;
   --mobile-composer-reserve: calc(176px + var(--safe-bottom));
   position: relative;
   min-height: 100dvh;
@@ -3168,4 +3169,1011 @@
   .stageNodeSource {
     --stage-node-scale: 1;
   }
+}
+
+/* --------------------------------------------------------------------------
+   Liquid mainline — adapted from reference/anicca-liquid-frontend.
+   The legacy dark pearl rules above remain useful to the backup branch; these
+   final declarations intentionally define the new light, on-demand shell.
+   -------------------------------------------------------------------------- */
+
+.shell {
+  --bg: #f6f4fb;
+  --surface: rgba(255, 255, 255, 0.56);
+  --surface-strong: rgba(255, 255, 255, 0.86);
+  --line: rgba(67, 56, 91, 0.12);
+  --text: #342d46;
+  --muted: rgba(52, 45, 70, 0.62);
+  --thesis: #e95d3d;
+  --thesis-deep: #9f321f;
+  --antithesis: #1f91a7;
+  --antithesis-deep: #176376;
+  --synthesis: #8062b4;
+  --synthesis-deep: #58417f;
+  height: var(--dialogue-viewport-height, 100dvh);
+  min-height: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background:
+    radial-gradient(circle at 14% 14%, rgba(255, 165, 135, 0.34), transparent 28%),
+    radial-gradient(circle at 86% 16%, rgba(127, 202, 222, 0.34), transparent 30%),
+    radial-gradient(circle at 58% 78%, rgba(182, 152, 223, 0.28), transparent 32%),
+    linear-gradient(150deg, #fbfafc 0%, #f1eff8 48%, #f8f4f1 100%);
+  transform: translateY(var(--dialogue-viewport-offset-top, 0px));
+}
+
+.ambient,
+.ambientSecondary,
+.ambientTertiary {
+  opacity: 0.48;
+  filter: blur(90px);
+}
+
+.ambient {
+  background: rgba(255, 126, 84, 0.32);
+}
+
+.ambientSecondary {
+  background: rgba(58, 177, 202, 0.28);
+}
+
+.ambientTertiary {
+  background: rgba(143, 111, 196, 0.22);
+}
+
+.hero {
+  top: calc(22px + var(--safe-top));
+  left: calc(28px + var(--safe-left));
+  z-index: 9;
+  width: 300px;
+  max-width: 270px;
+  color: rgba(52, 45, 70, 0.86);
+  opacity: 1;
+}
+
+.hero .eyebrow {
+  color: rgba(52, 45, 70, 0.48);
+}
+
+.hero h1,
+.bootPanel h1,
+.stageNodeInner strong,
+.panelHeader h2 {
+  font-family: "Songti SC", "Noto Serif SC", STSong, SimSun, serif;
+}
+
+.hero h1 {
+  margin-top: 3px;
+  color: rgba(52, 45, 70, 0.86);
+  font-size: 1.18rem;
+  font-weight: 500;
+  line-height: 1.22;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
+.heroCopy {
+  margin-top: 5px;
+  color: rgba(52, 45, 70, 0.48);
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.workspaceBar {
+  top: calc(18px + var(--safe-top));
+  right: calc(20px + var(--safe-right));
+  left: auto;
+  z-index: 10;
+  width: min(330px, calc(100vw - 360px));
+  transform: none;
+  border-color: rgba(67, 56, 91, 0.1);
+  background: rgba(255, 255, 255, 0.42);
+  color: var(--text);
+  opacity: 0.86;
+  box-shadow: 0 12px 34px rgba(89, 72, 120, 0.09);
+  backdrop-filter: blur(18px) saturate(1.1);
+}
+
+.workspaceBarHeader {
+  align-items: center;
+}
+
+.workspaceBarCurrent strong {
+  max-width: 156px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspaceStatus {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.workspaceRecent {
+  display: none;
+}
+
+.workspaceBar:hover,
+.workspaceBar:focus-within {
+  border-color: rgba(67, 56, 91, 0.16);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.workspaceBarButton,
+.workspaceBarGhostButton,
+.workspaceRecentItem {
+  border-color: rgba(67, 56, 91, 0.11);
+  background: rgba(255, 255, 255, 0.5);
+  color: rgba(52, 45, 70, 0.78);
+}
+
+.workspaceOverflowMenu {
+  border-color: rgba(67, 56, 91, 0.12);
+  background: rgba(252, 251, 253, 0.94);
+  box-shadow: 0 20px 48px rgba(73, 57, 105, 0.16);
+}
+
+.workspaceOverflowItem,
+.workspaceOverflowLabel {
+  color: rgba(52, 45, 70, 0.7);
+}
+
+.workspaceOverflowItem:hover,
+.workspaceOverflowItem:focus-visible {
+  background: rgba(104, 82, 145, 0.08);
+  color: var(--text);
+}
+
+.workspace {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+  padding: 0;
+}
+
+.stagePanel,
+.stageCanvas {
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.stageCanvas {
+  background:
+    radial-gradient(ellipse at 50% 44%, rgba(255, 255, 255, 0.52), transparent 48%),
+    radial-gradient(ellipse at 30% 60%, rgba(255, 143, 105, 0.14), transparent 34%),
+    radial-gradient(ellipse at 70% 58%, rgba(61, 175, 201, 0.13), transparent 34%);
+}
+
+.stageGlow,
+.stageGlowSecondary {
+  opacity: 0.34;
+}
+
+.stageViewport {
+  inset: 0;
+  overflow: hidden;
+  border-radius: 0;
+  touch-action: none;
+}
+
+.stageTrack {
+  filter: saturate(0.96) contrast(1.01);
+}
+
+.stageMetaballCanvas {
+  border-radius: 0;
+  mix-blend-mode: normal;
+  opacity: 0;
+  filter: saturate(1.03) brightness(1.04);
+}
+
+.stageTrack[data-metaball-renderer="ready"] .stageMetaballCanvas {
+  opacity: 1;
+}
+
+.stageTrack[data-metaball-renderer="ready"] .stageNode:focus-visible {
+  outline: 2px solid rgba(69, 54, 95, 0.72);
+  outline-offset: 8px;
+}
+
+.stageNode {
+  width: clamp(124px, 12vw, 166px);
+  height: clamp(112px, 11vw, 150px);
+  border: 1px solid rgba(67, 56, 91, 0.1);
+  background: rgba(255, 255, 255, 0.34);
+  color: rgba(48, 42, 66, 0.88);
+  text-shadow: 0 1px 8px rgba(255, 255, 255, 0.92);
+  box-shadow: 0 18px 52px rgba(104, 83, 137, 0.12);
+  touch-action: none;
+}
+
+.stageNodeInner {
+  padding: 18px;
+}
+
+.stageNodeInner strong {
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.stageNodeInner small {
+  color: rgba(48, 42, 66, 0.62);
+  font-family: "Songti SC", "Noto Serif SC", STSong, SimSun, serif;
+  letter-spacing: 0.28em;
+}
+
+.stageNodeFocused {
+  --stage-node-scale: 1.06;
+  filter: saturate(1.08);
+}
+
+.stageNodeAncestor,
+.stageNodeSource {
+  opacity: 0.68;
+}
+
+.stageRelationshipHint {
+  top: 0;
+  color: rgba(52, 45, 70, 0.46);
+  font-size: 0.7rem;
+}
+
+.emptyStageCluster {
+  top: 48%;
+}
+
+.emptyStageBlob {
+  color: rgba(48, 42, 66, 0.82);
+  text-shadow: 0 1px 9px rgba(255, 255, 255, 0.9);
+  box-shadow: 0 24px 64px rgba(90, 70, 125, 0.12);
+}
+
+.emptyStageRoot {
+  background: rgba(255, 255, 255, 0.54);
+  color: rgba(48, 42, 66, 0.84);
+}
+
+.emptyStageThesis {
+  background: rgba(242, 104, 72, 0.42);
+}
+
+.emptyStageAntithesis {
+  background: rgba(38, 161, 183, 0.38);
+}
+
+.emptyStageHint {
+  color: rgba(52, 45, 70, 0.5);
+  font-family: "Songti SC", "Noto Serif SC", STSong, SimSun, serif;
+  letter-spacing: 0.16em;
+}
+
+.emptyStageAction {
+  border-color: rgba(67, 56, 91, 0.1);
+  background: rgba(255, 255, 255, 0.48);
+  color: rgba(52, 45, 70, 0.68);
+  box-shadow: none;
+}
+
+.stageControls {
+  position: absolute;
+  top: calc(120px + var(--safe-top));
+  right: calc(24px + var(--safe-right));
+  z-index: 11;
+  display: flex;
+  gap: 6px;
+}
+
+.stageControls button,
+.drawerCloseButton,
+.panelCloseButton {
+  min-width: 54px;
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid rgba(67, 56, 91, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.46);
+  color: rgba(52, 45, 70, 0.68);
+  font: inherit;
+  font-size: 0.74rem;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 28px rgba(83, 65, 117, 0.08);
+}
+
+.stageControls button[aria-expanded="true"] {
+  border-color: rgba(91, 69, 129, 0.24);
+  background: rgba(255, 255, 255, 0.78);
+  color: rgba(52, 45, 70, 0.9);
+}
+
+.stageControls button:disabled {
+  opacity: 0.44;
+}
+
+.stageControls small {
+  margin-left: 5px;
+  opacity: 0.56;
+}
+
+.lineageDrawer,
+.readingDrawer {
+  position: absolute;
+  top: calc(172px + var(--safe-top));
+  bottom: calc(122px + var(--safe-bottom));
+  z-index: 13;
+  width: min(390px, calc(100vw - 40px));
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 220ms ease;
+}
+
+.lineageDrawer {
+  left: calc(18px + var(--safe-left));
+  transform: translateX(calc(-100% - 28px));
+}
+
+.readingDrawer {
+  right: calc(18px + var(--safe-right));
+  transform: translateX(calc(100% + 28px));
+}
+
+.lineageDrawer[data-open="true"],
+.readingDrawer[data-open="true"] {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.lineageDrawer .sidebar,
+.readingDrawer .panel {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  height: auto;
+  max-height: none;
+  margin: 0;
+  border: 1px solid rgba(67, 56, 91, 0.11);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text);
+  box-shadow: 0 24px 70px rgba(77, 58, 110, 0.14);
+  backdrop-filter: blur(24px) saturate(1.08);
+}
+
+.lineageDrawer .sidebar {
+  padding-top: 44px;
+}
+
+.readingDrawer .panel {
+  padding-top: 24px;
+  overflow: auto;
+}
+
+.drawerCloseButton {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 6;
+  min-width: 48px;
+  min-height: 34px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.panelCloseButton {
+  margin-left: auto;
+  min-width: 48px;
+  min-height: 34px;
+  padding: 6px 10px;
+}
+
+.sidebarItem,
+.sidebarSynthesisEvent,
+.panelSourceCard,
+.composerChoiceButton {
+  color: rgba(52, 45, 70, 0.82);
+}
+
+.sidebarItem:hover,
+.sidebarSynthesisEvent:hover,
+.panelSourceCard:hover,
+.composerChoiceButton:hover:not(:disabled) {
+  border-color: rgba(76, 57, 110, 0.14);
+  background: rgba(102, 78, 145, 0.07);
+}
+
+.sidebarItemFocused {
+  border-color: rgba(103, 76, 148, 0.16);
+  background: rgba(110, 83, 155, 0.09);
+}
+
+.panelBody,
+.panelSourceCard,
+.panelEventRow,
+.composerDecisionContext {
+  border-color: rgba(67, 56, 91, 0.1);
+  background: rgba(255, 255, 255, 0.38);
+}
+
+.panelSummary,
+.panelMuted,
+.panelActionHint,
+.sidebarItemSummary {
+  color: rgba(52, 45, 70, 0.58);
+}
+
+/* The shell already matches visualViewport.height; keyboard inset is state-only here. */
+.composer,
+.composer[data-mode="choice"] {
+  position: absolute;
+  right: auto;
+  bottom: calc(22px + var(--safe-bottom));
+  left: 50%;
+  z-index: 12;
+  width: min(680px, calc(100vw - 48px));
+  min-height: 64px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(67, 56, 91, 0.1);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.54);
+  color: var(--text);
+  box-shadow: 0 18px 52px rgba(86, 67, 120, 0.14);
+  backdrop-filter: blur(24px) saturate(1.12);
+}
+
+.composer[data-empty-start="true"] {
+  width: min(600px, calc(100vw - 48px));
+  opacity: 1;
+}
+
+.composerMeta {
+  color: rgba(52, 45, 70, 0.62);
+}
+
+.composer textarea {
+  min-height: 46px;
+  max-height: 104px;
+  resize: none;
+  border-color: transparent;
+  background: rgba(255, 255, 255, 0.34);
+  color: rgba(52, 45, 70, 0.92);
+}
+
+.composer textarea::placeholder {
+  color: rgba(52, 45, 70, 0.4);
+}
+
+.composer textarea:focus {
+  min-height: 58px;
+  border-color: rgba(92, 70, 132, 0.16);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.primaryButton,
+.secondaryButton {
+  border-color: rgba(67, 56, 91, 0.11);
+  color: rgba(52, 45, 70, 0.82);
+}
+
+.primaryButton {
+  background: rgba(88, 66, 127, 0.12);
+}
+
+.secondaryButton {
+  background: rgba(255, 255, 255, 0.44);
+}
+
+.errorPanel {
+  border-color: rgba(168, 72, 81, 0.16);
+  background: rgba(255, 235, 235, 0.76);
+  color: rgba(112, 45, 54, 0.9);
+}
+
+.flowStatus {
+  border-color: rgba(67, 56, 91, 0.09);
+  background: rgba(255, 255, 255, 0.58);
+  color: rgba(52, 45, 70, 0.58);
+  box-shadow: 0 8px 24px rgba(84, 66, 116, 0.08);
+}
+
+.synthesisBridgePreview {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  z-index: 5;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.68);
+  color: rgba(52, 45, 70, 0.66);
+  font-size: 0.72rem;
+  pointer-events: none;
+  backdrop-filter: blur(16px);
+}
+
+.synthesisProposal {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  z-index: 8;
+  display: grid;
+  width: min(370px, calc(100% - 28px));
+  gap: 10px;
+  transform: translateX(-50%);
+  padding: 12px;
+  border: 1px solid rgba(67, 56, 91, 0.12);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.86);
+  color: rgba(52, 45, 70, 0.76);
+  box-shadow: 0 18px 50px rgba(77, 57, 112, 0.16);
+  backdrop-filter: blur(22px);
+}
+
+.synthesisProposal > span {
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.synthesisProposal > div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.roundtableDrawer {
+  z-index: 20;
+  border-color: rgba(67, 56, 91, 0.12);
+  background: rgba(252, 251, 253, 0.94);
+  color: var(--text);
+  box-shadow: 0 24px 72px rgba(76, 57, 111, 0.18);
+}
+
+.bootPanel {
+  border-color: rgba(67, 56, 91, 0.1);
+  background: rgba(255, 255, 255, 0.66);
+  color: var(--text);
+}
+
+@media (max-width: 980px) {
+  .hero {
+    position: absolute;
+    top: calc(15px + var(--safe-top));
+    left: calc(18px + var(--safe-left));
+  }
+
+  .hero h1 {
+    font-size: 1rem;
+  }
+
+  .heroCopy {
+    display: none;
+  }
+
+  .workspaceBar {
+    position: absolute;
+    top: calc(12px + var(--safe-top));
+    right: calc(12px + var(--safe-right));
+    width: min(240px, calc(100vw - 148px));
+    margin: 0;
+  }
+
+  .stagePanel,
+  .stageCanvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .workspaceBarHeader {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .workspaceBarCurrent {
+    flex: 1 1 auto;
+  }
+
+  .workspaceBarCurrent .eyebrow {
+    display: none;
+  }
+
+  .workspaceBarCurrent strong {
+    max-width: none;
+    font-size: 0.72rem;
+  }
+
+  .workspaceBarActions {
+    width: auto;
+    flex: 0 0 auto;
+    gap: 4px;
+  }
+
+  .workspaceOverflow {
+    flex: 0 0 auto;
+  }
+
+  .workspaceBarButton,
+  .workspaceBarGhostButton {
+    flex: 0 0 auto;
+    padding-inline: 9px;
+  }
+
+  .stageControls {
+    top: calc(68px + var(--safe-top));
+    right: calc(14px + var(--safe-right));
+  }
+
+  .stageViewport {
+    inset: 0;
+    touch-action: none;
+  }
+
+  .stageRelationshipHint {
+    display: none;
+  }
+
+  .lineageDrawer,
+  .readingDrawer {
+    top: auto;
+    right: calc(8px + var(--safe-right));
+    bottom: calc(var(--dialogue-composer-height) + 18px + var(--safe-bottom));
+    left: calc(8px + var(--safe-left));
+    width: auto;
+    height: min(
+      62vh,
+      calc(
+        var(--dialogue-viewport-height, 100dvh) -
+        var(--dialogue-composer-height) -
+        94px -
+        var(--safe-top) -
+        var(--safe-bottom)
+      )
+    );
+    transform: translateY(24px);
+  }
+
+  .lineageDrawer[data-open="true"],
+  .readingDrawer[data-open="true"] {
+    transform: translateY(0);
+  }
+
+  .lineageDrawer .sidebar,
+  .readingDrawer .panel {
+    border-radius: 26px 26px 20px 20px;
+  }
+
+  .lineageDrawer .sidebar {
+    overflow: auto;
+  }
+
+  .lineageDrawer .sidebar::before,
+  .readingDrawer .panel::before {
+    content: "";
+    position: sticky;
+    top: 7px;
+    z-index: 3;
+    display: block;
+    width: 42px;
+    height: 4px;
+    margin: 0 auto 5px;
+    border-radius: 999px;
+    background: rgba(67, 56, 91, 0.18);
+  }
+
+  .composer,
+  .composer[data-mode="choice"] {
+    position: absolute;
+    right: auto;
+    bottom: calc(10px + var(--safe-bottom));
+    left: 50%;
+    width: calc(100vw - 20px);
+    margin: 0;
+    transform: translateX(-50%);
+    border-radius: 22px;
+  }
+
+  .composer[data-empty-start="true"] {
+    width: calc(100vw - 20px);
+  }
+
+  .composer:not([data-mode="choice"]) {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "meta meta"
+      "field actions";
+  }
+
+  .composer:not([data-mode="choice"]) .composerActions {
+    width: auto;
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .composer:not([data-mode="choice"]) .primaryButton {
+    width: auto;
+  }
+
+  .composerMeta {
+    padding: 2px 8px 0;
+  }
+
+  .composer textarea,
+  .composer textarea:focus {
+    min-height: 44px;
+    max-height: 76px;
+  }
+
+  .composerActions .secondaryButton:not(:only-child) {
+    padding-inline: 12px;
+  }
+
+  .stageNode {
+    width: 112px;
+    height: 104px;
+  }
+
+  .stageNodeUser {
+    width: 122px;
+    height: 116px;
+  }
+
+  .emptyStageCluster {
+    top: 45%;
+    height: min(300px, 44vh);
+  }
+
+  .emptyStageHint {
+    bottom: 30px;
+    width: min(300px, 82vw);
+    font-size: 0.78rem;
+  }
+
+  .flowStatus {
+    bottom: calc(110px + var(--safe-bottom));
+    color: rgba(52, 45, 70, 0.56);
+  }
+
+  .roundtableDrawer {
+    right: 8px;
+    bottom: calc(8px + var(--safe-bottom));
+    left: 8px;
+    width: auto;
+    max-height: calc(var(--dialogue-viewport-height, 100dvh) - 24px - var(--safe-top));
+    margin: 0;
+    overflow: auto;
+  }
+
+  .shell[data-keyboard-open="true"] .hero,
+  .shell[data-keyboard-open="true"] .workspaceBar,
+  .shell[data-keyboard-open="true"] .stageControls {
+    opacity: 0.18;
+    pointer-events: none;
+  }
+
+  .shell[data-keyboard-open="true"] .stageViewport {
+    inset-block-start: 16px;
+    inset-block-end: 96px;
+    transform: scale(0.86);
+    transform-origin: center bottom;
+  }
+}
+
+@media (max-width: 520px) {
+  .hero {
+    width: 100px;
+    max-width: 100px;
+  }
+
+  .hero .eyebrow {
+    font-size: 0.55rem;
+  }
+
+  .hero h1 {
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+    white-space: normal;
+  }
+
+  .workspaceBar {
+    width: min(218px, calc(100vw - 142px));
+    padding: 4px 6px;
+    background: rgba(255, 255, 255, 0.38);
+  }
+
+  .workspaceBarButton,
+  .workspaceBarGhostButton {
+    min-height: 40px;
+  }
+
+  .stageControls {
+    top: calc(62px + var(--safe-top));
+  }
+
+  .stageControls button {
+    min-width: 50px;
+    min-height: 42px;
+    padding: 8px 10px;
+  }
+
+  .stageViewport {
+    inset-block: 0;
+  }
+
+  .composer,
+  .composer[data-mode="choice"] {
+    gap: 5px;
+    padding: 7px;
+  }
+
+  .composer:not([data-mode="choice"]) .composerMeta {
+    display: none;
+  }
+
+  .composerActions .secondaryButton {
+    min-width: 48px;
+    padding-inline: 10px;
+    font-size: 0.7rem;
+  }
+
+  .composer .primaryButton {
+    min-width: 74px;
+  }
+
+  .composer textarea {
+    padding-inline: 12px;
+  }
+
+  .readingDrawer .panel,
+  .lineageDrawer .sidebar {
+    margin: 0;
+  }
+
+  .sidebarTree {
+    flex-direction: column;
+    overflow: auto;
+    padding-inline: 10px;
+  }
+
+  .sidebarItem,
+  .sidebarSynthesisEvent {
+    width: auto;
+    min-width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lineageDrawer,
+  .readingDrawer,
+  .stageMetaballCanvas {
+    transition: none;
+  }
+}
+
+/* Seed workspace: the stage and writing surface are the primary interface. */
+.seedGuide { position: absolute; z-index: 22; top: calc(74px + var(--safe-top)); left: 20px; width: min(320px, calc(100vw - 40px)); padding: 18px; border-radius: 20px; background: #faf7fc; color: #342d46; box-shadow: 0 8px 30px #37264c18; }
+.seedGuide small { color: #786185; }
+.seedGuide h2 { font-size: 17px; margin: 8px 0; }
+.seedGuide p { font-size: 13px; line-height: 1.7; margin: 8px 0 14px; }
+.seedGuide > div:last-child { display: flex; justify-content: space-between; gap: 12px; }
+.seedGuide button { border: 0; padding: 8px 12px; min-height: 44px; border-radius: 12px; background: #eee6f3; color: #4a385a; cursor: pointer; }
+.stageNode { touch-action: none; -webkit-touch-callout: none; }
+.stageNodeInner strong, .stageNodeInner small {
+  color: #332b43; background: rgba(255, 253, 255, .86); border-radius: 12px;
+  padding: 3px 5px; text-shadow: none; opacity: 1;
+}
+.stagePendingGhost, .stagePendingRoot { opacity: .8; }
+.stagePendingGhost strong, .stagePendingGhost small, .stagePendingRoot strong, .stagePendingRoot small,
+.emptyStageBlob span, .emptyStageBlob small { color: #332b43; background: rgba(255,253,255,.92); border-radius: 10px; padding: 3px 6px; text-shadow: none; opacity: 1; }
+.stagePendingCaption, .emptyStageHint { color: #51425e; opacity: 1; }
+.stageMetaballCanvas[data-renderer-state="ready"] { opacity: 1; }
+.stageMetaballCanvas[data-renderer-state="fallback"] { visibility: hidden; }
+.generationProgress { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 6px 10px 3px; color: #655771; font-size: 12px; }
+.generationShimmer { width: 100%; height: 3px; border-radius: 3px; background: linear-gradient(90deg, #e6dfea, #b7a0c8, #e6dfea); background-size: 200% 100%; animation: waitingFlow 2s ease-in-out infinite; }
+@keyframes waitingFlow { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .generationShimmer { animation: none; } }
+.shell { overflow: clip; }
+.ambient, .ambientSecondary, .ambientTertiary,
+.hero .eyebrow, .heroCopy, .stageRelationshipHint,
+.workspaceBarCurrent, .workspaceRecent { display: none; }
+
+.hero { display: block; top: calc(24px + var(--safe-top)); left: 28px; width: auto; margin: 0; }
+.hero h1 { margin: 0; font-size: 24px; letter-spacing: -.04em; }
+.workspaceBar {
+  top: calc(16px + var(--safe-top)); right: 20px; left: auto;
+  width: auto; padding: 0; border: 0; border-radius: 0;
+  background: transparent; backdrop-filter: none; box-shadow: none; opacity: 1; transform: none;
+}
+.workspaceBarGhostButton { min-height: 44px; min-width: 60px; background: rgba(255,255,255,.65); }
+.workspaceOverflowMenu { width: min(280px, calc(100vw - 36px)); max-height: calc(var(--dialogue-viewport-height, 100dvh) - 90px); overflow: auto; }
+.workspaceOverflowItem { min-height: 44px; }
+.workspaceRenameForm { width: min(290px, calc(100vw - 40px)); background: #faf8fc; }
+
+.stageViewport { inset: 64px 0 calc(var(--dialogue-composer-height) + 32px); }
+.stageTrack { filter: none; }
+.stageNode, .stageNodeFocused { filter: none; transition: none; width: clamp(108px, 9vw, 130px); height: clamp(108px, 9vw, 130px); }
+.stageNode::before, .stageNode::after, .emptyStageBlob,
+.stagePendingGhost, .stagePendingGhost::after { animation: none; }
+.stageNodeSynthesisEvent { animation: none; }
+.stageNodeInner strong { line-height: 1.5; }
+.stageGlow, .stageGlowSecondary { display: none; }
+.stageMetaballCanvas { filter: none; }
+
+.composer, .composer[data-mode="compose"], .composer[data-empty-start="true"] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "target target" "field actions" "error error";
+  gap: 0 8px; width: min(620px, calc(100vw - 32px));
+  min-height: 0; padding: 8px; bottom: calc(18px + var(--safe-bottom));
+  border-radius: 24px; background: rgba(253,252,255,.96);
+  backdrop-filter: none; box-shadow: 0 8px 30px rgba(69,48,91,.08);
+}
+.composerField { grid-area: field; min-width: 0; }
+.composerLabel { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.composer textarea, .composer textarea:focus { height: 48px; min-height: 48px; max-height: 110px; padding: 12px; background: transparent; box-shadow: none; font-size: 16px; line-height: 24px; }
+.composerActions { grid-area: actions; align-self: end; align-items: center; }
+.composer .primaryButton { min-width: 64px; min-height: 46px; border-radius: 18px; background: #584a70; color: #fff; }
+.composer .primaryButton:disabled { opacity: .42; }
+.composer .errorPanel { grid-area: error; margin-top: 8px; }
+.seedComposerTarget { grid-area: target; display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 4px 10px 6px; font-size: 12px; }
+.seedComposerTarget span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seedComposerTarget button { flex-shrink: 0; border: 0; background: none; color: #67567d; min-height: 32px; cursor: pointer; }
+
+.readingDrawer, .lineageDrawer { top: 80px; bottom: calc(var(--dialogue-composer-height) + 42px + var(--safe-bottom)); }
+.readingDrawer .panel, .lineageDrawer .sidebar { backdrop-filter: none; background: #faf9fc; box-shadow: 0 12px 40px rgba(55,38,76,.1); }
+.readingDrawer .seedInspector { display: flex; flex-direction: column; padding: 24px; overflow: auto; }
+.seedInspectorHeader { position: relative; padding-right: 40px; flex-shrink: 0; }
+.seedInspectorHeader > span { color: #806394; font-size: 12px; }
+.seedInspectorHeader h2 { margin: 10px 0 20px; font: 500 22px/1.4 "Songti SC", serif; outline-offset: 4px; }
+.seedInspectorHeader .panelCloseButton { position: absolute; top: -12px; right: -12px; margin: 0; width: 44px; min-width: 44px; height: 44px; min-height: 44px; font-size: 22px; }
+.seedBody { line-height: 1.85; font-size: 15px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.seedBody p { margin: 0 0 20px; }
+.seedActions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 20px; }
+.seedActions button { min-height: 44px; flex: 1; }
+.seedActions .primaryButton { background: #584a70; color: #fff; }
+.seedSources { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: #766782; font-size: 12px; }
+.seedSources button { background: #efebf4; border: 0; border-radius: 12px; padding: 10px; color: #584a70; cursor: pointer; }
+.seedContextHint { font-size: 13px; line-height: 1.7; margin: 0 0 16px; }
+.seedSearch { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #ded6e7; border-radius: 12px; background: #fff; color: #342d46; font-size: 16px; }
+.seedPicker { display: grid; gap: 6px; margin-top: 14px; overflow-y: auto; }
+.seedPicker button { display: flex; align-items: center; gap: 12px; text-align: left; min-height: 48px; border: 0; border-radius: 12px; background: #f0edf5; padding: 10px 14px; color: #342d46; cursor: pointer; }
+.seedPicker small { flex-shrink: 0; color: #806394; }
+.seedCombineBar { position: absolute; left: 50%; bottom: calc(var(--dialogue-composer-height) + 30px + var(--safe-bottom)); transform: translateX(-50%); z-index: 14; display: flex; gap: 8px; align-items: center; width: min(620px, calc(100vw - 32px)); padding: 12px; border: 1px solid #ded6e7; border-radius: 20px; background: #faf9fc; box-shadow: 0 8px 30px rgba(69,48,91,.08); }
+.seedCombineBar > span { flex: 1; min-width: 0; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.seedCombineBar button { flex-shrink: 0; min-height: 44px; }
+.synthesisBridgePreview { bottom: 8px; backdrop-filter: none; }
+.flowStatus { backdrop-filter: none; bottom: calc(var(--dialogue-composer-height) + 32px + var(--safe-bottom)); }
+
+@media (max-width: 760px) {
+  .hero { left: 20px; top: calc(22px + var(--safe-top)); }
+  .hero h1 { font-size: 22px; }
+  .workspaceBar { right: 16px; }
+  .stageViewport { inset: 66px 0 calc(var(--dialogue-composer-height) + 26px); }
+  .stageNode, .stageNodeUser { width: clamp(68px, 11vh, 88px); height: clamp(68px, 11vh, 88px); }
+  .stageNodeInner { padding: 14px; }
+  .stageNodeInner strong { font-size: 13px; }
+  .readingDrawer, .lineageDrawer { top: auto; right: 8px; left: 8px; bottom: calc(var(--dialogue-composer-height) + 28px + var(--safe-bottom)); height: min(56vh, calc(var(--dialogue-viewport-height, 100dvh) - var(--dialogue-composer-height) - 104px - var(--safe-bottom))); width: auto; }
+  .readingDrawer .seedInspector { padding: 22px; }
+  .readingDrawer .panel::before { display: none; }
+  .seedInspectorHeader h2 { font-size: 20px; margin-bottom: 14px; }
+  .seedActions { padding-top: 14px; }
+  .seedCombineBar { flex-wrap: wrap; }
+  .seedCombineBar > span { flex-basis: 100%; }
+  .seedCombineBar button { flex: 1; }
+  .shell[data-keyboard-open="true"] .stageViewport { inset: 50px 0 calc(var(--dialogue-composer-height) + 30px); transform: none; }
 }

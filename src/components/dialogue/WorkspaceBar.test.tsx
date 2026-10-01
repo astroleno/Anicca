@@ -3,7 +3,9 @@ import userEvent from "@testing-library/user-event";
 import { WorkspaceBar } from "@/components/dialogue/WorkspaceBar";
 
 describe("WorkspaceBar", () => {
-  it("renders the current workspace and recent list", () => {
+  it("renders the current workspace and exposes the recent list on demand", async () => {
+    const user = userEvent.setup();
+
     render(
       <WorkspaceBar
         currentWorkspaceId="workspace_current"
@@ -42,6 +44,7 @@ describe("WorkspaceBar", () => {
     expect(
       screen.getByText("Current Workspace", { selector: "strong" })
     ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "更多" }));
     expect(screen.getByRole("button", { name: "Other Workspace" })).toBeInTheDocument();
   });
 
@@ -63,6 +66,7 @@ describe("WorkspaceBar", () => {
       />
     );
 
+    await user.click(screen.getByRole("button", { name: "更多" }));
     await user.click(screen.getByRole("button", { name: "新建工作区" }));
 
     expect(onCreate).toHaveBeenCalledTimes(1);
@@ -97,6 +101,7 @@ describe("WorkspaceBar", () => {
       />
     );
 
+    await user.click(screen.getByRole("button", { name: "更多" }));
     await user.click(screen.getByRole("button", { name: "Other Workspace" }));
 
     expect(onSelect).toHaveBeenCalledWith("workspace_other");

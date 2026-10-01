@@ -20,6 +20,7 @@ export type MetaballHostRect = {
 
 export type MetaballSurfaceRect = {
   id: string;
+  colorKey?: string;
   role: MetaballRole;
   relation: MetaballRelation;
   left: number;
@@ -60,15 +61,18 @@ const RELATION_EMPHASIS: Record<MetaballRelation, number> = {
   decorative: 0.68
 };
 
-const ROLE_COLORS: Record<MetaballRole, [number, number, number]> = {
-  user: [0.82, 0.86, 0.9],
-  thesis: [0.18, 0.82, 0.62],
-  antithesis: [0.93, 0.38, 0.55],
-  synthesis: [0.94, 0.72, 0.34],
-  growth: [0.48, 0.66, 0.94],
-  neutral: [0.7, 0.73, 0.78],
-  pending: [0.7, 0.73, 0.78]
-};
+function getSurfaceColor(surface: MetaballSurfaceRect): [number, number, number] {
+  const key = surface.colorKey || surface.id;
+  if (surface.role === "thesis") return thesisColor(key);
+  if (surface.role === "antithesis") return antithesisColor(key);
+  if (surface.role === "synthesis") {
+    return synthesisColor(thesisColor(key), antithesisColor(key));
+  }
+  if (surface.role === "growth") return [0.42, 0.58, 0.94];
+  if (surface.role === "user") return [0.76, 0.7, 0.9];
+  if (surface.role === "pending") return [0.76, 0.72, 0.82];
+  return [0.7, 0.73, 0.78];
+}
 
 function rankSurface(surface: MetaballSurfaceRect, index: number) {
   return {
@@ -109,7 +113,7 @@ export function projectMetaballSurfaces(
           (hostCenterY - surfaceCenterY) / host.height
         ],
         radius: Math.max(surface.width, surface.height) / 2 / host.height,
-        color: [...ROLE_COLORS[surface.role]],
+        color: getSurfaceColor(surface),
         emphasis: RELATION_EMPHASIS[surface.relation]
       };
     });
@@ -153,3 +157,8 @@ export function packMetaballUniforms(nodes: DialogueMetaballNode[]): PackedMetab
 
   return { count, centers, radii, colors, emphasis };
 }
+import {
+  antithesisColor,
+  synthesisColor,
+  thesisColor
+} from "../liquid/color";

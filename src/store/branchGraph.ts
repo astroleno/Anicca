@@ -53,8 +53,8 @@ export class BranchGraphStore {
 
   createChildUserNode(parentAssistantId: string, text: string): string {
     const parent = this.graph.nodes[parentAssistantId];
-    if (!parent || parent.kind !== "assistant") {
-      throw new Error(`assistant parent not found: ${parentAssistantId}`);
+    if (!parent) {
+      throw new Error(`parent not found: ${parentAssistantId}`);
     }
 
     const id = this.generateId("user");
@@ -165,8 +165,8 @@ export class BranchGraphStore {
 
   createAssistantPair(parentUserId: string, opts?: { thesis?: AssistantDraft; antithesis?: AssistantDraft }) {
     const parent = this.graph.nodes[parentUserId];
-    if (!parent || parent.kind !== "user") {
-      throw new Error(`user parent not found: ${parentUserId}`);
+    if (!parent) {
+      throw new Error(`parent not found: ${parentUserId}`);
     }
 
     const thesisId = this.createAssistantNode(parentUserId, "正", opts?.thesis);
@@ -178,7 +178,7 @@ export class BranchGraphStore {
 
   createSynthesisAssistant(sourceNodeIds: string[], opts?: AssistantDraft): string {
     if (!Array.isArray(sourceNodeIds) || sourceNodeIds.length !== 2) {
-      throw new Error("synthesis requires exactly two source assistants");
+      throw new Error("synthesis requires exactly two sources");
     }
 
     const uniqueSourceIds = [...new Set(sourceNodeIds)];
@@ -190,8 +190,8 @@ export class BranchGraphStore {
       .map((nodeId) => this.graph.nodes[nodeId])
       .filter((node): node is AniccaNode => Boolean(node));
 
-    if (sourceNodes.length !== 2 || sourceNodes.some((node) => node.kind !== "assistant")) {
-      throw new Error("synthesis sources must be assistant nodes");
+    if (sourceNodes.length !== 2) {
+      throw new Error("synthesis sources must exist");
     }
 
     const normalizedSourceIds = [...sourceNodes]
@@ -199,17 +199,7 @@ export class BranchGraphStore {
       .map((node) => node.id);
 
     const normalizedSources = normalizedSourceIds.map((nodeId) => this.graph.nodes[nodeId]);
-    if (
-      normalizedSources[0].branchType !== "正" ||
-      normalizedSources[1].branchType !== "反"
-    ) {
-      throw new Error("synthesis sources must be one 正 assistant and one 反 assistant");
-    }
-
     const lineageParentId = this.resolveSharedLineageParentId(normalizedSources);
-    if (!lineageParentId) {
-      throw new Error("synthesis sources must share the same parent user");
-    }
 
     const id = this.generateId("asst");
     const node: AniccaNode = {
@@ -223,7 +213,7 @@ export class BranchGraphStore {
       meta: this.buildMeta({
         ...opts,
         sourceNodeIds: normalizedSourceIds,
-        lineageParentId
+        lineageParentId: lineageParentId || undefined
       })
     };
 
@@ -267,8 +257,8 @@ export class BranchGraphStore {
 
   private createAssistantNode(parentUserId: string, branchType: Exclude<BranchType, "合">, draft?: AssistantDraft): string {
     const parent = this.graph.nodes[parentUserId];
-    if (!parent || parent.kind !== "user") {
-      throw new Error(`user parent not found: ${parentUserId}`);
+    if (!parent) {
+      throw new Error(`parent not found: ${parentUserId}`);
     }
 
     const id = this.generateId("asst");

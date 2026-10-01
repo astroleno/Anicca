@@ -21,6 +21,8 @@ type ConversationPanelProps = {
   onSelectSource: (nodeId: string) => void;
   onSummonRoundtable: () => void;
   onOpenSavedRoundtable: () => void;
+  onContinueFromNode?: () => void;
+  onClose?: () => void;
 };
 
 export function ConversationPanel({
@@ -39,7 +41,9 @@ export function ConversationPanel({
   onGenerateSynthesis,
   onSelectSource,
   onSummonRoundtable,
-  onOpenSavedRoundtable
+  onOpenSavedRoundtable,
+  onContinueFromNode,
+  onClose
 }: ConversationPanelProps) {
   const roundtableHintId = useId();
   const roundtablePendingHint = roundtablePendingSourceLabel
@@ -65,6 +69,16 @@ export function ConversationPanel({
           <span className={styles.panelEventMarker}>合流记录</span>
         ) : node?.branchType ? (
           <span className={styles.panelPill}>{node.branchType}</span>
+        ) : null}
+        {onClose ? (
+          <button
+            type="button"
+            className={styles.panelCloseButton}
+            onClick={onClose}
+            aria-label="收起阅读面板"
+          >
+            收起
+          </button>
         ) : null}
       </div>
 
@@ -154,6 +168,15 @@ export function ConversationPanel({
 
       {node ? (
         <div className={styles.panelActionRow}>
+          {node.kind === "assistant" && onContinueFromNode ? (
+            <button
+              type="button"
+              className={styles.primaryButton}
+              onClick={onContinueFromNode}
+            >
+              继续裂变
+            </button>
+          ) : null}
           <button
             type="button"
             ref={roundtableSummonButtonRef}

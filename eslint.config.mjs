@@ -13,6 +13,7 @@ const eslintConfig = [
   {
     ignores: [
       '.next/**',
+      '.cache/**',
       '.worktrees/**',
       'archived/**',
       'coverage/**',

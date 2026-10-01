@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Keep production verification separate from a running development server.
+  distDir: process.env.ANICCA_NEXT_DIST_DIR || ".next",
   reactStrictMode: true,
   devIndicators: false,
   outputFileTracingExcludes: {
@@ -7,6 +9,7 @@ const nextConfig = {
       "./.worktrees/**/*",
       "./archived/**/*",
       "./artifacts/**/*",
+      "./.cache/**/*",
       "./graphify-out/**/*",
       "./ref/**/*"
     ]

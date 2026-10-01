@@ -8,7 +8,9 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js'
 import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectionShader.js'
-import { useMetaballStore } from '@/store/metaballStore'
+import { ResourceScope } from '@/utils/resourceScope'
+import MetaballLabels from './MetaballLabels'
+import { type Ball2D, useMetaballStore } from '@/store/metaballStore'
 
 // 交互常量
 const K_MERGE = 1.4
@@ -37,7 +39,6 @@ export default function RaymarchingCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   // Store 状态
-  const balls = useMetaballStore(s => s.balls)
   const setPos = useMetaballStore(s => s.setPos)
   const split = useMetaballStore(s => s.split)
   const merge = useMetaballStore(s => s.merge)
@@ -92,22 +93,27 @@ export default function RaymarchingCanvas() {
     }
   })
 
+  const settingsRef = useRef({ renderScale, preset, presets })
+  settingsRef.current = { renderScale, preset, presets }
+  const resizeRef = useRef<(() => void) | null>(null)
+  useEffect(() => { resizeRef.current?.() }, [renderScale])
+
   // 材质和 Bloom 的引用（用于实时更新参数）
   const materialRef = useRef<THREE.ShaderMaterial | null>(null)
   const bloomPassRef = useRef<UnrealBloomPass | null>(null)
 
   // 性能监测
   const fpsHistoryRef = useRef<number[]>([])
-  const lastFpsUpdateRef = useRef(0)
 
   useEffect(() => {
     if (!containerRef.current || !canvasRef.current) return
 
-    let cleanup: (() => void) | undefined
-    let rafId: number
+    const resources = new ResourceScope()
+    let rafId = 0
+    resources.add(() => cancelAnimationFrame(rafId))
 
     // 初始化 Three.js 场景
-    const initScene = async () => {
+    const initScene = () => {
       try {
         // 场景、相机、渲染器
         const scene = new THREE.Scene()
@@ -115,14 +121,20 @@ export default function RaymarchingCanvas() {
         const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
 
         // 设备检测
-        const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent)
-        const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 2 : 2)
+        const isMobile = window.matchMedia('(pointer: coarse)').matches
+        const dpr = Math.min(window.devicePixelRatio || 1, 1.5)
 
         const renderer = new THREE.WebGLRenderer({
           canvas: canvasRef.current!,
           antialias: false,
           powerPreference: 'high-performance',
           alpha: false // 不需要透明背景，使用场景背景色
+        })
+        resources.add(() => {
+          renderer.dispose()
+          // StrictMode reuses the connected canvas immediately after cleanup.
+          // Lose only detached contexts; a replay must remain able to draw.
+          queueMicrotask(() => { if (!renderer.domElement.isConnected) renderer.forceContextLoss() })
         })
         renderer.setPixelRatio(dpr)
         renderer.setClearColor(0x767676, 1.0) // 18% gray
@@ -131,8 +143,8 @@ export default function RaymarchingCanvas() {
         const updateSize = () => {
           const width = containerRef.current!.clientWidth
           const height = containerRef.current!.clientHeight
-          const renderWidth = Math.floor(width * renderScale)
-          const renderHeight = Math.floor(height * renderScale)
+          const renderWidth = Math.floor(width * settingsRef.current.renderScale)
+          const renderHeight = Math.floor(height * settingsRef.current.renderScale)
 
           renderer.setSize(renderWidth, renderHeight, false)
           camera.updateProjectionMatrix()
@@ -156,26 +168,12 @@ export default function RaymarchingCanvas() {
           if (extTextureHalfFloat) {
             textureType = 'float16'
             textureDataType = THREE.HalfFloatType
-            console.log('降级到 float16 纹理')
+
           } else {
             textureType = 'ubo'
-            console.log('降级到 UBO（纹理不支持浮点）')
+
           }
         }
-
-        const capabilities = {
-          webgl2: gl instanceof WebGL2RenderingContext,
-          extFloat: !!extFloat,
-          extTextureFloat: !!extTextureFloat,
-          extTextureHalfFloat: !!extTextureHalfFloat
-        }
-        console.log('WebGL 能力探测:', capabilities)
-        console.log('最终配置:', {
-          textureType,
-          maxBalls: MAX_BALLS,
-          texSize: TEX_SIZE,
-          isMobile
-        })
 
         // 创建纹理表（总是创建，即使降级到 UBO 也创建占位纹理）
         const textureData = new Float32Array(TEX_SIZE * TEX_SIZE * 4)
@@ -186,6 +184,7 @@ export default function RaymarchingCanvas() {
           textureFormat,
           textureDataType
         )
+        resources.add(() => ballsTexture.dispose())
         ballsTexture.minFilter = THREE.NearestFilter
         ballsTexture.magFilter = THREE.NearestFilter
         ballsTexture.wrapS = THREE.ClampToEdgeWrapping
@@ -510,33 +509,18 @@ export default function RaymarchingCanvas() {
           depthWrite: false, // 透明物体不需要写入深度
         })
 
-        // 检查 shader 编译错误
-        material.onBeforeCompile = () => {
-          console.log('Shader 开始编译...')
-        }
-
-        // 监听 shader 错误（在第一次渲染后检查）
-        setTimeout(() => {
-          const program = (material as any).program
-          if (program) {
-            const infoLog = gl.getProgramInfoLog(program)
-            if (infoLog) {
-              console.error('Shader Program 错误:', infoLog)
-            } else {
-              console.log('Shader Program 编译成功')
-            }
-          }
-        }, 100)
-
+        resources.add(() => { material.dispose(); materialRef.current = null })
         materialRef.current = material
 
         // 创建全屏平面
         const geometry = new THREE.PlaneGeometry(2, 2)
+        resources.add(() => geometry.dispose())
         const plane = new THREE.Mesh(geometry, material)
         scene.add(plane)
 
         // 后期处理链
         const composer = new EffectComposer(renderer)
+        resources.add(() => { for (const pass of composer.passes) pass.dispose(); composer.dispose(); bloomPassRef.current = null })
         composer.addPass(new RenderPass(scene, camera))
 
         // Bloom Pass（参考 threejs-gsap 的设置）
@@ -547,6 +531,8 @@ export default function RaymarchingCanvas() {
           presets[preset].bloomThreshold // threshold
         )
         composer.addPass(bloomPass)
+        // three 0.181's bloom dispose omits this owned high-pass material.
+        resources.add(() => bloomPass.materialHighPassFilter.dispose())
         bloomPassRef.current = bloomPass
 
         // FXAA Pass
@@ -564,7 +550,7 @@ export default function RaymarchingCanvas() {
         let lastActiveCount = 0
 
         // 屏幕裁剪：检查球是否在视锥内
-        const isBallVisible = (ball: typeof balls[0]): boolean => {
+        const isBallVisible = (ball: Ball2D): boolean => {
           // 简单检查：球是否在屏幕范围内（加上半径缓冲）
           const margin = ball.radius + 0.2
           return ball.pos[0] >= -1 - margin && ball.pos[0] <= 1 + margin &&
@@ -574,7 +560,7 @@ export default function RaymarchingCanvas() {
         // 分组/融合策略：示例
         // 前景组(0)：level==0 或 奇数 id；平滑并集(smin)
         // 背景组(1)：其他；硬并集(min)，仅用于视觉层次，不参与交互
-        const computeGroupBlend = (ball: typeof balls[0], index: number) => {
+        const computeGroupBlend = (ball: Ball2D) => {
           const isForeground = (ball.level === 0) || (ball.id % 2 === 1)
           const groupId = isForeground ? 0 : 1
           const blendType = 0 // 先用硬并集，便于查看 7 个独立球与序号对齐
@@ -603,7 +589,7 @@ export default function RaymarchingCanvas() {
               textureData[idx + 1] = ball.pos[1]
               textureData[idx + 2] = ball.radius
               // pack groupId and blendType into w channel: (group<<1)|blend
-              const { groupId, blendType } = computeGroupBlend(ball, i)
+              const { groupId, blendType } = computeGroupBlend(ball)
               const packed = (groupId << 1) | blendType
               textureData[idx + 3] = packed
             }
@@ -612,33 +598,10 @@ export default function RaymarchingCanvas() {
             if (materialRef.current) {
               const count = Math.min(activeBalls.length, MAX_BALLS)
               materialRef.current.uniforms.uCount.value = count
-              console.log('updateTextureData 设置 uCount:', count, 'activeBalls:', activeBalls.length)
+
             }
             lastActiveCount = activeBalls.length
 
-            // 日志：纹理表更新
-            console.log(`纹理表更新: 全量更新, 球数=${activeBalls.length}, 耗时=0ms`)
-            if (activeBalls.length > 0) {
-              console.log('写入纹理的球数据:', activeBalls.slice(0, 3).map(b => ({
-                id: b.id,
-                pos: b.pos,
-                radius: b.radius,
-                textureIndex: ballIdToIndex.get(b.id)
-              })))
-              // 检查纹理数据是否正确写入
-              const firstBallIndex = ballIdToIndex.get(activeBalls[0].id)!
-              const idx = firstBallIndex * 4
-              console.log('纹理数据验证:', {
-                index: firstBallIndex,
-                textureData: [
-                  textureData[idx + 0],
-                  textureData[idx + 1],
-                  textureData[idx + 2],
-                  textureData[idx + 3]
-                ],
-                expected: [activeBalls[0].pos[0], activeBalls[0].pos[1], activeBalls[0].radius, activeBalls[0].level]
-              })
-            }
           } else {
             // 增量更新：只更新变化的球
             const changedBalls: Array<{ index: number, ball: typeof currentBalls[0] }> = []
@@ -651,14 +614,13 @@ export default function RaymarchingCanvas() {
 
             // 批量更新：合并多个变更为单次 texSubImage2D
             if (changedBalls.length > 0) {
-              const startTime = performance.now()
 
               for (const { index, ball } of changedBalls) {
                 const idx = index * 4
                 textureData[idx + 0] = ball.pos[0]
                 textureData[idx + 1] = ball.pos[1]
                 textureData[idx + 2] = ball.radius
-                const { groupId, blendType } = computeGroupBlend(ball, index)
+                const { groupId, blendType } = computeGroupBlend(ball)
                 const packed = (groupId << 1) | blendType
                 textureData[idx + 3] = packed
               }
@@ -671,7 +633,7 @@ export default function RaymarchingCanvas() {
 
                 if (
                   gl instanceof WebGL2RenderingContext &&
-                  (gl as any).texSubImage2D &&
+                  gl.texSubImage2D &&
                   textureHandle
                 ) {
                   gl.bindTexture(gl.TEXTURE_2D, textureHandle)
@@ -694,7 +656,7 @@ export default function RaymarchingCanvas() {
                     textureData[idx + 0] = ball.pos[0]
                     textureData[idx + 1] = ball.pos[1]
                     textureData[idx + 2] = ball.radius
-                    const { groupId, blendType } = computeGroupBlend(ball, index)
+                    const { groupId, blendType } = computeGroupBlend(ball)
                     const packed = (groupId << 1) | blendType
                     textureData[idx + 3] = packed
                   }
@@ -706,41 +668,14 @@ export default function RaymarchingCanvas() {
                 ballsTexture.needsUpdate = true
               }
 
-              const elapsed = performance.now() - startTime
-              if (elapsed > 1) { // 只记录耗时超过 1ms 的更新
-                console.log(`纹理表增量更新: 变更=${changedBalls.length}, 耗时=${elapsed.toFixed(2)}ms`)
-              }
             }
           }
 
           setActiveBallCount(activeBalls.length)
         }
 
-        // 调试：检查初始球数据
-        const initialBalls = useMetaballStore.getState().balls
-        const initialActiveBalls = initialBalls.filter(b => b.active !== false)
-        console.log('初始球数据:', {
-          total: initialBalls.length,
-          active: initialActiveBalls.length,
-          balls: initialActiveBalls.map(b => ({ id: b.id, pos: b.pos, radius: b.radius }))
-        })
-
         // 初始更新（必须在 material 创建后）
         updateTextureData(true)
-
-        // 确保 uCount 被正确设置（延迟设置，等待material完全初始化）
-        setTimeout(() => {
-          if (materialRef.current) {
-            const currentBalls = useMetaballStore.getState().balls
-            const activeBalls = currentBalls.filter(b => b.active !== false && isBallVisible(b))
-            const count = Math.min(activeBalls.length, MAX_BALLS)
-            materialRef.current.uniforms.uCount.value = count
-            console.log('设置 uCount:', count, 'activeBalls:', activeBalls.length, 'MAX_BALLS:', MAX_BALLS)
-            console.log('uCount uniform 当前值:', materialRef.current.uniforms.uCount.value)
-          } else {
-            console.error('materialRef.current 为 null，无法设置 uCount')
-          }
-        }, 200)
 
         // 订阅 store 变化
         const unsubscribe = useMetaballStore.subscribe((state, prev) => {
@@ -750,11 +685,9 @@ export default function RaymarchingCanvas() {
           // 球数量变化时全量更新，否则增量更新
           updateTextureData(currActive !== prevActive)
 
-          // 调试日志
-          if (currActive !== prevActive) {
-            console.log(`球数量变化: ${prevActive} -> ${currActive}`)
-          }
         })
+
+        resources.add(unsubscribe)
 
         // 交互处理（拖拽、合并检测）
         let dragging = false
@@ -769,8 +702,13 @@ export default function RaymarchingCanvas() {
           }
         }
 
+        resources.add(clearDwell)
+        let bounds = canvasRef.current!.getBoundingClientRect()
+        const refreshBounds = () => { bounds = canvasRef.current!.getBoundingClientRect() }
+        window.addEventListener('scroll', refreshBounds, true)
+        resources.add(() => window.removeEventListener('scroll', refreshBounds, true))
         const toNDC = (clientX: number, clientY: number): [number, number] => {
-          const rect = canvasRef.current!.getBoundingClientRect()
+          const rect = bounds
           const x = (clientX - rect.left) / rect.width
           const y = (clientY - rect.top) / rect.height
           return [x * 2 - 1, (1 - y) * 2 - 1]
@@ -783,6 +721,7 @@ export default function RaymarchingCanvas() {
 
         const onDown = (e: PointerEvent) => {
           if (e.button !== 0) return
+          refreshBounds()
 
           const [nx, ny] = toNDC(e.clientX, e.clientY)
           const state = useMetaballStore.getState()
@@ -803,9 +742,9 @@ export default function RaymarchingCanvas() {
           const now = Date.now()
           if (now - lastClickTime < DOUBLE_CLICK_DELAY && lastClickId === best) {
             try {
-              console.log('双击触发 split:', best)
+
               split(best)
-              console.log('split 完成:', best)
+
             } catch (error) {
               console.error('split 失败:', error, { ballId: best })
             }
@@ -841,9 +780,9 @@ export default function RaymarchingCanvas() {
           }
 
           try {
-            console.log('右键触发 split:', best)
+
             split(best)
-            console.log('split 完成:', best)
+
           } catch (error) {
             console.error('split 失败:', error, { ballId: best })
           }
@@ -896,13 +835,13 @@ export default function RaymarchingCanvas() {
             mergeTargetId = bestCandidate
             setHoverMergeCandidate(bestCandidate)
             clearDwell()
-            console.log(`开始合并计时: 拖拽球${draggingId} 靠近球${bestCandidate}, 等待${DWELL_MS}ms`)
+
             dwellTimer = setTimeout(() => {
               if (mergeTargetId === bestCandidate) {
                 try {
-                  console.log(`自动合并触发: ${draggingId} + ${bestCandidate}`)
+
                   merge(draggingId, bestCandidate)
-                  console.log('自动合并完成')
+
                 } catch (error) {
                   console.error('自动合并失败:', error, { ballA: draggingId, ballB: bestCandidate })
                 }
@@ -912,23 +851,36 @@ export default function RaymarchingCanvas() {
           }
         }
 
+        let moveFrame = 0
+        let latestPoint: [number, number] | null = null
+        resources.add(() => cancelAnimationFrame(moveFrame))
         const stopDrag = () => {
+          cancelAnimationFrame(moveFrame)
+          moveFrame = 0
+          latestPoint = null
           dragging = false
           clearDwell()
           mergeTargetId = null
           setHoverMergeCandidate(null)
         }
 
-        const onMove = (e: PointerEvent) => {
-          if (!dragging) return
-          requestAnimationFrame(() => {
-            const [nx, ny] = toNDC(e.clientX, e.clientY)
+        const applyMove = () => {
+          moveFrame = 0
+          if (dragging && latestPoint) {
+            const [nx, ny] = toNDC(...latestPoint)
             setPos(draggingId, [nx, ny])
             tryUpdateMergeCandidate()
-          })
+          }
+        }
+        const onMove = (e: PointerEvent) => {
+          if (!dragging) return
+          latestPoint = [e.clientX, e.clientY]
+          if (!moveFrame) moveFrame = requestAnimationFrame(applyMove)
         }
 
         const onUp = (e: PointerEvent) => {
+          cancelAnimationFrame(moveFrame)
+          if (e.type !== 'pointercancel') applyMove()
           stopDrag()
           try {
             canvasRef.current!.releasePointerCapture(e.pointerId)
@@ -942,6 +894,13 @@ export default function RaymarchingCanvas() {
           canvas.addEventListener('pointerup', onUp)
           canvas.addEventListener('pointercancel', onUp)
           canvas.addEventListener('contextmenu', onContextMenu)
+        resources.add(() => {
+          canvas.removeEventListener('pointerdown', onDown)
+          canvas.removeEventListener('pointermove', onMove)
+          canvas.removeEventListener('pointerup', onUp)
+          canvas.removeEventListener('pointercancel', onUp)
+          canvas.removeEventListener('contextmenu', onContextMenu)
+        })
           canvas.style.touchAction = 'none'
         }
 
@@ -973,18 +932,18 @@ export default function RaymarchingCanvas() {
               const targetFps = isMobile ? TARGET_FPS_MOBILE : TARGET_FPS_DESKTOP
               const highFps = isMobile ? TARGET_FPS_MOBILE + 5 : TARGET_FPS_DESKTOP + 5
 
-              if (avgFps < targetFps - 5 && renderScale > MIN_SCALE) {
+              if (avgFps < targetFps - 5 && settingsRef.current.renderScale > MIN_SCALE) {
                 setRenderScale(prev => {
                   const newScale = Math.max(MIN_SCALE, prev - 0.1)
-                  console.log(`动态分辨率触发: FPS=${avgFps.toFixed(1)}, scale=${newScale.toFixed(2)}`)
+
                   lastScaleChange = now
                   return newScale
                 })
-              } else if (avgFps > highFps && renderScale < MAX_SCALE) {
+              } else if (avgFps > highFps && settingsRef.current.renderScale < MAX_SCALE) {
                 // 检查连续 2s 高 FPS（需要在外部维护状态）
                 setRenderScale(prev => {
                   const newScale = Math.min(MAX_SCALE, prev + 0.1)
-                  console.log(`动态分辨率回弹: FPS=${avgFps.toFixed(1)}, scale=${newScale.toFixed(2)}`)
+
                   lastScaleChange = now
                   return newScale
                 })
@@ -996,6 +955,7 @@ export default function RaymarchingCanvas() {
         // 渲染循环
         const clock = new THREE.Clock()
         const animate = () => {
+          if (document.hidden) { rafId = 0; return }
           rafId = requestAnimationFrame(animate)
 
           updatePerformance()
@@ -1009,7 +969,7 @@ export default function RaymarchingCanvas() {
             )
 
             // 更新质感参数（如果预设改变）
-            const currentPreset = presets[preset]
+            const currentPreset = settingsRef.current.presets[settingsRef.current.preset]
             materialRef.current.uniforms.uSmoothK.value = currentPreset.smoothK
             materialRef.current.uniforms.uContrast.value = currentPreset.contrast
             materialRef.current.uniforms.uFogDensity.value = currentPreset.fog
@@ -1022,8 +982,8 @@ export default function RaymarchingCanvas() {
 
           // 更新 Bloom 参数（随分辨率缩放和预设）
           if (bloomPassRef.current) {
-            const currentPreset = presets[preset]
-            bloomPassRef.current.strength = currentPreset.bloomStrength * (0.7 + 0.3 * renderScale)
+            const currentPreset = settingsRef.current.presets[settingsRef.current.preset]
+            bloomPassRef.current.strength = currentPreset.bloomStrength * (0.7 + 0.3 * settingsRef.current.renderScale)
             bloomPassRef.current.threshold = currentPreset.bloomThreshold
             bloomPassRef.current.radius = currentPreset.bloomRadius
           }
@@ -1031,41 +991,34 @@ export default function RaymarchingCanvas() {
           // 渲染
           composer.render()
         }
+        const visibility = () => {
+          cancelAnimationFrame(rafId)
+          rafId = 0
+          fpsHistoryRef.current = []
+          if (!document.hidden) animate()
+        }
+        document.addEventListener('visibilitychange', visibility)
+        resources.add(() => document.removeEventListener('visibilitychange', visibility))
         animate()
 
         // 窗口大小变化
         const handleResize = () => {
+          refreshBounds()
           updateSize()
-          composer.setSize(renderer.domElement.width, renderer.domElement.height)
+          composer.setSize(containerRef.current!.clientWidth * settingsRef.current.renderScale,
+            containerRef.current!.clientHeight * settingsRef.current.renderScale)
           fxaaPass.material.uniforms['resolution'].value.x = 1 / renderer.domElement.width
           fxaaPass.material.uniforms['resolution'].value.y = 1 / renderer.domElement.height
         }
+        resizeRef.current = handleResize
         window.addEventListener('resize', handleResize)
 
-        // 清理函数
-        cleanup = () => {
-          cancelAnimationFrame(rafId)
-          unsubscribe()
+        resources.add(() => {
+          resizeRef.current = null
           window.removeEventListener('resize', handleResize)
-          if (canvas) {
-            canvas.removeEventListener('pointerdown', onDown)
-            canvas.removeEventListener('pointermove', onMove)
-            canvas.removeEventListener('pointerup', onUp)
-            canvas.removeEventListener('pointercancel', onUp)
-            canvas.removeEventListener('contextmenu', onContextMenu)
-          }
-          clearDwell()
-          try {
-            composer?.dispose()
-            renderer?.dispose()
-            ballsTexture?.dispose()
-            material?.dispose()
-            geometry?.dispose()
-          } catch (e) {
-            console.warn('清理资源时出错:', e)
-          }
-        }
+        })
       } catch (error) {
+        resources.dispose()
         console.error('RaymarchingCanvas 初始化失败:', error)
         // 记录错误详情
         if (error instanceof Error) {
@@ -1078,23 +1031,14 @@ export default function RaymarchingCanvas() {
       }
     }
 
-    initScene().then(() => {
-      console.log('RaymarchingCanvas 初始化完成')
-    }).catch(console.error)
+    initScene()
 
     return () => {
-      if (cleanup) cleanup()
+      resources.dispose()
     }
-  }, [balls, setPos, split, merge, renderScale, preset])
-
-  // 将 NDC 坐标转换为屏幕像素坐标（用于标签显示）
-  const ndcToPixel = (ndc: [number, number]): [number, number] => {
-    if (!containerRef.current) return [0, 0]
-    const rect = containerRef.current.getBoundingClientRect()
-    const x = (ndc[0] + 1) * 0.5 * rect.width
-    const y = (1 - ndc[1]) * 0.5 * rect.height
-    return [x, y]
-  }
+  // Store actions are stable; animation reads settings through a ref.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div ref={containerRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -1139,7 +1083,7 @@ export default function RaymarchingCanvas() {
               key={p}
               onClick={() => {
                 setPreset(p)
-                console.log(`切换预设: ${p}`, presets[p])
+
               }}
               style={{
                 padding: '4px 8px',
@@ -1192,7 +1136,7 @@ export default function RaymarchingCanvas() {
                 if (materialRef.current) {
                   materialRef.current.uniforms.uSmoothK.value = value
                 }
-                console.log(`调整 smoothK: ${value.toFixed(2)}`)
+
               }}
               style={{ width: '100%' }}
             />
@@ -1216,7 +1160,7 @@ export default function RaymarchingCanvas() {
                 if (materialRef.current) {
                   materialRef.current.uniforms.uContrast.value = value
                 }
-                console.log(`调整 contrast: ${value.toFixed(2)}`)
+
               }}
               style={{ width: '100%' }}
             />
@@ -1240,7 +1184,7 @@ export default function RaymarchingCanvas() {
                 if (materialRef.current) {
                   materialRef.current.uniforms.uFogDensity.value = value
                 }
-                console.log(`调整 fog: ${value.toFixed(2)}`)
+
               }}
               style={{ width: '100%' }}
             />
@@ -1264,7 +1208,7 @@ export default function RaymarchingCanvas() {
                 if (bloomPassRef.current) {
                   bloomPassRef.current.strength = value
                 }
-                console.log(`调整 bloomStrength: ${value.toFixed(2)}`)
+
               }}
               style={{ width: '100%' }}
             />
@@ -1272,40 +1216,7 @@ export default function RaymarchingCanvas() {
         </div>
       </div>
 
-      {/* 球体序号标签 */}
-      {balls.filter(b => b.active !== false).map((ball) => {
-        const [x, y] = ndcToPixel(ball.pos)
-        const isHoverMerge = hoverMergeCandidate === ball.id
-
-        return (
-          <div
-            key={ball.id}
-            style={{
-              position: 'absolute',
-              left: x - 20,
-              top: y - 10,
-              zIndex: 1000,
-              width: 40,
-              height: 20,
-              background: 'rgba(255, 255, 255, 0.9)',
-              border: isHoverMerge ? '2px solid #0af' : '1px solid rgba(0,0,0,0.2)',
-              borderRadius: 4,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 12,
-              fontWeight: 'bold',
-              color: '#333',
-              userSelect: 'none',
-              pointerEvents: 'auto',
-              cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-            }}
-          >
-            {ball.id}
-          </div>
-        )
-      })}
+<MetaballLabels highlighted={hoverMergeCandidate} />
     </div>
   )
 }

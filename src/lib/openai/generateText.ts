@@ -20,7 +20,7 @@ function normalizeConfiguredPattern(pattern: string) {
 function getChatCompletionsOnlyModelPatterns() {
   const configured = process.env.ANICCA_CHAT_COMPLETIONS_MODELS;
   if (!configured) {
-    return ["gemini-"];
+    return ["gemini-", "deepseek-"];
   }
 
   return configured
@@ -31,6 +31,10 @@ function getChatCompletionsOnlyModelPatterns() {
 
 export function prefersChatCompletions(model: string) {
   const normalizedModel = model.trim().toLowerCase();
+  if (normalizedModel.startsWith("deepseek-")) {
+    return true;
+  }
+
   return getChatCompletionsOnlyModelPatterns().some((pattern) => {
     if (pattern.endsWith("*")) {
       return normalizedModel.startsWith(pattern.slice(0, -1));
@@ -76,7 +80,9 @@ async function generateViaChatCompletions(
   maxOutputTokens: number,
   temperature?: number
 ) {
-  const response = await client.chat.completions.create({
+  const request: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming & {
+    thinking?: { type: "disabled" };
+  } = {
     model,
     messages: [
       {
@@ -86,7 +92,12 @@ async function generateViaChatCompletions(
     ],
     temperature,
     max_tokens: maxOutputTokens
-  });
+  };
+  if (model.trim().toLowerCase().startsWith("deepseek-")) {
+    request.thinking = { type: "disabled" };
+  }
+
+  const response = await client.chat.completions.create(request);
 
   return {
     text: readChatCompletionText(response),

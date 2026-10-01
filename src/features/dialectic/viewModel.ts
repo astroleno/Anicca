@@ -1,4 +1,10 @@
 import { AniccaNode, BranchType, Graph } from "@/types/anicca";
+import {
+  projectDialogueScene,
+  type DialogueStageNode
+} from "@/features/dialectic/sceneProjection";
+
+export type { DialogueStageNode } from "@/features/dialectic/sceneProjection";
 
 export type DialogueBreadcrumbItem = {
   id: string;
@@ -19,24 +25,6 @@ export type DialogueSidebarItem = {
   isFocused: boolean;
   isOnFocusedPath: boolean;
   sourceLabels: string[];
-};
-
-export type DialogueStageNode = {
-  id: string;
-  label: string;
-  preview?: string;
-  summary?: string;
-  kind: AniccaNode["kind"];
-  branchType?: BranchType;
-  displayRole?: "node" | "synthesis-record";
-  isGrowthPerspective?: boolean;
-  relation: "focus" | "ancestor" | "child" | "source";
-  // Seed coordinates define the default composition before per-snapshot drag state takes over.
-  seedX: number;
-  seedY: number;
-  // Narrow stages use a separate seed grid so dense Growth sessions keep real card spacing.
-  compactSeedX?: number;
-  compactSeedY?: number;
 };
 
 export type DialogueSourceNode = {
@@ -62,7 +50,7 @@ export type DialogueNodeDetail = {
 export type DialogueComposerTarget = {
   nodeId: string | null;
   label: string;
-  kind: "assistant" | "root";
+  kind: "assistant" | "seed" | "root";
   branchType?: BranchType;
   displayRole: "node" | "synthesis-record";
 };
@@ -174,7 +162,7 @@ function getSynthesisEventIdsByLineageParent(graph: Graph, lineageParentId: stri
 
 function getAssistantDisplayChildren(graph: Graph, assistantNode: AniccaNode): string[] {
   return assistantNode.children
-    .filter((childId) => graph.nodes[childId]?.kind === "user")
+    .filter((childId) => graph.nodes[childId] && graph.nodes[childId]?.branchType !== "合")
     .sort((leftId, rightId) => byCreatedAt(graph, leftId, rightId));
 }
 
@@ -266,6 +254,10 @@ function buildSidebarItems(graph: Graph, focusNodeId: string | null, breadcrumbI
   for (const rootId of [...graph.entryIds].sort((leftId, rightId) => byCreatedAt(graph, leftId, rightId))) {
     walk(rootId, 0, null);
   }
+
+  // Cross-theme synthesis has no artificial common user anchor. Keep it, its
+  // descendants, and imported independent seeds reachable in history.
+  for (const id of Object.keys(graph.nodes)) walk(id, 0, null);
 
   return items;
 }
@@ -678,6 +670,6 @@ export function deriveDialogueView(graph: Graph, requestedFocusNodeId: string | 
     composerTarget,
     availableSynthesisActions: buildSynthesisActions(graph),
     focusSnapshotId: `focus:${focusNodeId || "root"}|target:${composerTarget.nodeId || "root"}|trail:${breadcrumbIds.join(">")}`,
-    stageNodes: buildStageNodes(graph, focusNodeId)
+    stageNodes: projectDialogueScene(graph, buildStageNodes(graph, focusNodeId)).nodes
   };
 }

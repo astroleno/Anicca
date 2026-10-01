@@ -17,8 +17,8 @@ export interface AniccaNodeMeta {
   summary?: string; // 单行摘要（≤30字，不复述用户原文）
   summaryStatus?: "ok" | "missing" | "invalid"; // 用于补摘要流程
   label?: string; // UI 短标签
-  sourceNodeIds?: string[]; // 合节点的双来源 assistant
-  lineageParentId?: string; // 合节点共享的上游 user anchor
+  sourceNodeIds?: string[]; // 合节点的两个来源 seed，保留原节点
+  lineageParentId?: string; // 旧版同母题合的共同上游；跨母题合可以没有此字段
   growth?: GrowthNodeMeta; // A2A growth provenance, namespaced to keep dialectic metadata stable
 }
 

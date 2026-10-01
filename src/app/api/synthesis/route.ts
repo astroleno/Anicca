@@ -1,9 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDefaultModel } from "@/lib/openai/client";
+import { getDialecticModel, getDialecticOpenAiClient } from "@/lib/openai/client";
 import { generateText } from "@/lib/openai/generateText";
-import { parseStrictJsonObject } from "@/lib/openai/parseStrictJsonObject";
 import { describeProviderFailure } from "@/lib/openai/providerErrors";
-import { normalizeDialecticLabel, normalizeDialecticSummary } from "@/features/dialectic/outputContract";
+import {
+  analyzeSynthesisOutput,
+  buildSynthesisAuditPrompt,
+  buildSynthesisContractRepairPrompt,
+  buildSynthesisCriticPrompt,
+  buildSynthesisDraftPrompt,
+  buildSynthesisFinalPrompt,
+  parseSynthesisAudit,
+  SynthesisResult,
+  SynthesisSource
+} from "@/features/dialectic/server/synthesisQuality";
+import {
+  isHighRiskDialectic,
+  retrieveDialecticPolicyCards
+} from "@/features/dialectic/server/policyCards";
 
 type ContextMessage = {
   role?: string;
@@ -17,12 +30,7 @@ type SynthesisInput = {
   stance?: unknown;
 };
 
-type SynthesisBranch = {
-  text: string;
-  summary: string;
-  label: string;
-  stance: "合";
-};
+type SynthesisStageContext = Parameters<typeof buildSynthesisDraftPrompt>[0];
 
 function serializeContextMessages(contextMessages: unknown): string {
   if (!Array.isArray(contextMessages)) {
@@ -56,65 +64,70 @@ function getErrorInfo(error: unknown) {
 }
 
 function hasRequiredBranch(value: unknown, stance: "正" | "反"): value is Required<SynthesisInput> {
-  if (!value || typeof value !== "object") {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
     return false;
   }
 
   const branch = value as Record<string, unknown>;
   return (
     typeof branch.text === "string" &&
+    Boolean(branch.text.trim()) &&
     typeof branch.summary === "string" &&
+    Boolean(branch.summary.trim()) &&
     typeof branch.label === "string" &&
     branch.stance === stance
   );
 }
 
-function parseSynthesis(value: unknown, rootValue: unknown): SynthesisBranch | null {
-  if (!value || typeof value !== "object") {
-    return null;
-  }
-
-  const candidate = value as Record<string, unknown>;
-  const root = rootValue && typeof rootValue === "object" ? (rootValue as Record<string, unknown>) : null;
-  const candidateStance = candidate.stance;
-  const rootStance = root?.stance;
-  if (
-    typeof candidate.text !== "string" ||
-    typeof candidate.summary !== "string" ||
-    typeof candidate.label !== "string" ||
-    (candidateStance !== undefined && candidateStance !== "合") ||
-    (candidateStance === undefined && rootStance !== undefined && rootStance !== "合")
-  ) {
-    return null;
-  }
-
-  const text = candidate.text.trim();
-  const summary = normalizeDialecticSummary(candidate.summary);
-  if (!text || !summary) {
-    return null;
-  }
-
+function toSynthesisSource(value: Required<SynthesisInput>, stance: "正" | "反"): SynthesisSource {
   return {
-    text,
-    summary,
-    label: normalizeDialecticLabel(candidate.label, "合流", "合"),
-    stance: "合"
+    text: String(value.text).trim(),
+    summary: String(value.summary).trim(),
+    label: String(value.label).trim(),
+    stance
   };
 }
 
-function buildSynthesisPrompt(thesis: Required<SynthesisInput>, antithesis: Required<SynthesisInput>, contextMessages: unknown): string {
-  const serializedContext = serializeContextMessages(contextMessages);
-  const sections = [
-    "你负责把同一母题下的正与反整理成一个更高阶的合。",
-    "只返回一个 JSON object，不要 markdown，不要解释，不要代码围栏。",
-    "schema={\"synthesis\":{\"text\":\"\",\"summary\":\"\",\"label\":\"\",\"stance\":\"合\"}}",
-    "summary 必须是单行摘要，label 必须是 8 个字符以内的中文短标签；不要在 label 中写解释、冒号、下划线或长短语。",
-    `正:\ntext=${thesis.text}\nsummary=${thesis.summary}\nlabel=${thesis.label}`,
-    `反:\ntext=${antithesis.text}\nsummary=${antithesis.summary}\nlabel=${antithesis.label}`,
-    serializedContext ? `历史上下文:\n${serializedContext}` : ""
-  ];
+function readSeedSources(value: unknown): [SynthesisSource, SynthesisSource] | null {
+  if (!Array.isArray(value) || value.length !== 2) return null;
+  const ids = new Set<string>();
+  const sources: SynthesisSource[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object" || typeof item.id !== "string" || !item.id.trim() ||
+      ids.has(item.id) || typeof item.text !== "string" || !item.text.trim() || item.text.length > 12000 ||
+      typeof item.summary !== "string" || typeof item.label !== "string" ||
+      !["正", "反", "合", "想法"].includes(item.stance)) return null;
+    ids.add(item.id);
+    sources.push({ text: item.text.trim(), summary: item.summary.trim(), label: item.label.trim(), stance: item.stance });
+  }
+  return sources as [SynthesisSource, SynthesisSource];
+}
 
-  return sections.filter(Boolean).join("\n\n");
+async function generateSynthesisStage(
+  model: string,
+  client: ReturnType<typeof getDialecticOpenAiClient>,
+  prompt: string,
+  context: SynthesisStageContext,
+  requireContract = true
+): Promise<{ synthesis: SynthesisResult | null; errors: string[]; outputText: string }> {
+  const first = await generateText({ model, client, input: prompt, maxOutputTokens: 1400 });
+  let analysis = analyzeSynthesisOutput(first.text, context.rootInput, { requireContract });
+  if (analysis.synthesis) {
+    return { synthesis: analysis.synthesis, errors: [], outputText: first.text };
+  }
+
+  const repair = await generateText({
+    model,
+    client,
+    input: buildSynthesisContractRepairPrompt(context, first.text, analysis.errors),
+    maxOutputTokens: 1400
+  });
+  analysis = analyzeSynthesisOutput(repair.text, context.rootInput, { requireContract });
+  return {
+    synthesis: analysis.synthesis,
+    errors: analysis.errors,
+    outputText: repair.text
+  };
 }
 
 export async function POST(req: NextRequest) {
@@ -131,35 +144,103 @@ export async function POST(req: NextRequest) {
   let requestId = "";
 
   try {
-    requestId = typeof body?.requestId === "string" ? body.requestId.trim() : "";
-    const thesis = body?.thesis;
-    const antithesis = body?.antithesis;
-    const model = getDefaultModel(typeof body?.model === "string" ? body.model : undefined);
+    requestId = typeof body.requestId === "string" ? body.requestId.trim() : "";
+    const rootInput = typeof body.rootInput === "string" ? body.rootInput.trim() : "";
+    const thesis = body.thesis;
+    const antithesis = body.antithesis;
+    const seedMode = "sources" in body;
+    const sources = seedMode ? readSeedSources(body.sources) : null;
 
     if (!requestId) {
       return NextResponse.json({ error: "requestId required" }, { status: 400 });
     }
 
-    if (!hasRequiredBranch(thesis, "正") || !hasRequiredBranch(antithesis, "反")) {
+    if (!rootInput) {
+      return NextResponse.json({ requestId, error: "rootInput required" }, { status: 400 });
+    }
+
+    if (seedMode ? !sources : (!hasRequiredBranch(thesis, "正") || !hasRequiredBranch(antithesis, "反"))) {
       return NextResponse.json({ requestId, error: "thesis and antithesis required" }, { status: 400 });
     }
 
-    const { text: outputText } = await generateText({
-      model,
-      input: buildSynthesisPrompt(thesis, antithesis, body?.contextMessages),
-      maxOutputTokens: 1200
-    });
+    const model = getDialecticModel(typeof body.model === "string" ? body.model : undefined);
+    const client = getDialecticOpenAiClient();
 
-    const parsed = outputText ? parseStrictJsonObject(outputText) : null;
-    if (!parsed) {
-      console.warn("/api/synthesis invalid model output", { requestId, outputText: outputText.slice(0, 500) });
-      return invalidModelOutput(requestId, "expected synthesis JSON object");
+    const cards = retrieveDialecticPolicyCards(seedMode && sources
+      ? `${rootInput}\n${sources.map((source) => source.text).join("\n")}` : rootInput);
+    const context: SynthesisStageContext = {
+      sourceMode: seedMode ? "seeds" : undefined,
+      rootInput,
+      thesis: sources?.[0] || toSynthesisSource(thesis as Required<SynthesisInput>, "正"),
+      antithesis: sources?.[1] || toSynthesisSource(antithesis as Required<SynthesisInput>, "反"),
+      contextMessages: serializeContextMessages(body.contextMessages),
+      cards
+    };
+
+    const draft = await generateSynthesisStage(
+      model,
+      client,
+      buildSynthesisDraftPrompt(context),
+      context,
+      false
+    );
+    if (!draft.synthesis) {
+      console.warn("/api/synthesis draft failed contract", {
+        requestId,
+        errors: draft.errors,
+        outputText: draft.outputText.slice(0, 500)
+      });
+      return invalidModelOutput(requestId, "synthesis draft failed contract after one repair");
     }
 
-    const synthesis = parseSynthesis(parsed.synthesis, parsed);
-    if (!synthesis) {
-      console.warn("/api/synthesis malformed payload", { requestId, parsed });
-      return invalidModelOutput(requestId, "payload missing synthesis with matching stance");
+    const critic = await generateSynthesisStage(
+      model,
+      client,
+      buildSynthesisCriticPrompt(context, draft.synthesis),
+      context
+    );
+    if (!critic.synthesis) {
+      console.warn("/api/synthesis critic failed contract", {
+        requestId,
+        errors: critic.errors,
+        outputText: critic.outputText.slice(0, 500)
+      });
+      return invalidModelOutput(requestId, "synthesis critic failed contract after one repair");
+    }
+
+    let synthesis = critic.synthesis;
+    if (isHighRiskDialectic(cards)) {
+      const auditResponse = await generateText({
+        model,
+        client,
+        input: buildSynthesisAuditPrompt(context, critic.synthesis),
+        maxOutputTokens: 1800
+      });
+      const audit = parseSynthesisAudit(auditResponse.text, cards);
+      if (!audit) {
+        console.warn("/api/synthesis malformed high-risk audit", {
+          requestId,
+          policyCardIds: cards.map((card) => card.id),
+          outputText: auditResponse.text.slice(0, 500)
+        });
+        return invalidModelOutput(requestId, "high-risk semantic audit failed");
+      }
+
+      const final = await generateSynthesisStage(
+        model,
+        client,
+        buildSynthesisFinalPrompt(context, critic.synthesis, audit),
+        context
+      );
+      if (!final.synthesis) {
+        console.warn("/api/synthesis final rewrite failed contract", {
+          requestId,
+          errors: final.errors,
+          outputText: final.outputText.slice(0, 500)
+        });
+        return invalidModelOutput(requestId, "synthesis final rewrite failed contract after one repair");
+      }
+      synthesis = final.synthesis;
     }
 
     return NextResponse.json({ requestId, synthesis });

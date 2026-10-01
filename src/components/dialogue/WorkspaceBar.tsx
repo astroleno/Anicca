@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useId, useRef, useState } from "react";
+import { FormEvent, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { WorkspaceRegistryEntry } from "@/types/workspace";
 import styles from "./DialogueShell.module.css";
 
@@ -14,6 +14,7 @@ type WorkspaceBarProps = {
   onRename: (title: string) => void;
   onExport: () => void;
   onImport: () => void;
+  extraActions?: ReactNode;
 };
 
 export function WorkspaceBar({
@@ -25,7 +26,8 @@ export function WorkspaceBar({
   onSelect,
   onRename,
   onExport,
-  onImport
+  onImport,
+  extraActions
 }: WorkspaceBarProps) {
   const [renaming, setRenaming] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
@@ -91,13 +93,6 @@ export function WorkspaceBar({
           <strong>{currentTitle || "未命名工作区"}</strong>
         </div>
         <div className={styles.workspaceBarActions}>
-          <button
-            type="button"
-            className={styles.workspaceBarButton}
-            onClick={onCreate}
-          >
-            新建工作区
-          </button>
           <div
             className={styles.workspaceOverflow}
             onKeyDown={(event) => {
@@ -110,6 +105,7 @@ export function WorkspaceBar({
             <button
               type="button"
               ref={overflowButtonRef}
+              data-testid="dialogue-more-button"
               className={styles.workspaceBarGhostButton}
               aria-controls={actionsOpen ? overflowActionsId : undefined}
               aria-expanded={actionsOpen}
@@ -122,6 +118,9 @@ export function WorkspaceBar({
                 id={overflowActionsId}
                 className={styles.workspaceOverflowMenu}
                 aria-label="更多工作区操作"
+                onClick={(event) => {
+                  if ((event.target as HTMLElement).closest("button") && !renaming) setActionsOpen(false);
+                }}
                 onKeyDown={(event) => {
                   if (event.key === "Escape") {
                     event.preventDefault();
@@ -129,6 +128,8 @@ export function WorkspaceBar({
                   }
                 }}
               >
+                {extraActions}
+                <button type="button" className={styles.workspaceOverflowItem} onClick={() => { onCreate(); setActionsOpen(false); }}>新建工作区</button>
                 <button
                   type="button"
                   ref={firstOverflowItemRef}
@@ -221,7 +222,7 @@ export function WorkspaceBar({
         </form>
       ) : null}
 
-      <div className={styles.workspaceRecent}>
+      <div className={styles.workspaceRecent} hidden>
         <p className={styles.workspaceRecentLabel}>最近工作区</p>
         <div className={styles.workspaceRecentList}>
           {items.map((item) => (

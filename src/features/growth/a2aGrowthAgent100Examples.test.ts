@@ -259,7 +259,7 @@ describe("A05 and A06 orchestration/projection examples", () => {
     });
 
     expect(() => projectGrowthSessionToGraph(store, session, { targetAssistantId: "missing" }))
-      .toThrow("assistant parent not found");
+      .toThrow("parent not found");
     expect(() => store.createGrowthAssistant([], {
       text: "orphan",
       growth: { eventId: "event_orphan", operator: "expand" }

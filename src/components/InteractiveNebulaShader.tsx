@@ -25,6 +25,7 @@ export function InteractiveNebulaShader({
 }: InteractiveNebulaShaderProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const materialRef  = useRef<THREE.ShaderMaterial>();
+  const initialProps = useRef({ hasActiveReminders, hasUpcomingReminders, disableCenterDimming, themeHex });
 
   // Sync props into uniforms
   useEffect(() => {
@@ -42,10 +43,11 @@ export function InteractiveNebulaShader({
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+    const { hasActiveReminders, hasUpcomingReminders, disableCenterDimming, themeHex } = initialProps.current;
 
     // Renderer, scene, camera, clock
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-    renderer.setPixelRatio(window.devicePixelRatio);
+    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1));
     container.appendChild(renderer.domElement);
 
     const scene  = new THREE.Scene();
@@ -159,20 +161,32 @@ export function InteractiveNebulaShader({
     window.addEventListener("mousemove", onMouseMove);
     onResize();
 
-    // Animation loop
-    renderer.setAnimationLoop(() => {
+    const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const render = () => {
       uniforms.iTime.value = clock.getElapsedTime();
       renderer.render(scene, camera);
-    });
+    };
+    const syncAnimation = () => {
+      renderer.setAnimationLoop(!document.hidden && !motion.matches ? render : null);
+      if (!document.hidden) render();
+    };
+    document.addEventListener('visibilitychange', syncAnimation);
+    motion.addEventListener('change', syncAnimation);
+    window.addEventListener('resize', syncAnimation);
+    syncAnimation();
 
     return () => {
       window.removeEventListener("resize", onResize);
       window.removeEventListener("mousemove", onMouseMove);
       renderer.setAnimationLoop(null);
+      document.removeEventListener('visibilitychange', syncAnimation);
+      motion.removeEventListener('change', syncAnimation);
+      window.removeEventListener('resize', syncAnimation);
       container.removeChild(renderer.domElement);
       material.dispose();
       mesh.geometry.dispose();
       renderer.dispose();
+      renderer.forceContextLoss();
     };
   }, []);
 

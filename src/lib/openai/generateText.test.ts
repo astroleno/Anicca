@@ -27,9 +27,10 @@ describe("prefersChatCompletions", () => {
     process.env.ANICCA_CHAT_COMPLETIONS_MODELS = previous;
   });
 
-  it("defaults gemini models to chat completions", () => {
+  it("defaults Gemini and DeepSeek models to chat completions", () => {
     delete process.env.ANICCA_CHAT_COMPLETIONS_MODELS;
     expect(prefersChatCompletions("gemini-3.1-flash-lite-preview")).toBe(true);
+    expect(prefersChatCompletions("deepseek-v4-flash")).toBe(true);
     expect(prefersChatCompletions("gpt-4o-mini")).toBe(false);
   });
 
@@ -37,6 +38,7 @@ describe("prefersChatCompletions", () => {
     process.env.ANICCA_CHAT_COMPLETIONS_MODELS = "foo-*,bar-model";
     expect(prefersChatCompletions("foo-baz")).toBe(true);
     expect(prefersChatCompletions("bar-model")).toBe(true);
+    expect(prefersChatCompletions("deepseek-v4-flash")).toBe(true);
     expect(prefersChatCompletions("gemini-3.1-flash-lite-preview")).toBe(false);
   });
 });
@@ -77,6 +79,33 @@ describe("generateText", () => {
 
     expect(client.responses.create).not.toHaveBeenCalled();
     expect(client.chat.completions.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("disables provider thinking for DeepSeek dialectic output", async () => {
+    const client = {
+      responses: {
+        create: vi.fn()
+      },
+      chat: {
+        completions: {
+          create: vi.fn().mockResolvedValue({
+            choices: [{ message: { content: "deepseek output" } }]
+          })
+        }
+      }
+    } as any;
+
+    await generateText({
+      client,
+      model: "deepseek-v4-flash",
+      input: "hello",
+      maxOutputTokens: 1200
+    });
+
+    expect(client.chat.completions.create).toHaveBeenCalledWith(
+      expect.objectContaining({ thinking: { type: "disabled" } })
+    );
+    expect(client.responses.create).not.toHaveBeenCalled();
   });
 
   it("falls back to chat completions when responses are unsupported", async () => {

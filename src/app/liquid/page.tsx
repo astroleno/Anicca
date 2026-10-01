@@ -1,12 +1,3 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import React from "react";
-import { InteractiveNebulaShader } from "@/components/InteractiveNebulaShader";
-
-export default function Page() {
-  return (
-    <main className="fixed inset-0">
-      <InteractiveNebulaShader />
-    </main>
-  );
-}
+export default function LegacyExperiment() { redirect("/labs/liquid"); }
