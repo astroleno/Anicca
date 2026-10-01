@@ -8,6 +8,7 @@ import {
   type DialogueMetaballNode
 } from "../metaball/model";
 import { buildLiquidSpCode, LIQUID_SEED_SLOTS } from "./spcode";
+import { liquidBlendTargets, RESTING_LIQUID_BLEND } from "./fusion";
 
 export const DIALOGUE_METABALL_SMOOTHNESS = 0.055;
 let cachedFragmentSource: string | null = null;
@@ -20,7 +21,7 @@ export function buildLiquidFragmentSource(): string {
 
 export type DialogueMetaballRenderer = {
   resize(width: number, height: number, pixelRatio: number): void;
-  render(nodes: DialogueMetaballNode[], timeSeconds: number, cursor?: { center: [number, number]; active: boolean }): void;
+  render(nodes: DialogueMetaballNode[], timeSeconds: number, cursor?: { center: [number, number]; active: boolean; draggedId?: string | null }): void;
   dispose(): void;
 };
 
@@ -111,7 +112,7 @@ export function createDialogueMetaballRenderer(
   const locations = new Map<string, WebGLUniformLocation | null>();
   const uniformNames = ["time", "resolution", "opacity", "_scale", "mouse", "mx", "my"];
   for (let index = 0; index < LIQUID_SEED_SLOTS; index += 1) {
-    for (const suffix of ["x", "y", "r", "h", "cr", "cg", "cb"]) {
+    for (const suffix of ["x", "y", "r", "h", "b", "cr", "cg", "cb"]) {
       uniformNames.push(`s${index}${suffix}`);
     }
   }
@@ -136,6 +137,9 @@ export function createDialogueMetaballRenderer(
   let cssWidth = 1;
   let cssHeight = 1;
   let previousNodes: DialogueMetaballNode[] | null = null;
+  const blends = new Map<string, number>();
+  const previousSlotBlends: number[] = [];
+  let previousTime: number | null = null;
 
   const handleContextLost = (event: Event) => {
     event.preventDefault();
@@ -165,6 +169,24 @@ export function createDialogueMetaballRenderer(
       const resolution = locations.get("resolution");
       if (resolution !== null && resolution !== undefined) {
         gl.uniform2f(resolution, canvas.width, canvas.height);
+      }
+
+      const visibleNodes = nodes.slice(0, count);
+      const targets = liquidBlendTargets(visibleNodes, cursor?.draggedId);
+      // time=0 is the reduced-motion path: update geometry without interpolation.
+      const amount = previousTime === null || timeSeconds === 0 ? 1
+        : 1 - Math.exp(-18 * Math.max(0, timeSeconds - previousTime));
+      previousTime = timeSeconds;
+      const ids = new Set(visibleNodes.map(node => node.id));
+      for (const id of blends.keys()) if (!ids.has(id)) blends.delete(id);
+      for (let index = 0; index < LIQUID_SEED_SLOTS; index++) {
+        const node = visibleNodes[index];
+        const target = targets[index] ?? RESTING_LIQUID_BLEND;
+        const current = node ? (blends.get(node.id) ?? RESTING_LIQUID_BLEND) : RESTING_LIQUID_BLEND;
+        const value = Math.abs(target - current) < 0.0001 ? target : current + (target - current) * amount;
+        if (node) blends.set(node.id, value);
+        if (previousSlotBlends[index] !== value) set1f(`s${index}b`, value);
+        previousSlotBlends[index] = value;
       }
 
       if (nodes !== previousNodes) {

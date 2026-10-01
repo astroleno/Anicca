@@ -105,6 +105,27 @@ describe("dialogue liquid renderer", () => {
     expect(gl.createProgram).not.toHaveBeenCalled();
   });
 
+  it("changes the approaching pair's liquid neck through uniforms and relaxes after release", () => {
+    const gl = createGlMock();
+    const canvas = document.createElement("canvas");
+    vi.spyOn(canvas, "getContext").mockReturnValue(gl as unknown as GPUCanvasContext);
+    const renderer = createDialogueMetaballRenderer(canvas, vi.fn());
+    const nodes = [0, 0.2, 1].map((x, index) => ({ id: `seed-${index}`, center: [x, 0] as [number, number],
+      radius: 0.1, color: [0.5, 0.5, 0.5] as [number, number, number], emphasis: 1 }));
+    const blend = (index: number) => gl.uniform1f.mock.calls.filter(([location]) =>
+      (location as unknown as { name: string }).name === `s${index}b`).at(-1)?.[1];
+    renderer.render(nodes, 1);
+    expect(blend(0)).toBe(0.14);
+    renderer.render(nodes, 2, { center: [0, 0], active: true, draggedId: "seed-0" });
+    expect(blend(0)).toBeCloseTo(0.3);
+    expect(blend(1)).toBeCloseTo(0.3);
+    expect(blend(2)).toBe(0.14);
+    renderer.render(nodes, 3);
+    expect(blend(0)).toBeCloseTo(0.14);
+    expect(gl.createProgram).toHaveBeenCalledOnce();
+    renderer.dispose();
+  });
+
   it("falls back on context loss and disposes owned resources once", () => {
     const gl = createGlMock();
     const canvas = document.createElement("canvas");

@@ -927,6 +927,20 @@ async function ensureMetaballFusionAndSeparation(browser) {
       { expectedPair: pair }
     );
 
+    await waitForCondition(page, "metaball-fusion:motion-settled", () =>
+      [...document.querySelectorAll('[data-testid^="dialogue-stage-node-"]')].every(element =>
+        (element.style.translate || "0px 0px").split(/\s+/).every(value => Math.abs(parseFloat(value)) < 0.5)
+      )
+    );
+
+    await waitForCondition(page, "metaball-fusion:pair-neck-strengthened", () => {
+      const gl = document.querySelector('[data-testid="dialogue-metaball-canvas"]')?.getContext("webgl2");
+      const program = gl?.getParameter(gl.CURRENT_PROGRAM);
+      if (!program) return false;
+      return Array.from({ length: 8 }, (_, index) => gl.getUniform(program, gl.getUniformLocation(program, `s${index}b`)))
+        .filter(blend => blend > 0.2).length === 2;
+    });
+
     const fusedScreenshotPath = path.join(outputDir, "desktop-metaball-fused.png");
     await page.screenshot({ path: fusedScreenshotPath, fullPage: false });
 
@@ -942,6 +956,14 @@ async function ensureMetaballFusionAndSeparation(browser) {
     );
     await page.mouse.up();
     pointerDown = false;
+
+    await waitForCondition(page, "metaball-fusion:neck-relaxed-after-release", () => {
+      const gl = document.querySelector('[data-testid="dialogue-metaball-canvas"]')?.getContext("webgl2");
+      const program = gl?.getParameter(gl.CURRENT_PROGRAM);
+      if (!program) return false;
+      return Array.from({ length: 8 }, (_, index) => gl.getUniform(program, gl.getUniformLocation(program, `s${index}b`)))
+        .every(blend => Math.abs(blend - 0.14) < 0.001);
+    });
 
     const graphAfter = await readPersistedGraphCounts(page);
     if (!graphAfter) {

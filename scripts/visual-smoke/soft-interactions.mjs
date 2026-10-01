@@ -90,7 +90,9 @@ export async function runCanvasLifecycle(browser, { baseUrl, outputDir, setActiv
       await page.evaluate(() => { window.__canvasAudit.rects = 0; });
       await page.mouse.move(640, 360);
       await page.mouse.down();
-      await page.mouse.move(800, 480, { steps: 24 });
+      // Stay inside the empty centre: moving into the surrounding ring can
+      // legitimately trigger this experiment's dwell-to-merge on a slow run.
+      await page.mouse.move(680, 380, { steps: 24 });
       await page.mouse.up();
       await page.getByRole("button", { name: "高对比", exact: true }).click();
       await page.waitForTimeout(200);

@@ -253,6 +253,8 @@ active workspace key 单独保存：
 
 `/dialogue` 已接入主线专用液态 renderer：固定 8 个 GPU uniform 槽位，材质源码来自 [`reference/anicca-liquid-frontend`](reference/anicca-liquid-frontend/README.md)，运行时只消费场景投影，不拥有 graph。渲染器限制像素比并实现 `resize / render / dispose`；WebGL 不可用或 context lost 时自动回退到 CSS blob，reduced-motion 会冻结材质时间，但不会冻结 DOM 交互。
 
+拖动种子靠近另一颗时，液桥按两者间距与半径逐渐增强，松开后平滑恢复；其他种子保持静止时的融合范围。材质保留参考版的多色色场和 tint 配方，增强液桥不会直接触发业务合成。
+
 移动 Web 使用实际 visual viewport、safe-area 与输入区高度计算可用舞台；页面失焦或进入后台时暂停动画。近期微信目标是微信内 H5，业务/API/布局层已保持平台边界；原生小程序页面、Canvas 和存储适配不在本轮实现中，微信 iOS/Android 真机尚未验收。
 
 旧版深色珍珠前端保留在 `codex/dialogue-metaball-gummy`（`5321273`）。该快照已在隔离目录通过 production build，并用浏览器确认 `/dialogue` 的 shell、舞台和 WebGL canvas 可启动，因此没有另建重复备份分支。检查旧版时应在干净的独立 clone 中切换，避免覆盖当前未提交工作；回退只取前端及必要依赖，不整体回退 API、模型配置、评测或用户数据。

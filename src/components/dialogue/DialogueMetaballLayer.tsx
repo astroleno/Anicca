@@ -199,7 +199,8 @@ export function DialogueMetaballLayer({ hostRef, onStateChange }: Props) {
         const cap = hostRect.width <= 640 ? 0.62 : 0.8;
         renderer.resize(hostRect.width, hostRect.height, Math.min(window.devicePixelRatio || 1, cap) * qualityScale);
         renderer.render(renderedNodes, prefersReducedMotion ? 0 : timestamp / 1000,
-          { center: smoothCursor, active: cursor.active && !prefersReducedMotion });
+          { center: smoothCursor, active: cursor.active && !prefersReducedMotion,
+            draggedId: pointerDown ? pressedId : null });
         if (!reportedReady) {
           reportedReady = true;
           canvas.dataset.rendererState = "ready";

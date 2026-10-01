@@ -14,6 +14,7 @@ export function buildLiquidSpCode(slots: number = LIQUID_SEED_SLOTS): string {
       `let s${index}y = input();`,
       `let s${index}r = input();`,
       `let s${index}h = input();`,
+      `let s${index}b = input();`,
       `let s${index}cr = input();`,
       `let s${index}cg = input();`,
       `let s${index}cb = input();`
@@ -43,10 +44,10 @@ export function buildLiquidSpCode(slots: number = LIQUID_SEED_SLOTS): string {
 
   lines.push("let seedCol = tint/max(tw, .0001);");
   lines.push("color(mix(n, seedCol*(n*1.5+.3), clamp(tw, 0., 1.)*.55));");
-  // Scale the reference's soft union to the smaller dialogue seeds.
-  lines.push("blend(.14);");
-
   for (let index = 0; index < slots; index += 1) {
+    // A nearby dragged pair gets the reference's broader liquid neck without
+    // joining every small seed in a crowded, resting scene.
+    lines.push(`blend(s${index}b);`);
     if (index === 0) {
       lines.push("displace(s0x, s0y, 0.);");
     } else {
@@ -56,6 +57,7 @@ export function buildLiquidSpCode(slots: number = LIQUID_SEED_SLOTS): string {
   }
 
   lines.push(`displace(mx-s${slots - 1}x, my-s${slots - 1}y, 0.);`);
+  lines.push("blend(.14);");
   lines.push("sphere(.2);");
 
   return `${declarations.join("\n")}\n${lines.join("\n")}\n`;
