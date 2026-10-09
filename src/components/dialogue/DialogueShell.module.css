@@ -4074,8 +4074,8 @@
 .seedGuide button { border: 0; padding: 8px 12px; min-height: 44px; border-radius: 12px; background: #eee6f3; color: #4a385a; cursor: pointer; }
 .stageNode { touch-action: none; -webkit-touch-callout: none; }
 .stageNodeInner strong, .stageNodeInner small {
-  color: #332b43; background: rgba(255, 253, 255, .86); border-radius: 12px;
-  padding: 3px 5px; text-shadow: none; opacity: 1;
+  color: #302a42; background: transparent; border-radius: 0;
+  padding: 0; text-shadow: 0 1px 3px #fff, 0 0 8px #fff, 0 0 16px #fff; opacity: 1;
 }
 .stagePendingGhost, .stagePendingRoot { opacity: .8; }
 .stagePendingGhost strong, .stagePendingGhost small, .stagePendingRoot strong, .stagePendingRoot small,
@@ -4110,7 +4110,10 @@
 .stageNode::before, .stageNode::after, .emptyStageBlob,
 .stagePendingGhost, .stagePendingGhost::after { animation: none; }
 .stageNodeSynthesisEvent { animation: none; }
-.stageNodeInner strong { line-height: 1.5; }
+.stageNodeInner { width: 156px; height: auto; min-height: 64px; padding: 8px 4px; overflow: visible; flex-shrink: 0; gap: 3px; }
+.stageNodeInner strong { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; max-height: none; width: 100%; overflow: hidden; line-height: 1.5; font-weight: 500; letter-spacing: .02em; }
+.stageNodeInner small { order: -1; font-size: 11px; }
+.stageNode { display: flex; align-items: center; justify-content: center; overflow: visible; }
 .stageGlow, .stageGlowSecondary { display: none; }
 .stageMetaballCanvas { filter: none; }
 
@@ -4118,19 +4121,19 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas: "target target" "field actions" "error error";
-  gap: 0 8px; width: min(620px, calc(100vw - 32px));
-  min-height: 0; padding: 8px; bottom: calc(18px + var(--safe-bottom));
-  border-radius: 24px; background: rgba(253,252,255,.96);
-  backdrop-filter: none; box-shadow: 0 8px 30px rgba(69,48,91,.08);
+  gap: 0 6px; width: min(560px, calc(100vw - 32px));
+  min-height: 0; padding: 6px; bottom: calc(24px + var(--safe-bottom));
+  border-radius: 28px; background: rgba(253,252,255,.72);
+  backdrop-filter: blur(12px); box-shadow: 0 8px 30px rgba(69,48,91,.06);
 }
 .composerField { grid-area: field; min-width: 0; }
 .composerLabel { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-.composer textarea, .composer textarea:focus { height: 48px; min-height: 48px; max-height: 110px; padding: 12px; background: transparent; box-shadow: none; font-size: 16px; line-height: 24px; }
+.composer textarea, .composer textarea:focus { height: 44px; min-height: 44px; max-height: 110px; padding: 10px 14px; background: transparent; box-shadow: none; font-size: 16px; line-height: 24px; }
 .composerActions { grid-area: actions; align-self: end; align-items: center; }
-.composer .primaryButton { min-width: 64px; min-height: 46px; border-radius: 18px; background: #584a70; color: #fff; }
+.composer .primaryButton { min-width: 60px; min-height: 44px; padding: 8px 14px; border-radius: 22px; background: #584a70; color: #fff; }
 .composer .primaryButton:disabled { opacity: .42; }
 .composer .errorPanel { grid-area: error; margin-top: 8px; }
-.seedComposerTarget { grid-area: target; display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 4px 10px 6px; font-size: 12px; }
+.seedComposerTarget { grid-area: target; display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 0 12px; font-size: 12px; }
 .seedComposerTarget span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .seedComposerTarget button { flex-shrink: 0; border: 0; background: none; color: #67567d; min-height: 32px; cursor: pointer; }
 
@@ -4139,18 +4142,19 @@
 .readingDrawer .seedInspector { display: flex; flex-direction: column; padding: 24px; overflow: auto; }
 .seedInspectorHeader { position: relative; padding-right: 40px; flex-shrink: 0; }
 .seedInspectorHeader > span { color: #806394; font-size: 12px; }
-.seedInspectorHeader h2 { margin: 10px 0 20px; font: 500 22px/1.4 "Songti SC", serif; outline-offset: 4px; }
+.seedInspectorHeader h2 { margin: 6px 0 12px; font: 500 20px/1.4 "Songti SC", serif; outline-offset: 4px; }
+.seedInspectorHeader h2:focus { outline: none; }
 .seedInspectorHeader .panelCloseButton { position: absolute; top: -12px; right: -12px; margin: 0; width: 44px; min-width: 44px; height: 44px; min-height: 44px; font-size: 22px; }
 .seedBody { line-height: 1.85; font-size: 15px; white-space: pre-wrap; overflow-wrap: anywhere; }
-.seedBody p { margin: 0 0 20px; }
-.seedReadingCard { position: fixed; z-index: 45; width: 360px; max-height: 440px; display: flex; border-radius: 22px; box-shadow: 0 12px 44px rgba(55,38,76,.14); background: #faf9fc; }
-.seedReadingCard .seedInspector { position: relative; inset: auto; display: flex; flex-direction: column; width: 100%; height: auto; min-height: 0; max-height: inherit; margin: 0; padding: 22px; overflow: auto; border: 1px solid rgba(67,56,91,.1); border-radius: inherit; background: #faf9fc; backdrop-filter: none; box-shadow: none; opacity: 1; }
+.seedBody p { margin: 0; }
+.seedReadingCard { position: fixed; z-index: 45; width: 340px; max-height: 440px; display: flex; border-radius: 20px; box-shadow: 0 8px 30px rgba(55,38,76,.1); background: #faf9fc; }
+.seedReadingCard .seedInspector { position: relative; inset: auto; display: flex; flex-direction: column; width: 100%; height: auto; min-height: 0; max-height: inherit; margin: 0; padding: 18px; overflow: auto; border: 1px solid rgba(67,56,91,.08); border-radius: inherit; background: #faf9fc; backdrop-filter: none; box-shadow: none; opacity: 1; }
 .seedReadingCard .seedInspector::before { display: none; }
-.seedReadingCard .seedBody { overflow-y: auto; min-height: 48px; }
+.seedReadingCard .seedBody { overflow-y: auto; min-height: 28px; }
 .seedReadingCard .seedActions { flex-shrink: 0; }
 .seedReadingCard .seedSources { flex-shrink: 0; }
-.seedActions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 20px; }
-.seedActions button { min-height: 44px; flex: 1; }
+.seedActions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 0; padding-top: 14px; }
+.seedActions button { min-height: 44px; flex: 1; padding: 8px 12px; font-size: 14px; }
 .seedActions .primaryButton { background: #584a70; color: #fff; }
 .seedSources { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: #766782; font-size: 12px; }
 .seedSources button { background: #efebf4; border: 0; border-radius: 12px; padding: 10px; color: #584a70; cursor: pointer; }
@@ -4171,7 +4175,7 @@
   .workspaceBar { right: 16px; }
   .stageViewport { inset: 66px 0 calc(var(--dialogue-composer-height) + 26px); }
   .stageNode, .stageNodeUser { width: clamp(68px, 11vh, 88px); height: clamp(68px, 11vh, 88px); }
-  .stageNodeInner { padding: 14px; }
+  .stageNodeInner { width: 116px; padding: 6px 3px; }
   .stageNodeInner strong { font-size: 13px; }
   .readingDrawer, .lineageDrawer { top: auto; right: 8px; left: 8px; bottom: calc(var(--dialogue-composer-height) + 28px + var(--safe-bottom)); height: min(56vh, calc(var(--dialogue-viewport-height, 100dvh) - var(--dialogue-composer-height) - 104px - var(--safe-bottom))); width: auto; }
   .readingDrawer .seedInspector { padding: 22px; }

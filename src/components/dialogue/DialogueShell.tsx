@@ -36,6 +36,7 @@ import {
 } from "@/features/dialectic/controller";
 import { observeDialogueViewport } from "@/features/dialectic/platform";
 import { buildSeedContext, buildSeedScene, seedPairAction } from "@/features/dialectic/seeds";
+import { arrangeSeedScene } from "@/features/dialectic/seedPlacement";
 import { createClientId, DialogueErrorState, PendingRequest, useDialogueUiStore } from "@/features/dialectic/store";
 import {
   DialogueComposerTarget,
@@ -636,7 +637,7 @@ export function DialogueShell() {
   }, []);
 
   const view = useMemo(() => deriveDialogueView(graphSnapshot.graph, focusedNodeId), [graphSnapshot, focusedNodeId]);
-  const seedScene = useMemo(() => buildSeedScene(graphSnapshot.graph, focusedNodeId, combineSourceId), [graphSnapshot, focusedNodeId, combineSourceId]);
+  const seedScene = useMemo(() => arrangeSeedScene(buildSeedScene(graphSnapshot.graph, focusedNodeId, combineSourceId)), [graphSnapshot, focusedNodeId, combineSourceId]);
   const resolveSeedPair = useCallback((left: string, right: string) => seedPairAction(graphSnapshot.graph, left, right), [graphSnapshot]);
   const isEmptyWorkspace = graphSnapshot.graph.entryIds.length === 0;
   const isBranchPending = pending.branches !== null;

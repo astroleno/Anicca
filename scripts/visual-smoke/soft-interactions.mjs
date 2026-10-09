@@ -42,7 +42,12 @@ export async function runSeedRecoveryAndTouch(browser, { baseUrl, outputDir, set
     assert.equal(requests.length, 2);
     assert.equal(requests[0].userText, requests[1].userText);
     assert.equal(await page.getByRole("textbox", { name: "输入", exact: true }).inputValue(), "等待时写下的下一颗想法", "Retry preserves the later draft");
-    await page.waitForFunction(() => [...document.querySelectorAll('[data-testid^="dialogue-stage-node-"]')].every(node => Math.abs(parseFloat(node.style.translate) || 0) < .2));
+    await page.waitForFunction(() => document.querySelector('[data-testid="dialogue-stage-track"]')?.dataset.metaballRenderer === "ready");
+    // Both axes spring out from the source. An unset or settled X alone does
+    // not mean the label has reached its touch target, especially in staggered layouts.
+    await page.waitForFunction(() => [...document.querySelectorAll('[data-testid^="dialogue-stage-node-"]')].every(node =>
+      node.style.translate && node.style.translate.split(/\s+/).every(value => Math.abs(parseFloat(value)) < .2)
+    ));
     const a = await page.locator('[data-testid^="dialogue-stage-node-"][data-metaball-role="thesis"]').boundingBox();
     const b = await page.locator('[data-testid^="dialogue-stage-node-"][data-metaball-role="antithesis"]').boundingBox();
     assert(a && b);

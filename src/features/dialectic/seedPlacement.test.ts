@@ -1,4 +1,4 @@
-import { placeSeeds } from "./seedPlacement";
+import { arrangeSeedScene, placeSeeds } from "./seedPlacement";
 import type { DialogueStageNode } from "./sceneProjection";
 
 const seed = (id: string, x: number, y: number, origins: string[] = []): DialogueStageNode => ({
@@ -21,4 +21,22 @@ it("places a synthesis near the midpoint of both sources without overlapping eit
   expect(Math.abs(result.c.y - 61)).toBeLessThan(24);
   expect(result.c).not.toEqual(result.a);
   expect(result.c).not.toEqual(result.b);
+});
+
+it("keeps compact clusters separated and preserves saved layouts when the scene changes", () => {
+  for (let count = 1; count <= 8; count++) {
+    const nodes = Array.from({ length: count }, (_, i) => seed(`node-${i}`, 50, 50));
+    const scene = arrangeSeedScene(nodes);
+    const positions = placeSeeds(scene, {}, true);
+    const points = Object.values(positions);
+    // At the narrow supported viewport, settled seed hit areas must stay distinct.
+    for (let i = 0; i < points.length; i++) {
+      expect(points[i].x).toBeGreaterThanOrEqual(12);
+      expect(points[i].x).toBeLessThanOrEqual(88);
+      for (let j = i + 1; j < points.length; j++) {
+        expect(Math.hypot((points[i].x - points[j].x) * 3.2, (points[i].y - points[j].y) * 4.5)).toBeGreaterThan(88);
+      }
+    }
+    expect(placeSeeds(arrangeSeedScene([...nodes].reverse()), positions, true)).toEqual(positions);
+  }
 });

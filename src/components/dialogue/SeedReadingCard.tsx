@@ -21,7 +21,7 @@ export function SeedReadingCard({ nodeId, onDismiss, children }: {
       const bottom = Math.min((viewport?.offsetTop || 0) + (viewport?.height || window.innerHeight) - 12,
         (composer?.getBoundingClientRect().top ?? window.innerHeight) - 12);
       const available = Math.max(80, bottom - topEdge);
-      const cardWidth = Math.min(360, width - 24);
+      const cardWidth = Math.min(340, width - 24);
       card.style.width = `${cardWidth}px`;
       card.style.maxHeight = `${Math.min(440, available)}px`;
       const rect = anchor?.getBoundingClientRect();

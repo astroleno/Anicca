@@ -792,6 +792,8 @@ export function BubbleStage({
             ) : null}
             {positionedNodes.map(({ node, position }) => {
               const isDragging = gesture?.kind === "node" && gesture.nodeId === node.id;
+              const label = node.kind === "user" && node.preview && node.preview.length > node.label.length && node.preview.startsWith(node.label)
+                ? `${node.label}…` : node.label;
 
               return (
                 <button
@@ -840,8 +842,8 @@ export function BubbleStage({
                 >
                   <span className={styles.stageNodeInner}>
                     <strong>
-                      <span className={styles.stageNodeTextFull}>{node.label}</span>
-                      <span className={styles.stageNodeTextShort}>{node.label}</span>
+                      <span className={styles.stageNodeTextFull}>{label}</span>
+                      <span className={styles.stageNodeTextShort}>{label}</span>
                     </strong>
                     {node.branchType ? <small>{node.branchType}</small> : null}
                   </span>
