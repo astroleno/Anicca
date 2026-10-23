@@ -8,6 +8,7 @@ import {
   startTransition,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -536,6 +537,7 @@ export function DialogueShell() {
   const [synthesisRevealId, setSynthesisRevealId] = useState<string | null>(null);
   const [lineageOpen, setLineageOpen] = useState(false);
   const [evolutionOpen, setEvolutionOpen] = useState(false);
+  const evolutionReturnFocusRef = useRef<HTMLElement | null>(null);
   const [readingOpen, setReadingOpen] = useState(false);
   const [guideRequest, setGuideRequest] = useState(0);
   const [atmosphereVisible, setAtmosphereVisible] = useState(false);
@@ -555,8 +557,10 @@ export function DialogueShell() {
     setActiveDeferredId(null);
   }, []);
   const openEvolution = useCallback(() => {
-    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-    setEvolutionOpen(true); setReadingOpen(false); setLineageOpen(false); setCombineSourceId(null);
+    attentionVersionRef.current += 1;
+    evolutionReturnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    evolutionReturnFocusRef.current?.blur();
+    setEvolutionOpen(true); setLineageOpen(false);
   }, []);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const composerRootRef = useRef<HTMLFormElement | null>(null);
@@ -583,7 +587,7 @@ export function DialogueShell() {
   const thinkingSpace = useDialogueUiStore((state) => state.thinkingSpace);
   const setThinkingSpace = useDialogueUiStore((state) => state.setThinkingSpace);
   const arrangeStage = useDialogueUiStore((state) => state.arrangeStage);
-  useEffect(() => {
+  useLayoutEffect(() => {
     setAxisSuggestions([]); setCameraView(null); pendingPerspectiveRef.current = null;
     setActiveInstanceId(null); setExpandedResultId(null); setExpansionResult(null);
     setEvolutionOpen(false);
@@ -600,9 +604,9 @@ export function DialogueShell() {
   const cancelPendingRequests = useDialogueUiStore((state) => state.cancelPendingRequests);
   const setErrorState = useDialogueUiStore((state) => state.setErrorState);
 
-  // Hydration owns the draft before the persistence effect can observe it. A
-  // workspace switch flushes the previous owner, never the newly selected one.
-  useEffect(() => {
+  // Restore before paint so a workspace cannot briefly display or accept edits
+  // into its predecessor's draft. Flush the previous owner before changing it.
+  useLayoutEffect(() => {
     if (!workspaceReady || !workspaceId || draftWorkspaceRef.current === workspaceId) return;
     flushDraft();
     const restored = unsavedDraftsRef.current.get(workspaceId) || loadComposerDraft(workspaceId, branchGraphStore.getGraph());
@@ -864,7 +868,9 @@ export function DialogueShell() {
   const handleDraftChange = useCallback((value: string) => {
     draftVersionRef.current += 1;
     attentionVersionRef.current += 1;
-    if (!useDialogueUiStore.getState().pendingAction) {
+    const state = useDialogueUiStore.getState();
+    const hasRetry = retryRef.current?.sessionId === state.workspaceSessionId && retryRef.current?.error === state.errorState;
+    if (!state.pendingAction && !hasRetry) {
       retryRef.current = null;
       setErrorState(null);
     }
@@ -925,10 +931,10 @@ export function DialogueShell() {
     return () => window.clearTimeout(timeout);
   }, [synthesisRevealId]);
 
-  const handleSelectNode = (nodeId: string) => {
+  const handleSelectNode = (nodeId: string, fromOverview = false) => {
     attentionVersionRef.current += 1;
     setActiveDeferredId(null);
-    if (combineSourceId && !selectedPair && !hasPendingRequest) {
+    if (!fromOverview && combineSourceId && !selectedPair && !hasPendingRequest) {
       const pair = resolveSeedPair(combineSourceId, nodeId);
       if (pair) {
         setReadingOpen(false);
@@ -939,12 +945,14 @@ export function DialogueShell() {
     }
     const conceptId = seedConceptId(graphSnapshot.graph, seedInstances, nodeId);
     if (!conceptId) return;
+    if (fromOverview) setCombineSourceId(null);
     if (expansionResult && ![expansionResult.sourceId, expansionResult.firstId, expansionResult.secondId].some(id =>
       seedConceptId(graphSnapshot.graph, seedInstances, id) === conceptId)) setExpansionResult(null);
     setActiveInstanceId(nodeId);
     startTransition(() => {
       setFocusedNodeId(conceptId);
-      if (!hasPendingRequest) setComposerParentId(conceptId);
+      // Browsing is independent of the destination of unfinished writing.
+      if (!hasPendingRequest && !draft.trim() && !inquiryTarget && !connectionTargetId) setComposerParentId(conceptId);
     });
     setLineageOpen(false);
     setReadingOpen(true);
@@ -2161,7 +2169,7 @@ export function DialogueShell() {
           />
         </div>
         {view.currentNode ? (
-          <SeedReadingContent open={readingOpen} originNodeId={combineSourceId || focusedInstanceId || view.currentNode.id} onDismiss={dismissSeedReading}>
+          <SeedReadingContent open={readingOpen} suspended={evolutionOpen} originNodeId={combineSourceId || focusedInstanceId || view.currentNode.id} onDismiss={dismissSeedReading}>
             <SeedInspector key={combineSourceId || view.currentNode.id}
               space={thinkingSpace}
               graph={graphSnapshot.graph} nodeId={seedConceptId(graphSnapshot.graph, seedInstances, combineSourceId) || view.currentNode.id}
@@ -2348,7 +2356,10 @@ export function DialogueShell() {
         </aside>
       ) : null}
       {evolutionOpen ? <EvolutionOverview key={workspaceSessionId} graph={graphSnapshot.graph} initialNodeId={focusedNodeId}
-        theme={theme} onDismiss={() => setEvolutionOpen(false)} onEnter={id => { setEvolutionOpen(false); handleSelectNode(id); }} /> : null}
+        theme={theme} returnFocus={evolutionReturnFocusRef.current} onDismiss={() => setEvolutionOpen(false)}
+        onEnter={id => { setEvolutionOpen(false); handleSelectNode(id, true);
+          window.setTimeout(() => document.getElementById("conversation-panel-heading")?.focus({ preventScroll: true }), 0);
+        }} /> : null}
     </main>
   );
 }

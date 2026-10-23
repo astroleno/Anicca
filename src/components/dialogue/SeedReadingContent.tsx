@@ -4,8 +4,8 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "re
 import styles from "./DialogueShell.module.css";
 
 /** Reading is a state of the stage, with no separate card surface. */
-export function SeedReadingContent({ open = true, originNodeId, onDismiss, children }: {
-  open?: boolean; originNodeId?: string; onDismiss(): void; children: ReactNode;
+export function SeedReadingContent({ open = true, suspended = false, originNodeId, onDismiss, children }: {
+  open?: boolean; suspended?: boolean; originNodeId?: string; onDismiss(): void; children: ReactNode;
 }) {
   const root = useRef<HTMLDivElement>(null);
   const [present, setPresent] = useState(open);
@@ -14,6 +14,12 @@ export function SeedReadingContent({ open = true, originNodeId, onDismiss, child
   useLayoutEffect(() => {
     if (open) setPresent(true);
   }, [open]);
+
+  useLayoutEffect(() => {
+    // React 18 drops a boolean inert attribute; apply the native attribute
+    // before focus effects, including while a covering view suspends reading.
+    root.current?.toggleAttribute("inert", !open || suspended);
+  }, [open, present, suspended]);
 
   useLayoutEffect(() => {
     const element = root.current;
@@ -55,7 +61,7 @@ export function SeedReadingContent({ open = true, originNodeId, onDismiss, child
   }, [open, present, originNodeId]);
 
   useEffect(() => {
-    if (!open || !present) return;
+    if (!open || !present || suspended) return;
     const stage = document.querySelector<HTMLElement>('[data-testid="dialogue-stage-track"]');
     const previousInert = stage?.inert ?? false;
     if (stage) stage.inert = true;
@@ -68,10 +74,11 @@ export function SeedReadingContent({ open = true, originNodeId, onDismiss, child
       if (stage) stage.inert = previousInert;
       document.removeEventListener("pointerdown", dismiss);
     };
-  }, [onDismiss, open, present]);
+  }, [onDismiss, open, present, suspended]);
   if (!present) return null;
   return <div ref={root} id="dialogue-reading-drawer" className={styles.seedReadingContent}
-    data-open={open ? "true" : "false"} inert={open ? undefined : true} aria-hidden={open ? undefined : true}>
+    style={suspended ? { visibility: "hidden" } : undefined}
+    data-open={open ? "true" : "false"} aria-hidden={open && !suspended ? undefined : true}>
     {children}
   </div>;
 }

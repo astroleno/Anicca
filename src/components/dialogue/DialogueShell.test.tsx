@@ -344,6 +344,58 @@ describe("DialogueShell", () => {
     expect(screen.getByRole("textbox", { name: "输入" })).toHaveValue("什么具体情形会让这句话不成立？");
   });
 
+  it("keeps the quote and its draft destination while browsing another seed through panorama", async () => {
+    const { thesisId, antithesisId } = seedPair(); seedActiveWorkspaceFromCurrentGraph();
+    render(<DialogueShell />);
+    fireEvent.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
+    fireEvent.click(await screen.findByRole("button", { name: "选一句追问" }));
+    fireEvent.click(within(screen.getByLabelText("选择要追问的原句")).getByRole("button"));
+    fireEvent.click(screen.getByRole("button", { name: "追问前提" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "输入" }), { target: { value: "这个判断依赖什么条件？" } });
+    fireEvent.click(screen.getByRole("button", { name: "演化全景" }));
+    const overview = screen.getByTestId("evolution-overview");
+    fireEvent.change(within(overview).getByRole("textbox"), { target: { value: "暂停" } });
+    fireEvent.click(within(overview).getByRole("button", { name: /暂停.*正反裂变/ }));
+    fireEvent.click(within(overview).getByRole("button", { name: "进入种子" }));
+    await waitFor(() => expect(useDialogueUiStore.getState().focusedNodeId).toBe(antithesisId));
+    expect(useDialogueUiStore.getState().composerParentId).toBe(thesisId);
+    expect(screen.getByLabelText("续写对象")).toHaveTextContent("追问前提 · 继续");
+    fireEvent(window, new Event("pagehide"));
+    expect(loadComposerDraft("workspace_test", branchGraphStore.getGraph())).toMatchObject({ targetId: thesisId,
+      text: "这个判断依赖什么条件？", inquiry: { sourceNodeId: thesisId, quote: "继续" } });
+  });
+
+  it("keeps ordinary unfinished writing addressed to its source while reading other seeds", async () => {
+    const { thesisId, antithesisId } = seedPair(); seedActiveWorkspaceFromCurrentGraph();
+    render(<DialogueShell />);
+    fireEvent.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
+    fireEvent.click(await screen.findByRole("button", { name: "继续写" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "输入" }), { target: { value: "继续之前先问一个问题" } });
+    fireEvent.click(screen.getByTestId(`dialogue-stage-node-${antithesisId}`));
+    await screen.findByRole("button", { name: "继续写" });
+    expect(useDialogueUiStore.getState().composerParentId).toBe(thesisId);
+    fireEvent.click(screen.getByRole("button", { name: "继续写" }));
+    expect(useDialogueUiStore.getState().composerParentId).toBe(antithesisId);
+    expect(screen.getByRole("textbox", { name: "输入" })).toHaveValue("继续之前先问一个问题");
+  });
+
+  it("resumes the same reading and selected sentence after dismissing panorama", async () => {
+    const { thesisId } = seedPair(); seedActiveWorkspaceFromCurrentGraph();
+    const user = userEvent.setup(); render(<DialogueShell />);
+    await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
+    await user.click(await screen.findByRole("button", { name: "选一句追问" }));
+    await user.click(within(screen.getByLabelText("选择要追问的原句")).getByRole("button"));
+    const reading = screen.getByTestId("dialogue-panel"); reading.scrollTop = 120;
+    const trigger = screen.getByRole("button", { name: "演化全景" });
+    await user.click(trigger);
+    expect(screen.queryByLabelText("围绕选句继续")).not.toBeVisible();
+    await user.keyboard("{Escape}");
+    expect(screen.getByTestId("dialogue-panel")).toBe(reading);
+    expect(reading.scrollTop).toBe(120);
+    expect(screen.getByLabelText("围绕选句继续")).toHaveTextContent("继续");
+    expect(trigger).toHaveFocus();
+  });
+
   it("keeps a memory copy across workspace switches when device draft storage fails", async () => {
     seedPair(); seedActiveWorkspaceFromCurrentGraph();
     const write = localStorage.setItem.bind(localStorage);
@@ -607,6 +659,27 @@ describe("DialogueShell", () => {
     expect(input).toHaveValue("下一颗想法 B");
     expect(input).toHaveFocus();
     expect(document.getElementById("dialogue-reading-drawer")).toBeNull();
+  });
+
+  it("retains the original retry after editing a failed request and preserves the newer draft on success", async () => {
+    const response = createDeferred<Response>();
+    const fetchMock = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({ error: "branches_failed" }), { status: 502 }))
+      .mockImplementationOnce(() => response.promise);
+    vi.stubGlobal("fetch", fetchMock); render(<DialogueShell />);
+    const input = screen.getByRole("textbox", { name: "输入" });
+    fireEvent.change(input, { target: { value: "想法 A" } });
+    fireEvent.click(screen.getByRole("button", { name: "生成" }));
+    await screen.findByRole("button", { name: "重试" });
+    fireEvent.change(input, { target: { value: "失败后继续写下的想法 B" } });
+    fireEvent.click(screen.getByRole("button", { name: "重试" }));
+    const request = readFetchBody(fetchMock, 1); expect(request.userText).toBe("想法 A");
+    response.resolve(new Response(JSON.stringify({ requestId: request.requestId,
+      thesis: { text: "推进 A", label: "推进", summary: "推进", stance: "正" },
+      antithesis: { text: "检验 A", label: "检验", summary: "检验", stance: "反" }
+    }), { status: 200 }));
+    await waitFor(() => expect(branchGraphStore.getGraph().entryIds).toHaveLength(1));
+    expect(input).toHaveValue("失败后继续写下的想法 B");
+    expect(screen.queryByRole("button", { name: "重试" })).not.toBeInTheDocument();
   });
 
   it("runs the artwork perspective command locally without calling the branch route", async () => {
@@ -1961,7 +2034,7 @@ describe("DialogueShell", () => {
     useDialogueUiStore.setState({ focusedNodeId: rootUserId }); seedActiveWorkspaceFromCurrentGraph();
     const reply = createDeferred<Response>();
     const fetchMock = vi.fn(() => reply.promise); vi.stubGlobal("fetch", fetchMock);
-    render(<DialogueShell />);
+    const rendered = render(<DialogueShell />);
     await synthesizePair(user);
     const requestId = useDialogueUiStore.getState().pending.synthesis!.requestId;
     reply.resolve(new Response(JSON.stringify({ requestId, outcome: "deferred", deferred: {
@@ -1972,6 +2045,9 @@ describe("DialogueShell", () => {
     expect(branchGraphStore.getGraph().deferredSyntheses?.[requestId].sourceNodeIds).toEqual([thesisId, antithesisId]);
     await user.click(screen.getByRole("button", { name: "补充联系" }));
     fireEvent.change(screen.getByRole("textbox", { name: "输入" }), { target: { value: "在同一作品里保留探索与收束的不同阶段。" } });
+    rendered.unmount(); render(<DialogueShell />);
+    expect(await screen.findByRole("button", { name: "再试一次" })).toBeEnabled();
+    expect(screen.getByRole("textbox", { name: "输入" })).toHaveValue("在同一作品里保留探索与收束的不同阶段。");
     const second = createDeferred<Response>(); fetchMock.mockImplementation(() => second.promise);
     await user.click(screen.getByRole("button", { name: "再试一次" }));
     expect(readFetchBody(fetchMock, 1).connectionInput).toBe("在同一作品里保留探索与收束的不同阶段。");

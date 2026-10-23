@@ -9,13 +9,13 @@ import styles from "./EvolutionOverview.module.css";
 import { layoutEvolutionLabels, type EvolutionLabelBox } from "./evolutionLabels";
 import { UnderstandingChange } from "./SeedMeaning";
 
-type Props = { graph: Graph; initialNodeId: string | null; theme: "light" | "dark"; onEnter(id: string): void; onDismiss(): void };
+type Props = { graph: Graph; initialNodeId: string | null; theme: "light" | "dark"; returnFocus?: HTMLElement | null; onEnter(id: string): void; onDismiss(): void };
 type Camera = { x: number; y: number; scale: number };
 type Hit = { x: number; y: number; ids: string[]; nodes: EvolutionNode[]; labelBox?: EvolutionLabelBox; radius?: number };
 const PAGE_SIZE = 8;
 const clampScale = (scale: number) => Math.max(.00001, Math.min(4, scale));
 
-export function EvolutionOverview({ graph, initialNodeId, theme, onEnter, onDismiss }: Props) {
+export function EvolutionOverview({ graph, initialNodeId, theme, returnFocus, onEnter, onDismiss }: Props) {
   const model = useMemo(() => projectEvolution(graph), [graph]);
   const panoramaModel = useMemo(() => compactEvolution(model), [model]);
   const [selectedId, setSelectedId] = useState(initialNodeId || model.nodes[model.nodes.length - 1]?.id || "");
@@ -44,6 +44,7 @@ export function EvolutionOverview({ graph, initialNodeId, theme, onEnter, onDism
     }
   }, []);
   const skipReturnFocus = useRef(false);
+  const returnFocusRef = useRef(returnFocus);
   const dismissRef = useRef(onDismiss);
   dismissRef.current = onDismiss;
   const results = useMemo(() => {
@@ -87,7 +88,7 @@ export function EvolutionOverview({ graph, initialNodeId, theme, onEnter, onDism
   }, [cancelPointers]);
 
   useEffect(() => {
-    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previous = returnFocusRef.current || (document.activeElement instanceof HTMLElement ? document.activeElement : null);
     const first = () => rootRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
     first();
     const keydown = (event: KeyboardEvent) => {
@@ -109,7 +110,7 @@ export function EvolutionOverview({ graph, initialNodeId, theme, onEnter, onDism
     document.addEventListener("focusin", focus);
     return () => {
       window.removeEventListener("keydown", keydown); document.removeEventListener("focusin", focus);
-      if (!skipReturnFocus.current && previous?.isConnected) previous.focus();
+      if (!skipReturnFocus.current && previous?.isConnected) previous.focus({ preventScroll: true });
     };
   }, []);
 

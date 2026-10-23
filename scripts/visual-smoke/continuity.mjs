@@ -75,12 +75,45 @@ export async function runFlowContinuity(browser, { baseUrl, outputDir, setActive
         await page.getByRole("button", { name: "选一句追问", exact: true }).click();
         await page.getByLabel("选择要追问的原句").getByRole("button", { name: quote, exact: true }).click();
       }
+      // A brief look at the whole path must preserve the exact reading place
+      // and selection, without remounting the passage or losing keyboard focus.
+      const passage = await page.locator("[data-seed-passage]").elementHandle();
+      await page.getByLabel("围绕选句继续").scrollIntoViewIfNeeded();
+      const readingScroll = await page.getByTestId("dialogue-panel").evaluate(element => element.scrollTop);
+      await page.getByRole("button", { name: "演化全景", exact: true }).click();
+      await page.getByTestId("evolution-overview").getByRole("button", { name: "返回种子", exact: true }).click();
+      assert(await passage.evaluate(element => element.isConnected), "Panorama keeps the original passage mounted");
+      assert.equal(await page.getByTestId("dialogue-panel").evaluate(element => element.scrollTop), readingScroll);
+      assert(await page.getByRole("button", { name: "演化全景", exact: true }).evaluate(element => document.activeElement === element));
+      assert((await page.getByLabel("围绕选句继续").innerText()).includes(quote));
       await page.getByLabel("围绕选句继续").getByRole("button", { name: "追问前提", exact: true }).click();
       assert.equal(await page.getByLabel("本次追问的原句").innerText(), quote);
       await input.fill("什么条件下这些取舍还能撤回？");
       await page.reload({ waitUntil: "networkidle" });
       assert.equal(await input.inputValue(), "什么条件下这些取舍还能撤回？");
       assert.equal(await page.getByLabel("本次追问的原句").innerText(), quote);
+      // Browsing a different seed must not silently readdress this question.
+      await page.getByRole("button", { name: "演化全景", exact: true }).click();
+      const panorama = page.getByTestId("evolution-overview");
+      await panorama.getByRole("textbox", { name: "搜索想法或极性" }).fill("辨认引力");
+      await panorama.getByRole("button").filter({ hasText: "辨认引力" }).click();
+      await panorama.getByRole("button", { name: "进入种子", exact: true }).click();
+      await closeReading();
+      assert((await page.getByLabel("续写对象", { exact: true }).innerText()).includes("认领线索"));
+      assert.equal(await input.inputValue(), "什么条件下这些取舍还能撤回？");
+      // Each workspace owns its own text and quote, including a quick switch.
+      await page.getByRole("button", { name: "更多", exact: true }).click();
+      const originalWorkspace = await page.getByRole("group", { name: "最近工作区", exact: true }).locator('button[aria-current="true"]').innerText();
+      await page.getByRole("button", { name: "新建工作区", exact: true }).click();
+      await page.waitForFunction(() => document.getElementById("dialogue-input")?.value === "");
+      assert.equal(await input.inputValue(), "");
+      await input.fill("另一条尚未展开的思路。");
+      await page.getByRole("button", { name: "更多", exact: true }).click();
+      await page.getByRole("group", { name: "最近工作区", exact: true }).getByRole("button", { name: originalWorkspace, exact: true }).click();
+      await page.waitForFunction(() => document.getElementById("dialogue-input")?.value === "什么条件下这些取舍还能撤回？");
+      assert.equal(await input.inputValue(), "什么条件下这些取舍还能撤回？");
+      assert.equal(await page.getByLabel("本次追问的原句").innerText(), quote);
+      assert.equal((await snapshot()).composerParentId, "earlier");
       const composer = await page.getByTestId("dialogue-composer").boundingBox();
       assert(composer.y >= 0 && composer.y + composer.height <= spec.height + 1, "The restored quote and input stay on screen");
       const field = await input.boundingBox(), quoteBox = await page.getByLabel("本次追问的原句").boundingBox();
@@ -99,6 +132,7 @@ export async function runFlowContinuity(browser, { baseUrl, outputDir, setActive
       assert.equal(calls[0].origin.question, "什么条件下这些取舍还能撤回？");
       await closeReading();
       await input.fill("看完来路之后，我还想继续问。");
+      const draftTarget = (await snapshot()).composerParentId;
       if (spec.width < 500) {
         await input.focus(); await page.evaluate(() => window.__continuityKeyboard(true));
         await page.waitForFunction(() => document.querySelector('[data-keyboard-open="true"]'));
@@ -119,6 +153,7 @@ export async function runFlowContinuity(browser, { baseUrl, outputDir, setActive
       await overview.getByRole("button", { name: "进入种子", exact: true }).click();
       if (spec.width < 500) await page.evaluate(() => window.__continuityKeyboard(false));
       assert.equal(await input.inputValue(), "看完来路之后，我还想继续问。");
+      assert.equal((await snapshot()).composerParentId, draftTarget, "Entering another seed preserves the ordinary draft destination");
       await closeReading();
       await page.getByRole("button", { name: "先记下", exact: true }).click();
       assert.equal(calls.length, 1, "Quiet capture does not call the model");

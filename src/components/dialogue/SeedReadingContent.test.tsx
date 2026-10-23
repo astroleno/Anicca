@@ -31,6 +31,18 @@ it("preserves a stage that was already inert", () => {
   stage.remove();
 });
 
+it("suspends reading for a covering view without discarding its DOM or handling outside gestures", () => {
+  const dismiss = vi.fn();
+  const view = render(<SeedReadingContent onDismiss={dismiss}><textarea defaultValue="尚未选完" /></SeedReadingContent>);
+  const field = screen.getByRole("textbox");
+  view.rerender(<SeedReadingContent suspended onDismiss={dismiss}><textarea defaultValue="尚未选完" /></SeedReadingContent>);
+  expect(field).toBeInTheDocument(); expect(field).not.toBeVisible();
+  expect(document.getElementById("dialogue-reading-drawer")).toHaveAttribute("inert");
+  fireEvent.pointerDown(document.body); expect(dismiss).not.toHaveBeenCalled();
+  view.rerender(<SeedReadingContent onDismiss={dismiss}><textarea defaultValue="尚未选完" /></SeedReadingContent>);
+  expect(screen.getByRole("textbox")).toBe(field); expect(field).toBeVisible();
+});
+
 it("keeps reading open while a thinking-space trigger or modal is used", () => {
   const trigger = document.createElement("button"); trigger.dataset.preserveSeedReading = "";
   const modal = document.createElement("dialog"); modal.setAttribute("open", "");

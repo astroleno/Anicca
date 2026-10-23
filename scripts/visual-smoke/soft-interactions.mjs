@@ -7,15 +7,21 @@ export async function runSeedRecoveryAndTouch(browser, { baseUrl, outputDir, set
   const page = await context.newPage();
   setActivePage(page);
   const errors = [], requests = [];
+  let releaseFailure;
+  const failureGate = new Promise(resolve => { releaseFailure = resolve; });
+  let releaseCancelled;
+  const cancellationGate = new Promise(resolve => { releaseCancelled = resolve; });
   page.on("pageerror", error => errors.push(error.message));
   await page.route("**/api/**", async route => {
     const input = route.request().postDataJSON();
     requests.push(input);
     if (requests.length === 1) {
-      await new Promise(resolve => setTimeout(resolve, 1600));
+      // Keep the request pending until editing and evidence are complete, even
+      // on software-rendered CI. Separately exercise editing after the failure.
+      await failureGate;
       return route.fulfill({ status: 502, json: { error: "branches_failed", details: "provider_overloaded" } });
     }
-    if (requests.length === 4) await new Promise(resolve => setTimeout(resolve, 900));
+    if (requests.length === 4) await cancellationGate;
     if (route.request().url().endsWith("/synthesis")) {
       await new Promise(resolve => setTimeout(resolve, 350));
       return route.fulfill({ json: { requestId: input.requestId,
@@ -32,17 +38,20 @@ export async function runSeedRecoveryAndTouch(browser, { baseUrl, outputDir, set
     if (await guide.isVisible()) await guide.click();
     await page.getByRole("textbox", { name: "输入", exact: true }).fill("失败后仍然保留我的想法");
     await page.getByRole("button", { name: "生成", exact: true }).click();
-    await page.getByLabel("已用时间").filter({ hasText: "1 秒" }).waitFor();
+    await page.getByLabel("已用时间").filter({ hasText: /^[1-9]\d* 秒$/ }).waitFor();
     await page.getByRole("textbox", { name: "输入", exact: true }).fill("等待时写下的下一颗想法");
     await page.screenshot({ path: path.join(outputDir, "mobile-pending-elapsed.png") });
+    releaseFailure();
     await page.getByRole("button", { name: "重试", exact: true }).waitFor();
     assert.equal(await page.getByRole("textbox", { name: "输入", exact: true }).inputValue(), "等待时写下的下一颗想法");
+    await page.getByRole("textbox", { name: "输入", exact: true }).fill("失败之后继续完善的下一颗想法");
+    await page.getByRole("button", { name: "重试", exact: true }).waitFor();
     await page.screenshot({ path: path.join(outputDir, "mobile-failure-retry.png") });
     await page.getByRole("button", { name: "重试", exact: true }).click();
     await page.waitForFunction(() => document.querySelectorAll('[data-testid^="dialogue-stage-node-"]').length === 3);
     assert.equal(requests.length, 2);
     assert.equal(requests[0].userText, requests[1].userText);
-    assert.equal(await page.getByRole("textbox", { name: "输入", exact: true }).inputValue(), "等待时写下的下一颗想法", "Retry preserves the later draft");
+    assert.equal(await page.getByRole("textbox", { name: "输入", exact: true }).inputValue(), "失败之后继续完善的下一颗想法", "Retry preserves the later draft");
     await page.waitForFunction(() => document.querySelector('[data-testid="dialogue-stage-track"]')?.dataset.metaballRenderer === "ready");
     // Both axes spring out from the source. An unset or settled X alone does
     // not mean the label has reached its touch target, especially in staggered layouts.
@@ -66,15 +75,18 @@ export async function runSeedRecoveryAndTouch(browser, { baseUrl, outputDir, set
     await page.waitForFunction(() => document.querySelectorAll('[data-testid^="dialogue-stage-node-"]').length === 4);
     assert.equal(requests.length, 3, "Releasing an armed pair sends exactly one synthesis request");
     assert.equal(await page.locator("#dialogue-reading-drawer").count(), 0, "Completion does not open a card");
+    const cancelledRequest = page.waitForRequest("**/api/branches");
     await page.getByRole("button", { name: "生成", exact: true }).click();
+    await cancelledRequest;
     await page.getByRole("button", { name: "取消", exact: true }).click();
+    releaseCancelled();
     await page.waitForTimeout(1100); // Verify the late response after cancellation cannot commit.
     assert.equal(await page.locator('[data-testid^="dialogue-stage-node-"]').count(), 4);
-    assert.equal(await page.getByRole("textbox", { name: "输入", exact: true }).inputValue(), "等待时写下的下一颗想法");
+    assert.equal(await page.getByRole("textbox", { name: "输入", exact: true }).inputValue(), "失败之后继续完善的下一颗想法");
     assert.deepEqual(errors, []);
     return { name: "seed-recovery-and-touch", passed: true, requests: requests.length,
       checks: ["elapsed-wait", "editable-pending", "retry-original-preserves-new-draft", "long-press-drag", "dwell-release-synthesis", "no-auto-card", "cancel-late-response"] };
-  } finally { await context.close(); }
+  } finally { releaseFailure(); releaseCancelled(); await context.close(); }
 }
 
 export async function runCanvasLifecycle(browser, { baseUrl, outputDir, setActivePage }) {
