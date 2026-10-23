@@ -135,3 +135,29 @@ it("starts a synthesis between its actual sources and respects reduced motion", 
   expect(born.radius).toBe(.015);
   expect(motion.step([target], 16, true).nodes).toEqual([target]);
 });
+
+it("finishes an arrival in visible elapsed time even when almost every frame is dropped", () => {
+  const motion = new LiquidMotion();
+  const origin = { ...node("a", 0), spaceDepth: -.3 };
+  const goal = { ...node("a", .6), spaceDepth: .4, radius: .2 };
+  motion.step([origin], 0, false);
+  expect(motion.step([goal], 16, false).moving).toBe(true);
+  const result = motion.step([goal], 2016, false);
+  expect(result.nodes[0].center).toEqual(goal.center);
+  expect(result.nodes[0].spaceDepth).toBe(goal.spaceDepth);
+  expect(result.nodes[0].radius).toBe(goal.radius);
+  expect(result.moving).toBe(false);
+});
+
+it("does not spend a slow previous frame on a newly arriving target or contact", () => {
+  const motion = new LiquidMotion();
+  motion.step([node("a", 0)], 0, false);
+  const arriving = motion.step([node("a", .6)], 16, false).nodes[0];
+  const redirected = motion.step([node("a", .8), node("b", .9)], 2016, false);
+  expect(redirected.nodes[0].center[0]).toBeGreaterThan(arriving.center[0]);
+  expect(redirected.nodes[0].center[0]).toBeLessThan(.1);
+  expect(redirected.nodes[1].radius).toBeLessThan(.025);
+  const caught = motion.step([node("a", .8), node("b", .9)], 4016, false, "a", "b");
+  expect(caught.nodes[0].center).toEqual(redirected.nodes[0].center);
+  expect(caught.nodes[0].radius).toBeGreaterThan(.095);
+});

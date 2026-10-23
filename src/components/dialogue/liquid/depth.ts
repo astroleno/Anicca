@@ -44,6 +44,7 @@ export class LiquidDepthMotion {
 
   step(nodes: DialogueMetaballNode[], timestamp: number, reduced: boolean,
     sourceId: string | null = null, partnerId: string | null = null) {
+    const changedContact = sourceId !== this.previousSource || partnerId !== this.previousPartner;
     const same = nodes === this.previousInput && sourceId === this.previousSource && partnerId === this.previousPartner;
     if (same && this.settled) { this.previousTime = timestamp; return { nodes: this.settled, moving: false }; }
     const source = nodes.find(node => node.id === sourceId);
@@ -54,7 +55,10 @@ export class LiquidDepthMotion {
     if (!same) this.goals = separateDepths(nodes, source ? partner && strength > 0 ? [source.id,partner.id] : [source.id] : [], strength);
     this.previousInput = nodes; this.previousSource = sourceId; this.previousPartner = partnerId;
     const goals = this.goals;
-    const dt = this.previousTime === null ? 0 : Math.min(.05, Math.max(0, (timestamp-this.previousTime)/1000));
+    const elapsed = this.previousTime === null ? 0 : Math.max(0, (timestamp-this.previousTime)/1000);
+    // Exponential easing is stable for long frames; only a newly started
+    // contact should ignore the idle time that preceded it.
+    const dt = changedContact || this.settled ? Math.min(1 / 60, elapsed) : elapsed;
     const amount = reduced || this.previousTime === null ? 1 : 1-Math.exp(-(strength > 0 ? 14 : 10)*dt);
     this.previousTime = timestamp;
     const ids = new Set(nodes.map(node => node.id));

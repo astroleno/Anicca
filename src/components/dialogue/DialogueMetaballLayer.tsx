@@ -292,7 +292,8 @@ export function DialogueMetaballLayer({ hostRef, onStateChange }: Props) {
         const rawChanged = lastLayoutBase !== unfittedNodes || lastLayoutDepth !== depth.nodes;
         const dragging = pointerDown && Boolean(pressedId);
         if (rawChanged && trackRect && !dragging) fitGoal = fitSeedScene(depth.nodes, spatialPivot, trackRect, hostRect.height);
-        const fitDt = lastFitTime === null ? 1 : Math.min(.05, Math.max(0, (sceneTime - lastFitTime) / 1000));
+        const fitElapsed = lastFitTime === null ? 1 : Math.max(0, (sceneTime - lastFitTime) / 1000);
+        const fitDt = lastFitTime === null || fitActive ? fitElapsed : Math.min(1 / 60, fitElapsed);
         lastFitTime = sceneTime;
         if (!dragging) viewFit = prefersReducedMotion || fitGoal < viewFit || Math.abs(fitGoal - viewFit) < .0001 ? fitGoal : viewFit + (fitGoal - viewFit) * (1 - Math.exp(-12 * fitDt));
         fitActive = !dragging && Math.abs(fitGoal - viewFit) >= .0001;

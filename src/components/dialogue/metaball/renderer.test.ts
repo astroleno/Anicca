@@ -221,6 +221,8 @@ describe("dialogue liquid renderer", () => {
     renderer.render(nodes, 5, { draggedId: "source", partnerId: "partner" });
     expect(value("s0h")).toBeGreaterThan(0); expect(value("s0h")).toBeLessThan(.1);
     expect(value("s0b")).toBeGreaterThan(RESTING_LIQUID_BLEND); expect(value("s0b")).toBeLessThan(.14);
+    renderer.render(nodes, 7, { draggedId: "source", partnerId: "partner" });
+    expect(value("s0h")).toBeCloseTo(1, 3); expect(value("s0b")).toBeCloseTo(DRAGGED_LIQUID_BLEND);
     renderer.render(nodes, 0, { draggedId: "source", partnerId: "partner" });
     expect(value("s0h")).toBe(1); expect(value("s0b")).toBeCloseTo(DRAGGED_LIQUID_BLEND);
     renderer.dispose();
@@ -236,8 +238,10 @@ describe("dialogue liquid renderer", () => {
       (location as unknown as { name: string }).name === "s0p").at(-1)?.[1] as number;
     renderer.render([node], 1);
     expect(value()).toBe(1);
-    renderer.render([{ ...node, attention: .3 }], 1.02);
+    renderer.render([{ ...node, attention: .3 }], 5);
     expect(value()).toBeGreaterThan(.3); expect(value()).toBeLessThan(1);
+    renderer.render([{ ...node, attention: .3 }], 7);
+    expect(value()).toBeCloseTo(.3, 4);
     renderer.render([{ ...node, attention: .3 }], 0);
     expect(value()).toBe(.3); expect(gl.createProgram).toHaveBeenCalledOnce();
     renderer.dispose();

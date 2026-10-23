@@ -71,3 +71,18 @@ it("keeps a third overlapping seed out of the active pair's shared depth",()=>{
   expect(result.nodes[0].depth).toBe(result.nodes[1].depth);
   expect(result.nodes[2].depth).toBeGreaterThan(.2);
 });
+
+it("finishes contact and separation after dropped frames without jumping at a new contact", () => {
+  const motion = new LiquidDepthMotion();
+  const resting = motion.step(nodes, 0, false).nodes;
+  const first = motion.step(nodes, 4000, false, "source", "partner");
+  expect(first.nodes[0].depth).toBeGreaterThan(0);
+  expect(first.nodes[0].depth).toBeLessThan(resting[0].depth!);
+  const joined = motion.step(nodes, 5000, false, "source", "partner");
+  expect(joined.moving).toBe(false);
+  expect(joined.nodes[0].depth).toBe(joined.nodes[1].depth);
+  const release = motion.step(nodes, 9000, false);
+  expect(release.nodes[0].depth).toBeGreaterThan(0);
+  expect(release.nodes[0].depth).toBeLessThan(resting[0].depth!);
+  expect(motion.step(nodes, 10000, false)).toEqual({ nodes: resting, moving: false });
+});

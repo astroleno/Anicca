@@ -10,15 +10,19 @@ export class LiquidMotion {
   private previousTime: number | null = null;
   private partner: { id: string; strength: number } | null = null;
   private moving = false;
+  private pressedId: string | null = null;
+  private partnerId: string | null = null;
   private held: { id: string; goalX: number; goalY: number; goalZ: number; x: number; y: number; z: number; moved: boolean } | null = null;
 
   step(targets: DialogueMetaballNode[], time: number, reduced: boolean, pressedId: string | null = null,
     partnerId: string | null = null, maxAttraction = Infinity) {
     // A new target has not been moving during the idle interval before it.
     // Resume with one normal step instead of spending that gap in one kick.
+    const changedContact = pressedId !== this.pressedId || partnerId !== this.partnerId;
     const dt = this.previousTime === null ? 1 / 60
-      : Math.min(this.moving ? 1 / 30 : 1 / 60, Math.max(0, (time - this.previousTime) / 1000));
+      : Math.min(this.moving && !changedContact ? 2 : 1 / 60, Math.max(0, (time - this.previousTime) / 1000));
     this.previousTime = time;
+    this.pressedId = pressedId; this.partnerId = partnerId;
     const ids = new Set(targets.map(node => node.id));
     const previous = [...this.bodies.values()];
     for (const id of this.bodies.keys()) if (!ids.has(id)) this.bodies.delete(id);
@@ -47,6 +51,7 @@ export class LiquidMotion {
     let moving = false;
     const nodes = targets.map(target => {
       let body = this.bodies.get(target.id);
+      const newBody = !body;
       if (!body) {
         const origins = (target.emergeFrom || []).flatMap(id => {
           const source = previous.find(item => item.node.id === id);
@@ -69,11 +74,23 @@ export class LiquidMotion {
           goalX: target.center[0], goalY: target.center[1], goalZ: target.spaceDepth ?? seedSpaceDepth(target.id) };
         this.bodies.set(target.id, body);
       }
+      const changedTarget = body.goalX !== target.center[0] || body.goalY !== target.center[1]
+        || body.goalZ !== (target.spaceDepth ?? seedSpaceDepth(target.id));
+      const stepTime = newBody || changedTarget ? Math.min(dt, 1 / 60) : dt;
       const spring = (current: number, goal: number, velocity: number): [number, number] => {
         if (reduced || (Math.abs(goal - current) < .0003 && Math.abs(velocity) < .002)) return [goal, 0];
-        const nextVelocity = velocity + ((goal - current) * 140 - velocity * 13) * dt;
+        // Integrate missed visible time in bounded, stable steps. Dropped frames
+        // must not stretch a one-second arrival into a minute of slow motion.
+        // New targets and contacts still start with one gentle normal step.
+        for (let remaining = stepTime; remaining > 0;) {
+          const step = Math.min(1 / 60, remaining);
+          velocity += ((goal - current) * 140 - velocity * 13) * step;
+          current += velocity * step;
+          remaining -= step;
+        }
+        if (Math.abs(goal - current) < .0003 && Math.abs(velocity) < .002) return [goal, 0];
         moving = true;
-        return [current + nextVelocity * dt, nextVelocity];
+        return [current, velocity];
       };
       const attraction = !reduced && target.id === activePartner?.id
         ? Math.min(target.radius*.14,maxAttraction)*strength : 0;

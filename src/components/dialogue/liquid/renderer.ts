@@ -245,6 +245,7 @@ export function createDialogueMetaballRenderer(
   const blends = new Map<string, number>();
   const pressures = new Map<string, number>();
   const attentions = new Map<string, number>();
+  const attentionTargets = new Map<string, number>();
   let fusionPair: string[] = [];
   const previousSlotBlends: number[] = [];
   const previousSlotPressures: number[] = [];
@@ -303,7 +304,8 @@ export function createDialogueMetaballRenderer(
       // time=0 is the reduced-motion path: update geometry without interpolation.
       const draggedId = interaction?.draggedId || null, partnerId = interaction?.partnerId || null;
       const changedInteraction = draggedId !== previousDraggedId || partnerId !== previousPartnerId;
-      const dt = Math.min(changedInteraction ? 1 / 60 : .05, Math.max(0,timeSeconds-(previousTime ?? timeSeconds)));
+      const elapsed = Math.max(0,timeSeconds-(previousTime ?? timeSeconds));
+      const dt = changedInteraction ? Math.min(1 / 60, elapsed) : elapsed;
       previousDraggedId = draggedId; previousPartnerId = partnerId;
       const immediate = previousTime === null || timeSeconds === 0;
       const pressureAmount = previousTime === null || timeSeconds === 0 ? 1
@@ -313,13 +315,15 @@ export function createDialogueMetaballRenderer(
       for (const id of blends.keys()) if (!ids.has(id)) blends.delete(id);
       for (const id of pressures.keys()) if (!ids.has(id)) pressures.delete(id);
       for (const id of attentions.keys()) if (!ids.has(id)) attentions.delete(id);
+      for (const id of attentionTargets.keys()) if (!ids.has(id)) attentionTargets.delete(id);
       for (let index = 0; index < LIQUID_SEED_SLOTS; index++) {
         const node = visibleNodes[index];
         const attentionTarget = node?.attention ?? 1;
         const previousAttention = node ? attentions.get(node.id) ?? attentionTarget : 1;
+        const attentionDt = node && attentionTargets.get(node.id) !== attentionTarget ? Math.min(1 / 60, dt) : dt;
         const attention = immediate || Math.abs(attentionTarget - previousAttention) < .001 ? attentionTarget
-          : previousAttention + (attentionTarget - previousAttention) * (1 - Math.exp(-12 * dt));
-        if (node) attentions.set(node.id, attention);
+          : previousAttention + (attentionTarget - previousAttention) * (1 - Math.exp(-12 * attentionDt));
+        if (node) { attentions.set(node.id, attention); attentionTargets.set(node.id, attentionTarget); }
         if (previousSlotAttentions[index] !== attention) set1f(`s${index}p`, attention);
         previousSlotAttentions[index] = attention;
         const target = targets[index] ?? RESTING_LIQUID_BLEND;
