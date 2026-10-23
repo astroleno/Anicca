@@ -1142,7 +1142,7 @@ async function main() {
         // Exercise the native GPU on macOS; software raymarching can starve
         // unrelated checks and does not represent the interactive preview.
         args: process.platform === "darwin" && process.env.DIALOGUE_SMOKE_SOFTWARE_GL !== "1"
-          ? ["--use-angle=metal"] : ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
+          ? ["--use-angle=metal"] : ["--use-gl=angle", "--use-angle=swiftshader-webgl", "--enable-unsafe-swiftshader"],
         ...(browserExecutablePath ? { executablePath: browserExecutablePath } : {})
       }));
       const results = [];
