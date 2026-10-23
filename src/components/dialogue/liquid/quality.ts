@@ -7,20 +7,32 @@ export class LiquidQuality {
   private fastTime = 0;
   private recovery = 1;
   private scale = 1;
+  private severeFrames = 0;
 
-  resetTiming() { this.previous=null;this.intervals=[];this.elapsed=0;this.fastTime=0; }
+  resetTiming() { this.previous=null;this.intervals=[];this.elapsed=0;this.fastTime=0;this.severeFrames=0; }
 
   step(timestamp: number, active: boolean, held: boolean): number {
     if (!active) this.resetTiming();
     else {
       if (this.previous !== null) {
         const dt=timestamp-this.previous;
-        if (dt>0) { this.intervals.push(dt);this.elapsed+=dt; }
+        if (dt>0) {
+          this.intervals.push(dt);this.elapsed+=dt;
+          // A twelve-frame sampling window can itself take a minute on a
+          // software GPU. Three consecutive severe stalls are enough evidence
+          // to shed pixel work; a single compilation/OS pause is still ignored.
+          this.severeFrames = dt > 120 ? this.severeFrames + 1 : 0;
+          if (this.severeFrames >= 3) {
+            this.scale = Math.max(.4, this.scale * .65);
+            this.recovery = this.scale;
+            this.fastTime = 0; this.intervals = []; this.elapsed = 0; this.severeFrames = 0;
+          }
+        }
       }
       this.previous=timestamp;
       if (this.elapsed>=1200 && this.intervals.length>=12) {
         const sorted=[...this.intervals].sort((a,b)=>a-b),median=sorted[Math.floor(sorted.length*.5)],p90=sorted[Math.floor(sorted.length*.9)];
-        if (median>24.5) { this.scale=Math.max(.5,this.scale-.15);this.fastTime=0;this.recovery=this.scale; }
+        if (median>24.5) { this.scale=Math.max(Math.min(.5,this.scale),this.scale-.15);this.fastTime=0;this.recovery=this.scale; }
         else if (median<18.5 && p90<22) {
           this.fastTime+=this.elapsed;
           if (this.fastTime>=4800) { this.recovery=Math.min(1,this.scale+.15);this.fastTime=0; }
