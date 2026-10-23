@@ -28,10 +28,11 @@ import { DialogueComposer } from "@/components/dialogue/DialogueComposer";
 import { PerspectiveControls } from "@/components/dialogue/PerspectiveControls";
 import { annotatePerspective, normalizeThinkingSpace, perspectiveLabel, type AxisSuggestion, type ThinkingAxis, type ThinkingSpace } from "@/features/perspectives/model";
 import { normalizePolarityOrigin, polarityAxis } from "@/features/perspectives/polarity";
-import type { SeedViewDirection } from "./liquid/space";
+import { readSeedOrbit, readSpatialFrame, separateSpatialSeeds, type SeedViewDirection } from "./liquid/space";
 import { WorkspaceBar } from "@/components/dialogue/WorkspaceBar";
 import { createDialogueDemoWorkspace } from "@/features/dialectic/demoWorkspace";
 import { isAbortError } from "@/features/dialectic/api";
+import { deferredSyntheses } from "@/features/dialectic/meaning";
 import {
   commitBranchesResult,
   commitPolarityResult,
@@ -42,7 +43,7 @@ import {
 } from "@/features/dialectic/controller";
 import { observeDialogueViewport } from "@/features/dialectic/platform";
 import { buildSeedContext, seedLabel } from "@/features/dialectic/seeds";
-import { buildSeedInstanceScene, seedConceptId, seedInstancePairAction, sourceInstances, unfoldedSourcePositions } from "@/features/dialectic/seedInstances";
+import { buildSeedInstanceScene, seedConceptId, seedInstancePairAction, sourceInstances, unfoldedSourcePositions, separatedEncounterPositions } from "@/features/dialectic/seedInstances";
 import { arrangeSeedScene } from "@/features/dialectic/seedPlacement";
 import { createClientId, DialogueErrorState, PendingRequest, useDialogueUiStore } from "@/features/dialectic/store";
 import {
@@ -520,12 +521,15 @@ export function DialogueShell() {
   const pendingPerspectiveRef = useRef<ThinkingSpace | null>(null);
   const [combineSourceId, setCombineSourceId] = useState<string | null>(null);
   const [selectedPair, setSelectedPair] = useState<DialogueSynthesisAction | null>(null);
+  const [activeDeferredId, setActiveDeferredId] = useState<string | null>(null);
+  const [connectionTargetId, setConnectionTargetId] = useState<string | null>(null);
   const [activeInstanceId, setActiveInstanceId] = useState<string | null>(null);
   const [expandedResultId, setExpandedResultId] = useState<string | null>(null);
   const [expansionResult, setExpansionResult] = useState<SeedExpansionResult | null>(null);
   const dismissSeedReading = useCallback(() => {
     setReadingOpen(false);
     setCombineSourceId(null);
+    setActiveDeferredId(null);
   }, []);
   const openEvolution = useCallback(() => {
     setEvolutionOpen(true); setReadingOpen(false); setLineageOpen(false); setCombineSourceId(null);
@@ -559,6 +563,7 @@ export function DialogueShell() {
     setAxisSuggestions([]); setCameraView(null); pendingPerspectiveRef.current = null;
     setActiveInstanceId(null); setExpandedResultId(null); setExpansionResult(null);
     setEvolutionOpen(false);
+    setActiveDeferredId(null); setConnectionTargetId(null);
   }, [workspaceSessionId]);
   const pendingAction = useDialogueUiStore((state) => state.pendingAction);
   const pending = useDialogueUiStore((state) => state.pending);
@@ -691,21 +696,32 @@ export function DialogueShell() {
     return first && second ? { sourceId: node.parents[0], firstId: first.id, secondId: second.id, axis: polarityAxis(origin),
       lens: perspectiveLabel({ ...origin.frame, focus: Object.fromEntries(Object.entries(origin.frame.focus).filter(([id]) => id !== origin.axisId)) }) } : null;
   }, [expansionResult, graphSnapshot, view.focusNodeId]);
+  const encounters = useMemo(() => deferredSyntheses(graphSnapshot.graph), [graphSnapshot]);
+  const connectionTarget = encounters.find(item => item.id === connectionTargetId && !item.resolvedNodeId);
+  const activeEncounter = encounters.find(item => item.id === activeDeferredId && !item.resolvedNodeId);
+  const encounterInstances = useMemo(() => {
+    const encounter = activeEncounter || connectionTarget;
+    return encounter?.sourceNodeIds.map((id, index) => {
+      const instance = encounter.sourceInstanceIds?.[index];
+      return instance && seedConceptId(graphSnapshot.graph, seedInstances, instance) === id ? instance : id;
+    });
+  }, [activeEncounter, connectionTarget, graphSnapshot, seedInstances]);
   const seedScene = useMemo(() => arrangeSeedScene(buildSeedInstanceScene({
     graph: graphSnapshot.graph, instances: seedInstances, focusId: view.focusNodeId,
     activeInstanceId: focusedInstanceId, expandedResultId, thinkingSpace,
-    pinnedInstanceIds: selectedPair?.sourceInstanceIds || (combineSourceId ? [combineSourceId]
+    pinnedInstanceIds: selectedPair?.sourceInstanceIds || encounterInstances || (combineSourceId ? [combineSourceId]
       : visibleExpansion ? [visibleExpansion.sourceId, visibleExpansion.firstId, visibleExpansion.secondId] : [])
-  })), [graphSnapshot, seedInstances, view.focusNodeId, focusedInstanceId, expandedResultId, thinkingSpace, selectedPair, combineSourceId, visibleExpansion]);
+  })), [graphSnapshot, seedInstances, view.focusNodeId, focusedInstanceId, expandedResultId, thinkingSpace, selectedPair, encounterInstances, combineSourceId, visibleExpansion]);
   const attentionIds = useMemo(() => {
     if (selectedPair?.sourceInstanceIds) return selectedPair.sourceInstanceIds;
+    if (encounterInstances) return encounterInstances;
     if (expandedResultId) return [expandedResultId, ...sourceInstances(graphSnapshot.graph, seedInstances, expandedResultId)];
     if (visibleExpansion) return [visibleExpansion.sourceId, visibleExpansion.firstId, visibleExpansion.secondId];
     const sources = focusedInstanceId ? sourceInstances(graphSnapshot.graph, seedInstances, focusedInstanceId) : [];
     if (sources.length) return [focusedInstanceId!, ...sources];
     if (readingOpen && focusedInstanceId) return [focusedInstanceId, ...(graphSnapshot.graph.nodes[view.currentNode?.id || ""]?.parents || [])];
     return null;
-  }, [selectedPair, expandedResultId, graphSnapshot, seedInstances, visibleExpansion, focusedInstanceId, readingOpen, view.currentNode]);
+  }, [selectedPair, encounterInstances, expandedResultId, graphSnapshot, seedInstances, visibleExpansion, focusedInstanceId, readingOpen, view.currentNode]);
   const resolveSeedPair = useCallback((left: string, right: string) => seedInstancePairAction(graphSnapshot.graph, seedInstances, left, right), [graphSnapshot, seedInstances]);
   const isEmptyWorkspace = graphSnapshot.graph.entryIds.length === 0;
   const isBranchPending = pending.branches !== null;
@@ -727,6 +743,7 @@ export function DialogueShell() {
 
   const closeSeedPanel = useCallback(() => {
     setReadingOpen(false);
+    setActiveDeferredId(null);
     setLineageOpen(false);
     setCombineSourceId(null);
     const id = focusedInstanceId;
@@ -857,6 +874,8 @@ export function DialogueShell() {
 
   const handleSelectNode = (nodeId: string) => {
     attentionVersionRef.current += 1;
+    setActiveDeferredId(null);
+    if (!hasPendingRequest) setConnectionTargetId(null);
     if (combineSourceId && !selectedPair && !hasPendingRequest) {
       const pair = resolveSeedPair(combineSourceId, nodeId);
       if (pair) {
@@ -1554,7 +1573,8 @@ export function DialogueShell() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleCloseRoundtableDrawer, roundtableArtifact]);
 
-  const handleGenerateSynthesis = async (action: DialogueSynthesisAction, retryPerspective?: ThinkingSpace) => {
+  const handleGenerateSynthesis = async (action: DialogueSynthesisAction, retryPerspective?: ThinkingSpace,
+    connection?: { encounterId: string; text: string; draftVersion: number }) => {
     if (!action.available || useDialogueUiStore.getState().pendingAction) {
       return;
     }
@@ -1569,12 +1589,13 @@ export function DialogueShell() {
     if (!rootInput.trim()) return;
     const requestPerspective = normalizeThinkingSpace(retryPerspective || useDialogueUiStore.getState().thinkingSpace);
     pendingPerspectiveRef.current = requestPerspective;
-    retryRef.current = { sessionId: workspaceSessionId, run: () => { void handleGenerateSynthesis(action, requestPerspective); } };
+    retryRef.current = { sessionId: workspaceSessionId, run: () => { void handleGenerateSynthesis(action, requestPerspective, connection); } };
     const attentionVersion = attentionVersionRef.current;
     setSelectedPair(action);
     setExpansionResult(null);
     setCombineSourceId(null);
     setReadingOpen(false);
+    setActiveDeferredId(null);
 
     const requestId = createClientId("req");
     beginPending("synthesis", {
@@ -1598,6 +1619,7 @@ export function DialogueShell() {
         requestId,
         rootInput,
         perspective: requestPerspective,
+        ...(connection ? { connectionInput: connection.text } : {}),
         sources: [{
           id: thesisNode.id,
           text: thesisNode.text || "",
@@ -1622,12 +1644,51 @@ export function DialogueShell() {
         return;
       }
 
+      if (response.outcome === "deferred") {
+        const shouldReveal = attentionVersion === attentionVersionRef.current && shouldAutoFocusPendingResult(activePending, graph);
+        branchGraphStore.deferSynthesis({ id: response.requestId, ...response.deferred,
+          sourceNodeIds: [action.thesisId, action.antithesisId], sourceInstanceIds: action.sourceInstanceIds,
+          perspective: requestPerspective, createdAt: new Date().toISOString(), connectionInput: connection?.text });
+        clearPending("synthesis"); setSelectedPair(null); setCombineSourceId(null); setErrorState(null);
+        retryRef.current = null;
+        setGenerationAnnouncement("暂不融合，两颗想法已保留。可以分别继续，也可以补充联系。");
+        if (connection && connection.draftVersion === draftVersionRef.current) { setDraft(""); setConnectionTargetId(null); }
+        if (shouldReveal) {
+          const state = useDialogueUiStore.getState(), key = `seeds:${workspaceId || "local"}`;
+          const ids = action.sourceInstanceIds || [action.thesisId, action.antithesisId];
+          const nodes = arrangeSeedScene(buildSeedInstanceScene({ graph: branchGraphStore.getGraph(), instances: state.seedInstances,
+            focusId: action.thesisId, activeInstanceId: ids[0], expandedResultId: null, thinkingSpace: state.thinkingSpace, pinnedInstanceIds: ids }));
+          const layout = state.stagePreview?.layoutKey === key ? state.stagePreview.view : state.stageLayouts[key];
+          let wide = separatedEncounterPositions(nodes, layout?.nodePositions || {}, ids, false);
+          let compact = separatedEncounterPositions(nodes, layout?.compact?.nodePositions || {}, ids, true);
+          const track = shellRef.current?.querySelector<HTMLElement>('[data-testid="dialogue-stage-track"]');
+          const frame = track && readSpatialFrame(track), bounds = track?.parentElement?.getBoundingClientRect();
+          if (track && frame && bounds?.width && bounds.height) {
+            const orbit = readSeedOrbit(track), narrow = window.matchMedia("(max-width: 980px)").matches;
+            if (Math.abs(orbit.yaw) + Math.abs(orbit.pitch) > .001) {
+              const separated = separateSpatialSeeds(narrow ? compact : wide, ids, orbit, bounds, frame.height, frame.scale, narrow);
+              if (narrow) compact = separated; else wide = separated;
+            }
+          }
+          state.endStagePreview(); state.setStageNodePositions(key, wide, compact);
+          setActiveInstanceId(action.sourceInstanceIds?.[0] || action.thesisId);
+          setFocusedNodeId(action.thesisId); setActiveDeferredId(response.requestId);
+          setExpandedResultId(null); setReadingOpen(true); setWorkspaceStatus(null);
+        } else setWorkspaceStatus("暂不融合，原因已留在来源种子的「暂存的相遇」中。");
+        return;
+      }
       const synthesisId = commitSynthesisResult(branchGraphStore, {
         thesisId: action.thesisId,
         antithesisId: action.antithesisId,
         sourceInstanceIds: action.sourceInstanceIds,
-        response
+        response,
+        connectionInput: connection?.text
       });
+      if (connection) {
+        branchGraphStore.resolveDeferredSynthesis(connection.encounterId, synthesisId);
+        if (connection.draftVersion === draftVersionRef.current) setDraft("");
+        setConnectionTargetId(null);
+      }
       setAxisSuggestions(response.suggestedAxes || []);
       const updatedGraph = branchGraphStore.getGraph();
       const shouldAutoFocus = attentionVersion === attentionVersionRef.current && shouldAutoFocusPendingResult(activePending, updatedGraph);
@@ -1668,6 +1729,28 @@ export function DialogueShell() {
       setGenerationAnnouncement(null);
       setErrorState(formatted);
     }
+  };
+
+  const continueDeferred = (id: string) => {
+    const encounter = encounters.find(item => item.id === id && !item.resolvedNodeId);
+    if (!encounter || hasPendingRequest) return;
+    attentionVersionRef.current += 1;
+    setConnectionTargetId(id); setActiveDeferredId(null); setReadingOpen(false); setCombineSourceId(null);
+    if (!draft.trim() && encounter.connectionInput) handleDraftChange(encounter.connectionInput);
+    focusComposerSoon();
+  };
+
+  const submitComposer = () => {
+    if (!connectionTarget) { void handleSubmit(); return; }
+    if (hasPendingRequest || !draft.trim()) return;
+    const ids = connectionTarget.sourceNodeIds.map((id, index) => {
+      const saved = connectionTarget.sourceInstanceIds?.[index];
+      return saved && seedConceptId(graphSnapshot.graph, seedInstances, saved) === id ? saved : id;
+    });
+    const pair = resolveSeedPair(ids[0], ids[1]);
+    if (pair) void handleGenerateSynthesis(pair, connectionTarget.perspective, {
+      encounterId: connectionTarget.id, text: draft.trim(), draftVersion: draftVersionRef.current
+    });
   };
 
   const relevantSynthesisAction = selectedPair || findRelevantSynthesisAction(
@@ -1975,6 +2058,7 @@ export function DialogueShell() {
               graph={graphSnapshot.graph} nodeId={seedConceptId(graphSnapshot.graph, seedInstances, combineSourceId) || view.currentNode.id}
               instances={seedInstances} instanceId={focusedInstanceId || view.currentNode.id}
               combining={Boolean(combineSourceId)} busy={hasPendingRequest}
+              activeDeferredId={activeDeferredId} onContinueDeferred={continueDeferred}
               onClose={closeSeedPanel}
               onSplit={handleContinueFromCurrentNode}
               onExpandPolarity={(axisId, frame) => void handlePolarityExpansion(view.currentNode!.id, axisId, frame)}
@@ -2030,6 +2114,7 @@ export function DialogueShell() {
         {shouldShowComposer ? (
           <DialogueComposer
             perspectiveLabel={composerPerspectiveLabel}
+            connectionTarget={connectionTarget ? connectionTarget.sourceNodeIds.map(id => seedLabel(graphSnapshot.graph, id)).join(" / ") : undefined}
             target={composerTarget}
             value={draft}
             disabled={hasPendingRequest}
@@ -2043,10 +2128,10 @@ export function DialogueShell() {
             rootRef={composerRootRef}
             textareaRef={composerTextareaRef}
             onChange={handleDraftChange}
-            onSubmit={() => void handleSubmit()}
+            onSubmit={submitComposer}
             onCancel={handleCancelPending}
             onRetry={errorState && retryRef.current?.error === errorState && retryRef.current?.sessionId === workspaceSessionId ? () => retryRef.current?.run() : undefined}
-            onResetTarget={() => { setComposerParentId(null); focusComposerSoon(); }}
+            onResetTarget={() => { setConnectionTargetId(null); setComposerParentId(null); focusComposerSoon(); }}
           />
         ) : null}
       </div>

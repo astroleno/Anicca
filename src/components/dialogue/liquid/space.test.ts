@@ -1,7 +1,20 @@
 import { orbitSeedSpace, projectSpatialSeed, seedSpaceDepth, spatialStagePoint, unprojectSeedPoint, dragSpatialStagePoint, SEED_VIEWS,
-  SEED_CAMERA_DISTANCE, SEED_WORLD_CAMERA_DISTANCE, canCaptureSpatialPair, spatialPairInContact, fitSpatialSeed, fitSeedScene, spatialPairMetrics } from "./space";
+  SEED_CAMERA_DISTANCE, SEED_WORLD_CAMERA_DISTANCE, canCaptureSpatialPair, spatialPairInContact, fitSpatialSeed, fitSeedScene, spatialPairMetrics, separateSpatialSeeds } from "./space";
 
 describe("seed space projection", () => {
+  it("separates a deferred pair across all six viewing directions without moving other seeds", () => {
+    const saved = { a: { x: 48, y: 53, z: -.12 }, b: { x: 52, y: 53, z: -.12 }, other: { x: 18, y: 24, z: .3 } };
+    for (const compact of [true, false]) for (const orbit of Object.values(SEED_VIEWS)) {
+      const viewport = { width: compact ? 320 : 1440, height: compact ? 600 : 800 };
+      const positions = separateSpatialSeeds(saved, ["a", "b"], orbit, viewport, 980, .7, compact);
+      const a = spatialStagePoint(positions.a, "a", orbit, viewport, 980, false, .7);
+      const b = spatialStagePoint(positions.b, "b", orbit, viewport, 980, false, .7);
+      expect(a.x).toBeCloseTo(28, 8); expect(b.x).toBeCloseTo(72, 8);
+      expect(positions.other).toEqual(saved.other);
+      expect(saved.a).toEqual({ x: 48, y: 53, z: -.12 });
+      expect(Number.isFinite(positions.a.z)).toBe(true);
+    }
+  });
   it("retains a real contact through a narrow exit margin without accepting a new or distant contact",()=>{
     const a={id:"a",center:[0,0] as [number,number],depth:0,radius:.1,color:[1,1,1] as [number,number,number],emphasis:1};
     const b={...a,id:"b",center:[.224,0] as [number,number]};

@@ -136,12 +136,12 @@ export function normalizeAxisSuggestions(value: unknown, existing: ThinkingAxis[
   });
 }
 
-export function thinkingSpacePrompt(space: ThinkingSpace | undefined, mode: "branches" | "synthesis" | "suggestions" = "branches"): string {
+export function thinkingSpacePrompt(space: ThinkingSpace | undefined, mode: "branches" | "synthesis" | "suggestions" = "branches", meaning = false): string {
   if (!space?.axes.length) return "";
   const frame = space.axes.map(({ id, label, negative, positive, evidence }) => ({ id, label, negative, positive, evidence, selected: space.focus[id] || 0 }));
   const mapped = space.axes.filter(axis => axis.placement !== "none");
   const samples = Object.fromEntries((mapped.length ? mapped : space.axes).slice(0, 3).map(axis => [axis.id, space.focus[axis.id] ? space.focus[axis.id] * .8 : .2]));
-  const placementExample = JSON.stringify({ synthesis: { text: "", summary: "", label: "", stance: "合" }, spatial: { synthesis: samples }, suggestedAxes: [] });
+  const placementExample = JSON.stringify({ synthesis: { text: "", summary: "", label: "", stance: "合", ...(meaning ? { change: "" } : {}) }, spatial: { synthesis: samples }, suggestedAxes: [] });
   const selected = space.axes.flatMap(axis => {
     const value = space.focus[axis.id] || 0;
     return value ? [`${JSON.stringify(axis.label)}选${JSON.stringify(value > 0 ? axis.positive : axis.negative)}`] : [];
@@ -157,8 +157,8 @@ export function thinkingSpacePrompt(space: ThinkingSpace | undefined, mode: "bra
     "self-report 维度涉及谁知道什么，不能凭空断言用户或他人的知晓程度；只能沿用户选择提出待确认的问题，未选择时保持 0。content 维度可依据本次正文估计位置。",
     mode === "suggestions" ? "只提出最多三条与当前问题有关、现有框架尚未覆盖的互补维度，说明探索价值；建议不是事实，不替用户采用。"
       : `分支内原有正文 JSON 合同保持；根对象可额外附加 spatial 与 suggestedAxes。${mode === "branches" ? "spatial 遵照完整 schema，thesis、antithesis 内用真实轴 id 作为键、[-1,1] 数值作为值。" : `完整根对象结构示例：${placementExample}。正文仍须满足本阶段合同，附加字段在同一对根花括号内，不能在已闭合的 JSON 后拼接。`}数字仅为格式示意，应根据各自正文与所选角度判断；只使用上述真实 id。suggestedAxes 可省略或为数组，最多一项 [{"label":"维度","negative":"一端","positive":"另一端","reason":"为何值得补看","evidence":"content"}]，只有确有遗漏才建议。先检查每份正文是否真正从本轮明确选择展开，再给出正文及坐标；不能仅把坐标移到所选端却沿其他角度写正文。`,
-    mode === "branches" ? "最终输出仍须含完整 thesis 和 antithesis：每份只能有 text、summary、label、stance。每个 text 含标点 120–220 字，目标 150–180 字，summary 单行，label 不超过 8 字，stance 分别为正、反。spatial 只放根对象，不进入分支，也不替代正文。"
-      : mode === "synthesis" ? "最终保留本阶段要求的 synthesis 正文与质量字段。spatial 只附在根对象，不进入 synthesis，也不替代其正文合同。" : "",
+    mode === "branches" ? `最终输出仍须含完整 thesis 和 antithesis：每份只能有 text、summary、label、stance${meaning ? "、change" : ""}。每个 text 含标点 120–220 字，目标 150–180 字，summary 单行，label 不超过 8 字，stance 分别为正、反。spatial 只放根对象，不进入分支，也不替代正文。`
+      : mode === "synthesis" ? `最终保留本阶段要求的 synthesis 正文与质量字段。spatial 只附在根对象，不进入 synthesis，也不替代其正文合同。${meaning ? "若本阶段选择 deferred，则只返回 deferred，不生成 synthesis、spatial 或 suggestedAxes；以上坐标示例不改变暂不融合的决定。" : ""}` : "",
   ].join("\n\n");
 }
 

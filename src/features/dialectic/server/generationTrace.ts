@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { generateText, type GenerateTextOptions, type TokenUsage } from "@/lib/openai/generateText";
 import { DIALECTIC_POLICY_CARD_VERSION } from "./policyCards";
 
-export const DIALECTIC_PROMPT_VERSION = "seed-flow-2026-10-21-perspectives";
+export const DIALECTIC_PROMPT_VERSION = "seed-flow-2026-10-23-meaning";
 type Stage = "branches" | "polarities" | "draft" | "critic" | "audit" | "final";
 type Outcome = "success" | "invalid_output" | "failed" | "cancelled";
 type Call = {

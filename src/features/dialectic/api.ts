@@ -1,6 +1,7 @@
 import type { Message } from "@/types/chat";
 import { emitDialogueTelemetry } from "@/lib/analytics/dialogue";
 import type { AxisSuggestion, SeedPerspective, ThinkingAxis, ThinkingSpace } from "@/features/perspectives/model";
+import { readDeferredDraft, readUnderstandingChange, type DeferredDraft } from "./meaning";
 
 export const DIALECTIC_INPUT_MAX_LENGTH = 2000;
 
@@ -12,6 +13,7 @@ export type BranchPayload = {
   label: string;
   stance: "正" | "反";
   perspective?: SeedPerspective;
+  change?: string;
 };
 
 export type BranchesResponse = {
@@ -27,12 +29,18 @@ export type SynthesisPayload = {
   label: string;
   stance: "合";
   perspective?: SeedPerspective;
+  change?: string;
 };
 
-export type SynthesisResponse = {
+export type SynthesizedResponse = {
   requestId: string;
+  outcome?: "synthesized";
   synthesis: SynthesisPayload;
   suggestedAxes?: AxisSuggestion[];
+};
+export type SynthesisResponse = SynthesizedResponse | {
+  requestId: string; outcome: "deferred"; deferred: DeferredDraft;
+  synthesis?: never; suggestedAxes?: never;
 };
 
 export type GenerateBranchesInput = {
@@ -64,6 +72,7 @@ export type GenerateSynthesisInput = {
   rootInput: string;
   contextMessages: DialecticContextMessage[];
   perspective?: ThinkingSpace;
+  connectionInput?: string;
 } & ({ sources: [SeedSource, SeedSource]; thesis?: never; antithesis?: never } |
   { sources?: never; thesis: BranchPayload; antithesis: BranchPayload });
 
@@ -137,18 +146,26 @@ export function generateBranches(
   input: GenerateBranchesInput,
   options?: DialecticRequestOptions
 ): Promise<BranchesResponse> {
-  return requestJson<BranchesResponse>("/api/branches", input, options);
+  return requestJson<BranchesResponse>("/api/branches", { ...input, meaningVersion: 1 }, options);
 }
 
-export function generateSynthesis(
+export async function generateSynthesis(
   input: GenerateSynthesisInput,
   options?: DialecticRequestOptions
 ): Promise<SynthesisResponse> {
-  return requestJson<SynthesisResponse>("/api/synthesis", input, options);
+  const response = await requestJson<SynthesisResponse>("/api/synthesis", { ...input, meaningVersion: 1 }, options);
+  if (response?.requestId !== input.requestId ||
+    (response.outcome !== undefined && response.outcome !== "synthesized" && response.outcome !== "deferred") || (response.outcome === "deferred"
+    ? !readDeferredDraft(response.deferred) || Boolean(response.synthesis)
+    : !response.synthesis?.text?.trim() || response.synthesis.stance !== "合" ||
+      (response.synthesis.change !== undefined && !readUnderstandingChange(response.synthesis.change)))) {
+    throw new DialecticApiError({ status: 502, code: "invalid_model_output", details: "synthesis_response_incomplete" });
+  }
+  return response;
 }
 
 export async function generatePolarity(input: GeneratePolarityInput, options?: DialecticRequestOptions): Promise<PolarityResponse> {
-  const response = await requestJson<PolarityResponse>("/api/polarities", input, options);
+  const response = await requestJson<PolarityResponse>("/api/polarities", { ...input, meaningVersion: 1 }, options);
   const expected = input.perspective.axes.find(axis => axis.id === input.axisId);
   const completePole = (pole: PolarityPayload | undefined) => Boolean(pole && typeof pole.text === "string" && pole.text.trim() &&
     typeof pole.summary === "string" && pole.summary.trim() && typeof pole.label === "string" && pole.label.trim() &&

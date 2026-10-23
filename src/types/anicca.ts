@@ -3,6 +3,7 @@
 import type { GrowthNodeMeta } from "@/features/growth/types";
 import type { SeedPerspective, ThinkingSpace } from "@/features/perspectives/model";
 import type { PolarityOrigin } from "@/features/perspectives/polarity";
+import type { DeferredSynthesis } from "@/features/dialectic/meaning";
 
 export const ANICCA_GRAPH_VERSION = "anicca-dialectic-v2";
 
@@ -26,6 +27,8 @@ export interface AniccaNodeMeta {
   perspective?: SeedPerspective;
   polarity?: PolarityOrigin;
   fissionFrame?: ThinkingSpace;
+  change?: string;
+  connectionInput?: string;
 }
 
 export interface AniccaNode {
@@ -51,6 +54,7 @@ export interface Graph {
   nodes: Record<string, AniccaNode>;
   edges: Record<string, Edge>;
   entryIds: string[]; // 入口 user 节点（支持多主题）
+  deferredSyntheses?: Record<string, DeferredSynthesis>;
 }
 
 export interface StagePoint {

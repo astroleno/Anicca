@@ -7,7 +7,8 @@ import {
   type GeneratePolarityInput,
   type PolarityResponse,
   type GenerateSynthesisInput,
-  type SynthesisResponse
+  type SynthesisResponse,
+  type SynthesizedResponse
 } from "@/features/dialectic/api";
 import type { PendingRequest, PendingSlot } from "@/features/dialectic/store";
 import type { BranchGraphStore } from "@/store/branchGraph";
@@ -34,7 +35,8 @@ export type SynthesisCommitInput = {
   thesisId: string;
   antithesisId: string;
   sourceInstanceIds?: [string, string];
-  response: SynthesisResponse;
+  response: SynthesizedResponse;
+  connectionInput?: string;
 };
 
 export function ownsPendingResponse(
@@ -72,6 +74,8 @@ export function commitSynthesisResult(
     text: input.response.synthesis.text,
     summary: input.response.synthesis.summary,
     label: input.response.synthesis.label,
+    change: input.response.synthesis.change,
+    connectionInput: input.connectionInput,
     sourceInstanceIds: input.sourceInstanceIds,
     perspective: input.response.synthesis.perspective
   });

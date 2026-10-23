@@ -3982,6 +3982,7 @@
 .seedInspectorHeader .panelCloseButton { position: absolute; top: -12px; right: -12px; margin: 0; width: 44px; min-width: 44px; height: 44px; min-height: 44px; border: 0; background: transparent; box-shadow: none; font-size: 22px; color: #736580; }
 .seedBody { line-height: 1.85; font-size: 15px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .seedBody p { margin: 0; }
+.seedInspector[data-mode="polarity"] [data-seed-meaning] { display: none; }
 .seedReadingContent { position: absolute; z-index: 15; top: calc(112px + var(--safe-top)); bottom: calc(var(--dialogue-composer-height) + 52px + var(--safe-bottom)); left: 50%; transform: translateX(-50%); width: min(520px, calc(100% - 48px)); display: flex; align-items: center; pointer-events: none; }
 .seedReadingContent .seedInspector { display: flex; flex-direction: column; width: 100%; min-height: 0; max-height: 100%; padding: 0; overflow: auto; pointer-events: auto; color: #342d46; }
 .seedReadingContent[data-open="false"] .seedInspector { pointer-events: none; }

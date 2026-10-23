@@ -6,6 +6,7 @@ import { createGenerationTrace, type GenerationTrace } from "@/features/dialecti
 import { parseStrictJsonObject } from "@/lib/openai/parseStrictJsonObject";
 import { describeProviderFailure } from "@/lib/openai/providerErrors";
 import { normalizeDialecticLabel, normalizeDialecticSummary } from "@/features/dialectic/outputContract";
+import { readUnderstandingChange, UNDERSTANDING_CHANGE_PROMPT } from "@/features/dialectic/meaning";
 
 type ContextMessage = {
   role?: string;
@@ -17,6 +18,7 @@ type DialecticBranch = {
   summary: string;
   label: string;
   stance: "正" | "反";
+  change?: string;
 };
 
 const BRANCH_TEXT_MIN = 120;
@@ -54,8 +56,8 @@ function hasExactKeys(value: unknown, keys: string[]): value is Record<string, u
   return JSON.stringify(Object.keys(value).sort()) === JSON.stringify([...keys].sort());
 }
 
-function parseBranch(value: unknown, stance: DialecticBranch["stance"]): DialecticBranch | null {
-  if (!hasExactKeys(value, ["text", "summary", "label", "stance"])) {
+function parseBranch(value: unknown, stance: DialecticBranch["stance"], meaning: boolean): DialecticBranch | null {
+  if (!hasExactKeys(value, ["text", "summary", "label", "stance", ...(meaning ? ["change"] : [])])) {
     return null;
   }
 
@@ -72,7 +74,8 @@ function parseBranch(value: unknown, stance: DialecticBranch["stance"]): Dialect
   const text = candidate.text.trim();
   const summary = normalizeDialecticSummary(candidate.summary);
   const textLength = Array.from(text).length;
-  if (!text || textLength < BRANCH_TEXT_MIN || textLength > BRANCH_TEXT_MAX || !summary) {
+  const change = readUnderstandingChange(candidate.change);
+  if (!text || textLength < BRANCH_TEXT_MIN || textLength > BRANCH_TEXT_MAX || !summary || (meaning && !change)) {
     return null;
   }
 
@@ -80,11 +83,12 @@ function parseBranch(value: unknown, stance: DialecticBranch["stance"]): Dialect
     text,
     summary,
     label: normalizeDialecticLabel(candidate.label, stance === "正" ? "正向" : "反向", stance),
-    stance
+    stance,
+    ...(change ? { change } : {})
   };
 }
 
-function analyzeBranchesOutput(outputText: string) {
+function analyzeBranchesOutput(outputText: string, meaning = false) {
   const parsed = outputText ? parseStrictJsonObject(outputText) : null;
   const errors: string[] = [];
   if (!hasExactKeys(parsed, ["thesis", "antithesis"])) {
@@ -95,14 +99,15 @@ function analyzeBranchesOutput(outputText: string) {
     };
   }
 
-  const thesis = parseBranch(parsed.thesis, "正");
-  const antithesis = parseBranch(parsed.antithesis, "反");
+  const thesis = parseBranch(parsed.thesis, "正", meaning);
+  const antithesis = parseBranch(parsed.antithesis, "反", meaning);
   for (const [key, valid] of [["thesis", thesis], ["antithesis", antithesis]] as const) {
     if (valid) continue;
     const candidate = parsed[key];
     const text = candidate && typeof candidate === "object" && "text" in candidate ? candidate.text : undefined;
     const length = typeof text === "string" ? Array.from(text.trim()).length : null;
     errors.push(`${key} must match schema and contain ${BRANCH_TEXT_MIN}-${BRANCH_TEXT_MAX} characters${length === null ? "" : `; current text has ${length} characters`}`);
+    if (meaning) errors.push(`${key}.change must contain 6–100 characters describing a specific change from its source`);
   }
 
   return { thesis, antithesis, errors };
@@ -123,20 +128,21 @@ function hasAssistantContext(contextMessages: unknown): boolean {
     message && typeof message === "object" && message.role === "assistant");
 }
 
-function branchesSchema(space?: ThinkingSpace): string {
-  const branch = (stance: "正" | "反") => ({ text: "", summary: "", label: "", stance });
+function branchesSchema(space?: ThinkingSpace, meaning = false): string {
+  const branch = (stance: "正" | "反") => ({ text: "", summary: "", label: "", stance, ...(meaning ? { change: "" } : {}) });
   const mapped = space?.axes.filter(axis => axis.placement !== "none") || [];
   const coordinates = Object.fromEntries((mapped.length ? mapped : space?.axes || []).slice(0, 3).map(axis => [axis.id, 0]));
   return JSON.stringify({ thesis: branch("正"), antithesis: branch("反"),
     ...(space?.axes.length ? { spatial: { thesis: coordinates, antithesis: coordinates }, suggestedAxes: [] } : {}) });
 }
 
-function buildBranchesPrompt(userText: string, contextMessages: unknown, perspective?: ThinkingSpace): string {
+function buildBranchesPrompt(userText: string, contextMessages: unknown, perspective?: ThinkingSpace, meaning = false): string {
   const serializedContext = serializeContextMessages(contextMessages);
   const sections = [
     "你帮助一颗想法长出两条有实质张力、值得继续探索的分支。正与反是观察方向，不代表正确与错误、乐观与悲观。目标是让读者发现原来忽略了什么，而不只是得到赞成与反对的理由。",
     "只返回一个 JSON object，不要 markdown，不要解释，不要代码围栏。",
-    `schema=${branchesSchema(perspective)}`,
+    `schema=${branchesSchema(perspective, meaning)}`,
+    meaning ? UNDERSTANDING_CHANGE_PROMPT : "",
     "thesis.text 与 antithesis.text 必须分别是 120–220 个中文字符，建议各写 150–180 字，给长度上限留余量。summary 必须是单行摘要，label 必须是 8 个字符以内的中文短标签；不要在 label 中写解释、冒号、下划线或长短语。",
     "最高优先级是当前输入和历史实际写出的事实、拒绝、禁止与资源上限。不得为了正反对称绕过它们，也不得凭空添加题设没有的禁令。已被排除的一侧可说明吸引力与成立条件，但必须明确当前不可采用，不能先建议执行再把越界写成可接受代价。",
     consentBoundaryFor(userText, serializedContext, hasAssistantContext(contextMessages)),
@@ -168,13 +174,15 @@ function buildBranchesRepairPrompt(
   contextMessages: unknown,
   outputText: string,
   errors: string[],
-  perspective?: ThinkingSpace
+  perspective?: ThinkingSpace,
+  meaning = false
 ): string {
   return [
     "你是短文编辑，只修复以下 JSON。保留两侧各一个核心想法与差异，尤其保留改变理解的具体细节和关键推理；先删套话、重复边界与旁枝，不能压成普通利弊。过长时实质删减论述，不要仅换词。原稿违反题设明示事实、拒绝或硬约束的内容必须纠正。",
     perspective?.axes.length
-      ? `只返回一个完整严格 JSON object，schema=${branchesSchema(perspective)}。每个分支只能有 text、summary、label、stance；spatial 与 suggestedAxes 可省略，只能在同一个根对象内，不能在已闭合的 JSON 后拼接字段。原稿括号损坏时重建整个根对象。`
-      : "只返回一个严格 JSON object，根对象只能有 thesis 和 antithesis。每个分支只能有 text、summary、label、stance。",
+      ? `只返回一个完整严格 JSON object，schema=${branchesSchema(perspective, meaning)}。每个分支只能有 text、summary、label、stance${meaning ? "、change" : ""}；spatial 与 suggestedAxes 可省略，只能在同一个根对象内，不能在已闭合的 JSON 后拼接字段。原稿括号损坏时重建整个根对象。`
+      : `只返回一个严格 JSON object，schema=${branchesSchema(undefined, meaning)}。根对象只能有 thesis 和 antithesis。`,
+    meaning ? UNDERSTANDING_CHANGE_PROMPT : "",
     "每个 text 含标点必须为 120–220 个字符，目标各 160–190 字。过长删次要情节、旁支解释和重复结论，但不能缩到 120 字以下；过短则展开已有理由与关键边界。每侧留一个主张、一段理由和一个边界，决策还保留关键代价与失效条件。感受和创意不改成执行方案，不添加新事实。",
     "summary 必须单行；label 必须是 1–8 个字符的中文短标签；stance 分别严格为‘正’与‘反’。",
     "压缩时保留假设和不确定性标记；不把假设改成事实，不添加未给定的时间门槛。感受题讨论解释的前提，不评判当事人品格或推断隐藏动机。创作必须保留题设的‘只能、不能、先于’等边界，不能扩展被排除的能力。",
@@ -217,27 +225,28 @@ export async function POST(req: NextRequest) {
     trace = createGenerationTrace("branches", model, req.signal);
     const client = getDialecticOpenAiClient();
     const perspective = readThinkingSpaceRequest(body.perspective);
-    const lensPrompt = thinkingSpacePrompt(perspective);
+    const meaning = body.meaningVersion === 1;
+    const lensPrompt = thinkingSpacePrompt(perspective, "branches", meaning);
 
     const { text: outputText } = await trace.generate("branches", {
       client,
-      input: [buildBranchesPrompt(userText, body?.contextMessages, perspective), lensPrompt].filter(Boolean).join("\n\n"),
+      input: [buildBranchesPrompt(userText, body?.contextMessages, perspective, meaning), lensPrompt].filter(Boolean).join("\n\n"),
       maxOutputTokens: 2000
     });
 
     let envelope = perspectiveEnvelope(outputText, perspective);
-    let analysis = analyzeBranchesOutput(envelope.content);
+    let analysis = analyzeBranchesOutput(envelope.content, meaning);
     trace.check("branches", Boolean(analysis.thesis && analysis.antithesis));
     let selectedOutputText = outputText;
     if (!analysis.thesis || !analysis.antithesis) {
       const repair = await trace.generate("branches", {
         client,
-        input: [buildBranchesRepairPrompt(userText, body?.contextMessages, outputText, analysis.errors, perspective), lensPrompt].filter(Boolean).join("\n\n"),
+        input: [buildBranchesRepairPrompt(userText, body?.contextMessages, outputText, analysis.errors, perspective, meaning), lensPrompt].filter(Boolean).join("\n\n"),
         maxOutputTokens: 2000
       }, true);
       selectedOutputText = repair.text;
       envelope = perspectiveEnvelope(selectedOutputText, perspective);
-      analysis = analyzeBranchesOutput(envelope.content);
+      analysis = analyzeBranchesOutput(envelope.content, meaning);
       trace.check("branches", Boolean(analysis.thesis && analysis.antithesis), true);
     }
 

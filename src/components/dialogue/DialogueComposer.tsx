@@ -13,6 +13,7 @@ type Props = {
   disabled: boolean;
   pendingAction: string | null;
   pendingMessage?: string;
+  connectionTarget?: string;
   isEmptyStart?: boolean;
   emptyStartOpen?: boolean;
   targetFrozen?: boolean;
@@ -28,7 +29,7 @@ type Props = {
 };
 
 export function DialogueComposer({
-  target, perspectiveLabel, value, disabled, pendingAction, pendingMessage, isEmptyStart, errorState,
+  target, perspectiveLabel, value, disabled, pendingAction, pendingMessage, connectionTarget, isEmptyStart, errorState,
   rootRef, textareaRef, onChange, onSubmit, onCancel, onRetry, onResetTarget
 }: Props) {
   const [elapsed, setElapsed] = useState(0);
@@ -46,20 +47,20 @@ export function DialogueComposer({
       data-testid="dialogue-composer" aria-busy={Boolean(pendingAction)}
       data-perspective={perspectiveLabel ? "true" : undefined}
       onSubmit={(event) => { event.preventDefault(); onSubmit(); }}>
-      {target.nodeId || pendingAction === "synthesis" || !isEmptyStart || perspectiveLabel ? (
+      {connectionTarget || target.nodeId || pendingAction === "synthesis" || !isEmptyStart || perspectiveLabel ? (
         <div className={styles.seedComposerTarget} aria-live="polite" aria-label={perspectiveLabel ? "生成视角与续写对象" : "续写对象"}>
           <span title={perspectiveLabel ? `从「${perspectiveLabel}」看${target.nodeId ? ` · ${target.label}` : ""}` : pendingAction === "synthesis" ? target.label : target.nodeId ? target.label : "独立的新想法"}>
-            {perspectiveLabel ? `从「${perspectiveLabel}」看${target.nodeId ? ` · ${target.label}` : ""}`
+            {connectionTarget ? `补充联系：${connectionTarget}` : perspectiveLabel ? `从「${perspectiveLabel}」看${target.nodeId ? ` · ${target.label}` : ""}`
               : pendingAction === "synthesis" ? `本次合成：${target.label}` : target.nodeId ? `${pendingAction ? "本次" : ""}基于「${target.label}」` : "独立的新想法"}
           </span>
-          {target.nodeId ? <button type="button" disabled={disabled} onClick={onResetTarget}>写新想法</button> : null}
+          {connectionTarget || target.nodeId ? <button type="button" disabled={disabled} onClick={onResetTarget}>写新想法</button> : null}
         </div>
       ) : null}
       <label className={styles.composerField}>
         <span className={styles.composerLabel}>输入</span>
         <textarea id="dialogue-input" ref={textareaRef} aria-label="输入" rows={1} value={value}
           maxLength={DIALECTIC_INPUT_MAX_LENGTH}
-          placeholder={pendingAction ? "等待时，也可以继续写…" : target.nodeId ? "补充你的想法…" : "写下一个想法…"}
+          placeholder={pendingAction ? "等待时，也可以继续写…" : connectionTarget ? "你想让它们怎样相遇？" : target.nodeId ? "补充你的想法…" : "写下一个想法…"}
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
@@ -73,7 +74,7 @@ export function DialogueComposer({
           <button type="button" className={styles.secondaryButton} onClick={onCancel}>取消</button>
         ) : null}
         <button type="submit" className={styles.primaryButton} disabled={disabled || !value.trim()}>
-          {pendingAction === "branches" ? "生成中…" : pendingAction === "synthesis" ? "合成中…" : "生成"}
+          {pendingAction === "branches" ? "生成中…" : pendingAction === "synthesis" ? "合成中…" : connectionTarget ? "再试一次" : "生成"}
         </button>
       </div>
       {pendingAction ? <div className={styles.generationProgress}>

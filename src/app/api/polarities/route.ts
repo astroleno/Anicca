@@ -29,14 +29,14 @@ export async function POST(req: NextRequest) {
   try {
     trace = createGenerationTrace("polarities", getDialecticModel(), req.signal);
     const client = getDialecticOpenAiClient();
-    const input = { userText, contextMessages: body.contextMessages, space, axis };
+    const input = { userText, contextMessages: body.contextMessages, space, axis, meaning: body.meaningVersion === 1 };
     const output = await trace.generate("polarities", { client, input: buildPolarityPrompt(input), maxOutputTokens: 2200 });
-    let result = analyzePolarityOutput(output.text, axis);
+    let result = analyzePolarityOutput(output.text, axis, input.meaning);
     trace.check("polarities", Boolean(result.negative && result.positive));
     if (!result.negative || !result.positive) {
       const repair = await trace.generate("polarities", { client,
         input: buildPolarityPrompt({ ...input, repair: { output: output.text, errors: result.errors } }), maxOutputTokens: 2200 }, true);
-      result = analyzePolarityOutput(repair.text, axis);
+      result = analyzePolarityOutput(repair.text, axis, input.meaning);
       trace.check("polarities", Boolean(result.negative && result.positive), true);
     }
     if (!result.negative || !result.positive) {

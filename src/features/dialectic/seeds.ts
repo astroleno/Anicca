@@ -49,13 +49,14 @@ export function buildSeedContext(graph: Graph, sourceIds: string[]): DialecticCo
     if (retained.size >= 16) break;
     if (seen.has(id)) retained.add(id);
   }
-  return ancestry.filter(({ id }) => retained.has(id)).reverse().map(({ id }) => {
+  return ancestry.filter(({ id }) => retained.has(id)).reverse().flatMap(({ id }) => {
     const node = graph.nodes[id];
     const text = node.text || node.meta?.summary || "";
     const excerpt = text.length <= 1200 ? text : `${text.slice(0, 800)}\n[中段省略]\n${text.slice(-400)}`;
     const lens = seedPerspectiveLabel(node.meta?.perspective);
-    return { role: node.kind === "user" ? "user" as const : "assistant" as const,
-      content: `[${node.branchType || (polarityLabel(node.meta?.polarity) ? "极性视角" : "想法")} · ${seedLabel(graph, id)} · id=${id} · 来源=${node.parents.join(",") || "无"}${lens ? ` · 当时选择的角度=${lens}` : ""}] ${excerpt}` };
+    return [...(node.meta?.connectionInput ? [{ role: "user" as const, content: `[用户为本次联结补充] ${node.meta.connectionInput.slice(0, 2000)}` }] : []),
+      { role: node.kind === "user" ? "user" as const : "assistant" as const,
+      content: `[${node.branchType || (polarityLabel(node.meta?.polarity) ? "极性视角" : "想法")} · ${seedLabel(graph, id)} · id=${id} · 来源=${node.parents.join(",") || "无"}${lens ? ` · 当时选择的角度=${lens}` : ""}] ${excerpt}` }];
   });
 }
 

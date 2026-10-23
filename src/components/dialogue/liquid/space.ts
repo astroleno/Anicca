@@ -91,6 +91,18 @@ export function dragSpatialStagePoint(screen: StagePoint, start: StagePoint, id:
     y: (.5 - world[1] / restoredBaseline * renderHeight / viewport.height) * 100, z: world[2] };
 }
 
+/** Release a meeting across the current view, including exact side/top views. */
+export function separateSpatialSeeds(positions: Record<string, StagePoint>, ids: string[], orbit: SeedOrbit,
+  viewport: { width: number; height: number }, renderHeight: number, sceneScale: number, compact: boolean) {
+  const result = { ...positions };
+  ids.forEach((id, index) => {
+    if (!positions[id]) return;
+    const screen = { x: index ? 72 : 28, y: compact ? (index ? 65 : 38) : 53 };
+    result[id] = dragSpatialStagePoint(screen, positions[id], id, orbit, viewport, renderHeight, 0, sceneScale);
+  });
+  return result;
+}
+
 /** Uniform 3D scale is equivalent to moving the camera back; contact ratios stay invariant. */
 export function fitSpatialSeed(node: DialogueMetaballNode, pivot: readonly [number, number], scale: number): DialogueMetaballNode {
   if (scale === 1) return node;

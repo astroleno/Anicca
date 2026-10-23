@@ -7,11 +7,15 @@ import { conceptInstances, sourceInstances, seedConceptId } from "@/features/dia
 import { defaultThinkingSpace, normalizeSeedPerspective, normalizeThinkingSpace, perspectiveLabel, seedPerspectiveLabel, type ThinkingSpace } from "@/features/perspectives/model";
 import { normalizePolarityOrigin, polarityAxis, polarityLabel } from "@/features/perspectives/polarity";
 import styles from "./DialogueShell.module.css";
+import { deferredSyntheses } from "@/features/dialectic/meaning";
+import { DeferredEncounter, UnderstandingChange } from "./SeedMeaning";
 
-export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = {}, space = defaultThinkingSpace(), combining, busy, onClose, onSplit, onExpandPolarity, onWrite, onCombine, onPick, onCreateInstance, onRemoveInstance, onExpandSources }: {
+export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = {}, space = defaultThinkingSpace(), combining, busy, activeDeferredId, onContinueDeferred, onClose, onSplit, onExpandPolarity, onWrite, onCombine, onPick, onCreateInstance, onRemoveInstance, onExpandSources }: {
   graph: Graph; nodeId: string; combining: boolean; busy: boolean;
   instanceId?: string; instances?: SeedInstances;
   space?: ThinkingSpace;
+  activeDeferredId?: string | null;
+  onContinueDeferred?(id: string): void;
   onClose(): void; onSplit(frame?: ThinkingSpace): void; onWrite(): void; onCombine(): void; onPick(id: string): void;
   onExpandPolarity?(axisId: string, frame: ThinkingSpace): void;
   onCreateInstance?(): void; onRemoveInstance?(): void; onExpandSources?(): void;
@@ -50,6 +54,13 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
   const axes = perspective?.axes.filter(axis => Math.abs(axis.value) > .1) || [];
   const copies = conceptInstances(instances, nodeId);
   const sources = sourceInstances(graph, instances, instanceId);
+  const encounters = deferredSyntheses(graph, nodeId).filter(item => !item.resolvedNodeId).map(item => ({ ...item,
+    sourceInstanceIds: item.sourceNodeIds.map((id, index) => {
+      const saved = item.sourceInstanceIds?.[index];
+      return saved && seedConceptId(graph, instances, saved) === id ? saved : id;
+    }) as [string, string]
+  }));
+  const activeEncounter = encounters.find(item => item.id === activeDeferredId);
   const candidates = Object.values(graph.nodes).filter((candidate) =>
     candidate.id !== nodeId && candidate.text?.trim() &&
     `${candidate.text} ${candidate.meta?.label || ""}`.includes(query.trim())).reverse();
@@ -57,7 +68,7 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
     <section ref={inspectorRef} className={styles.seedInspector} data-testid="dialogue-panel" aria-labelledby="conversation-panel-heading"
       data-mode={polarityOpen ? "polarity" : combining ? "combine" : "read"}>
       <header className={styles.seedInspectorHeader}>
-        <span>{polarityOpen ? `从「${seedLabel(graph, nodeId)}」继续` : combining ? "组合" : origin ? "极性视角" : node.branchType || "想法"}</span>
+        <span>{polarityOpen ? `从「${seedLabel(graph, nodeId)}」继续` : combining ? "组合" : activeEncounter ? "暂不融合" : origin ? "极性视角" : node.branchType || "想法"}</span>
         <button type="button" className={styles.seedReadingBack} aria-label={polarityOpen ? "返回种子阅读" : "返回种子，收起阅读"}
           onClick={polarityOpen ? () => setPolarityOpen(false) : onClose}>{polarityOpen ? "返回阅读" : "返回种子"}</button>
         <h2 id="conversation-panel-heading" tabIndex={-1}>{polarityOpen ? "沿极性展开" : combining ? "让想法相遇" : seedLabel(graph, nodeId)}</h2>
@@ -75,11 +86,20 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
             {!candidates.length ? <p>还没有可组合的种子。可以先写一个想法，或裂变当前种子。</p> : null}
           </div>
         </>
+      ) : activeEncounter ? (
+        <DeferredEncounter encounter={activeEncounter} graph={graph} busy={busy} onPick={onPick} onDismiss={onClose}
+          onContinue={onContinueDeferred ? () => onContinueDeferred(activeEncounter.id) : undefined} />
       ) : (
         <>
           {originAxis ? <p className={styles.seedPolarityOrigin}>沿「{originAxis.label}」· {polarityLabel(origin)}
             {originAxis.evidence === "self-report" ? " · 待确认的假设视角" : ""}</p> : null}
+          <UnderstandingChange node={node} />
           <div className={styles.seedBody}><p>{node.text || "这颗种子还没有正文。"}</p></div>
+          {node.meta?.connectionInput ? <details className={styles.seedPerspective} data-seed-meaning><summary>这次补充的联系</summary><p>{node.meta.connectionInput}</p></details> : null}
+          {encounters.length ? <details className={styles.seedPerspective} data-seed-meaning><summary>暂存的相遇 · {encounters.length}</summary>
+            {encounters.map(encounter => <DeferredEncounter key={encounter.id} encounter={encounter} graph={graph} busy={busy} onPick={onPick}
+              onContinue={onContinueDeferred ? () => onContinueDeferred(encounter.id) : undefined} />)}
+          </details> : null}
           {axes.length ? <details className={styles.seedPerspective}>
             <summary>{lens ? `当时从「${lens}」看` : "这个种子的角度"}</summary>
             <ul>{axes.map(axis => <li key={axis.id}>{axis.label}：{axis.value > 0 ? axis.positive : axis.negative}

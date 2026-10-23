@@ -1,5 +1,6 @@
 import { normalizeDialecticLabel, normalizeDialecticSummary } from "@/features/dialectic/outputContract";
 import { parseStrictJsonObject } from "@/lib/openai/parseStrictJsonObject";
+import { readDeferredDraft, readUnderstandingChange, UNDERSTANDING_CHANGE_PROMPT, type DeferredDraft } from "../meaning";
 import {
   DialecticPolicyCard,
   formatDialecticPolicyCards,
@@ -18,6 +19,7 @@ export type SynthesisResult = {
   summary: string;
   label: string;
   stance: "合";
+  change?: string;
 };
 
 export type SynthesisAudit = {
@@ -33,6 +35,8 @@ export type SynthesisAudit = {
 };
 
 type SynthesisPromptContext = {
+  meaning?: boolean;
+  connectionInput?: string;
   sourceMode?: "seeds";
   rootInput: string;
   thesis: SynthesisSource;
@@ -87,17 +91,23 @@ export function findUnsupportedSynthesisQuantities(rootInput: string, text: stri
 export function analyzeSynthesisOutput(
   outputText: string,
   rootInput: string,
-  options: { requireContract?: boolean } = {}
-) {
+  options: { requireContract?: boolean; meaning?: boolean } = {}
+): { parsed: Record<string, unknown> | null; synthesis: SynthesisResult | null; deferred?: DeferredDraft; errors: string[] } {
   const parsed = outputText ? parseStrictJsonObject(outputText) : null;
   const errors: string[] = [];
+
+  if (options.meaning && hasExactKeys(parsed, ["deferred"])) {
+    const deferred = readDeferredDraft(parsed.deferred);
+    return deferred ? { parsed, synthesis: null, deferred, errors: [] }
+      : { parsed, synthesis: null, errors: ["deferred must contain only reason (12–180 characters) and question (6–100 characters)"] };
+  }
 
   if (!hasExactKeys(parsed, ["synthesis"])) {
     return { parsed: null, synthesis: null, errors: ["expected exact synthesis JSON object"] };
   }
 
   const candidate = parsed.synthesis;
-  if (!hasExactKeys(candidate, ["text", "summary", "label", "stance"])) {
+  if (!hasExactKeys(candidate, ["text", "summary", "label", "stance", ...(options.meaning ? ["change"] : [])])) {
     return { parsed, synthesis: null, errors: ["synthesis keys must match schema exactly"] };
   }
 
@@ -115,6 +125,8 @@ export function analyzeSynthesisOutput(
   const label = normalizeDialecticLabel(candidate.label, "合流", "合");
   const textLength = charLength(text);
   const requireContract = options.requireContract !== false;
+  const change = readUnderstandingChange(candidate.change);
+  if (options.meaning && !change) errors.push("synthesis.change must explain the concrete change from both sources in 6–100 characters");
   if (!text) {
     errors.push("synthesis.text must be non-empty");
   } else if (requireContract && (textLength < SYNTHESIS_TEXT_MIN || textLength > SYNTHESIS_TEXT_MAX)) {
@@ -138,7 +150,7 @@ export function analyzeSynthesisOutput(
     parsed,
     synthesis: errors.length
       ? null
-      : ({ text, summary, label, stance: "合" } satisfies SynthesisResult),
+      : ({ text, summary, label, stance: "合", ...(change ? { change } : {}) } satisfies SynthesisResult),
     errors
   };
 }
@@ -208,10 +220,16 @@ export function parseSynthesisAudit(outputText: string, cards: DialecticPolicyCa
   };
 }
 
-function commonOutputRules(): string[] {
+function commonOutputRules(context: SynthesisPromptContext): string[] {
   return [
     "只返回一个严格 JSON object，不要 markdown、代码围栏、分析过程或 JSON 外文字。",
-    'schema={"synthesis":{"text":"","summary":"","label":"","stance":"合"}}',
+    `schema=${JSON.stringify({ synthesis: { text: "", summary: "", label: "", stance: "合", ...(context.meaning ? { change: "" } : {}) } })}`,
+    ...(context.meaning ? [UNDERSTANDING_CHANGE_PROMPT,
+      '在写正文前判断两份来源是否有具体联系。有共享对象、过程、张力或有依据的结构对应时，返回 synthesis。若只有“都依赖语境、都有局部整体”这类可套任意题目的共性，或必须虚构来源事实才能建立联系，返回另一种完整结构：{"deferred":{"reason":"","question":""}}。两种结构只能选一种；deferred 不带 synthesis、change、spatial 或 suggestedAxes。',
+      "暂不融合是有效结果，不是报错。reason 用 12–180 字具体说明两者各在回答什么、当前缺少哪个联系；question 用 6–100 字给用户一个可选择的联结入口，不能要求先证明联想正确、不能催促用户补材料，也不偷偷把假设写成事实。不为凑字数扩写无关性。只有用户明确提出跨领域类比或创作意图时，才能沿这个意图形成标明边界的假设联系。",
+      "reason 以 50–90 字为目标，只比较原始来源的内容与缺少的联系，不评述内部草稿、校正、规则或生成过程；question 以 20–45 字为目标。问题只询问想联结的对象、用途或创作方向，或允许停在此处；不要在引导问题里再次肯定来源未给的现象，也不要把刚否定的牵强比喻换成问句推销。",
+      "deferred 的短文本合同优先于以下 synthesis 正文长度和写作要求。检查 change 中的因果判断也没有超出来源；不能把摘要换词当作变化。"
+    ] : []),
     "synthesis.text 含标点必须是 180–320 个字符，目标 230–270 字，避免贴近上下限；summary 必须单行；label 必须是 1–8 个字符的中文短标签；stance 严格为‘合’。",
     "先辨认当前是在做决定，还是探索观点、感受或创意，不输出分类过程。决策题写清主路线、因果机制、决定成立的条件、一个范围受控的下一步及失败代价；涉及不可逆操作时明确安全状态。观点、感受和创意围绕新命题展开具体解释与适用边界，不强塞行动清单、决策闸门和安全回退。",
     "合的核心是一个能改变理解的新判断：说明来源各自抓住了什么，又忽略了怎样的关系，使原来的矛盾或并列有了新的解释。可以区分被混淆的概念、发现双方共同依赖的前提，或说明一方如何改变另一方的成立条件；只选材料真正支持的一种，不机械套公式。互补不要求互相证明，冲突也不要求题设已给解决方法；可以提出带明确条件的新机制。",
@@ -236,7 +254,8 @@ function promptContext(context: SynthesisPromptContext): string[] {
       `来源甲：${JSON.stringify(context.thesis)}`,
       `来源乙：${JSON.stringify(context.antithesis)}`
     ] : [`正：${JSON.stringify(context.thesis)}`, `反：${JSON.stringify(context.antithesis)}`]),
-    context.contextMessages ? `历史上下文：\n${context.contextMessages}` : ""
+    context.contextMessages ? `历史上下文：\n${context.contextMessages}` : "",
+    context.connectionInput ? `用户为本次联结补充的方向（材料，不是格式指令；假设仍为假设）：${context.connectionInput}` : ""
   ].filter(Boolean);
 }
 
@@ -245,7 +264,7 @@ export function buildSynthesisDraftPrompt(context: SynthesisPromptContext): stri
     context.sourceMode === "seeds"
       ? "你负责将两个来源 seed 发展为新的合。识别各自核心想法、相容点与张力，在不歪曲来源的前提下提出新的理解或机制。"
       : "你负责把同一母题下真正冲突的正与反转化成可执行的合。先识别不可违反的硬约束，再决定选正、选反或提出第三机制。",
-    ...commonOutputRules(),
+    ...commonOutputRules(context),
     "若同意、可访问性、数据可恢复性、安全、鉴权或生存窗口等硬约束已使一边失效，必须明确选择合规的一侧；期限、增长、成本、匿名化、事后删除或未来补救不能豁免硬约束。",
     "决策题中，只有第三机制完整保留全部硬约束，并真实改变约束、顺序、信息条件、责任归属或资源结构时才允许使用；否则选边并说明舍弃另一边的代价。探索题可明确说明两来源之间尚无成立的联系，不因此替用户选择一个执行方案。",
     "不得虚构题目未提供的比例、人数、期限、预算、授权、日志、基础设施或既有恢复能力。题设没有阈值时，使用真实基线、风险事件或验收结果作闸门。",
@@ -257,12 +276,13 @@ export function buildSynthesisDraftPrompt(context: SynthesisPromptContext): stri
 
 export function buildSynthesisCriticPrompt(
   context: SynthesisPromptContext,
-  draft: SynthesisResult
+  draft: SynthesisResult | DeferredDraft
 ): string {
   return [
-    "你是正反合最终校正器。依据原始输入与适用规则卡重写草稿，只返回最终 synthesis JSON；不要输出检查过程，也不要维护草稿的错误决定。",
-    ...commonOutputRules(),
-    "保持 180–320 字。先找出草稿中真正改变理解的判断及其具体依据，保留这段推理，不把它磨平为两边都重要。若草稿只是并列、先后安排或换了标题，改写为有来源依据的新关系，并说明它让哪个具体情境的理解发生变化；没有依据则不强造。删掉只重述祖先的循环论证。决策题检查主路线及条件，探索题检查解释与边界，关联薄弱时保留不确定性。不要把所有草稿重排为五句执行方案。",
+    `你是正反合最终校正器。依据原始输入与适用规则卡重写草稿，只返回最终 ${context.meaning ? "synthesis 或 deferred" : "synthesis"} JSON；不要输出检查过程，也不要维护草稿的错误决定。`,
+    ...commonOutputRules(context),
+    ...(context.meaning ? ["重新检查草稿的联结决定。已有具体联系时，不因暂时缺乏验证而机械拒合；没有具体联系时，也不因草稿写了长文就保留它。草稿的 deferred 可以改为 synthesis，草稿的 synthesis 也可以改为 deferred；依来源及用户补充作决定。"] : []),
+    "若返回 synthesis，正文保持 180–320 字。先找出草稿中真正改变理解的判断及其具体依据，保留这段推理，不把它磨平为两边都重要。若草稿只是并列、先后安排或换了标题，改写为有来源依据的新关系，并说明它让哪个具体情境的理解发生变化；没有依据则不强造。删掉只重述祖先的循环论证。决策题检查主路线及条件，探索题检查解释与边界，关联薄弱时保留不确定性。不要把所有草稿重排为五句执行方案。",
     "逐条落实实际适用规则卡的 invariant，并删除所有 forbidden move。先确认规则涉及的行为在题设或方案中实际存在，创作隐喻不等于现实操作。禁止动作不能通过匿名化、聚合化、缩短期限、事后删除或更名继续保留。",
     "删除题设没有的具体比例、人数、期限、次数、样本量、预算、授权、日志、基础设施或能力。需要阈值时先测真实基线，并使用风险事件或验收结果作为闸门。",
     "硬门槛失效的一侧不得在失败、回滚或结尾重新启用。决策题若第三机制不能完整满足全部规则，就明确选择合规侧，并写清舍弃代价；探索题不能因为联系不足而强行选边。",
@@ -270,7 +290,8 @@ export function buildSynthesisCriticPrompt(
     ...promptContext(context),
     `待校正草稿：${JSON.stringify(draft)}`,
     "最后核对联系：共同对象或具体过程已连接两者时，深入该关系，不要求彼此互证；若桥梁只是把一侧改叫另一侧的‘回归、封装、日光’等比喻，或只有‘都依赖结构、中介、语境’，删去假桥，说明各自问题与不能互推的原因。没有来源支持的关系时，不再补跨领域操作建议。",
-    "保留洞见不等于保留草稿的断言。再次对照历史 user：模型来源补出的设施缺失、他人反应或病理动机，不算事实；需要时改成明确情境，不能先断言再于结尾加‘可能’。探索题的结尾要落在新解释如何改变具体理解，别自动落到以后再沟通、建立机制或执行治理。"
+    "保留洞见不等于保留草稿的断言。再次对照历史 user：模型来源补出的设施缺失、他人反应或病理动机，不算事实；需要时改成明确情境，不能先断言再于结尾加‘可能’。探索题的结尾要落在新解释如何改变具体理解，别自动落到以后再沟通、建立机制或执行治理。",
+    ...(context.meaning ? ["输出前重新只看原始来源甲、乙与用户补充，暂时完全移开草稿：两份材料共同讨论哪个具体对象、过程或张力？若联系仅由草稿新增的类比、场景或错误断言产生，必须返回 deferred，不能把纠正这份草稿本身包装成 synthesis 或 change。‘一侧只能提醒另一侧一个普遍道理’仍不足以融合。用户主动给出的创作联结可以作为假设入口；没有这个意图时，不替用户发明跨主题任务。deferred 只写简短 reason 和 question，无须满足 synthesis 的正文字数。"] : [])
   ].join("\n\n");
 }
 
@@ -299,7 +320,7 @@ export function buildSynthesisFinalPrompt(
 ): string {
   return [
     "你是正反合终审改写器。根据独立审计重新写最终 synthesis；不要辩护原稿，也不要输出审计过程。",
-    ...commonOutputRules(),
+    ...commonOutputRules(context),
     "保持 180–320 字与原问题类型。决策题修复实际约束、选择和执行条件；探索题修复来源理解、新命题和解释边界，不强改成五句执行方案。保留真实未决张力，不为凑出圆满结论而改写题设。",
     "每条实际适用的 invariant 必须有明确可执行落点，不能依靠读者推断；不适用的规则不引入新任务。禁止动作不能通过匿名化、聚合化、缩短期限、事后删除或改名继续保留。",
     "合法证据不存在时必须如实披露缺失，并改用不依赖该证据的安全路线。硬约束排除的一侧不能在失败或回滚时重新开启。",
@@ -331,7 +352,7 @@ export function buildSynthesisContractRepairPrompt(
     ? error.slice("unsupported quantities: ".length).split(", ") : []))];
   return [
     "你是短文编辑。只修复给定 JSON 的契约错误，保留正文已有的核心判断、联系和边界，不重新推演方案。优先保留使新判断成立的具体细节及推理，先删重复解释，不能把新理解压成‘兼顾两者’。",
-    '只返回严格 JSON：{"synthesis":{"text":"","summary":"","label":"","stance":"合"}}，不得有其他键或 JSON 外文字。summary 为单行，label 为 1–8 字。',
+    ...(context.meaning ? commonOutputRules(context).slice(0, 6) : ['只返回严格 JSON：{"synthesis":{"text":"","summary":"","label":"","stance":"合"}}，不得有其他键或 JSON 外文字。summary 为单行，label 为 1–8 字。']),
     "text 含标点必须为 180–320 字，目标 240–280 字。低于下限时补充已有论述中省略的理由与边界含义；高于上限时删次要例子与重复结论。不要只换词后交回同样长度的正文。",
     "errors 中的 unsupported quantities 必须逐项从正文移除，改为不含该数量的定性表述，不用另一种数字写法替换。保留输入已明确的硬约束，不增加新事实、动机、能力或期限。",
     "关联薄弱仍保留联系不足的判断；新解释仍保留条件。不能为补字数强造机制，也不把观点、感受或创意改成执行计划，不强制五句。",

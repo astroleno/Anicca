@@ -1869,6 +1869,52 @@ describe("DialogueShell", () => {
     });
   });
 
+  it("preserves a deferred meeting, accepts a user bridge, and saves the resulting change", async () => {
+    const user = userEvent.setup();
+    const { rootUserId, thesisId, antithesisId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId }); seedActiveWorkspaceFromCurrentGraph();
+    const reply = createDeferred<Response>();
+    const fetchMock = vi.fn(() => reply.promise); vi.stubGlobal("fetch", fetchMock);
+    render(<DialogueShell />);
+    await synthesizePair(user);
+    const requestId = useDialogueUiStore.getState().pending.synthesis!.requestId;
+    reply.resolve(new Response(JSON.stringify({ requestId, outcome: "deferred", deferred: {
+      reason: "两个方向目前各有理由，但还没有说明它们可以共享的具体关系。", question: "你希望它们围绕哪一个具体问题相遇？"
+    } })));
+    await screen.findByTestId("deferred-encounter");
+    expect(Object.keys(branchGraphStore.getGraph().nodes)).toHaveLength(3);
+    expect(branchGraphStore.getGraph().deferredSyntheses?.[requestId].sourceNodeIds).toEqual([thesisId, antithesisId]);
+    await user.click(screen.getByRole("button", { name: "补充联系" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "输入" }), { target: { value: "在同一作品里保留探索与收束的不同阶段。" } });
+    const second = createDeferred<Response>(); fetchMock.mockImplementation(() => second.promise);
+    await user.click(screen.getByRole("button", { name: "再试一次" }));
+    expect(readFetchBody(fetchMock, 1).connectionInput).toBe("在同一作品里保留探索与收束的不同阶段。");
+    expect(readFetchBody(fetchMock, 1).sources.map((item: { id: string }) => item.id)).toEqual([thesisId, antithesisId]);
+    second.resolve(new Response(JSON.stringify({ requestId: useDialogueUiStore.getState().pending.synthesis!.requestId,
+      synthesis: { text: "在同一作品里安排不同的探索阶段。", summary: "不同阶段共享作品", label: "阶段共存", stance: "合", change: "把相斥的路线改成同一作品内的不同阶段。" } })));
+    await waitFor(() => expect(Object.keys(branchGraphStore.getGraph().nodes)).toHaveLength(4));
+    const result = Object.values(branchGraphStore.getGraph().nodes).find(node => node.branchType === "合")!;
+    expect(result.meta?.connectionInput).toBe("在同一作品里保留探索与收束的不同阶段。");
+    expect(branchGraphStore.getGraph().deferredSyntheses?.[requestId].resolvedNodeId).toBe(result.id);
+    await user.click(await screen.findByRole("button", { name: "阅读推演" }));
+    expect(await screen.findByLabelText("这一步的理解变化")).toHaveTextContent("把相斥的路线");
+  });
+
+  it("does not save a deferred result arriving after cancellation", async () => {
+    const user = userEvent.setup(); const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId }); seedActiveWorkspaceFromCurrentGraph();
+    const reply = createDeferred<Response>(); vi.stubGlobal("fetch", vi.fn(() => reply.promise));
+    render(<DialogueShell />); await synthesizePair(user);
+    const requestId = useDialogueUiStore.getState().pending.synthesis!.requestId;
+    await user.click(screen.getByRole("button", { name: "取消" }));
+    reply.resolve(new Response(JSON.stringify({ requestId, outcome: "deferred", deferred: {
+      reason: "两个方向目前各有理由，但还没有说明它们可以共享的具体关系。", question: "你希望它们怎样相遇？"
+    } })));
+    await waitFor(() => expect(useDialogueUiStore.getState().pendingAction).toBeNull());
+    expect(branchGraphStore.getGraph().deferredSyntheses).toBeUndefined();
+    expect(screen.queryByTestId("deferred-encounter")).not.toBeInTheDocument();
+  });
+
   it("emits synthesis_created only after synthesis succeeds and lands", async () => {
     const user = userEvent.setup();
     const events: DialogueTelemetryEvent[] = [];

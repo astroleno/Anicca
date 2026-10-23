@@ -7,6 +7,7 @@ import { annotatePerspective } from "@/features/perspectives/model";
 import { semanticSeedColor, seedColorPolarity } from "./liquid/color";
 import styles from "./EvolutionOverview.module.css";
 import { layoutEvolutionLabels, type EvolutionLabelBox } from "./evolutionLabels";
+import { UnderstandingChange } from "./SeedMeaning";
 
 type Props = { graph: Graph; initialNodeId: string | null; theme: "light" | "dark"; onEnter(id: string): void; onDismiss(): void };
 type Camera = { x: number; y: number; scale: number };
@@ -384,6 +385,7 @@ export function EvolutionOverview({ graph, initialNodeId, theme, onEnter, onDism
         {active ? <article className={styles.reading}>
           <p className={styles.phase} role="status">{active.cyclic ? "来源待梳理" : `第 ${active.generation} 代`} · {active.phase}</p>
           <h3>{active.label}</h3>
+          <UnderstandingChange node={graph.nodes[active.id]} />
           {active.lens ? <p className={styles.lens}>当时的视角 · {active.lens}</p> : null}
           <p className={styles.summary}>{active.summary}</p>
           {active.parents.length ? <div className={styles.sources}><span>{active.kind === "synthesis" ? "共同来源" : "从这里生长"}</span>{active.parents.map(id => <button key={id} type="button" onClick={() => choose(id)}>{model.byId.get(id)?.label}</button>)}</div> : null}

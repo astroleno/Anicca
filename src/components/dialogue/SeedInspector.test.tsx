@@ -4,6 +4,33 @@ import { BranchGraphStore } from "@/store/branchGraph";
 import { defaultThinkingSpace } from "@/features/perspectives/model";
 import { polarityPerspective } from "@/features/perspectives/polarity";
 
+it("reveals a stored change and lets a deferred meeting continue without manufacturing a seed", () => {
+  const store = new BranchGraphStore(), a = store.createUserNode("邮编"), b = store.createUserNode("薄荷");
+  const change = "把区域分类与个别叶片的光感分别理解。";
+  store.patchNodeMeta(a, { change });
+  store.deferSynthesis({ id: "meeting", sourceNodeIds: [a, b], createdAt: new Date().toISOString(),
+    reason: "一个描述投递区域，一个探索画面的光感，当前尚无具体联系。", question: "你想把区域结构带入画面吗？" });
+  const onContinue = vi.fn();
+  render(<SeedInspector graph={store.getGraph()} nodeId={a} combining={false} busy={false}
+    onClose={vi.fn()} onWrite={vi.fn()} onCombine={vi.fn()} onPick={vi.fn()} onSplit={vi.fn()} onContinueDeferred={onContinue} />);
+  expect(screen.getByLabelText("这一步的理解变化")).toHaveTextContent(change);
+  fireEvent.click(screen.getByText("暂存的相遇 · 1"));
+  fireEvent.click(screen.getByRole("button", { name: "补充联系" }));
+  expect(onContinue).toHaveBeenCalledExactlyOnceWith("meeting");
+  expect(Object.keys(store.getGraph().nodes)).toHaveLength(2);
+});
+
+it("opens the original source when an encounter's copy has since been removed", () => {
+  const store = new BranchGraphStore(), a = store.createUserNode("邮编"), b = store.createUserNode("薄荷");
+  store.deferSynthesis({ id: "meeting", sourceNodeIds: [a, b], sourceInstanceIds: ["removed-copy", b], createdAt: new Date().toISOString(),
+    reason: "一个描述投递区域，一个探索画面的光感，当前尚无具体联系。", question: "你想把区域结构带入画面吗？" });
+  const onPick = vi.fn();
+  render(<SeedInspector graph={store.getGraph()} nodeId={a} activeDeferredId="meeting" combining={false} busy={false}
+    onClose={vi.fn()} onWrite={vi.fn()} onCombine={vi.fn()} onPick={onPick} onSplit={vi.fn()} />);
+  fireEvent.click(screen.getByRole("button", { name: "邮编" }));
+  expect(onPick).toHaveBeenCalledExactlyOnceWith(a);
+});
+
 it("distinguishes ordinary fission from axis expansion and leaves the global lens untouched", () => {
   const store = new BranchGraphStore(), id = store.createUserNode("让探索持续下去");
   const space = defaultThinkingSpace(); space.focus.horizon = 1;

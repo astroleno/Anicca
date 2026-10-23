@@ -109,3 +109,16 @@ export function unfoldedSourcePositions(nodes: DialogueStageNode[], saved: Recor
   });
   return placeSeeds([...nodes.filter(node => !group.includes(node.id)), ...spread], retained, compact);
 }
+
+/** Release only the two participants; the motion renderer eases them out of contact. */
+export function separatedEncounterPositions(nodes: DialogueStageNode[], saved: Record<string, StagePoint>, sources: string[], compact: boolean) {
+  const retained = { ...saved };
+  sources.forEach(id => delete retained[id]);
+  const spread = sources.flatMap((id, index) => {
+    const node = nodes.find(item => item.id === id);
+    const x = index ? 72 : 28, y = compact ? (index ? 65 : 38) : 53;
+    return node ? [{ ...node, originNodeIds: [], spatialCoordinates: undefined,
+      seedZ: saved[id]?.z ?? node.seedZ, seedX: x, seedY: y, compactSeedX: x, compactSeedY: y }] : [];
+  });
+  return placeSeeds([...nodes.filter(node => !sources.includes(node.id)), ...spread], retained, compact);
+}

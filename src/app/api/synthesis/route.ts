@@ -4,6 +4,7 @@ import { perspectiveEnvelope, responsePerspective } from "@/features/perspective
 import { getDialecticModel, getDialecticOpenAiClient } from "@/lib/openai/client";
 import { createGenerationTrace, type GenerationTrace } from "@/features/dialectic/server/generationTrace";
 import { describeProviderFailure } from "@/lib/openai/providerErrors";
+import type { DeferredDraft } from "@/features/dialectic/meaning";
 import {
   analyzeSynthesisOutput,
   buildSynthesisAuditPrompt,
@@ -105,13 +106,14 @@ async function generateSynthesisStage(
   prompt: string,
   context: SynthesisStageContext,
   requireContract = true
-): Promise<{ synthesis: SynthesisResult | null; errors: string[]; outputText: string }> {
-  const lensPrompt = thinkingSpacePrompt(context.perspective, "synthesis");
+): Promise<{ synthesis: SynthesisResult | null; deferred?: DeferredDraft; errors: string[]; outputText: string }> {
+  const lensPrompt = thinkingSpacePrompt(context.perspective, "synthesis", context.meaning);
+  const suppliedInput = [context.rootInput, context.connectionInput].filter(Boolean).join("\n");
   const first = await trace.generate(stage, { client, input: [prompt, lensPrompt].filter(Boolean).join("\n\n"), maxOutputTokens: context.perspective ? 1800 : 1400 });
-  let analysis = analyzeSynthesisOutput(perspectiveEnvelope(first.text, context.perspective).content, context.rootInput, { requireContract });
-  trace.check(stage, Boolean(analysis.synthesis));
-  if (analysis.synthesis) {
-    return { synthesis: analysis.synthesis, errors: [], outputText: first.text };
+  let analysis = analyzeSynthesisOutput(perspectiveEnvelope(first.text, context.perspective).content, suppliedInput, { requireContract, meaning: context.meaning });
+  trace.check(stage, Boolean(analysis.synthesis || analysis.deferred));
+  if (analysis.synthesis || analysis.deferred) {
+    return { ...analysis, outputText: first.text };
   }
 
   const repair = await trace.generate(stage, {
@@ -119,10 +121,11 @@ async function generateSynthesisStage(
     input: [buildSynthesisContractRepairPrompt(context, first.text, analysis.errors), lensPrompt].filter(Boolean).join("\n\n"),
     maxOutputTokens: context.perspective ? 1800 : 1400
   }, true);
-  analysis = analyzeSynthesisOutput(perspectiveEnvelope(repair.text, context.perspective).content, context.rootInput, { requireContract });
-  trace.check(stage, Boolean(analysis.synthesis), true);
+  analysis = analyzeSynthesisOutput(perspectiveEnvelope(repair.text, context.perspective).content, suppliedInput, { requireContract, meaning: context.meaning });
+  trace.check(stage, Boolean(analysis.synthesis || analysis.deferred), true);
   return {
     synthesis: analysis.synthesis,
+    deferred: analysis.deferred,
     errors: analysis.errors,
     outputText: repair.text
   };
@@ -149,6 +152,10 @@ export async function POST(req: NextRequest) {
     const antithesis = body.antithesis;
     const seedMode = "sources" in body;
     const sources = seedMode ? readSeedSources(body.sources) : null;
+    const connectionInput = typeof body.connectionInput === "string" ? body.connectionInput.trim() : "";
+    if (body.connectionInput !== undefined && (typeof body.connectionInput !== "string" || Array.from(connectionInput).length > 2000)) {
+      return NextResponse.json({ requestId, error: "invalid_connection_input" }, { status: 400 });
+    }
 
     if (!requestId) {
       return NextResponse.json({ error: "requestId required" }, { status: 400 });
@@ -167,9 +174,11 @@ export async function POST(req: NextRequest) {
     const client = getDialecticOpenAiClient();
     const perspective = readThinkingSpaceRequest(body.perspective);
 
-    const cards = retrieveDialecticPolicyCards(seedMode && sources
-      ? `${rootInput}\n${sources.map((source) => source.text).join("\n")}` : rootInput);
+    const cards = retrieveDialecticPolicyCards([rootInput, connectionInput,
+      ...(seedMode && sources ? sources.map(source => source.text) : [])].filter(Boolean).join("\n"));
     const context: SynthesisStageContext = {
+      meaning: body.meaningVersion === 1,
+      connectionInput,
       sourceMode: seedMode ? "seeds" : undefined,
       perspective,
       rootInput,
@@ -187,7 +196,7 @@ export async function POST(req: NextRequest) {
       context,
       false
     );
-    if (!draft.synthesis) {
+    if (!draft.synthesis && !draft.deferred) {
       trace.finish("invalid_output");
       return invalidModelOutput(requestId, "synthesis draft failed contract after one repair");
     }
@@ -196,9 +205,14 @@ export async function POST(req: NextRequest) {
       trace,
       "critic",
       client,
-      buildSynthesisCriticPrompt(context, draft.synthesis),
+      buildSynthesisCriticPrompt(context, (draft.synthesis || draft.deferred)!),
       context
     );
+    if (critic.deferred) {
+      req.signal.throwIfAborted();
+      trace.finish("success");
+      return NextResponse.json({ requestId, outcome: "deferred", deferred: critic.deferred });
+    }
     if (!critic.synthesis) {
       trace.finish("invalid_output");
       return invalidModelOutput(requestId, "synthesis critic failed contract after one repair");
@@ -226,6 +240,11 @@ export async function POST(req: NextRequest) {
         buildSynthesisFinalPrompt(context, critic.synthesis, audit),
         context
       );
+      if (final.deferred) {
+        req.signal.throwIfAborted();
+        trace.finish("success");
+        return NextResponse.json({ requestId, outcome: "deferred", deferred: final.deferred });
+      }
       if (!final.synthesis) {
         trace.finish("invalid_output");
         return invalidModelOutput(requestId, "synthesis final rewrite failed contract after one repair");

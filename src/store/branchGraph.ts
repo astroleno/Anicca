@@ -2,6 +2,7 @@ import { AniccaNode, AniccaNodeMeta, BranchType, Edge, Graph, createEmptyGraph }
 import { normalizeSeedPerspective, normalizeThinkingSpace } from "@/features/perspectives/model";
 import { normalizePolarityOrigin, polarityFrame, type PolarityOrigin } from "@/features/perspectives/polarity";
 import type { ThinkingSpace } from "@/features/perspectives/model";
+import { readUnderstandingChange, readDeferredDraft, deferredSyntheses, type DeferredSynthesis } from "@/features/dialectic/meaning";
 
 type AssistantDraft = {
   text?: string;
@@ -14,6 +15,8 @@ type AssistantDraft = {
   sourceInstanceIds?: string[];
   polarity?: PolarityOrigin;
   fissionFrame?: ThinkingSpace;
+  change?: string;
+  connectionInput?: string;
 };
 
 type GrowthAssistantDraft = AssistantDraft & {
@@ -253,6 +256,26 @@ export class BranchGraphStore {
     return id;
   }
 
+  deferSynthesis(input: DeferredSynthesis): string {
+    const draft = readDeferredDraft({ reason: input.reason, question: input.question });
+    if (!draft || input.sourceNodeIds.length !== 2 || new Set(input.sourceNodeIds).size !== 2 ||
+      input.sourceNodeIds.some(id => !this.graph.nodes[id]) || !input.id) throw new Error("invalid deferred synthesis");
+    this.graph.deferredSyntheses = { ...this.graph.deferredSyntheses, [input.id]: {
+      ...input, ...draft, sourceNodeIds: [...input.sourceNodeIds],
+      ...(input.sourceInstanceIds ? { sourceInstanceIds: [...input.sourceInstanceIds] } : {})
+    } };
+    this.emit();
+    return input.id;
+  }
+
+  resolveDeferredSynthesis(id: string, resultId: string) {
+    const encounter = deferredSyntheses(this.graph).find(item => item.id === id);
+    const result = this.graph.nodes[resultId];
+    if (!encounter || result?.branchType !== "合" || !encounter.sourceNodeIds.every(source => result.parents.includes(source))) return;
+    this.graph.deferredSyntheses![id] = { ...encounter, resolvedNodeId: resultId };
+    this.emit();
+  }
+
   setNodeText(nodeId: string, text: string) {
     const n = this.graph.nodes[nodeId];
     if (!n) throw new Error(`node not found: ${nodeId}`);
@@ -328,6 +351,9 @@ export class BranchGraphStore {
     const meta: AniccaNodeMeta = {};
     if (typeof input.label === "string") meta.label = input.label;
     if (typeof input.summary === "string") meta.summary = input.summary;
+    const change = readUnderstandingChange(input.change);
+    if (change) meta.change = change;
+    if (typeof input.connectionInput === "string" && input.connectionInput.trim()) meta.connectionInput = input.connectionInput.trim().slice(0, 2000);
     if (typeof input.model === "string") meta.model = input.model;
     if (typeof input.seedId === "number") meta.seedId = input.seedId;
     if (typeof input.temperature === "number") meta.temperature = input.temperature;
