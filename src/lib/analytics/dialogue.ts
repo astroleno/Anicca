@@ -7,7 +7,7 @@ export type DialogueTelemetryEvent =
   | {
       name: "generation_finished";
       payload: {
-        endpoint: "branches" | "synthesis" | "polarities";
+        endpoint: "branches" | "synthesis" | "polarities" | "inquiry";
         elapsedMs: number;
         outcome: "success" | "failed" | "cancelled";
         status: number | null;

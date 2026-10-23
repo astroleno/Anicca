@@ -223,7 +223,7 @@ export function EvolutionOverview({ graph, initialNodeId, theme, onEnter, onDism
         const node = group.nodes.find(item => item.id === selected) || group.nodes[0];
         const label = group.ids.length > 1 ? `${group.ids.length} 个想法` : node.label.length > 11 ? `${node.label.slice(0, 11)}…` : node.label;
         const caption = group.ids.length === 1 && c.scale >= .78 ? node.kind === "polarity" ? polarityCaption(node)
-          : node.kind === "fission" ? `${node.source.branchType} · 裂变` : node.kind === "synthesis" ? "合流" : node.parents.length ? "延续" : "起点" : "";
+          : node.kind === "fission" ? `${node.source.branchType} · 裂变` : node.kind === "inquiry" ? "一句话追问" : node.kind === "synthesis" ? "合流" : node.parents.length ? "延续" : "起点" : "";
         const measure = (text: string) => {
           if (!textWidths.has(text)) { if (textWidths.size > 512) textWidths.clear(); textWidths.set(text, context.measureText(text).width); }
           return textWidths.get(text)!;
@@ -339,7 +339,7 @@ export function EvolutionOverview({ graph, initialNodeId, theme, onEnter, onDism
         onChange={event => { setQuery(event.target.value); setMembers(null); setPage(0); setPlaying(false); setSelectedId(activeId); setReplay([]); setSearchOpen(true); }}
         onKeyDown={event => { if (event.key === "Enter" && results[0]) choose(results[0].id); }} /></label>
       <select aria-label="筛选演化关系" value={kind} onChange={event => { setKind(event.target.value); setMembers(null); setPage(0); setPlaying(false); setSelectedId(activeId); setReplay([]); setSearchOpen(true); }}>
-        <option value="all">全部关系</option><option value="polarity">极性展开</option><option value="fission">正反裂变</option><option value="synthesis">合流</option>
+        <option value="all">全部关系</option><option value="polarity">极性展开</option><option value="fission">正反裂变</option><option value="synthesis">合流</option><option value="inquiry">一句话追问</option>
       </select>
       <span className={styles.count}>{model.nodes.length} 个想法 · {model.nodes.length ? model.maxGeneration + 1 : 0} 代</span>
     </div>
@@ -385,7 +385,8 @@ export function EvolutionOverview({ graph, initialNodeId, theme, onEnter, onDism
         {active ? <article className={styles.reading}>
           <p className={styles.phase} role="status">{active.cyclic ? "来源待梳理" : `第 ${active.generation} 代`} · {active.phase}</p>
           <h3>{active.label}</h3>
-          <UnderstandingChange node={graph.nodes[active.id]} />
+          <UnderstandingChange node={graph.nodes[active.id]} graph={graph} onPick={choose} />
+          {active.source.inquiry ? <p className={styles.lens}>围绕原句 · {active.source.inquiry.quote}</p> : null}
           {active.lens ? <p className={styles.lens}>当时的视角 · {active.lens}</p> : null}
           <p className={styles.summary}>{active.summary}</p>
           {active.parents.length ? <div className={styles.sources}><span>{active.kind === "synthesis" ? "共同来源" : "从这里生长"}</span>{active.parents.map(id => <button key={id} type="button" onClick={() => choose(id)}>{model.byId.get(id)?.label}</button>)}</div> : null}

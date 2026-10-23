@@ -2,6 +2,9 @@ import {
   generateBranches,
   generatePolarity,
   generateSynthesis,
+  generateInquiry,
+  type GenerateInquiryInput,
+  type InquiryResponse,
   type BranchesResponse,
   type GenerateBranchesInput,
   type GeneratePolarityInput,
@@ -141,6 +144,12 @@ export class DialogueController {
     } finally {
       this.release("branches", controller);
     }
+  }
+
+  async generateInquiry(input: GenerateInquiryInput, options: ControllerRequestOptions = {}): Promise<InquiryResponse> {
+    const controller = this.replace("branches");
+    try { return await generateInquiry(input, { signal: controller.signal, fetchImpl: options.fetchImpl }); }
+    finally { this.release("branches", controller); }
   }
 
   cancel(slot: PendingSlot): void {

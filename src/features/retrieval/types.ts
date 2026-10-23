@@ -1,12 +1,14 @@
 import { BranchType, NodeKind } from "@/types/anicca";
 import type { SeedPerspective, ThinkingSpace } from "@/features/perspectives/model";
 import type { PolarityOrigin } from "@/features/perspectives/polarity";
+import type { InquiryOrigin } from "@/features/dialectic/inquiry";
 
 export type RetrievalRelation =
   | "lineage"
   | "thesis"
   | "antithesis"
   | "polarity"
+  | "inquiry"
   | "synthesis"
   | "continuation"
   | "source"
@@ -30,6 +32,7 @@ export type RetrievalNode = {
   polarity?: PolarityOrigin;
   perspective?: SeedPerspective;
   fissionFrame?: ThinkingSpace;
+  inquiry?: InquiryOrigin;
   growth?: {
     operator?: string;
     artworkId?: string;

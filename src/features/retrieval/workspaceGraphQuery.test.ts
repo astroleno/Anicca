@@ -90,7 +90,7 @@ describe("workspace graph retrieval", () => {
         maxEdges: 40,
         seedLimit: 3,
         maxQueryChars: 500,
-        relations: ["thesis", "antithesis", "polarity", "synthesis", "continuation"],
+        relations: ["thesis", "antithesis", "polarity", "synthesis", "continuation", "inquiry"],
         direction: "both"
       }
     });

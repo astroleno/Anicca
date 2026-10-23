@@ -4,6 +4,20 @@ import { BranchGraphStore } from "@/store/branchGraph";
 import { defaultThinkingSpace } from "@/features/perspectives/model";
 import { polarityPerspective } from "@/features/perspectives/polarity";
 
+it("shows grounded recurrence and offers its source instead of claiming another discovery", () => {
+  const store = new BranchGraphStore(), root = store.createUserNode("只认领真正有张力的伏线。");
+  const { thesisId } = store.createAssistantPair(root, { thesis: { text: "只把有张力的线索升格为债。", change: "新增了有张力的区分。",
+    novelty: { status: "revisit", sourceId: root, reason: "两处都主张有选择地认领伏线。", sourceEvidence: "只认领真正有张力的伏线", resultEvidence: "只把有张力的线索升格为债" } } });
+  const pick = vi.fn();
+  render(<SeedInspector graph={store.getGraph()} nodeId={thesisId} combining={false} busy={false}
+    onClose={vi.fn()} onWrite={vi.fn()} onCombine={vi.fn()} onPick={pick} onSplit={vi.fn()} onExpandPolarity={vi.fn()} />);
+  expect(screen.getByLabelText("与此前想法的联系")).toHaveTextContent("与此前相近");
+  expect(screen.queryByText("新增了有张力的区分。")).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: /回看/ })); expect(pick).toHaveBeenCalledWith(root);
+  fireEvent.click(screen.getByRole("button", { name: "换个角度展开" }));
+  expect(screen.getByRole("group", { name: "沿哪条维度展开" })).toBeInTheDocument();
+});
+
 it("reveals a stored change and lets a deferred meeting continue without manufacturing a seed", () => {
   const store = new BranchGraphStore(), a = store.createUserNode("邮编"), b = store.createUserNode("薄荷");
   const change = "把区域分类与个别叶片的光感分别理解。";

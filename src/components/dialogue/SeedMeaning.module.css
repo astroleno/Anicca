@@ -13,3 +13,7 @@
 .encounter button:disabled { opacity: .45; cursor: default; }
 .encounter :is(button, summary):focus-visible { outline: 2px solid var(--focus-ring, #766286); outline-offset: 4px; border-radius: 4px; }
 .encounter details { margin-block: 12px; }
+.change details { margin-top: 10px; color: var(--muted, #746c7c); font: 12px/1.8 var(--anicca-font-interface); }
+.change blockquote { margin: 12px 0; padding-left: 12px; border-left: 1px solid color-mix(in srgb, currentColor 20%, transparent); }
+.change button { border: 0; background: transparent; padding: 6px 0; min-height: 44px; text-align: left; color: var(--text, #494151); font: 13px/1.7 var(--anicca-font-interface); cursor: pointer; }
+.change :is(button, summary):focus-visible { outline: 2px solid var(--focus-ring, #766286); outline-offset: 3px; border-radius: 4px; }

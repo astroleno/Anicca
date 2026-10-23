@@ -3719,7 +3719,6 @@
   }
 
   .shell[data-keyboard-open="true"] .hero,
-  .shell[data-keyboard-open="true"] .workspaceBar,
   .shell[data-keyboard-open="true"] .stageControls {
     opacity: 0.18;
     pointer-events: none;
@@ -3732,6 +3731,14 @@
     transform-origin: center bottom;
   }
 }
+
+.seedInquiryOrigin { margin-bottom: 20px; color: var(--muted, #746c7c); font: 13px/1.85 var(--anicca-font-interface); overflow-wrap: anywhere; }
+.seedInquiryOrigin button { color: inherit; background: transparent; border: 0; padding: 4px 0; min-height: 44px; font: inherit; text-align: left; cursor: pointer; }
+.seedInquiryOrigin blockquote { margin: 8px 0; padding-left: 12px; border-left: 1px solid color-mix(in srgb, currentColor 20%, transparent); }
+.seedInquiryOrigin p { margin: 8px 0; }
+.composerQuote { grid-column: 1 / -1; margin: 0 10px 4px; padding-left: 10px; border-left: 1px solid color-mix(in srgb, var(--muted) 22%, transparent); color: var(--muted); font: 12px/1.8 var(--anicca-font-literary); overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.draftSaveError { grid-column: 1 / -1; margin: 4px 10px; font: 12px/1.7 var(--anicca-font-interface); color: var(--text); }
+.seedInquiryOrigin button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
 
 @media (max-width: 520px) {
   .hero {
@@ -3958,6 +3965,8 @@
   backdrop-filter: blur(20px); box-shadow: 0 8px 32px rgba(120,110,160,.1);
 }
 .composerField { grid-area: field; min-width: 0; }
+.composer[data-inquiry="true"] { grid-template-areas: "quote quote" "field actions" "error error"; border-radius: 26px; }
+.composerQuote { grid-area: quote; margin: 7px 12px 2px; }
 .composerLabel { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .composer textarea, .composer textarea:focus { height: 44px; min-height: 44px; max-height: 110px; padding: 10px 14px; border: 0; background: transparent; box-shadow: none; font-size: 16px; line-height: 24px; }
 .composer textarea:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }

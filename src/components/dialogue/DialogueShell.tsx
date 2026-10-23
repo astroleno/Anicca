@@ -33,6 +33,9 @@ import { WorkspaceBar } from "@/components/dialogue/WorkspaceBar";
 import { createDialogueDemoWorkspace } from "@/features/dialectic/demoWorkspace";
 import { isAbortError } from "@/features/dialectic/api";
 import { deferredSyntheses } from "@/features/dialectic/meaning";
+import { buildComparisonSeeds } from "@/features/dialectic/novelty";
+import { inquiryQuestion, readInquiryTarget, type InquiryTarget, type InquiryOrigin } from "@/features/dialectic/inquiry";
+import { loadComposerDraft, saveComposerDraft, type ComposerDraft } from "@/lib/persist/composerDraft";
 import {
   commitBranchesResult,
   commitPolarityResult,
@@ -497,7 +500,27 @@ export function DialogueShell() {
     branchGraphStore.getSnapshot.bind(branchGraphStore),
     branchGraphStore.getSnapshot.bind(branchGraphStore)
   );
-  const [draft, setDraft] = useState("");
+  const [draft, setDraftState] = useState("");
+  const draftSnapshotRef = useRef<ComposerDraft>({ text: "", targetId: null });
+  const draftWorkspaceRef = useRef<string | null>(null);
+  const unsavedDraftsRef = useRef(new Map<string, ComposerDraft>());
+  const draftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [draftOwner, setDraftOwner] = useState<string | null>(null);
+  const [draftSaveError, setDraftSaveError] = useState(false);
+  const [inquiryTarget, setInquiryTarget] = useState<InquiryTarget | null>(null);
+  const setDraft = useCallback((value: string) => {
+    draftSnapshotRef.current = { ...draftSnapshotRef.current, text: value };
+    setDraftState(value);
+  }, []);
+  const flushDraft = useCallback(() => {
+    if (draftTimerRef.current) { clearTimeout(draftTimerRef.current); draftTimerRef.current = null; }
+    const owner = draftWorkspaceRef.current;
+    if (!owner) return true;
+    const saved = saveComposerDraft(owner, draftSnapshotRef.current);
+    if (saved) unsavedDraftsRef.current.delete(owner);
+    else unsavedDraftsRef.current.set(owner, draftSnapshotRef.current);
+    return saved;
+  }, []);
   const draftVersionRef = useRef(0);
   const attentionVersionRef = useRef(0);
   const submittedTextRef = useRef("");
@@ -532,6 +555,7 @@ export function DialogueShell() {
     setActiveDeferredId(null);
   }, []);
   const openEvolution = useCallback(() => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     setEvolutionOpen(true); setReadingOpen(false); setLineageOpen(false); setCombineSourceId(null);
   }, []);
   const importInputRef = useRef<HTMLInputElement | null>(null);
@@ -575,6 +599,35 @@ export function DialogueShell() {
   const clearPending = useDialogueUiStore((state) => state.clearPending);
   const cancelPendingRequests = useDialogueUiStore((state) => state.cancelPendingRequests);
   const setErrorState = useDialogueUiStore((state) => state.setErrorState);
+
+  // Hydration owns the draft before the persistence effect can observe it. A
+  // workspace switch flushes the previous owner, never the newly selected one.
+  useEffect(() => {
+    if (!workspaceReady || !workspaceId || draftWorkspaceRef.current === workspaceId) return;
+    flushDraft();
+    const restored = unsavedDraftsRef.current.get(workspaceId) || loadComposerDraft(workspaceId, branchGraphStore.getGraph());
+    draftWorkspaceRef.current = workspaceId;
+    draftSnapshotRef.current = restored || { text: "", targetId: useDialogueUiStore.getState().composerParentId };
+    setDraftState(restored?.text || ""); setInquiryTarget(restored?.inquiry || null);
+    setConnectionTargetId(restored?.connectionId || null); setDraftSaveError(unsavedDraftsRef.current.has(workspaceId));
+    if (restored) setComposerParentId(restored.targetId);
+    setDraftOwner(workspaceId);
+  }, [workspaceReady, workspaceId, flushDraft, setComposerParentId]);
+
+  useEffect(() => {
+    if (!workspaceReady || draftOwner !== workspaceId || draftWorkspaceRef.current !== workspaceId) return;
+    draftSnapshotRef.current = { text: draft, targetId: composerParentId,
+      ...(inquiryTarget ? { inquiry: inquiryTarget } : {}), ...(connectionTargetId ? { connectionId: connectionTargetId } : {}) };
+    if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+    draftTimerRef.current = setTimeout(() => setDraftSaveError(!flushDraft()), 160);
+  }, [draft, composerParentId, inquiryTarget, connectionTargetId, draftOwner, workspaceId, workspaceReady, flushDraft]);
+
+  useEffect(() => {
+    const save = () => { setDraftSaveError(!flushDraft()); };
+    const hide = () => { if (document.visibilityState === "hidden") save(); };
+    window.addEventListener("pagehide", save); document.addEventListener("visibilitychange", hide);
+    return () => { flushDraft(); window.removeEventListener("pagehide", save); document.removeEventListener("visibilitychange", hide); };
+  }, [flushDraft]);
 
   useEffect(() => {
     const shell = shellRef.current;
@@ -819,7 +872,7 @@ export function DialogueShell() {
       setEmptyComposerOpen(true);
     }
     setDraft(value);
-  }, [isEmptyWorkspace, setErrorState]);
+  }, [isEmptyWorkspace, setErrorState, setDraft]);
 
   useEffect(() => {
     setEmptyComposerOpen(false);
@@ -875,7 +928,6 @@ export function DialogueShell() {
   const handleSelectNode = (nodeId: string) => {
     attentionVersionRef.current += 1;
     setActiveDeferredId(null);
-    if (!hasPendingRequest) setConnectionTargetId(null);
     if (combineSourceId && !selectedPair && !hasPendingRequest) {
       const pair = resolveSeedPair(combineSourceId, nodeId);
       if (pair) {
@@ -945,6 +997,7 @@ export function DialogueShell() {
   };
 
   const handleLoadDemoWorkspace = () => {
+    flushDraft();
     dialogueControllerRef.current?.cancelAll();
     cancelPendingRequests();
     const snapshot = createDialogueDemoWorkspace();
@@ -979,12 +1032,12 @@ export function DialogueShell() {
         )
       );
     }
-    setDraft("");
     clearRoundtableRuntime();
     setErrorState(null);
   };
 
   const handleCreateWorkspace = () => {
+    flushDraft();
     dialogueControllerRef.current?.cancelAll();
     cancelPendingRequests();
     const activeWorkspace = createWorkspace();
@@ -1008,7 +1061,6 @@ export function DialogueShell() {
       thinkingSpace: activeWorkspace.snapshot.thinkingSpace
     });
     refreshWorkspaceRegistryView(activeWorkspace.snapshot.workspaceId);
-    setDraft("");
     clearRoundtableRuntime();
     setErrorState(null);
   };
@@ -1018,6 +1070,7 @@ export function DialogueShell() {
       return;
     }
 
+    flushDraft();
     dialogueControllerRef.current?.cancelAll();
     cancelPendingRequests();
 
@@ -1056,7 +1109,6 @@ export function DialogueShell() {
         )
       );
     }
-    setDraft("");
     clearRoundtableRuntime();
     setErrorState(null);
   };
@@ -1135,6 +1187,7 @@ export function DialogueShell() {
         updatedAt: imported.updatedAt,
         lastOpenedAt: imported.lastOpenedAt
       });
+      flushDraft();
       setActiveWorkspaceId(imported.id);
 
       const activeWorkspace = loadActiveWorkspace();
@@ -1152,7 +1205,6 @@ export function DialogueShell() {
         seedInstances: activeWorkspace.snapshot.seedInstances,
         thinkingSpace: activeWorkspace.snapshot.thinkingSpace
       });
-      setDraft("");
       clearRoundtableRuntime();
       setErrorState(null);
       setWorkspaceStatus(`工作区已导入：${imported.title}`);
@@ -1201,7 +1253,8 @@ export function DialogueShell() {
         requestId,
         userText: text,
         perspective: requestPerspective,
-        contextMessages
+        contextMessages,
+        ...(targetId ? { comparisonSeeds: buildComparisonSeeds(graphSnapshot.graph, targetId) } : {})
       });
       const activePending = useDialogueUiStore.getState().pending.branches;
       if (!ownsPendingResponse(
@@ -1735,12 +1788,68 @@ export function DialogueShell() {
     const encounter = encounters.find(item => item.id === id && !item.resolvedNodeId);
     if (!encounter || hasPendingRequest) return;
     attentionVersionRef.current += 1;
-    setConnectionTargetId(id); setActiveDeferredId(null); setReadingOpen(false); setCombineSourceId(null);
+    setInquiryTarget(null); setConnectionTargetId(id); setActiveDeferredId(null); setReadingOpen(false); setCombineSourceId(null);
     if (!draft.trim() && encounter.connectionInput) handleDraftChange(encounter.connectionInput);
     focusComposerSoon();
   };
 
+  const startInquiry = (target: InquiryTarget) => {
+    const valid = readInquiryTarget(target, graphSnapshot.graph);
+    if (!valid || hasPendingRequest) return;
+    attentionVersionRef.current += 1;
+    setInquiryTarget(valid); setConnectionTargetId(null); setComposerParentId(valid.sourceNodeId);
+    setReadingOpen(false); setCombineSourceId(null);
+    if (!draft.trim()) handleDraftChange(inquiryQuestion(valid.intent));
+    focusComposerSoon();
+  };
+
+  const submitInquiry = async (retry?: { origin: InquiryOrigin; draftVersion: number; perspective: ThinkingSpace }) => {
+    const target = readInquiryTarget(retry?.origin || inquiryTarget, branchGraphStore.getGraph());
+    const question = retry?.origin.question || draft.trim();
+    if (!target || !question || useDialogueUiStore.getState().pendingAction) return;
+    const origin = { ...target, question }, draftVersion = retry?.draftVersion ?? draftVersionRef.current;
+    const requestId = createClientId("inquiry_req"), attentionVersion = attentionVersionRef.current;
+    const source = branchGraphStore.getGraph().nodes[target.sourceNodeId];
+    const inheritedFrame = normalizePolarityOrigin(source.meta?.polarity)?.frame || source.meta?.fissionFrame;
+    const frame = normalizeThinkingSpace(retry?.perspective || inheritedFrame || useDialogueUiStore.getState().thinkingSpace);
+    pendingPerspectiveRef.current = frame; submittedTextRef.current = question;
+    setExpansionResult(null); setExpandedResultId(null);
+    beginPending("branches", { requestId, workspaceSessionId, focusSnapshotId: view.focusSnapshotId,
+      composerTargetId: target.sourceNodeId, inquiry: true });
+    retryRef.current = { sessionId: workspaceSessionId, run: () => { void submitInquiry({ origin, draftVersion, perspective: frame }); } };
+    try {
+      const response = await dialogueControllerRef.current!.generateInquiry({ requestId, origin,
+        sourceText: branchGraphStore.getGraph().nodes[target.sourceNodeId].text!, perspective: frame,
+        contextMessages: buildSeedContext(branchGraphStore.getGraph(), [target.sourceNodeId]) });
+      const active = useDialogueUiStore.getState().pending.branches;
+      if (!ownsPendingResponse(active, response.requestId, useDialogueUiStore.getState().workspaceSessionId)) return;
+      const { responseId } = branchGraphStore.createInquiry(origin, { ...response.inquiry, fissionFrame: frame });
+      clearPending("branches"); retryRef.current = null; setErrorState(null);
+      if (draftVersion === draftVersionRef.current) { setDraft(""); setInquiryTarget(null); setComposerParentId(responseId); }
+      setGenerationAnnouncement("这一句的回应已保存，可以接着想。");
+      if (attentionVersion === attentionVersionRef.current && shouldAutoFocusPendingResult(active, branchGraphStore.getGraph())) {
+        setFocusedNodeId(responseId); setReadingOpen(true);
+      }
+    } catch (error) {
+      if (useDialogueUiStore.getState().pending.branches?.requestId !== requestId) return;
+      clearPending("branches");
+      if (isAbortError(error)) return;
+      const formatted = formatDialogueError(error); if (retryRef.current) retryRef.current.error = formatted;
+      setGenerationAnnouncement(null); setErrorState(formatted);
+    }
+  };
+
+  const rememberIdea = () => {
+    if (!draft.trim() || hasPendingRequest || inquiryTarget || connectionTarget) return;
+    const text = draft.trim(), perspective = annotatePerspective(thinkingSpace);
+    const id = composerTarget.nodeId ? branchGraphStore.createChildUserNode(composerTarget.nodeId, text, perspective)
+      : branchGraphStore.createUserNode(text, perspective);
+    setDraft(""); setComposerParentId(null); setFocusedNodeId(id); setReadingOpen(false);
+    setGenerationAnnouncement("已记下，想继续时再展开。");
+  };
+
   const submitComposer = () => {
+    if (inquiryTarget) { void submitInquiry(); return; }
     if (!connectionTarget) { void handleSubmit(); return; }
     if (hasPendingRequest || !draft.trim()) return;
     const ids = connectionTarget.sourceNodeIds.map((id, index) => {
@@ -1781,7 +1890,7 @@ export function DialogueShell() {
         summary: "正在生成正与反。"
       }
     : null;
-  const stagePendingPreview = pending.branches
+  const stagePendingPreview = pending.branches?.inquiry ? null : pending.branches
     ? {
         kind: "branches" as const,
         anchorNodeId: pending.branches.composerTargetId,
@@ -2061,8 +2170,9 @@ export function DialogueShell() {
               activeDeferredId={activeDeferredId} onContinueDeferred={continueDeferred}
               onClose={closeSeedPanel}
               onSplit={handleContinueFromCurrentNode}
+              onInquiry={startInquiry}
               onExpandPolarity={(axisId, frame) => void handlePolarityExpansion(view.currentNode!.id, axisId, frame)}
-              onWrite={() => { setComposerParentId(view.currentNode!.id); setReadingOpen(false); focusComposerSoon(); }}
+              onWrite={() => { setInquiryTarget(null); setConnectionTargetId(null); setComposerParentId(view.currentNode!.id); setReadingOpen(false); focusComposerSoon(); }}
               onCombine={() => { setCombineSourceId(focusedInstanceId || view.currentNode!.id); setSelectedPair(null); }}
               onCreateInstance={handleCreateInstance}
               onRemoveInstance={handleRemoveInstance}
@@ -2114,12 +2224,15 @@ export function DialogueShell() {
         {shouldShowComposer ? (
           <DialogueComposer
             perspectiveLabel={composerPerspectiveLabel}
+            inquiryTarget={inquiryTarget || undefined}
+            draftSaveError={draftSaveError}
+            onRemember={!inquiryTarget && !connectionTarget ? rememberIdea : undefined}
             connectionTarget={connectionTarget ? connectionTarget.sourceNodeIds.map(id => seedLabel(graphSnapshot.graph, id)).join(" / ") : undefined}
             target={composerTarget}
             value={draft}
             disabled={hasPendingRequest}
             pendingAction={pendingAction}
-            pendingMessage={pending.branches?.polarityAxis ? `正在沿「${pending.branches.polarityAxis.label}」展开两端` : undefined}
+            pendingMessage={pending.branches?.inquiry ? "正在围绕这句话继续想" : pending.branches?.polarityAxis ? `正在沿「${pending.branches.polarityAxis.label}」展开两端` : undefined}
             isEmptyStart={isEmptyWorkspace}
             emptyStartOpen={emptyComposerOpen}
             targetFrozen={composerTargetFrozen}
@@ -2131,7 +2244,7 @@ export function DialogueShell() {
             onSubmit={submitComposer}
             onCancel={handleCancelPending}
             onRetry={errorState && retryRef.current?.error === errorState && retryRef.current?.sessionId === workspaceSessionId ? () => retryRef.current?.run() : undefined}
-            onResetTarget={() => { setConnectionTargetId(null); setComposerParentId(null); focusComposerSoon(); }}
+            onResetTarget={() => { setInquiryTarget(null); setConnectionTargetId(null); setComposerParentId(null); focusComposerSoon(); }}
           />
         ) : null}
       </div>

@@ -109,9 +109,17 @@ export async function runCanvasLifecycle(browser, { baseUrl, outputDir, setActiv
       await page.evaluate(() => { window.__canvasAudit.rects = 0; });
       await page.mouse.move(640, 360);
       await page.mouse.down();
-      // Stay inside the empty centre: moving into the surrounding ring can
-      // legitimately trigger this experiment's dwell-to-merge on a slow run.
-      await page.mouse.move(680, 380, { steps: 24 });
+      // Audit a burst of pointer updates without turning slow GPU rendering
+      // into a one-second dwell gesture. This lab's initial radii overlap even
+      // at the centre; sustained fusion is covered by its dedicated scenario.
+      await page.evaluate(() => {
+        const canvas = document.querySelector("canvas");
+        for (let step = 1; step <= 24; step++) canvas.dispatchEvent(new PointerEvent("pointermove", {
+          bubbles: true, pointerId: 1, pointerType: "mouse", buttons: 1,
+          clientX: 640 + 40 * step / 24, clientY: 360 + 20 * step / 24
+        }));
+        canvas.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 1, pointerType: "mouse", button: 0, clientX: 680, clientY: 380 }));
+      });
       await page.mouse.up();
       await page.getByRole("button", { name: "高对比", exact: true }).click();
       await page.waitForTimeout(200);

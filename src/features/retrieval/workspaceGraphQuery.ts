@@ -1,6 +1,7 @@
 import { AniccaNode, BranchType, Edge, Graph } from "@/types/anicca";
 import { normalizeSeedPerspective, perspectiveLabel, readThinkingSpaceRequest, seedPerspectiveLabel } from "@/features/perspectives/model";
 import { normalizePolarityOrigin, polarityAxis, polarityLabel } from "@/features/perspectives/polarity";
+import { readInquiryOrigin } from "@/features/dialectic/inquiry";
 import {
   RetrievalClampedOptions,
   RetrievalConfidence,
@@ -52,12 +53,13 @@ type QueryOptions = {
   excludeNodeIds?: string[];
 };
 
-const DEFAULT_RELATIONS: RetrievalRelation[] = ["thesis", "antithesis", "polarity", "synthesis", "continuation"];
+const DEFAULT_RELATIONS: RetrievalRelation[] = ["thesis", "antithesis", "polarity", "synthesis", "continuation", "inquiry"];
 const ALL_RELATIONS: RetrievalRelation[] = [
   "lineage",
   "thesis",
   "antithesis",
   "polarity",
+  "inquiry",
   "synthesis",
   "continuation",
   "source",
@@ -73,6 +75,7 @@ const EXPLICIT_REASON_RELATIONS: Record<string, RetrievalRelation> = {
   正: "thesis",
   反: "antithesis",
   polarity: "polarity",
+  inquiry: "inquiry",
   continue: "continuation",
   synthesis: "synthesis",
   merge: "merge",
@@ -86,6 +89,7 @@ const RELATION_ORDER: Record<RetrievalRelation, number> = {
   thesis: 0,
   antithesis: 1,
   polarity: 1.5,
+  inquiry: 3.5,
   synthesis: 2,
   continuation: 3,
   source: 4,
@@ -186,6 +190,7 @@ function toRetrievalNode(id: string, node: AniccaNode, warnings: string[]): Retr
     polarity: normalizePolarityOrigin(node.meta?.polarity),
     perspective: normalizeSeedPerspective(node.meta?.perspective),
     fissionFrame: readThinkingSpaceRequest(node.meta?.fissionFrame),
+    inquiry: readInquiryOrigin(node.meta?.inquiry),
     ...(node.meta?.growth
       ? {
           growth: {
@@ -218,6 +223,7 @@ function inferRelationFromShape(from: RetrievalNode | undefined, to: RetrievalNo
   }
 
   if (to.polarity && to.branchType) return null;
+  if (to.inquiry && !to.branchType) return "inquiry";
 
   if (to.kind === "assistant" && to.growth?.operator) {
     const growthRelation = `growth:${to.growth.operator}`;
@@ -261,7 +267,7 @@ function hasTargetMembership(fromId: string, toId: string, relation: RetrievalRe
     return asStringArray(target.parents).includes(fromId) || asStringArray(target.meta?.sourceNodeIds).includes(fromId);
   }
 
-  if (relation === "thesis" || relation === "antithesis" || relation === "polarity" || relation === "continuation" || relation === "merge") {
+  if (relation === "thesis" || relation === "antithesis" || relation === "polarity" || relation === "inquiry" || relation === "continuation" || relation === "merge") {
     return asStringArray(target.parents).includes(fromId);
   }
 
@@ -294,6 +300,12 @@ function validateExplicitRelation(
 
   if (relation === "polarity") {
     return to.kind === "assistant" && Boolean(to.polarity) && !to.branchType;
+  }
+
+  if (relation === "inquiry") {
+    const origin = readInquiryOrigin(rawNodes[toId]?.meta?.inquiry, { nodes: rawNodes } as Graph);
+    return Boolean(origin && !to.branchType && (to.kind === "user" ? origin.sourceNodeId === fromId
+      : to.kind === "assistant" && from.kind === "user" && from.inquiry?.sourceNodeId === origin.sourceNodeId));
   }
 
   if (relation === "synthesis") {
@@ -354,6 +366,8 @@ function resolveEdgeRelation(
   if (!inferred) {
     return null;
   }
+
+  if (inferred === "inquiry" && !validateExplicitRelation(inferred, fromId, toId, from, to, rawNodes)) return null;
 
   if (!hasTargetMembership(fromId, toId, inferred, rawNodes)) {
     warnings.push(`edge ${edgeId}: skipped inferred ${inferred} because ${toId} does not declare ${fromId}`);
@@ -607,7 +621,7 @@ function scoreNodes(view: RetrievalGraphView, query: string, maxQueryChars: numb
   const matches = Object.values(view.nodes)
     .map((node) => {
       const viewpoint = [node.polarity ? `${polarityAxis(node.polarity).label} ${polarityLabel(node.polarity)} ${perspectiveLabel(node.polarity.frame)}` : "",
-        node.fissionFrame ? perspectiveLabel(node.fissionFrame) : seedPerspectiveLabel(node.perspective)].join(" ");
+        node.fissionFrame ? perspectiveLabel(node.fissionFrame) : seedPerspectiveLabel(node.perspective), node.inquiry?.quote, node.inquiry?.question].filter(Boolean).join(" ");
       let bestScore = 0;
       let bestMatch: MatchKind | null = null;
       let bestFieldOrder = FIELD_ORDER.length;

@@ -3,6 +3,8 @@ import { normalizeSeedPerspective, normalizeThinkingSpace } from "@/features/per
 import { normalizePolarityOrigin, polarityFrame, type PolarityOrigin } from "@/features/perspectives/polarity";
 import type { ThinkingSpace } from "@/features/perspectives/model";
 import { readUnderstandingChange, readDeferredDraft, deferredSyntheses, type DeferredSynthesis } from "@/features/dialectic/meaning";
+import { readInquiryOrigin, inquiryLabel, type InquiryOrigin } from "@/features/dialectic/inquiry";
+import { readNovelty, type NoveltyAssessment } from "@/features/dialectic/novelty";
 
 type AssistantDraft = {
   text?: string;
@@ -17,6 +19,8 @@ type AssistantDraft = {
   fissionFrame?: ThinkingSpace;
   change?: string;
   connectionInput?: string;
+  inquiry?: InquiryOrigin;
+  novelty?: NoveltyAssessment;
 };
 
 type GrowthAssistantDraft = AssistantDraft & {
@@ -188,6 +192,20 @@ export class BranchGraphStore {
     return { thesisId, antithesisId };
   }
 
+  createInquiry(origin: InquiryOrigin, draft: AssistantDraft) {
+    const captured = readInquiryOrigin(origin, this.graph);
+    if (!captured || !draft.text?.trim()) throw new Error("inquiry requires an existing quote and a response");
+    const questionId = this.generateId("user");
+    this.graph.nodes[questionId] = { id: questionId, kind: "user", text: captured.question,
+      parents: [captured.sourceNodeId], children: [], createdAt: new Date().toISOString(),
+      meta: { inquiry: captured, label: `${inquiryLabel(captured.intent)} · ${captured.quote.slice(0, 12)}` } };
+    this.graph.nodes[captured.sourceNodeId].children.push(questionId);
+    this.link(captured.sourceNodeId, questionId, "inquiry");
+    const responseId = this.createAssistantNode(questionId, undefined, { ...draft, inquiry: captured });
+    this.emit();
+    return { questionId, responseId };
+  }
+
   createPolarityPair(parentId: string, input: {
     groupId: string; axisId: string; frame: ThinkingSpace;
     negative: AssistantDraft; positive: AssistantDraft;
@@ -325,7 +343,7 @@ export class BranchGraphStore {
 
     this.graph.nodes[id] = node;
     parent.children.push(id);
-    this.link(parentUserId, id, draft?.polarity ? "polarity" : branchType);
+    this.link(parentUserId, id, draft?.inquiry ? "inquiry" : draft?.polarity ? "polarity" : branchType);
     return id;
   }
 
@@ -353,6 +371,10 @@ export class BranchGraphStore {
     if (typeof input.summary === "string") meta.summary = input.summary;
     const change = readUnderstandingChange(input.change);
     if (change) meta.change = change;
+    const inquiry = readInquiryOrigin(input.inquiry, this.graph);
+    if (inquiry) meta.inquiry = inquiry;
+    const novelty = readNovelty(input.novelty);
+    if (novelty) meta.novelty = novelty;
     if (typeof input.connectionInput === "string" && input.connectionInput.trim()) meta.connectionInput = input.connectionInput.trim().slice(0, 2000);
     if (typeof input.model === "string") meta.model = input.model;
     if (typeof input.seedId === "number") meta.seedId = input.seedId;

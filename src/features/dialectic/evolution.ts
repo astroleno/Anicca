@@ -3,8 +3,9 @@ import { normalizeGraphForRetrieval } from "@/features/retrieval/workspaceGraphQ
 import type { RetrievalNode, RetrievalRelation } from "@/features/retrieval/types";
 import { perspectiveLabel, seedPerspectiveLabel } from "@/features/perspectives/model";
 import { polarityAxis, polarityLabel } from "@/features/perspectives/polarity";
+import { inquiryLabel } from "./inquiry";
 
-export type EvolutionKind = "question" | "polarity" | "fission" | "synthesis" | "growth";
+export type EvolutionKind = "question" | "polarity" | "fission" | "synthesis" | "growth" | "inquiry";
 export type EvolutionNode = {
   id: string; label: string; summary: string; phase: string; lens: string;
   kind: EvolutionKind; role: string; generation: number; cyclic: boolean;
@@ -17,6 +18,7 @@ export type Evolution = {
 };
 
 export function evolutionPhase(node: RetrievalNode) {
+  if (node.inquiry) return `${inquiryLabel(node.inquiry.intent)} · ${node.kind === "user" ? "提出追问" : "聚焦回应"}`;
   if (node.polarity) return `沿「${polarityAxis(node.polarity).label}」展开 · ${polarityLabel(node.polarity)}`;
   if (node.branchType === "合" || node.kind === "merge") return "合流";
   if (node.branchType === "正") return "正反裂变 · 正 · 深化主张";
@@ -84,13 +86,13 @@ export function projectEvolution(graph: Graph): Evolution {
   const nodes = ordered.map(id => {
     const source = view.nodes[id], phase = evolutionPhase(source);
     const lens = source.polarity ? perspectiveLabel(source.polarity.frame) : source.fissionFrame ? perspectiveLabel(source.fissionFrame) : seedPerspectiveLabel(source.perspective);
-    const kind: EvolutionKind = source.polarity ? "polarity" : source.branchType === "合" || source.kind === "merge" ? "synthesis"
+    const kind: EvolutionKind = source.inquiry ? "inquiry" : source.polarity ? "polarity" : source.branchType === "合" || source.kind === "merge" ? "synthesis"
       : source.branchType === "正" || source.branchType === "反" ? "fission" : source.growth ? "growth" : "question";
     return { id, label: source.label, summary: source.summary || source.text, phase, lens, kind,
       role: source.branchType === "正" ? "thesis" : source.branchType === "反" ? "antithesis" : kind === "synthesis" ? "synthesis" : kind === "question" ? "user" : "neutral",
       generation: generation.get(id) || 0, cyclic: !visited.has(id), ...positions.get(id)!,
       parents: parents.get(id)!, source,
-      searchText: [source.label, source.summary, source.text, phase, lens].filter(Boolean).join(" ").toLocaleLowerCase()
+      searchText: [source.label, source.summary, source.text, source.inquiry?.quote, source.inquiry?.question, phase, lens].filter(Boolean).join(" ").toLocaleLowerCase()
     };
   });
   return { nodes, byId: new Map(nodes.map(node => [node.id, node])), edges,

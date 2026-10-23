@@ -4,6 +4,8 @@ import type { GrowthNodeMeta } from "@/features/growth/types";
 import type { SeedPerspective, ThinkingSpace } from "@/features/perspectives/model";
 import type { PolarityOrigin } from "@/features/perspectives/polarity";
 import type { DeferredSynthesis } from "@/features/dialectic/meaning";
+import type { InquiryOrigin } from "@/features/dialectic/inquiry";
+import type { NoveltyAssessment } from "@/features/dialectic/novelty";
 
 export const ANICCA_GRAPH_VERSION = "anicca-dialectic-v2";
 
@@ -29,6 +31,8 @@ export interface AniccaNodeMeta {
   fissionFrame?: ThinkingSpace;
   change?: string;
   connectionInput?: string;
+  inquiry?: InquiryOrigin;
+  novelty?: NoveltyAssessment;
 }
 
 export interface AniccaNode {

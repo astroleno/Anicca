@@ -13,6 +13,7 @@ export type PendingRequest = {
   sourceLabel?: string;
   synthesisActionKey?: string;
   polarityAxis?: ThinkingAxis;
+  inquiry?: boolean;
 };
 
 type PendingState = Record<PendingSlot, PendingRequest | null>;

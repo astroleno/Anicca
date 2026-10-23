@@ -9,8 +9,10 @@ import { normalizePolarityOrigin, polarityAxis, polarityLabel } from "@/features
 import styles from "./DialogueShell.module.css";
 import { deferredSyntheses } from "@/features/dialectic/meaning";
 import { DeferredEncounter, UnderstandingChange } from "./SeedMeaning";
+import { SeedPassage } from "./SeedPassage";
+import { inquiryLabel, readInquiryOrigin, type InquiryTarget } from "@/features/dialectic/inquiry";
 
-export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = {}, space = defaultThinkingSpace(), combining, busy, activeDeferredId, onContinueDeferred, onClose, onSplit, onExpandPolarity, onWrite, onCombine, onPick, onCreateInstance, onRemoveInstance, onExpandSources }: {
+export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = {}, space = defaultThinkingSpace(), combining, busy, activeDeferredId, onContinueDeferred, onClose, onSplit, onExpandPolarity, onWrite, onCombine, onPick, onCreateInstance, onRemoveInstance, onExpandSources, onInquiry }: {
   graph: Graph; nodeId: string; combining: boolean; busy: boolean;
   instanceId?: string; instances?: SeedInstances;
   space?: ThinkingSpace;
@@ -18,6 +20,7 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
   onContinueDeferred?(id: string): void;
   onClose(): void; onSplit(frame?: ThinkingSpace): void; onWrite(): void; onCombine(): void; onPick(id: string): void;
   onExpandPolarity?(axisId: string, frame: ThinkingSpace): void;
+  onInquiry?(target: InquiryTarget): void;
   onCreateInstance?(): void; onRemoveInstance?(): void; onExpandSources?(): void;
 }) {
   const [query, setQuery] = useState("");
@@ -42,6 +45,7 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
   const node = graph.nodes[nodeId];
   if (!node) return null;
   const perspective = normalizeSeedPerspective(node.meta?.perspective);
+  const inquiry = readInquiryOrigin(node.meta?.inquiry, graph);
   const origin = normalizePolarityOrigin(node.meta?.polarity);
   const originAxis = origin ? polarityAxis(origin) : null;
   const capturedFrame = origin?.frame || (node.meta?.fissionFrame ? normalizeThinkingSpace(node.meta.fissionFrame) : null);
@@ -68,7 +72,7 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
     <section ref={inspectorRef} className={styles.seedInspector} data-testid="dialogue-panel" aria-labelledby="conversation-panel-heading"
       data-mode={polarityOpen ? "polarity" : combining ? "combine" : "read"}>
       <header className={styles.seedInspectorHeader}>
-        <span>{polarityOpen ? `从「${seedLabel(graph, nodeId)}」继续` : combining ? "组合" : activeEncounter ? "暂不融合" : origin ? "极性视角" : node.branchType || "想法"}</span>
+        <span>{polarityOpen ? `从「${seedLabel(graph, nodeId)}」继续` : combining ? "组合" : activeEncounter ? "暂不融合" : inquiry ? inquiryLabel(inquiry.intent) : origin ? "极性视角" : node.branchType || "想法"}</span>
         <button type="button" className={styles.seedReadingBack} aria-label={polarityOpen ? "返回种子阅读" : "返回种子，收起阅读"}
           onClick={polarityOpen ? () => setPolarityOpen(false) : onClose}>{polarityOpen ? "返回阅读" : "返回种子"}</button>
         <h2 id="conversation-panel-heading" tabIndex={-1}>{polarityOpen ? "沿极性展开" : combining ? "让想法相遇" : seedLabel(graph, nodeId)}</h2>
@@ -93,8 +97,14 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
         <>
           {originAxis ? <p className={styles.seedPolarityOrigin}>沿「{originAxis.label}」· {polarityLabel(origin)}
             {originAxis.evidence === "self-report" ? " · 待确认的假设视角" : ""}</p> : null}
-          <UnderstandingChange node={node} />
-          <div className={styles.seedBody}><p>{node.text || "这颗种子还没有正文。"}</p></div>
+          {inquiry ? <div className={styles.seedInquiryOrigin} data-seed-meaning>
+            <button type="button" onClick={() => onPick(inquiry.sourceNodeId)}>从「{seedLabel(graph, inquiry.sourceNodeId)}」的一句话继续</button>
+            <blockquote>{inquiry.quote}</blockquote><p>{inquiry.question}</p>
+          </div> : null}
+          <UnderstandingChange node={node} graph={graph} onPick={onPick}
+            onReframe={onExpandPolarity && !busy ? () => { readingScrollRef.current = inspectorRef.current?.scrollTop || 0; setPolarityOpen(true); } : undefined} />
+          <SeedPassage key={node.id} nodeId={node.id} text={node.text || "这颗种子还没有正文。"} className={styles.seedBody}
+            busy={busy} onInquiry={!polarityOpen && node.text?.trim() ? onInquiry : undefined} />
           {node.meta?.connectionInput ? <details className={styles.seedPerspective} data-seed-meaning><summary>这次补充的联系</summary><p>{node.meta.connectionInput}</p></details> : null}
           {encounters.length ? <details className={styles.seedPerspective} data-seed-meaning><summary>暂存的相遇 · {encounters.length}</summary>
             {encounters.map(encounter => <DeferredEncounter key={encounter.id} encounter={encounter} graph={graph} busy={busy} onPick={onPick}

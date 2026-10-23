@@ -30,6 +30,7 @@ import { branchGraphStore } from "@/store/branchGraph";
 import { createEmptyGraph } from "@/types/anicca";
 import { PersistedWorkspaceSnapshot } from "@/types/workspace";
 import { createDeferred } from "../../../tests/deferred";
+import { loadComposerDraft } from "@/lib/persist/composerDraft";
 
 function resetWorkspace(focusedNodeId: string | null = null) {
   branchGraphStore.setGraph(createEmptyGraph());
@@ -271,6 +272,91 @@ describe("DialogueShell", () => {
     resetDialogueTelemetrySinkForTests();
     window.history.replaceState({}, "", "/dialogue");
     resetWorkspace();
+  });
+
+  it("flushes the last keystroke on leaving and restores both draft and continuation target", async () => {
+    const { thesisId } = seedPair(); useDialogueUiStore.setState({ focusedNodeId: thesisId, composerParentId: thesisId });
+    seedActiveWorkspaceFromCurrentGraph(); vi.stubGlobal("fetch", vi.fn());
+    const rendered = render(<DialogueShell />);
+    const input = await screen.findByRole("textbox", { name: "输入" });
+    fireEvent.change(input, { target: { value: "我还没想完，先保留这个问题。" } });
+    fireEvent(window, new Event("pagehide"));
+    expect(loadComposerDraft("workspace_test", branchGraphStore.getGraph())).toMatchObject({ text: "我还没想完，先保留这个问题。", targetId: thesisId });
+    rendered.unmount(); render(<DialogueShell />);
+    await waitFor(() => expect(screen.getByRole("textbox", { name: "输入" })).toHaveValue("我还没想完，先保留这个问题。"));
+    expect(useDialogueUiStore.getState().composerParentId).toBe(thesisId);
+  });
+
+  it("keeps separate workspace drafts and can quietly save a seed without generation", async () => {
+    const { rootUserId } = seedPair(); useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    seedActiveWorkspaceFromCurrentGraph(); const fetchMock = vi.fn(); vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup(); render(<DialogueShell />);
+    fireEvent.change(screen.getByRole("textbox", { name: "输入" }), { target: { value: "第一个工作区的未决想法" } });
+    await moreAction(user, "新建工作区");
+    await waitFor(() => expect(screen.getByRole("textbox", { name: "输入" })).toHaveValue(""));
+    fireEvent.change(screen.getByRole("textbox", { name: "输入" }), { target: { value: "第二个工作区先留下" } });
+    await selectWorkspace(user, "Workspace Test Boot");
+    await waitFor(() => expect(screen.getByRole("textbox", { name: "输入" })).toHaveValue("第一个工作区的未决想法"));
+    fireEvent.click(screen.getByRole("button", { name: "先记下" }));
+    expect(Object.values(branchGraphStore.getGraph().nodes).some(node => node.text === "第一个工作区的未决想法" && node.kind === "user")).toBe(true);
+    expect(fetchMock).not.toHaveBeenCalled();
+    fireEvent(window, new Event("pagehide"));
+    expect(loadComposerDraft("workspace_test", branchGraphStore.getGraph())).toBeNull();
+  });
+
+  it("restores a quoted inquiry, commits one response and preserves newer writing", async () => {
+    const root = branchGraphStore.createUserNode("自由探索可以持续。每条伏线都需要认领吗？");
+    const frame = defaultThinkingSpace(); frame.focus.concern = -1;
+    branchGraphStore.patchNodeMeta(root, { fissionFrame: frame });
+    useDialogueUiStore.setState({ focusedNodeId: root }); seedActiveWorkspaceFromCurrentGraph();
+    const pending = createDeferred<Response>(); const fetchMock = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(() => pending.promise); vi.stubGlobal("fetch", fetchMock);
+    const rendered = render(<DialogueShell />);
+    fireEvent.click(screen.getByTestId(`dialogue-stage-node-${root}`));
+    fireEvent.click(await screen.findByRole("button", { name: "选一句追问" }));
+    fireEvent.click(screen.getByRole("button", { name: "自由探索可以持续。" }));
+    fireEvent.click(screen.getByRole("button", { name: "追问前提" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "输入" }), { target: { value: "什么条件让探索能持续？" } });
+    rendered.unmount(); render(<DialogueShell />);
+    expect(await screen.findByLabelText("本次追问的原句")).toHaveTextContent("自由探索可以持续。");
+    expect(screen.getByRole("textbox", { name: "输入" })).toHaveValue("什么条件让探索能持续？");
+    fireEvent.click(screen.getByRole("button", { name: "追问" }));
+    const request = readFetchBody(fetchMock, 0);
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/inquiry");
+    expect(request.origin).toMatchObject({ sourceNodeId: root, quote: "自由探索可以持续。", question: "什么条件让探索能持续？" });
+    expect(request.perspective.focus).toEqual({ concern: -1 });
+    fireEvent.change(screen.getByRole("textbox", { name: "输入" }), { target: { value: "等待时想到的另一个问题" } });
+    pending.resolve(new Response(JSON.stringify({ requestId: request.requestId, inquiry: { text: "自由探索需要允许暂时不收束。", summary: "保留未决", label: "暂不收束", change: "澄清探索所需的暂缓判断空间。" } }), { status: 200 }));
+    await waitFor(() => expect(Object.keys(branchGraphStore.getGraph().nodes)).toHaveLength(3));
+    expect(screen.getByRole("textbox", { name: "输入" })).toHaveValue("等待时想到的另一个问题");
+    expect(Object.values(branchGraphStore.getGraph().nodes).filter(node => node.kind === "assistant")).toHaveLength(1);
+  });
+
+  it("cancels a quoted inquiry without adding late results or losing its question", async () => {
+    const root = branchGraphStore.createUserNode("这条前提值得继续追问。"); useDialogueUiStore.setState({ focusedNodeId: root }); seedActiveWorkspaceFromCurrentGraph();
+    const pending = createDeferred<Response>(), fetchMock = vi.fn(() => pending.promise); vi.stubGlobal("fetch", fetchMock);
+    render(<DialogueShell />); fireEvent.click(screen.getByTestId(`dialogue-stage-node-${root}`));
+    fireEvent.click(await screen.findByRole("button", { name: "选一句追问" })); fireEvent.click(within(screen.getByLabelText("选择要追问的原句")).getByRole("button", { name: "这条前提值得继续追问。" }));
+    fireEvent.click(screen.getByRole("button", { name: "找反例" })); fireEvent.click(screen.getByRole("button", { name: "追问" }));
+    const body = readFetchBody(fetchMock, 0); fireEvent.click(screen.getByRole("button", { name: "取消" }));
+    pending.resolve(new Response(JSON.stringify({ requestId: body.requestId, inquiry: { text: "迟到回答", summary: "迟到", label: "迟到", change: "这是已经被取消的追问结果。" } }), { status: 200 }));
+    await waitFor(() => expect(useDialogueUiStore.getState().pending.branches).toBeNull());
+    expect(Object.keys(branchGraphStore.getGraph().nodes)).toHaveLength(1);
+    expect(screen.getByRole("textbox", { name: "输入" })).toHaveValue("什么具体情形会让这句话不成立？");
+  });
+
+  it("keeps a memory copy across workspace switches when device draft storage fails", async () => {
+    seedPair(); seedActiveWorkspaceFromCurrentGraph();
+    const write = localStorage.setItem.bind(localStorage);
+    vi.spyOn(localStorage, "setItem").mockImplementation((key, value) => {
+      if (key.startsWith("anicca_composer_draft_v1:")) throw new Error("storage unavailable");
+      write(key, value);
+    });
+    const user = userEvent.setup(); render(<DialogueShell />);
+    fireEvent.change(screen.getByRole("textbox", { name: "输入" }), { target: { value: "还不能丢掉的草稿" } });
+    await moreAction(user, "新建工作区");
+    await selectWorkspace(user, "Workspace Test Boot");
+    await waitFor(() => expect(screen.getByRole("textbox", { name: "输入" })).toHaveValue("还不能丢掉的草稿"));
+    expect(screen.getByText("草稿暂时未能保存，请先保留这段文字。")).toBeInTheDocument();
   });
 
   it("creates shared instances without generation and can hide one without deleting the concept", async () => {

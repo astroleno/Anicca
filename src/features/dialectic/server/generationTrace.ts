@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { generateText, type GenerateTextOptions, type TokenUsage } from "@/lib/openai/generateText";
 import { DIALECTIC_POLICY_CARD_VERSION } from "./policyCards";
 
-export const DIALECTIC_PROMPT_VERSION = "seed-flow-2026-10-23-meaning";
+export const DIALECTIC_PROMPT_VERSION = "seed-flow-2026-10-23-continuity";
 type Stage = "branches" | "polarities" | "draft" | "critic" | "audit" | "final";
 type Outcome = "success" | "invalid_output" | "failed" | "cancelled";
 type Call = {
@@ -16,29 +16,37 @@ type Call = {
 };
 
 /** Request-local metadata only: never accepts prompts, output, or error messages as log fields. */
-export function createGenerationTrace(endpoint: "branches" | "synthesis" | "polarities", model: string, signal: AbortSignal) {
+export function createGenerationTrace(endpoint: "branches" | "synthesis" | "polarities" | "inquiry", model: string, signal: AbortSignal) {
   const started = performance.now();
   const traceId = randomUUID();
   const calls: Call[] = [];
   const checks: { stage: Stage; repair: boolean; valid: boolean }[] = [];
   let finished = false;
   return {
-    async generate(stage: Stage, options: Omit<GenerateTextOptions, "model" | "signal" | "onProviderCall">, repair = false) {
+    async generate(stage: Stage, options: Omit<GenerateTextOptions, "model" | "signal" | "onProviderCall">, repair = false, timeoutMs?: number) {
       signal.throwIfAborted();
+      const bounded = timeoutMs ? new AbortController() : null;
+      const abort = () => bounded?.abort(signal.reason);
+      signal.addEventListener("abort", abort, { once: true });
+      const timer = timeoutMs ? setTimeout(() => bounded?.abort(new DOMException("Review timed out", "TimeoutError")), timeoutMs) : null;
+      const callSignal = bounded?.signal || signal;
       const call: Call = { stage, repair, elapsedMs: 0, outcome: "failed", providerCalls: 0 };
       calls.push(call);
       const callStarted = performance.now();
       try {
-        const result = await generateText({ ...options, model, signal, onProviderCall() { call.providerCalls += 1; } });
+        const result = await generateText({ ...options, model, signal: callSignal, onProviderCall() { call.providerCalls += 1; } });
+        callSignal.throwIfAborted();
         signal.throwIfAborted();
         call.outcome = "success";
         call.transport = result.transport;
         call.usage = result.usage;
         return result;
       } catch (error) {
-        call.outcome = signal.aborted ? "cancelled" : "failed";
+        call.outcome = callSignal.aborted ? "cancelled" : "failed";
         throw error;
       } finally {
+        if (timer) clearTimeout(timer);
+        signal.removeEventListener("abort", abort);
         call.elapsedMs = Math.round(performance.now() - callStarted);
       }
     },

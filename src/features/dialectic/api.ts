@@ -2,6 +2,8 @@ import type { Message } from "@/types/chat";
 import { emitDialogueTelemetry } from "@/lib/analytics/dialogue";
 import type { AxisSuggestion, SeedPerspective, ThinkingAxis, ThinkingSpace } from "@/features/perspectives/model";
 import { readDeferredDraft, readUnderstandingChange, type DeferredDraft } from "./meaning";
+import { readNovelty, type ComparisonSeed, type NoveltyAssessment } from "./novelty";
+import type { InquiryOrigin } from "./inquiry";
 
 export const DIALECTIC_INPUT_MAX_LENGTH = 2000;
 
@@ -14,6 +16,7 @@ export type BranchPayload = {
   stance: "正" | "反";
   perspective?: SeedPerspective;
   change?: string;
+  novelty?: NoveltyAssessment;
 };
 
 export type BranchesResponse = {
@@ -48,7 +51,13 @@ export type GenerateBranchesInput = {
   userText: string;
   contextMessages: DialecticContextMessage[];
   perspective?: ThinkingSpace;
+  comparisonSeeds?: ComparisonSeed[];
 };
+
+export type InquiryPayload = Omit<BranchPayload, "stance">;
+export type InquiryResponse = { requestId: string; inquiry: InquiryPayload };
+export type GenerateInquiryInput = { requestId: string; sourceText: string; origin: InquiryOrigin;
+  contextMessages: DialecticContextMessage[]; perspective?: ThinkingSpace };
 
 export type PolarityPayload = Omit<BranchPayload, "stance">;
 export type GeneratePolarityInput = GenerateBranchesInput & { perspective: ThinkingSpace; axisId: string };
@@ -96,7 +105,7 @@ export class DialecticApiError extends Error {
 }
 
 async function requestJson<T>(
-  url: "/api/branches" | "/api/synthesis" | "/api/polarities",
+  url: "/api/branches" | "/api/synthesis" | "/api/polarities" | "/api/inquiry",
   body: Record<string, unknown>,
   options: DialecticRequestOptions = {}
 ): Promise<T> {
@@ -136,17 +145,32 @@ async function requestJson<T>(
     throw error;
   } finally {
     void emitDialogueTelemetry({ name: "generation_finished", payload: {
-      endpoint: url === "/api/branches" ? "branches" : url === "/api/polarities" ? "polarities" : "synthesis",
+      endpoint: url === "/api/branches" ? "branches" : url === "/api/polarities" ? "polarities" : url === "/api/inquiry" ? "inquiry" : "synthesis",
       elapsedMs: Math.round(performance.now() - started), outcome, status
     } });
   }
 }
 
-export function generateBranches(
+export async function generateBranches(
   input: GenerateBranchesInput,
   options?: DialecticRequestOptions
 ): Promise<BranchesResponse> {
-  return requestJson<BranchesResponse>("/api/branches", { ...input, meaningVersion: 1 }, options);
+  const response = await requestJson<BranchesResponse>("/api/branches", { ...input, meaningVersion: 1 }, options);
+  for (const branch of [response.thesis, response.antithesis]) {
+    if (branch?.novelty !== undefined) branch.novelty = readNovelty(branch.novelty) || { status: "unchecked" };
+  }
+  return response;
+}
+
+export async function generateInquiry(input: GenerateInquiryInput, options?: DialecticRequestOptions): Promise<InquiryResponse> {
+  const response = await requestJson<InquiryResponse>("/api/inquiry", input, options);
+  const result = response?.inquiry;
+  if (response?.requestId !== input.requestId || typeof result?.text !== "string" || !result.text.trim() ||
+    typeof result.summary !== "string" || !result.summary.trim() || typeof result.label !== "string" || !result.label.trim() ||
+    !readUnderstandingChange(result.change) || "stance" in result) {
+    throw new DialecticApiError({ status: 502, code: "invalid_model_output", details: "inquiry_response_incomplete" });
+  }
+  return response;
 }
 
 export async function generateSynthesis(
