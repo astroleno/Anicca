@@ -3,6 +3,7 @@ import {
   buildSynthesisCreatedEvent,
   buildWorkspaceResumedEvent,
   emitDialogueTelemetry,
+  getRecentGenerationMetrics,
   resetDialogueTelemetrySinkForTests,
   setDialogueTelemetrySink
 } from "@/lib/analytics/dialogue";
@@ -84,6 +85,17 @@ function buildWorkspaceRecord(): ActiveWorkspaceRecord {
 describe("dialogue telemetry", () => {
   beforeEach(() => {
     resetDialogueTelemetrySinkForTests();
+  });
+
+  it("bounds volatile request metrics and returns independent snapshots", async () => {
+    for (let elapsedMs = 0; elapsedMs < 105; elapsedMs += 1) {
+      await emitDialogueTelemetry({ name: "generation_finished", payload: { endpoint: "branches", elapsedMs, outcome: "success", status: 200 } });
+    }
+    const metrics = getRecentGenerationMetrics();
+    expect(metrics).toHaveLength(100);
+    expect(metrics[0].payload.elapsedMs).toBe(5);
+    metrics[0].payload.elapsedMs = -1;
+    expect(getRecentGenerationMetrics()[0].payload.elapsedMs).toBe(5);
   });
 
   it("builds privacy-safe workspace_resumed payloads", () => {

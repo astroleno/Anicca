@@ -21,6 +21,11 @@ export type MetaballHostRect = {
 export type MetaballSurfaceRect = {
   id: string;
   colorKey?: string;
+  generation?: number;
+  attention?: number;
+  polarity?: import("../liquid/color").SeedColorPolarity;
+  spaceDepth?: number;
+  emergeFrom?: readonly string[];
   role: MetaballRole;
   relation: MetaballRelation;
   left: number;
@@ -35,6 +40,11 @@ export type DialogueMetaballNode = {
   radius: number;
   color: [number, number, number];
   emphasis: number;
+  attention?: number;
+  depth?: number;
+  spaceScale?: number;
+  spaceDepth?: number;
+  emergeFrom?: readonly string[];
 };
 
 export type PackedMetaballUniforms = {
@@ -62,16 +72,7 @@ const RELATION_EMPHASIS: Record<MetaballRelation, number> = {
 };
 
 function getSurfaceColor(surface: MetaballSurfaceRect): [number, number, number] {
-  const key = surface.colorKey || surface.id;
-  if (surface.role === "thesis") return thesisColor(key);
-  if (surface.role === "antithesis") return antithesisColor(key);
-  if (surface.role === "synthesis") {
-    return synthesisColor(thesisColor(key), antithesisColor(key));
-  }
-  if (surface.role === "growth") return [0.42, 0.58, 0.94];
-  if (surface.role === "user") return [0.76, 0.7, 0.9];
-  if (surface.role === "pending") return [0.76, 0.72, 0.82];
-  return [0.7, 0.73, 0.78];
+  return semanticSeedColor(surface.role, surface.generation, surface.polarity);
 }
 
 function rankSurface(surface: MetaballSurfaceRect, index: number) {
@@ -114,7 +115,10 @@ export function projectMetaballSurfaces(
         ],
         radius: Math.max(surface.width, surface.height) / 2 / host.height,
         color: getSurfaceColor(surface),
-        emphasis: RELATION_EMPHASIS[surface.relation]
+        ...(surface.spaceDepth !== undefined ? { spaceDepth: surface.spaceDepth } : {}),
+        ...(surface.emergeFrom?.length ? { emergeFrom: surface.emergeFrom } : {}),
+        emphasis: RELATION_EMPHASIS[surface.relation],
+        ...(surface.attention !== undefined ? { attention: surface.attention } : {})
       };
     });
 }
@@ -157,8 +161,4 @@ export function packMetaballUniforms(nodes: DialogueMetaballNode[]): PackedMetab
 
   return { count, centers, radii, colors, emphasis };
 }
-import {
-  antithesisColor,
-  synthesisColor,
-  thesisColor
-} from "../liquid/color";
+import { semanticSeedColor } from "../liquid/color";

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readThinkingSpaceRequest, thinkingSpacePrompt, type ThinkingSpace } from "@/features/perspectives/model";
+import { perspectiveEnvelope, responsePerspective } from "@/features/perspectives/server";
 import { getDialecticModel, getDialecticOpenAiClient } from "@/lib/openai/client";
-import { generateText } from "@/lib/openai/generateText";
+import { createGenerationTrace, type GenerationTrace } from "@/features/dialectic/server/generationTrace";
 import { describeProviderFailure } from "@/lib/openai/providerErrors";
 import {
   analyzeSynthesisOutput,
@@ -30,7 +32,7 @@ type SynthesisInput = {
   stance?: unknown;
 };
 
-type SynthesisStageContext = Parameters<typeof buildSynthesisDraftPrompt>[0];
+type SynthesisStageContext = Parameters<typeof buildSynthesisDraftPrompt>[0] & { perspective?: ThinkingSpace };
 
 function serializeContextMessages(contextMessages: unknown): string {
   if (!Array.isArray(contextMessages)) {
@@ -54,13 +56,6 @@ function serializeContextMessages(contextMessages: unknown): string {
 
 function invalidModelOutput(requestId: string, details: string) {
   return NextResponse.json({ requestId, error: "invalid_model_output", details }, { status: 502 });
-}
-
-function getErrorInfo(error: unknown) {
-  return {
-    message: error instanceof Error ? error.message : String(error),
-    stack: error instanceof Error ? error.stack : undefined
-  };
 }
 
 function hasRequiredBranch(value: unknown, stance: "正" | "反"): value is Required<SynthesisInput> {
@@ -96,7 +91,7 @@ function readSeedSources(value: unknown): [SynthesisSource, SynthesisSource] | n
     if (!item || typeof item !== "object" || typeof item.id !== "string" || !item.id.trim() ||
       ids.has(item.id) || typeof item.text !== "string" || !item.text.trim() || item.text.length > 12000 ||
       typeof item.summary !== "string" || typeof item.label !== "string" ||
-      !["正", "反", "合", "想法"].includes(item.stance)) return null;
+      !["正", "反", "合", "想法", "视角"].includes(item.stance)) return null;
     ids.add(item.id);
     sources.push({ text: item.text.trim(), summary: item.summary.trim(), label: item.label.trim(), stance: item.stance });
   }
@@ -104,25 +99,28 @@ function readSeedSources(value: unknown): [SynthesisSource, SynthesisSource] | n
 }
 
 async function generateSynthesisStage(
-  model: string,
+  trace: GenerationTrace,
+  stage: "draft" | "critic" | "final",
   client: ReturnType<typeof getDialecticOpenAiClient>,
   prompt: string,
   context: SynthesisStageContext,
   requireContract = true
 ): Promise<{ synthesis: SynthesisResult | null; errors: string[]; outputText: string }> {
-  const first = await generateText({ model, client, input: prompt, maxOutputTokens: 1400 });
-  let analysis = analyzeSynthesisOutput(first.text, context.rootInput, { requireContract });
+  const lensPrompt = thinkingSpacePrompt(context.perspective, "synthesis");
+  const first = await trace.generate(stage, { client, input: [prompt, lensPrompt].filter(Boolean).join("\n\n"), maxOutputTokens: context.perspective ? 1800 : 1400 });
+  let analysis = analyzeSynthesisOutput(perspectiveEnvelope(first.text, context.perspective).content, context.rootInput, { requireContract });
+  trace.check(stage, Boolean(analysis.synthesis));
   if (analysis.synthesis) {
     return { synthesis: analysis.synthesis, errors: [], outputText: first.text };
   }
 
-  const repair = await generateText({
-    model,
+  const repair = await trace.generate(stage, {
     client,
-    input: buildSynthesisContractRepairPrompt(context, first.text, analysis.errors),
-    maxOutputTokens: 1400
-  });
-  analysis = analyzeSynthesisOutput(repair.text, context.rootInput, { requireContract });
+    input: [buildSynthesisContractRepairPrompt(context, first.text, analysis.errors), lensPrompt].filter(Boolean).join("\n\n"),
+    maxOutputTokens: context.perspective ? 1800 : 1400
+  }, true);
+  analysis = analyzeSynthesisOutput(perspectiveEnvelope(repair.text, context.perspective).content, context.rootInput, { requireContract });
+  trace.check(stage, Boolean(analysis.synthesis), true);
   return {
     synthesis: analysis.synthesis,
     errors: analysis.errors,
@@ -142,6 +140,7 @@ export async function POST(req: NextRequest) {
   }
 
   let requestId = "";
+  let trace: GenerationTrace | undefined;
 
   try {
     requestId = typeof body.requestId === "string" ? body.requestId.trim() : "";
@@ -164,12 +163,15 @@ export async function POST(req: NextRequest) {
     }
 
     const model = getDialecticModel(typeof body.model === "string" ? body.model : undefined);
+    trace = createGenerationTrace("synthesis", model, req.signal);
     const client = getDialecticOpenAiClient();
+    const perspective = readThinkingSpaceRequest(body.perspective);
 
     const cards = retrieveDialecticPolicyCards(seedMode && sources
       ? `${rootInput}\n${sources.map((source) => source.text).join("\n")}` : rootInput);
     const context: SynthesisStageContext = {
       sourceMode: seedMode ? "seeds" : undefined,
+      perspective,
       rootInput,
       thesis: sources?.[0] || toSynthesisSource(thesis as Required<SynthesisInput>, "正"),
       antithesis: sources?.[1] || toSynthesisSource(antithesis as Required<SynthesisInput>, "反"),
@@ -178,74 +180,66 @@ export async function POST(req: NextRequest) {
     };
 
     const draft = await generateSynthesisStage(
-      model,
+      trace,
+      "draft",
       client,
       buildSynthesisDraftPrompt(context),
       context,
       false
     );
     if (!draft.synthesis) {
-      console.warn("/api/synthesis draft failed contract", {
-        requestId,
-        errors: draft.errors,
-        outputText: draft.outputText.slice(0, 500)
-      });
+      trace.finish("invalid_output");
       return invalidModelOutput(requestId, "synthesis draft failed contract after one repair");
     }
 
     const critic = await generateSynthesisStage(
-      model,
+      trace,
+      "critic",
       client,
       buildSynthesisCriticPrompt(context, draft.synthesis),
       context
     );
     if (!critic.synthesis) {
-      console.warn("/api/synthesis critic failed contract", {
-        requestId,
-        errors: critic.errors,
-        outputText: critic.outputText.slice(0, 500)
-      });
+      trace.finish("invalid_output");
       return invalidModelOutput(requestId, "synthesis critic failed contract after one repair");
     }
 
     let synthesis = critic.synthesis;
+    let selectedOutput = critic.outputText;
     if (isHighRiskDialectic(cards)) {
-      const auditResponse = await generateText({
-        model,
+      const auditResponse = await trace.generate("audit", {
         client,
         input: buildSynthesisAuditPrompt(context, critic.synthesis),
         maxOutputTokens: 1800
       });
       const audit = parseSynthesisAudit(auditResponse.text, cards);
+      trace.check("audit", Boolean(audit));
       if (!audit) {
-        console.warn("/api/synthesis malformed high-risk audit", {
-          requestId,
-          policyCardIds: cards.map((card) => card.id),
-          outputText: auditResponse.text.slice(0, 500)
-        });
+        trace.finish("invalid_output");
         return invalidModelOutput(requestId, "high-risk semantic audit failed");
       }
 
       const final = await generateSynthesisStage(
-        model,
+        trace,
+        "final",
         client,
         buildSynthesisFinalPrompt(context, critic.synthesis, audit),
         context
       );
       if (!final.synthesis) {
-        console.warn("/api/synthesis final rewrite failed contract", {
-          requestId,
-          errors: final.errors,
-          outputText: final.outputText.slice(0, 500)
-        });
+        trace.finish("invalid_output");
         return invalidModelOutput(requestId, "synthesis final rewrite failed contract after one repair");
       }
       synthesis = final.synthesis;
+      selectedOutput = final.outputText;
     }
 
-    return NextResponse.json({ requestId, synthesis });
+    trace.finish("success");
+    const envelope = perspectiveEnvelope(selectedOutput, perspective);
+    return NextResponse.json({ requestId, synthesis: { ...synthesis, ...responsePerspective(perspective, envelope.spatial.synthesis) },
+      ...(envelope.suggestions.length ? { suggestedAxes: envelope.suggestions } : {}) });
   } catch (error: unknown) {
-    console.error("/api/synthesis error", { requestId, ...getErrorInfo(error) });
+    if (req.signal.aborted) return NextResponse.json({ requestId, error: "cancelled" }, { status: 499 });
     const failure = describeProviderFailure(error);
     return NextResponse.json(
       {
@@ -255,5 +249,7 @@ export async function POST(req: NextRequest) {
       },
       { status: failure.status }
     );
+  } finally {
+    trace?.finish("failed");
   }
 }

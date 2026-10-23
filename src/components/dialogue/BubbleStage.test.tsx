@@ -1,7 +1,8 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, createEvent, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { BubbleStage } from "@/components/dialogue/BubbleStage";
 import { useDialogueUiStore } from "@/features/dialectic/store";
 import { DialogueStageNode } from "@/features/dialectic/viewModel";
+import { spatialStagePoint, publishSpatialFrame } from "./liquid/space";
 
 const metaballLayerMock = vi.hoisted(() => ({
   state: "ready" as "loading" | "ready" | "fallback"
@@ -77,6 +78,88 @@ function stubPointerMode(pointer: "fine" | "coarse", narrow = false) {
 }
 
 describe("BubbleStage", () => {
+  it("updates the caption boundary when the external context appears and disappears", async () => {
+    const nodes: DialogueStageNode[] = [{ id: "seed", label: "想法", kind: "user", relation: "focus", seedX: 50, seedY: 50 }];
+    const scene = (context: boolean) => <div data-testid="dialogue-shell">
+      <BubbleStage layoutKey="caption-context" nodes={nodes} focusNodeId="seed" onSelect={vi.fn()} />
+      {context ? <p data-testid="caption-context" data-stage-label-chrome="top" /> : null}
+    </div>;
+    const { rerender } = render(scene(true));
+    mockViewportRect(screen.getByTestId("dialogue-stage-viewport"));
+    const context = screen.getByTestId("caption-context");
+    Object.defineProperty(context, "getBoundingClientRect", { value: () => ({ top: 0, bottom: 80, width: 400, height: 80 }) });
+    act(() => { context.textContent = "沿极性展开 · 个体 ↔ 群体"; });
+    await waitFor(() => expect(screen.getByTestId("dialogue-stage-track")).toHaveAttribute("data-label-inset-top", "80"));
+    const layout = structuredClone(useDialogueUiStore.getState().stageLayouts["caption-context"]);
+    rerender(scene(false));
+    await waitFor(() => expect(screen.getByTestId("dialogue-stage-track")).toHaveAttribute("data-label-inset-top", "0"));
+    expect(useDialogueUiStore.getState().stageLayouts["caption-context"]).toEqual(layout);
+  });
+
+  it("hands each arriving pole its own preview and keeps the selected instance as its origin", () => {
+    render(<BubbleStage layoutKey="arrival-origins" focusNodeId="source-copy" onSelect={vi.fn()}
+      arrivals={{ sourceId: "source-copy", firstId: "individual", secondId: "group" }} eventNodeId="fusion"
+      nodes={[
+        { id: "source-copy", conceptId: "canonical", label: "分身", kind: "assistant", relation: "focus", sourceRole: "source", seedX: 25, seedY: 30 },
+        { id: "other", label: "另一来源", kind: "assistant", relation: "child", sourceRole: "source", seedX: 75, seedY: 30 },
+        { id: "individual", label: "个体", kind: "assistant", relation: "child", seedX: 25, seedY: 65 },
+        { id: "group", label: "群体", kind: "assistant", relation: "child", seedX: 75, seedY: 65 },
+        { id: "fusion", label: "合", kind: "assistant", branchType: "合", relation: "child", seedX: 50, seedY: 50 }
+      ]} />);
+    expect(JSON.parse(screen.getByTestId("dialogue-stage-node-individual").dataset.liquidOrigins!)).toEqual(["pending-thesis", "source-copy"]);
+    expect(JSON.parse(screen.getByTestId("dialogue-stage-node-group").dataset.liquidOrigins!)).toEqual(["pending-antithesis", "source-copy"]);
+    expect(JSON.parse(screen.getByTestId("dialogue-stage-node-fusion").dataset.liquidOrigins!)).toEqual(["pending-synthesis", "source-copy", "other"]);
+  });
+
+  it("does not turn temporary depth avoidance into the saved depth of a dragged instance", () => {
+    const z = .06 * 2.4 / (2 / 1.75);
+    render(<BubbleStage layoutKey="instance-depth" nodes={[
+      { id: "copy", conceptId: "concept", label: "共享概念", kind: "user", relation: "child", seedX: 30, seedY: 50, seedZ: z }
+    ]} focusNodeId="copy" onSelect={vi.fn()} />);
+    mockViewportRect(screen.getByTestId("dialogue-stage-viewport"));
+    const node = { id: "copy", center: [-.2, 0] as [number, number], depth: .06, radius: .1, color: [1,1,1] as [number,number,number], emphasis: 1 };
+    publishSpatialFrame(screen.getByTestId("dialogue-stage-track"), { base: [node], rendered: [{ ...node, depth: .6 }], pivot: [0,0], height: 300, scale: 1 });
+    fireEvent.pointerDown(screen.getByTestId("dialogue-stage-node-copy"), { button: 0, pointerId: 81, clientX: 120, clientY: 150 });
+    fireEvent.pointerMove(window, { pointerId: 81, clientX: 170, clientY: 150 });
+    fireEvent.pointerUp(window, { pointerId: 81, clientX: 170, clientY: 150 });
+    expect(useDialogueUiStore.getState().stageLayouts["instance-depth"].nodePositions.copy.z).toBeCloseTo(z);
+  });
+
+  it.each([false,true])("requires a fresh physical dwell after separation, renewed=%s",renewed=>{
+    vi.useFakeTimers();
+    try {
+      const action={key:"a:b",lineageParentId:"",thesisId:"a",antithesisId:"b",synthesisId:null,label:"a / b",available:true},run=vi.fn();
+      render(<BubbleStage layoutKey="physical-dwell" nodes={[
+        {id:"a",label:"a",kind:"assistant",branchType:"正",relation:"child",seedX:28,seedY:70},
+        {id:"b",label:"b",kind:"assistant",branchType:"反",relation:"child",seedX:72,seedY:70}
+      ]} focusNodeId="a" onSelect={vi.fn()} synthesisAction={action} onProposeSynthesis={run}/>);
+      mockViewportRect(screen.getByTestId("dialogue-stage-viewport"));
+      fireEvent.pointerDown(screen.getByTestId("dialogue-stage-node-a"),{button:0,pointerId:91,clientX:112,clientY:210});
+      fireEvent.pointerMove(window,{pointerId:91,clientX:240,clientY:210});
+      const a={id:"a",center:[.133333,-.2] as [number,number],depth:0,radius:.1,color:[1,1,1] as [number,number,number],emphasis:1};
+      const b={...a,id:"b",center:[.293333,-.2] as [number,number]};
+      const frame={base:[a,b],rendered:[a,b],pivot:[0,0] as [number,number],height:300,scale:1};
+      const host=screen.getByTestId("dialogue-stage-track");publishSpatialFrame(host,frame);
+      act(()=>vi.advanceTimersByTime(400));expect(screen.getByTestId("dialogue-synthesis-bridge-preview")).toHaveAttribute("data-armed","true");
+      publishSpatialFrame(host,{...frame,rendered:[{...a,depth:-.6},b]});
+      act(()=>vi.advanceTimersByTime(40));expect(screen.getByTestId("dialogue-synthesis-bridge-preview")).toHaveAttribute("data-armed","false");
+      publishSpatialFrame(host,frame);act(()=>vi.advanceTimersByTime(renewed?400:40));
+      fireEvent.pointerUp(window,{pointerId:91,clientX:240,clientY:210});
+      fireEvent.pointerUp(window,{pointerId:91,clientX:240,clientY:210});
+      expect(run).toHaveBeenCalledTimes(renewed?1:0);
+    }finally{vi.useRealTimers();}
+  });
+
+  it("passes the seed's saved polarity into its material, independently of current placement",()=>{
+    render(<BubbleStage layoutKey="polarity-colors" nodes={[-1,1].map((value,index)=>({
+      id:`pole-${index}`,label:"同一角色",kind:"assistant" as const,branchType:"正" as const,relation:"child" as const,seedX:30+index*40,seedY:50,
+      perspective:{axes:[{id:"scale",label:"尺度",negative:"细节",positive:"整体",value,source:"model" as const}]}
+    }))} focusNodeId={null} onSelect={vi.fn()}/>);
+    const negative=screen.getByTestId("dialogue-stage-node-pole-0"),positive=screen.getByTestId("dialogue-stage-node-pole-1");
+    expect(Number(negative.dataset.seedHueShift)).toBeCloseTo(-Number(positive.dataset.seedHueShift));
+    expect(negative.dataset.seedHueShift).not.toBe(positive.dataset.seedHueShift);
+    expect(positive).toHaveAttribute("data-seed-polarity-strength","1");
+  });
   it.each(["quick", "away", "cancel", "blur", "escape"])("does not synthesize on %s", mode => {
     vi.useFakeTimers();
     try {
@@ -98,6 +181,22 @@ describe("BubbleStage", () => {
       act(() => vi.advanceTimersByTime(400));
       expect(run).not.toHaveBeenCalled();
     } finally { vi.useRealTimers(); }
+  });
+
+  it("places both pair captions from the first contact without requiring a second pointer move", () => {
+    const action = { key: "a:b", lineageParentId: "", thesisId: "a", antithesisId: "b", synthesisId: null, label: "a / b", available: true };
+    render(<BubbleStage layoutKey="first-pair-caption" nodes={[
+      { id: "a", label: "a", kind: "user", relation: "child", seedX: 25, seedY: 50 },
+      { id: "b", label: "b", kind: "user", relation: "child", seedX: 75, seedY: 50 }
+    ]} focusNodeId="a" onSelect={vi.fn()} resolveSynthesisAction={() => action} />);
+    mockViewportRect(screen.getByTestId("dialogue-stage-viewport"));
+    const source = screen.getByTestId("dialogue-stage-node-a");
+    Object.defineProperty(source, "offsetHeight", { configurable: true, value: 104 });
+    Object.defineProperty(screen.getByTestId("dialogue-stage-node-b"), "offsetHeight", { configurable: true, value: 100 });
+    fireEvent.pointerDown(source, { button: 0, pointerId: 1, clientX: 100, clientY: 150 });
+    fireEvent.pointerMove(window, { pointerId: 1, clientX: 280, clientY: 150 });
+    expect(screen.getByTestId("dialogue-synthesis-pair-label").style.getPropertyValue("--pair-caption-offset")).toBe("70px");
+    fireEvent.pointerCancel(window, { pointerId: 1 });
   });
 
   it("double click splits once without opening the reading card; keyboard activation still reads", () => {
@@ -147,14 +246,17 @@ describe("BubbleStage", () => {
     fireEvent.pointerUp(window, { pointerId: 1, clientX: 240, clientY: 180 });
     fireEvent.click(node);
 
-    expect(useDialogueUiStore.getState().stageLayouts["focus:root"].nodePositions.root).toEqual({
+    expect(useDialogueUiStore.getState().stageLayouts["focus:root"].nodePositions.root).toMatchObject({
       x: 60,
-      y: 60
+      y: 60,
+      z: expect.any(Number)
     });
     expect(onSelect).not.toHaveBeenCalled();
   });
 
-  it("requires dwell and release before requesting synthesis once", async () => {
+  it("requires dwell and release before requesting synthesis once", () => {
+    vi.useFakeTimers();
+    try {
     const nodes: DialogueStageNode[] = [
       {
         id: "thesis",
@@ -203,15 +305,28 @@ describe("BubbleStage", () => {
     fireEvent.pointerMove(window, { pointerId: 11, clientX: 240, clientY: 210 });
 
     expect(screen.getByTestId("dialogue-synthesis-bridge-preview")).toBeInTheDocument();
+    expect(screen.getByTestId("dialogue-synthesis-pair-label")).toHaveTextContent(/继续.*暂停/);
+    expect(thesis).toHaveAttribute("data-label-handoff", "true");
+    expect(screen.getByTestId("dialogue-stage-node-antithesis")).toHaveAttribute("data-label-handoff", "true");
+    expect(thesis).toHaveAccessibleName(/继续.*正方/);
     expect(onProposeSynthesis).not.toHaveBeenCalled();
-    await waitFor(() => expect(screen.getByTestId("dialogue-synthesis-bridge-preview")).toHaveAttribute("data-armed", "true"));
+    act(() => vi.advanceTimersByTime(319));
+    expect(screen.getByTestId("dialogue-synthesis-bridge-preview")).toHaveAttribute("data-armed", "false");
+    expect(onProposeSynthesis).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(1));
+    expect(screen.getByTestId("dialogue-synthesis-bridge-preview")).toHaveAttribute("data-armed", "true");
 
     fireEvent.pointerUp(window, { pointerId: 11, clientX: 240, clientY: 210 });
 
     expect(screen.queryByTestId("dialogue-synthesis-bridge-preview")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("dialogue-synthesis-pair-label")).not.toBeInTheDocument();
+    expect(thesis).not.toHaveAttribute("data-label-handoff");
     expect(onProposeSynthesis).toHaveBeenCalledWith(synthesisAction);
     expect(onProposeSynthesis).toHaveBeenCalledOnce();
     expect(screen.queryByTestId("dialogue-synthesis-proposal")).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("keeps full node meaning in the accessible name when the visual label is short", () => {
@@ -371,12 +486,12 @@ describe("BubbleStage", () => {
       compact?: { nodePositions: Record<string, { x: number; y: number }> };
     };
     expect(layout.nodePositions["growth-merge"]).toEqual({ x: 80, y: 65 });
-    expect(layout.compact?.nodePositions["growth-merge"]).toEqual({ x: 60, y: 82 });
+    expect(layout.compact?.nodePositions["growth-merge"]).toMatchObject({ x: 60, y: 82, z: expect.any(Number) });
     expect(merge.style.getPropertyValue("--stage-node-drag-x")).toBe("0px");
     expect(merge.style.getPropertyValue("--stage-node-drag-y")).toBe("0px");
   });
 
-  it("persists stage pan independently from node positions", () => {
+  it("orbits the scene without changing saved node positions and restores the view", () => {
     const nodes: DialogueStageNode[] = [
       {
         id: "root",
@@ -398,9 +513,14 @@ describe("BubbleStage", () => {
     fireEvent.pointerUp(window, { pointerId: 2, clientX: 176, clientY: 84 });
 
     expect(useDialogueUiStore.getState().stageLayouts["focus:root"]).toMatchObject({
-      pan: { x: 36, y: -26 },
+      pan: { x: 0, y: 0 },
       nodePositions: { root: { x: 50, y: 50 } }
     });
+    expect(Number(track.dataset.spaceYaw)).toBeCloseTo(.144);
+    expect(Number(track.dataset.spacePitch)).toBeCloseTo(-.078);
+    fireEvent.click(screen.getByRole("button", {name:"复位三维视角"}));
+    expect(track).toHaveAttribute("data-space-yaw", "0");
+    expect(track).toHaveAttribute("data-space-pitch", "0");
   });
 
   it("does not start stage pan from touch scroll gestures on the track", () => {
@@ -425,6 +545,33 @@ describe("BubbleStage", () => {
     fireEvent.pointerUp(window, { pointerId: 8, pointerType: "touch", clientX: 140, clientY: 190 });
 
     expect(useDialogueUiStore.getState().stageLayouts["focus:root"].pan).toEqual({ x: 0, y: 0 });
+  });
+
+  it("keeps a dragged seed under the pointer after the camera rotates", () => {
+    const node: DialogueStageNode = { id: "spatial-drag", label: "种子", kind: "user", relation: "focus", seedX: 50, seedY: 50 };
+    render(<BubbleStage layoutKey="spatial-drag" nodes={[node]} focusNodeId={node.id} onSelect={vi.fn()} />);
+    const viewport = screen.getByTestId("dialogue-stage-viewport"), track = screen.getByTestId("dialogue-stage-track");
+    mockViewportRect(viewport); mockViewportRect(track);
+    fireEvent.keyDown(track, {key:"ArrowRight"}); fireEvent.keyDown(track, {key:"ArrowRight"});
+    fireEvent.keyDown(track, {key:"ArrowUp"});
+    const orbit = { yaw:Number(track.dataset.spaceYaw), pitch:Number(track.dataset.spacePitch) };
+    const start = spatialStagePoint({x:50,y:50}, node.id, orbit, {width:400,height:300}, 300);
+    const button = screen.getByTestId(`dialogue-stage-node-${node.id}`);
+    vi.spyOn(button,"getBoundingClientRect").mockReturnValue({x:start.x*4-50,y:start.y*3-50,
+      left:start.x*4-50,top:start.y*3-50,right:start.x*4+50,bottom:start.y*3+50,width:100,height:100,toJSON:()=>({})});
+    fireEvent.pointerDown(button, {button:0,pointerId:11,clientX:start.x*4,clientY:start.y*3});
+    fireEvent.pointerMove(window, {pointerId:11,clientX:start.x*4+40,clientY:start.y*3+18});
+    fireEvent.keyDown(track,{key:"Home"});
+    expect(Number(track.dataset.spaceYaw)).toBe(orbit.yaw);
+    fireEvent.pointerUp(window, {pointerId:11,clientX:start.x*4+40,clientY:start.y*3+18});
+    const saved = useDialogueUiStore.getState().stageLayouts["spatial-drag"].nodePositions[node.id];
+    const screenPosition = spatialStagePoint(saved,node.id,orbit,{width:400,height:300},300);
+    expect(screenPosition.x*4).toBeCloseTo(start.x*4+40,6);
+    expect(screenPosition.y*3).toBeCloseTo(start.y*3+18,6);
+    const beforeReset = {...saved};
+    fireEvent.keyDown(track,{key:"Home"});
+    expect(track).toHaveAttribute("data-space-yaw","0");
+    expect(useDialogueUiStore.getState().stageLayouts["spatial-drag"].nodePositions[node.id]).toEqual(beforeReset);
   });
 
   it("does not drag nodes from touch scroll gestures", () => {
@@ -487,7 +634,210 @@ describe("BubbleStage", () => {
     } finally { vi.useRealTimers(); }
   });
 
-  it("does not pan the empty-state decorative cluster", () => {
+  it("keeps the current angle after capture loss and accepts a new rotation", () => {
+    render(<BubbleStage layoutKey="lost-orbit" nodes={[{ id: "a", label: "a", kind: "user", relation: "focus", seedX: 50, seedY: 50 }]} focusNodeId="a" onSelect={vi.fn()} />);
+    mockViewportRect(screen.getByTestId("dialogue-stage-viewport"));
+    const track = screen.getByTestId("dialogue-stage-track");
+    fireEvent.pointerDown(track, { button: 0, pointerId: 85, pointerType: "touch", clientX: 100, clientY: 150 });
+    fireEvent.pointerMove(window, { pointerId: 85, clientX: 160, clientY: 150 });
+    const yaw = Number(track.dataset.spaceYaw);
+    fireEvent.lostPointerCapture(track, { pointerId: 85 });
+    fireEvent.pointerMove(window, { pointerId: 85, clientX: 250, clientY: 150 });
+    expect(Number(track.dataset.spaceYaw)).toBe(yaw);
+    fireEvent.pointerDown(track, { button: 0, pointerId: 86, pointerType: "touch", clientX: 100, clientY: 150 });
+    fireEvent.pointerMove(window, { pointerId: 86, clientX: 140, clientY: 150 });
+    fireEvent.pointerUp(window, { pointerId: 86, clientX: 140, clientY: 150 });
+    expect(Number(track.dataset.spaceYaw)).toBeGreaterThan(yaw);
+  });
+
+  it("cancels pickup when the browser releases the touch capture", () => {
+    vi.useFakeTimers();
+    try {
+      render(<BubbleStage layoutKey="lost-hold" nodes={[{ id: "a", label: "a", kind: "user", relation: "focus", seedX: 50, seedY: 50 }]} focusNodeId="a" onSelect={vi.fn()} />);
+      const seed = screen.getByTestId("dialogue-stage-node-a");
+      fireEvent.pointerDown(seed, { button: 0, pointerId: 81, pointerType: "touch", clientX: 200, clientY: 150 });
+      fireEvent.lostPointerCapture(seed, { pointerId: 81, pointerType: "touch" });
+      expect(seed).not.toHaveAttribute("data-touch-holding");
+      act(() => vi.advanceTimersByTime(400));
+      fireEvent.pointerMove(window, { pointerId: 81, pointerType: "touch", clientX: 250, clientY: 150 });
+      fireEvent.pointerUp(window, { pointerId: 81, pointerType: "touch", clientX: 250, clientY: 150 });
+      expect(useDialogueUiStore.getState().stageLayouts["lost-hold"].nodePositions.a).toEqual({ x: 50, y: 50 });
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("cancels an armed fusion on capture loss and lets a fresh gesture start", () => {
+    vi.useFakeTimers();
+    try {
+      const action = { key: "a:b", lineageParentId: "", thesisId: "a", antithesisId: "b", synthesisId: null, label: "a / b", available: true };
+      const nodes: DialogueStageNode[] = [
+        { id: "a", label: "a", kind: "assistant", branchType: "正", relation: "child", seedX: 25, seedY: 50 },
+        { id: "b", label: "b", kind: "assistant", branchType: "反", relation: "child", seedX: 75, seedY: 50 }
+      ];
+      const propose = vi.fn();
+      render(<BubbleStage layoutKey="lost-fusion" nodes={nodes} focusNodeId="a" onSelect={vi.fn()} resolveSynthesisAction={() => action} onProposeSynthesis={propose} />);
+      mockViewportRect(screen.getByTestId("dialogue-stage-viewport"));
+      const seed = screen.getByTestId("dialogue-stage-node-a");
+      fireEvent.pointerDown(seed, { button: 0, pointerId: 82, pointerType: "touch", clientX: 100, clientY: 150 });
+      act(() => vi.advanceTimersByTime(350));
+      fireEvent.pointerMove(window, { pointerId: 82, pointerType: "touch", clientX: 280, clientY: 150 });
+      act(() => vi.advanceTimersByTime(320));
+      expect(screen.getByTestId("dialogue-synthesis-bridge-preview")).toBeInTheDocument();
+      fireEvent.lostPointerCapture(seed, { pointerId: 83, pointerType: "touch" });
+      expect(screen.getByTestId("dialogue-synthesis-bridge-preview")).toBeInTheDocument();
+      fireEvent.lostPointerCapture(seed, { pointerId: 82, pointerType: "touch" });
+      expect(screen.queryByTestId("dialogue-synthesis-bridge-preview")).not.toBeInTheDocument();
+      fireEvent.pointerUp(window, { pointerId: 82, pointerType: "touch", clientX: 280, clientY: 150 });
+      expect(propose).not.toHaveBeenCalled();
+      expect(useDialogueUiStore.getState().stageLayouts["lost-fusion"].nodePositions.a).toEqual({ x: 25, y: 50 });
+      fireEvent.pointerDown(seed, { button: 0, pointerId: 84, pointerType: "touch", clientX: 100, clientY: 150 });
+      act(() => vi.advanceTimersByTime(350));
+      fireEvent.pointerMove(window, { pointerId: 84, pointerType: "touch", clientX: 150, clientY: 150 });
+      fireEvent.pointerUp(window, { pointerId: 84, pointerType: "touch", clientX: 150, clientY: 150 });
+      expect(useDialogueUiStore.getState().stageLayouts["lost-fusion"].nodePositions.a.x).toBe(37.5);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("uses the remaining physical hold for a delayed touch and matches its visible progress", () => {
+    vi.useFakeTimers();
+    const clock = vi.spyOn(performance, "now").mockReturnValue(1000);
+    try {
+      const nodes: DialogueStageNode[] = [{ id: "a", label: "a", kind: "user", relation: "focus", seedX: 50, seedY: 50 }];
+      render(<BubbleStage layoutKey="delayed-touch" nodes={nodes} focusNodeId="a" onSelect={vi.fn()} />);
+      mockViewportRect(screen.getByTestId("dialogue-stage-viewport"));
+      const seed = screen.getByTestId("dialogue-stage-node-a");
+      const event = createEvent.pointerDown(seed, { button: 0, pointerId: 55, pointerType: "touch", clientX: 200, clientY: 150 });
+      Object.defineProperty(event, "timeStamp", { value: 880 });
+      fireEvent(seed, event);
+      expect(seed.style.getPropertyValue("--liquid-hold-duration")).toBe("230ms");
+      act(() => vi.advanceTimersByTime(229)); expect(seed).toHaveAttribute("data-touch-holding", "true");
+      act(() => vi.advanceTimersByTime(1)); expect(seed).not.toHaveAttribute("data-touch-holding");
+      fireEvent.pointerMove(window, { pointerId: 55, pointerType: "touch", clientX: 260, clientY: 150 });
+      fireEvent.pointerUp(window, { pointerId: 55, pointerType: "touch", clientX: 260, clientY: 150 });
+      expect(useDialogueUiStore.getState().stageLayouts["delayed-touch"].nodePositions.a.x).toBe(65);
+    } finally { clock.mockRestore(); vi.useRealTimers(); }
+  });
+
+  it("still cancels a quick release when a delayed touch's pickup deadline has already passed", () => {
+    vi.useFakeTimers();
+    const clock = vi.spyOn(performance, "now").mockReturnValue(1000);
+    try {
+      const nodes: DialogueStageNode[] = [{ id: "a", label: "a", kind: "user", relation: "focus", seedX: 50, seedY: 50 }];
+      render(<BubbleStage layoutKey="late-tap" nodes={nodes} focusNodeId="a" onSelect={vi.fn()} />);
+      mockViewportRect(screen.getByTestId("dialogue-stage-viewport"));
+      const seed = screen.getByTestId("dialogue-stage-node-a"), event = createEvent.pointerDown(seed, { button: 0, pointerId: 56, pointerType: "touch", clientX: 200, clientY: 150 });
+      Object.defineProperty(event, "timeStamp", { value: 500 }); fireEvent(seed, event);
+      fireEvent.pointerUp(window, { pointerId: 56, pointerType: "touch", clientX: 200, clientY: 150 });
+      act(() => vi.advanceTimersByTime(500));
+      fireEvent.pointerMove(window, { pointerId: 56, pointerType: "touch", clientX: 300, clientY: 150 });
+      fireEvent.pointerUp(window, { pointerId: 56, pointerType: "touch", clientX: 300, clientY: 150 });
+      expect(seed).not.toHaveAttribute("data-touch-holding");
+      expect(useDialogueUiStore.getState().stageLayouts["late-tap"].nodePositions.a).toEqual({ x: 50, y: 50 });
+    } finally { clock.mockRestore(); vi.useRealTimers(); }
+  });
+
+  it("keeps the first touch in control when a second finger touches and releases", () => {
+    vi.useFakeTimers();
+    try {
+      const action = { key: "a:b", lineageParentId: "", thesisId: "a", antithesisId: "b", synthesisId: null, label: "a / b", available: true };
+      const nodes: DialogueStageNode[] = [
+        { id: "a", label: "a", kind: "assistant", branchType: "正", relation: "child", seedX: 25, seedY: 50 },
+        { id: "b", label: "b", kind: "assistant", branchType: "反", relation: "child", seedX: 75, seedY: 50 }
+      ];
+      render(<BubbleStage layoutKey="touch-owner" nodes={nodes} focusNodeId="a" onSelect={vi.fn()} resolveSynthesisAction={() => action} />);
+      mockViewportRect(screen.getByTestId("dialogue-stage-viewport"));
+      const first = screen.getByTestId("dialogue-stage-node-a"), second = screen.getByTestId("dialogue-stage-node-b");
+      fireEvent.pointerDown(first, { button: 0, pointerId: 41, pointerType: "touch", clientX: 100, clientY: 150 });
+      fireEvent.pointerDown(second, { button: 0, pointerId: 42, pointerType: "touch", clientX: 300, clientY: 150 });
+      expect(first).toHaveAttribute("data-touch-holding", "true");
+      fireEvent.pointerUp(window, { pointerId: 42, pointerType: "touch" });
+      act(() => vi.advanceTimersByTime(350));
+      fireEvent.pointerMove(window, { pointerId: 41, pointerType: "touch", clientX: 280, clientY: 150 });
+      expect(screen.getByTestId("dialogue-synthesis-bridge-preview")).toBeInTheDocument();
+      fireEvent.pointerCancel(window, { pointerId: 41, pointerType: "touch" });
+      expect(useDialogueUiStore.getState().stageLayouts["touch-owner"].nodePositions.a).toEqual({ x: 25, y: 50 });
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("freezes the current orbit when the overview opens and accepts a fresh gesture on return", () => {
+    const nodes: DialogueStageNode[] = [{ id: "a", label: "a", kind: "user", relation: "focus", seedX: 50, seedY: 50 }];
+    const props = { layoutKey: "orbit-overview", nodes, focusNodeId: "a", onSelect: vi.fn() };
+    const { rerender } = render(<BubbleStage {...props} />);
+    mockViewportRect(screen.getByTestId("dialogue-stage-viewport"));
+    const track = screen.getByTestId("dialogue-stage-track");
+    fireEvent.pointerDown(track, { button: 0, pointerId: 51, clientX: 40, clientY: 40 });
+    fireEvent.pointerMove(window, { pointerId: 51, clientX: 80, clientY: 50 });
+    const yaw = track.dataset.spaceYaw, pitch = track.dataset.spacePitch;
+    rerender(<BubbleStage {...props} suspended />);
+    fireEvent.pointerMove(window, { pointerId: 51, clientX: 140, clientY: 90 });
+    expect(track.dataset.spaceYaw).toBe(yaw); expect(track.dataset.spacePitch).toBe(pitch);
+    fireEvent.pointerUp(window, { pointerId: 51, clientX: 140, clientY: 90 });
+    rerender(<BubbleStage {...props} />);
+    fireEvent.pointerDown(track, { button: 0, pointerId: 52, clientX: 40, clientY: 40 });
+    fireEvent.pointerMove(window, { pointerId: 52, clientX: 60, clientY: 40 });
+    fireEvent.pointerUp(window, { pointerId: 52, clientX: 60, clientY: 40 });
+    expect(Number(track.dataset.spaceYaw)).toBeCloseTo(Number(yaw) + .08);
+  });
+
+  it("cancels a pending touch pickup when the overview opens", () => {
+    vi.useFakeTimers();
+    try {
+      const nodes: DialogueStageNode[] = [{ id: "a", label: "a", kind: "user", relation: "focus", seedX: 50, seedY: 50 }];
+      const props = { layoutKey: "hold-overview", nodes, focusNodeId: "a", onSelect: vi.fn() };
+      const { rerender } = render(<BubbleStage {...props} />);
+      mockViewportRect(screen.getByTestId("dialogue-stage-viewport"));
+      const seed = screen.getByTestId("dialogue-stage-node-a");
+      fireEvent.pointerDown(seed, { button: 0, pointerId: 53, pointerType: "touch", clientX: 200, clientY: 150 });
+      act(() => vi.advanceTimersByTime(100));
+      rerender(<BubbleStage {...props} suspended />);
+      expect(seed).not.toHaveAttribute("data-touch-holding");
+      act(() => vi.advanceTimersByTime(400));
+      fireEvent.pointerMove(window, { pointerId: 53, pointerType: "touch", clientX: 300, clientY: 150 });
+      fireEvent.pointerUp(window, { pointerId: 53, pointerType: "touch", clientX: 300, clientY: 150 });
+      expect(useDialogueUiStore.getState().stageLayouts["hold-overview"].nodePositions.a).toEqual({ x: 50, y: 50 });
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("cancels an armed fusion instead of submitting it underneath the overview", () => {
+    vi.useFakeTimers();
+    try {
+      const action = { key: "a:b", lineageParentId: "", thesisId: "a", antithesisId: "b", synthesisId: null, label: "a / b", available: true };
+      const nodes: DialogueStageNode[] = [
+        { id: "a", label: "a", kind: "assistant", branchType: "正", relation: "child", seedX: 25, seedY: 50 },
+        { id: "b", label: "b", kind: "assistant", branchType: "反", relation: "child", seedX: 75, seedY: 50 }
+      ];
+      const submit = vi.fn(), props = { layoutKey: "fusion-overview", nodes, focusNodeId: "a", onSelect: vi.fn(), resolveSynthesisAction: () => action, onProposeSynthesis: submit };
+      const { rerender } = render(<BubbleStage {...props} />);
+      mockViewportRect(screen.getByTestId("dialogue-stage-viewport"));
+      fireEvent.pointerDown(screen.getByTestId("dialogue-stage-node-a"), { button: 0, pointerId: 54, pointerType: "touch", clientX: 100, clientY: 150 });
+      act(() => vi.advanceTimersByTime(350));
+      fireEvent.pointerMove(window, { pointerId: 54, pointerType: "touch", clientX: 280, clientY: 150 });
+      act(() => vi.advanceTimersByTime(320));
+      expect(screen.getByTestId("dialogue-synthesis-bridge-preview")).toHaveAttribute("data-armed", "true");
+      rerender(<BubbleStage {...props} suspended />);
+      fireEvent.pointerUp(window, { pointerId: 54, pointerType: "touch", clientX: 280, clientY: 150 });
+      expect(submit).not.toHaveBeenCalled(); expect(screen.queryByTestId("dialogue-synthesis-bridge-preview")).not.toBeInTheDocument();
+      expect(useDialogueUiStore.getState().stageLayouts["fusion-overview"].nodePositions.a).toEqual({ x: 25, y: 50 });
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("releases a touch drag when the page is hidden without persisting an unfinished position", () => {
+    vi.useFakeTimers();
+    const visibility = vi.spyOn(document, "hidden", "get").mockReturnValue(false);
+    try {
+      const nodes: DialogueStageNode[] = [{ id: "a", label: "a", kind: "user", relation: "focus", seedX: 50, seedY: 50 }];
+      render(<BubbleStage layoutKey="touch-hidden" nodes={nodes} focusNodeId="a" onSelect={vi.fn()} />);
+      mockViewportRect(screen.getByTestId("dialogue-stage-viewport"));
+      fireEvent.pointerDown(screen.getByTestId("dialogue-stage-node-a"), { button: 0, pointerId: 57, pointerType: "touch", clientX: 200, clientY: 150 });
+      act(() => vi.advanceTimersByTime(350));
+      fireEvent.pointerMove(window, { pointerId: 57, pointerType: "touch", clientX: 260, clientY: 150 });
+      visibility.mockReturnValue(true); fireEvent(document, new Event("visibilitychange"));
+      visibility.mockReturnValue(false); fireEvent(document, new Event("visibilitychange"));
+      fireEvent.pointerUp(window, { pointerId: 57, pointerType: "touch", clientX: 260, clientY: 150 });
+      expect(useDialogueUiStore.getState().stageLayouts["touch-hidden"].nodePositions.a).toEqual({ x: 50, y: 50 });
+    } finally { visibility.mockRestore(); vi.useRealTimers(); }
+  });
+
+  it("does not pan an empty stage", () => {
     render(<BubbleStage layoutKey="focus:empty" nodes={[]} focusNodeId={null} onSelect={vi.fn()} />);
 
     mockViewportRect(screen.getByTestId("dialogue-stage-viewport"));
@@ -504,10 +854,10 @@ describe("BubbleStage", () => {
     stubPointerMode("fine");
     render(<BubbleStage layoutKey="focus:empty" nodes={[]} focusNodeId={null} onSelect={vi.fn()} />);
 
-    expect(screen.getByText("写下母题，让正反开始生成。")).toBeInTheDocument();
+    expect(screen.getByText("在下方输入一个想法，看它分裂为正与反")).toBeInTheDocument();
   });
 
-  it("lets the empty theme node act as the primary input target", () => {
+  it("focuses input from a quiet empty prompt without showing illustrative seeds", () => {
     const onPrimaryAction = vi.fn();
 
     render(
@@ -520,20 +870,13 @@ describe("BubbleStage", () => {
       />
     );
 
-    const root = screen.getByRole("button", { name: /主题/ });
+    const root = screen.getByRole("button", { name: "点此输入一个想法" });
     fireEvent.click(root);
 
     expect(onPrimaryAction).toHaveBeenCalledWith(null);
-    expect(root).toHaveAttribute("data-metaball-surface", "empty-root");
-    expect(root).toHaveAttribute("data-metaball-role", "user");
-    expect(screen.getByTestId("dialogue-empty-stage-thesis")).toHaveAttribute(
-      "data-metaball-surface",
-      "pending-thesis"
-    );
-    expect(screen.getByTestId("dialogue-empty-stage-antithesis")).toHaveAttribute(
-      "data-metaball-surface",
-      "pending-antithesis"
-    );
+    expect(root).not.toHaveAttribute("data-metaball-surface");
+    expect(screen.queryByTestId("dialogue-empty-stage-thesis")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("dialogue-empty-stage-antithesis")).not.toBeInTheDocument();
   });
 
   it.each(["ready", "fallback"] as const)(
@@ -700,7 +1043,7 @@ describe("BubbleStage", () => {
       />
     );
 
-    expect(screen.getByTestId("dialogue-stage-pending-branches")).toHaveTextContent("正在让问题分岔");
+    expect(screen.getByTestId("dialogue-stage-pending-branches")).toHaveTextContent("正在深化主张、质疑前提");
     expect(screen.getByTestId("dialogue-stage-pending-branches").querySelector("svg")).toBeNull();
     expect(screen.getByTestId("dialogue-stage-pending-thesis")).toHaveAttribute(
       "data-metaball-role",
@@ -918,9 +1261,10 @@ describe("BubbleStage", () => {
     fireEvent.pointerMove(window, { pointerId: 4, clientX: 200, clientY: 450 });
     fireEvent.pointerUp(window, { pointerId: 4, clientX: 200, clientY: 450 });
 
-    expect(useDialogueUiStore.getState().stageLayouts["focus:low"].nodePositions["low-node"]).toEqual({
+    expect(useDialogueUiStore.getState().stageLayouts["focus:low"].nodePositions["low-node"]).toMatchObject({
       x: 50,
-      y: 84
+      y: 84,
+      z: expect.any(Number)
     });
   });
 });

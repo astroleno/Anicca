@@ -1,4 +1,5 @@
 import { AniccaNode, BranchType, Graph } from "@/types/anicca";
+import { polarityLabel } from "@/features/perspectives/polarity";
 import {
   projectDialogueScene,
   type DialogueStageNode
@@ -11,6 +12,7 @@ export type DialogueBreadcrumbItem = {
   label: string;
   kind: AniccaNode["kind"];
   branchType?: BranchType;
+  poleLabel?: string;
 };
 
 export type DialogueSidebarItem = {
@@ -20,6 +22,7 @@ export type DialogueSidebarItem = {
   label: string;
   kind: AniccaNode["kind"];
   branchType?: BranchType;
+  poleLabel?: string;
   displayRole: "node" | "synthesis-event";
   summary?: string;
   isFocused: boolean;
@@ -60,6 +63,7 @@ export type DialogueSynthesisAction = {
   lineageParentId: string;
   thesisId: string;
   antithesisId: string;
+  sourceInstanceIds?: [string, string];
   synthesisId: string | null;
   label: string;
   available: boolean;
@@ -205,6 +209,7 @@ function buildSidebarItems(graph: Graph, focusNodeId: string | null, breadcrumbI
       kind: node.kind,
       branchType: node.branchType,
       displayRole: "node",
+      ...(polarityLabel(node.meta?.polarity) ? { poleLabel: polarityLabel(node.meta?.polarity) } : {}),
       summary: node.meta?.summary || (node.kind === "user" ? getNodePreview(node) : undefined),
       isFocused: node.id === focusNodeId,
       isOnFocusedPath: focusPath.has(node.id),
@@ -657,7 +662,8 @@ export function deriveDialogueView(graph: Graph, requestedFocusNodeId: string | 
       id: node.id,
       label: getNodeLabel(node),
       kind: node.kind,
-      branchType: node.branchType
+      branchType: node.branchType,
+      ...(polarityLabel(node.meta?.polarity) ? { poleLabel: polarityLabel(node.meta?.polarity) } : {})
     };
   });
   const composerTarget = buildComposerTarget(graph, focusNodeId);

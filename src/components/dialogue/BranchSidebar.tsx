@@ -27,7 +27,7 @@ export function BranchSidebar({ breadcrumb, items, pendingRoot = null, onSelect 
               onClick={() => onSelect(item.id)}
             >
               <span>{item.label}</span>
-              {item.branchType ? <small>{item.branchType}</small> : null}
+              {item.poleLabel || item.branchType ? <small>{item.poleLabel || item.branchType}</small> : null}
             </button>
           ))}
         </nav>
@@ -35,7 +35,7 @@ export function BranchSidebar({ breadcrumb, items, pendingRoot = null, onSelect 
 
       <nav className={styles.sidebarTree} aria-label="分支列表">
         {pendingRoot ? (
-          <div className={[styles.sidebarItem, styles.sidebarPendingItem].join(" ")} role="status" aria-live="polite">
+          <div className={[styles.sidebarItem, styles.sidebarPendingItem].join(" ")}>
             <span className={styles.sidebarItemMain}>
               <span className={styles.sidebarItemLabelGroup}>
                 <span className={styles.sidebarItemLabel}>{pendingRoot.label}</span>
@@ -104,7 +104,7 @@ export function BranchSidebar({ breadcrumb, items, pendingRoot = null, onSelect 
                 <span className={styles.sidebarItemLabelGroup}>
                   <span className={styles.sidebarItemLabel}>{item.label}</span>
                 </span>
-                {item.branchType ? <small>{item.branchType}</small> : null}
+                {item.poleLabel || item.branchType ? <small>{item.poleLabel || item.branchType}</small> : null}
               </span>
               {item.summary ? <span className={styles.sidebarItemSummary}>{item.summary}</span> : null}
               {item.sourceLabels.length ? (

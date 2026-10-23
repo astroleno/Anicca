@@ -10,7 +10,7 @@ const experiments = [
 ];
 
 export default function LabsPage() {
-  return <main style={{ minHeight: "100dvh", background: "#f6f1f8", color: "#342d46", padding: "48px max(24px, calc((100vw - 720px) / 2))" }}>
+  return <main style={{ height: "100dvh", overflowY: "auto", fontFamily: "var(--anicca-font-interface)", background: "#f6f1f8", color: "#342d46", padding: "48px max(24px, calc((100vw - 720px) / 2))" }}>
     <Link href="/dialogue" style={{ color: "inherit" }}>← 返回对话</Link>
     <h1 style={{ marginTop: 36 }}>视觉实验</h1>
     <p>这些画布用于探索视觉和交互，不会写入你的对话工作区。</p>

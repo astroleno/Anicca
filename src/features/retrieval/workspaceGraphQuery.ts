@@ -1,4 +1,6 @@
 import { AniccaNode, BranchType, Edge, Graph } from "@/types/anicca";
+import { normalizeSeedPerspective, perspectiveLabel, readThinkingSpaceRequest, seedPerspectiveLabel } from "@/features/perspectives/model";
+import { normalizePolarityOrigin, polarityAxis, polarityLabel } from "@/features/perspectives/polarity";
 import {
   RetrievalClampedOptions,
   RetrievalConfidence,
@@ -50,11 +52,12 @@ type QueryOptions = {
   excludeNodeIds?: string[];
 };
 
-const DEFAULT_RELATIONS: RetrievalRelation[] = ["thesis", "antithesis", "synthesis", "continuation"];
+const DEFAULT_RELATIONS: RetrievalRelation[] = ["thesis", "antithesis", "polarity", "synthesis", "continuation"];
 const ALL_RELATIONS: RetrievalRelation[] = [
   "lineage",
   "thesis",
   "antithesis",
+  "polarity",
   "synthesis",
   "continuation",
   "source",
@@ -69,6 +72,7 @@ const ALL_RELATIONS: RetrievalRelation[] = [
 const EXPLICIT_REASON_RELATIONS: Record<string, RetrievalRelation> = {
   正: "thesis",
   反: "antithesis",
+  polarity: "polarity",
   continue: "continuation",
   synthesis: "synthesis",
   merge: "merge",
@@ -81,6 +85,7 @@ const EXPLICIT_REASON_RELATIONS: Record<string, RetrievalRelation> = {
 const RELATION_ORDER: Record<RetrievalRelation, number> = {
   thesis: 0,
   antithesis: 1,
+  polarity: 1.5,
   synthesis: 2,
   continuation: 3,
   source: 4,
@@ -97,6 +102,7 @@ const FIELD_ORDER: MatchField[] = [
   "label",
   "summary",
   "text",
+  "viewpoint",
   "growthOperator",
   "growthArtworkId",
   "growthEventId",
@@ -106,6 +112,7 @@ const FIELD_BONUS: Record<MatchField, number> = {
   label: 30,
   summary: 20,
   text: 10,
+  viewpoint: 17,
   growthOperator: 18,
   growthArtworkId: 16,
   growthEventId: 14,
@@ -176,6 +183,9 @@ function toRetrievalNode(id: string, node: AniccaNode, warnings: string[]): Retr
     summary,
     kind: node.kind,
     branchType,
+    polarity: normalizePolarityOrigin(node.meta?.polarity),
+    perspective: normalizeSeedPerspective(node.meta?.perspective),
+    fissionFrame: readThinkingSpaceRequest(node.meta?.fissionFrame),
     ...(node.meta?.growth
       ? {
           growth: {
@@ -207,6 +217,8 @@ function inferRelationFromShape(from: RetrievalNode | undefined, to: RetrievalNo
     return null;
   }
 
+  if (to.polarity && to.branchType) return null;
+
   if (to.kind === "assistant" && to.growth?.operator) {
     const growthRelation = `growth:${to.growth.operator}`;
     if (isRetrievalRelation(growthRelation)) {
@@ -218,7 +230,8 @@ function inferRelationFromShape(from: RetrievalNode | undefined, to: RetrievalNo
     return "merge";
   }
 
-  if (from.kind === "user" && to.kind === "assistant") {
+  if (to.kind === "assistant") {
+    if (to.polarity && !to.branchType) return "polarity";
     if (to.branchType === "正") return "thesis";
     if (to.branchType === "反") return "antithesis";
   }
@@ -227,7 +240,7 @@ function inferRelationFromShape(from: RetrievalNode | undefined, to: RetrievalNo
     return "continuation";
   }
 
-  if (from.kind === "assistant" && to.kind === "assistant" && to.branchType === "合") {
+  if (to.kind === "assistant" && to.branchType === "合") {
     return "synthesis";
   }
 
@@ -248,7 +261,7 @@ function hasTargetMembership(fromId: string, toId: string, relation: RetrievalRe
     return asStringArray(target.parents).includes(fromId) || asStringArray(target.meta?.sourceNodeIds).includes(fromId);
   }
 
-  if (relation === "thesis" || relation === "antithesis" || relation === "continuation" || relation === "merge") {
+  if (relation === "thesis" || relation === "antithesis" || relation === "polarity" || relation === "continuation" || relation === "merge") {
     return asStringArray(target.parents).includes(fromId);
   }
 
@@ -272,15 +285,19 @@ function validateExplicitRelation(
   }
 
   if (relation === "thesis") {
-    return from.kind === "user" && to.kind === "assistant" && to.branchType === "正";
+    return to.kind === "assistant" && to.branchType === "正" && !to.polarity;
   }
 
   if (relation === "antithesis") {
-    return from.kind === "user" && to.kind === "assistant" && to.branchType === "反";
+    return to.kind === "assistant" && to.branchType === "反" && !to.polarity;
+  }
+
+  if (relation === "polarity") {
+    return to.kind === "assistant" && Boolean(to.polarity) && !to.branchType;
   }
 
   if (relation === "synthesis") {
-    return from.kind === "assistant" && to.kind === "assistant" && to.branchType === "合";
+    return to.kind === "assistant" && to.branchType === "合";
   }
 
   if (relation === "continuation") {
@@ -505,7 +522,7 @@ function normalizeGraphInternal(graph: Graph): NormalizedGraph {
 
     if (normalizedNode.kind === "assistant" && normalizedNode.branchType === "合") {
       for (const sourceNodeId of asStringArray(node.meta?.sourceNodeIds)) {
-        if (!nodes[sourceNodeId] || nodes[sourceNodeId].kind !== "assistant") {
+        if (!nodes[sourceNodeId]) {
           stats.danglingEdges += 1;
           warnings.push(`sourceNodeIds backfill ${sourceNodeId} -> ${normalizedNode.id}: dangling source`);
           continue;
@@ -589,6 +606,8 @@ function scoreNodes(view: RetrievalGraphView, query: string, maxQueryChars: numb
 
   const matches = Object.values(view.nodes)
     .map((node) => {
+      const viewpoint = [node.polarity ? `${polarityAxis(node.polarity).label} ${polarityLabel(node.polarity)} ${perspectiveLabel(node.polarity.frame)}` : "",
+        node.fissionFrame ? perspectiveLabel(node.fissionFrame) : seedPerspectiveLabel(node.perspective)].join(" ");
       let bestScore = 0;
       let bestMatch: MatchKind | null = null;
       let bestFieldOrder = FIELD_ORDER.length;
@@ -597,6 +616,7 @@ function scoreNodes(view: RetrievalGraphView, query: string, maxQueryChars: numb
       for (const field of FIELD_ORDER) {
         const value =
           field === "branchType" ? node.branchType :
+          field === "viewpoint" ? viewpoint :
           field === "growthOperator" ? node.growth?.operator :
           field === "growthArtworkId" ? node.growth?.artworkId :
           field === "growthEventId" ? node.growth?.eventId :

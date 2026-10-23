@@ -23,6 +23,15 @@ it("places a synthesis near the midpoint of both sources without overlapping eit
   expect(result.c).not.toEqual(result.b);
 });
 
+it("leaves space between polarity-positioned seeds and ordinary seeds on the first layout", () => {
+  for (const compact of [false, true]) {
+    const polarized = { ...seed("polarized", 68, 37), compactSeedX: 68, compactSeedY: 37, spatialCoordinates: { x: .7, y: .5 } };
+    const ordinary = { ...seed("ordinary", 68, 37), compactSeedX: 68, compactSeedY: 37 };
+    const positions = placeSeeds([polarized, ordinary], {}, compact);
+    expect(Math.hypot((positions.polarized.x - positions.ordinary.x) * (compact ? .65 : 1.4), positions.polarized.y - positions.ordinary.y)).toBeGreaterThanOrEqual(compact ? 22 : 29);
+  }
+});
+
 it("keeps compact clusters separated and preserves saved layouts when the scene changes", () => {
   for (let count = 1; count <= 8; count++) {
     const nodes = Array.from({ length: count }, (_, i) => seed(`node-${i}`, 50, 50));

@@ -2,6 +2,7 @@ import { BranchGraphStore } from "@/store/branchGraph";
 import { AniccaNode, Graph, createEmptyGraph } from "@/types/anicca";
 import { projectGrowthSessionToGraph } from "@/features/growth/graphProjection";
 import { runGrowthSession } from "@/features/growth/orchestrator";
+import { evolutionFixture } from "../../../tests/evolutionFixture";
 import {
   findByLabelOrText,
   getNode,
@@ -40,6 +41,31 @@ function buildStoreFixture() {
 }
 
 describe("workspace graph retrieval", () => {
+  it("retrieves every stored polarity and multigeneration fission relation with captured lenses", () => {
+    const f = evolutionFixture(), before = JSON.stringify(f.graph), view = normalizeGraphForRetrieval(f.graph);
+    expect(view.edges.filter(edge => edge.relation !== "lineage")).toHaveLength(8); expect(view.warnings).toEqual([]);
+    expect(getNode(f.graph, f.negative)).toMatchObject({ polarity: { pole: -1, axisId: "concern", groupId: "polarity-example" } });
+    expect(getNode(f.graph, f.nextThesis)?.fissionFrame?.focus).toEqual({ horizon: 1 });
+    const result = queryWorkspaceGraph(f.graph, "是否继续投入这个项目", { seedLimit: 1 });
+    expect(result.nodes).toHaveLength(6); expect(result.nodes.some(node => node.id === f.negative)).toBe(true);
+    const deeper = queryWorkspaceGraph(f.graph, "小步尝试", { seedLimit: 1 });
+    expect(deeper.nodes.some(node => node.id === f.nextAntithesis)).toBe(true);
+    const retrieved = new Set([...result.edges, ...deeper.edges].map(edge => `${edge.from}:${edge.to}`));
+    expect(retrieved.size).toBe(8); expect(JSON.stringify(f.graph)).toBe(before);
+    const poleMatches = findByLabelOrText(f.graph, "关切");
+    expect(poleMatches).toHaveLength(2);
+    expect(poleMatches.every(match => match.matchedFields.includes("viewpoint"))).toBe(true);
+    f.graph.edges = {}; expect(normalizeGraphForRetrieval(f.graph).edges.filter(edge => edge.relation !== "lineage")).toHaveLength(8);
+  });
+
+  it("rejects forged polarity membership and invalid captured axes", () => {
+    const f = evolutionFixture();
+    f.graph.edges.forged = { id: "forged", from: f.thesis, to: f.positive, reason: "polarity" };
+    f.graph.nodes[f.negative].meta!.polarity!.axisId = "missing-axis";
+    const view = normalizeGraphForRetrieval(f.graph);
+    expect(view.edges.some(edge => edge.id === "forged")).toBe(false); expect(view.edges.some(edge => edge.to === f.negative)).toBe(false);
+    expect(view.warnings.join(" ")).toContain("explicit polarity failed endpoint validation");
+  });
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-04-29T12:00:00.000Z"));
@@ -64,7 +90,7 @@ describe("workspace graph retrieval", () => {
         maxEdges: 40,
         seedLimit: 3,
         maxQueryChars: 500,
-        relations: ["thesis", "antithesis", "synthesis", "continuation"],
+        relations: ["thesis", "antithesis", "polarity", "synthesis", "continuation"],
         direction: "both"
       }
     });

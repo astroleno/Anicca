@@ -9,6 +9,11 @@ type ViewportWindow = Pick<Window, "innerWidth" | "innerHeight" | "visualViewpor
 
 export function readDialogueViewport(win: ViewportWindow): DialogueViewportMetrics {
   const viewport = win.visualViewport;
+  // Native pinch zoom must retain the layout viewport and allow the browser to
+  // pan it. Following visualViewport here would shrink the stage and cancel pan.
+  if (viewport && viewport.scale > 1) {
+    return { width: Math.max(1, win.innerWidth), height: Math.max(1, win.innerHeight), offsetTop: 0, keyboardInset: 0 };
+  }
   const width = Math.max(1, viewport?.width || win.innerWidth || 1);
   const height = Math.max(1, viewport?.height || win.innerHeight || 1);
   const offsetTop = Math.max(0, viewport?.offsetTop || 0);

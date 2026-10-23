@@ -1,0 +1,67 @@
+.trigger { position: absolute; top: calc(17px + var(--safe-top)); left: calc(110px + var(--safe-left)); z-index: 24; min-height: 44px; padding: 8px 4px; border: 0; background: transparent; color: var(--muted); font: 400 12px/1.5 var(--anicca-font-interface); cursor: pointer; }
+.trigger:hover { color: var(--text); }
+.dot { display: inline-block; width: 4px; height: 4px; margin: 0 0 7px 3px; border-radius: 50%; background: #909888; }
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.panel { box-sizing: border-box; width: 450px; max-width: calc(100vw - 32px); max-height: min(780px, calc(100dvh - 48px)); margin: auto; padding: 28px; border: 1px solid var(--line); border-radius: 20px; overflow-y: auto; color: var(--text); background: var(--dialogue-menu); box-shadow: var(--dialogue-menu-shadow); font: 400 14px/1.65 var(--anicca-font-interface); overscroll-behavior: contain; }
+.panel::backdrop { background: rgba(100,94,112,.13); }
+.panel button { min-height: 44px; border: 0; border-radius: 8px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.panel button:hover:not(:disabled) { background: var(--dialogue-hover); }
+.panel button:disabled { opacity: .5; cursor: default; }
+.panel :is(button,input,select):focus-visible, .trigger:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.header p { color: var(--muted); font-size: 11px; letter-spacing: .08em; margin: 0 0 4px; }
+.header h2 { font: 400 25px/1.5 var(--anicca-font-reading, serif); letter-spacing: .03em; margin: 0; }
+.panel .close { font-size: 24px; line-height: 1; width: 44px; margin: -8px -10px 0 0; color: var(--muted); }
+.tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--line); margin: 20px 0; }
+.tabs button { position: relative; padding: 8px 0; color: var(--muted); }
+.tabs button[aria-pressed="true"] { color: var(--text); }
+.tabs button[aria-pressed="true"]::after { content: ""; position: absolute; bottom: -1px; height: 1px; background: currentColor; left: 0; right: 0; }
+.help { margin: 0 0 24px; font-size: 13px; color: var(--muted); line-height: 1.8; }
+.axis { margin: 0 0 20px; }
+.axisHeading { display: flex; gap: 8px; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+.axisHeading h3, .suggestionHeading h3 { font-size: 14px; font-weight: 400; margin: 0; }
+.axisHeading small { font-size: 11px; color: var(--muted); }
+.poles { display: flex; gap: 5px; align-items: stretch; }
+.poles button { flex: 1; min-width: 0; padding: 8px 12px; background: color-mix(in srgb, var(--dialogue-hover) 40%, transparent); overflow-wrap: anywhere; }
+.poles .neutral { flex: 0 0 auto; font-size: 11px; padding: 8px; color: var(--muted); background: transparent; }
+.poles button[aria-pressed="true"], .johari button[aria-pressed="true"] { background: var(--dialogue-hover); box-shadow: inset 0 0 0 1px var(--line); }
+.poles .neutral[aria-pressed="true"] { box-shadow: none; background: transparent; }
+.current { padding: 0 0 16px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; color: var(--muted); font-size: 12px; }
+.current button { padding: 0; text-decoration: underline; text-underline-offset: 4px; }
+.views { margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.views > span { font-size: 12px; color: var(--muted); flex-shrink: 0; }
+.views > div { display: flex; flex-wrap: wrap; justify-content: flex-end; }
+.views button { width: 34px; font-size: 13px; }
+.panel .arrange { display: block; padding: 4px 0; color: var(--muted); font-size: 12px; text-decoration: underline; text-underline-offset: 4px; }
+.suggestions { border-top: 1px solid var(--line); margin-top: 20px; padding-top: 16px; }
+.suggestionHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.suggestionHeading button { padding: 0 8px; font-size: 12px; }
+.suggestions p { margin: 8px 0; color: var(--muted); font-size: 12px; line-height: 1.8; }
+.suggestion { padding: 16px 0 8px; }
+.suggestion + .suggestion { border-top: 1px solid var(--line); }
+.suggestion h4 { font: inherit; margin: 0; }
+.suggestion h4 span { display: block; font-size: 12px; color: var(--muted); margin-top: 4px; }
+.suggestion button { font-size: 12px; padding: 0 8px; margin-left: -8px; }
+.axisEditor { min-width: 0; margin: 0 0 20px; padding: 12px 0 20px; border: 0; border-bottom: 1px solid var(--line); }
+.axisEditor legend { padding: 0; font-size: 12px; color: var(--muted); }
+.axisEditor label { display: flex; flex-direction: column; gap: 4px; color: var(--muted); font-size: 12px; }
+.axisEditor input:not([type="checkbox"]), .axisEditor select { box-sizing: border-box; width: 100%; min-width: 0; min-height: 44px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; color: var(--text); background: var(--surface-input); font: 400 14px/1.5 var(--anicca-font-interface); }
+.ends { display: grid; grid-template-columns: minmax(0,1fr) 16px minmax(0,1fr); gap: 8px; align-items: end; margin-top: 12px; }
+.ends > span { align-self: end; line-height: 44px; color: var(--muted); }
+.mapping { margin: 12px 0; display: flex; align-items: end; gap: 20px; }
+.mapping label { flex: 1; }
+.mapping button { padding: 0 10px; color: var(--muted); font-size: 12px; }
+.axisEditor .confirmed { flex-direction: row; align-items: center; min-height: 44px; gap: 8px; }
+.confirmed input { accent-color: #898297; }
+.editorActions { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.editorActions button { font-size: 12px; padding: 0 4px; color: var(--muted); }
+.footer { display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px; }
+.footer button { padding: 8px 16px; }
+.footer .primary { background: var(--dialogue-hover); }
+.error { color: var(--dialogue-error); font-size: 13px; margin: 16px 0 0; }
+.johari { margin-bottom: 24px; }
+.johari p { color: var(--muted); font-size: 12px; }
+.johari > div { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+@media (max-width: 760px) { .trigger { left: calc(99px + var(--safe-left)); top: calc(13px + var(--safe-top)); } .panel { padding: 22px; } }
+@media (max-width: 360px) { .panel { padding: 18px; } .views { align-items: flex-start; flex-direction: column; gap: 6px; } .views > div { justify-content: flex-start; } }
+@media (forced-colors: active) { .panel { border-color: CanvasText; background: Canvas; } .poles button[aria-pressed="true"] { border: 1px solid Highlight; } }

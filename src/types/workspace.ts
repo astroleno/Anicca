@@ -1,6 +1,7 @@
-import { Graph, StageLayouts } from "@/types/anicca";
+import { Graph, StageLayouts, SeedInstances } from "@/types/anicca";
 import { ANICCA_WORKSPACE_SCHEMA_VERSION } from "@/lib/persist/local";
 import type { RoundtableState } from "@/features/roundtable/types";
+import type { ThinkingSpace } from "@/features/perspectives/model";
 
 export type WorkspaceId = string;
 export type WorkspaceTitleSource = "derived" | "manual";
@@ -33,6 +34,8 @@ export type PersistedWorkspaceSnapshot = {
   focusedNodeId: string | null;
   composerParentId: string | null;
   stageLayouts: StageLayouts;
+  seedInstances?: SeedInstances;
+  thinkingSpace?: ThinkingSpace;
   artifacts?: WorkspaceArtifacts;
 };
 

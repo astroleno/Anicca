@@ -1,6 +1,8 @@
 // Anicca 对话域核心类型定义
 // 说明：Dialectic V2 以 local-first graph 作为主线真相源。
 import type { GrowthNodeMeta } from "@/features/growth/types";
+import type { SeedPerspective, ThinkingSpace } from "@/features/perspectives/model";
+import type { PolarityOrigin } from "@/features/perspectives/polarity";
 
 export const ANICCA_GRAPH_VERSION = "anicca-dialectic-v2";
 
@@ -18,8 +20,12 @@ export interface AniccaNodeMeta {
   summaryStatus?: "ok" | "missing" | "invalid"; // 用于补摘要流程
   label?: string; // UI 短标签
   sourceNodeIds?: string[]; // 合节点的两个来源 seed，保留原节点
+  sourceInstanceIds?: string[]; // 与 sourceNodeIds 同序的舞台实例；缺失时回到原种子
   lineageParentId?: string; // 旧版同母题合的共同上游；跨母题合可以没有此字段
   growth?: GrowthNodeMeta; // A2A growth provenance, namespaced to keep dialectic metadata stable
+  perspective?: SeedPerspective;
+  polarity?: PolarityOrigin;
+  fissionFrame?: ThinkingSpace;
 }
 
 export interface AniccaNode {
@@ -50,6 +56,7 @@ export interface Graph {
 export interface StagePoint {
   x: number;
   y: number;
+  z?: number;
 }
 
 export interface StagePan {
@@ -73,6 +80,10 @@ export interface StageLayoutView {
 }
 
 export type StageLayouts = Record<string, StageLayoutView>;
+
+// Graph nodes own concept content. Instances only own a place on the stage.
+export type SeedInstance = { id: string; conceptId: string; createdAt: string; ordinal: number };
+export type SeedInstances = Record<string, SeedInstance>;
 
 export function createEmptyGraph(): Graph {
   return { version: ANICCA_GRAPH_VERSION, nodes: {}, edges: {}, entryIds: [] };

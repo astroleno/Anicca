@@ -5,7 +5,7 @@ import {
   projectMetaballSurfaces,
   type MetaballSurfaceRect
 } from "./model";
-import { antithesisColor, synthesisColor, thesisColor } from "../liquid/color";
+import { semanticSeedColor } from "../liquid/color";
 
 const host = { left: 100, top: 50, width: 800, height: 600 };
 
@@ -21,14 +21,14 @@ describe("dialogue metaball projection", () => {
     expect(nodes[0]).toMatchObject({
       id: "a",
       center: [-0.125, 0],
-      color: [0.76, 0.7, 0.9],
+      color: semanticSeedColor("user"),
       emphasis: 1
     });
     expect(nodes[0].radius).toBeCloseTo(0.125, 5);
     expect(nodes[1]).toMatchObject({
       id: "b",
       center: [0.075, 0],
-      color: thesisColor("b"),
+      color: semanticSeedColor("thesis"),
       emphasis: 0.94
     });
     expect(computeFusedPairs(nodes, 0.055)).toEqual(["a::b"]);
@@ -93,9 +93,9 @@ describe("dialogue metaball projection", () => {
 
     const colors = Object.fromEntries(projectMetaballSurfaces(host, roles).map((node) => [node.id, node.color]));
 
-    expect(colors.synthesis).toEqual(synthesisColor(thesisColor("synthesis"), antithesisColor("synthesis")));
-    expect(colors.growth).toEqual([0.42, 0.58, 0.94]);
-    expect(colors.neutral).toEqual([0.7, 0.73, 0.78]);
-    expect(colors.pending).toEqual([0.76, 0.72, 0.82]);
+    expect(colors.synthesis).toEqual(semanticSeedColor("synthesis"));
+    expect(colors.growth).toEqual(semanticSeedColor("growth"));
+    expect(colors.neutral).toEqual(semanticSeedColor("neutral"));
+    expect(colors.pending).toEqual(semanticSeedColor("pending"));
   });
 });

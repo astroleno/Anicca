@@ -1,4 +1,5 @@
 import { createEmptyGraph } from "@/types/anicca";
+import { defaultThinkingSpace } from "@/features/perspectives/model";
 import { BranchGraphStore } from "@/store/branchGraph";
 import {
   commitBranchesResult,
@@ -64,5 +65,17 @@ describe("DialogueController", () => {
 
     controller.cancelAll();
     await expect(request).rejects.toMatchObject({ name: "AbortError" });
+  });
+
+  it("cancels polarity expansion through the same exclusive pending slot without committing partial work", async () => {
+    const controller = new DialogueController();
+    const fetchImpl = vi.fn((_url: string | URL | Request, init?: RequestInit) => new Promise<Response>((_resolve, reject) => {
+      init?.signal?.addEventListener("abort", () => reject(new DOMException("cancelled", "AbortError")));
+    }));
+    const request = controller.generatePolarity({ requestId: "pole_cancel", userText: "问题", axisId: "scale",
+      perspective: defaultThinkingSpace(), contextMessages: [] }, { fetchImpl });
+    controller.cancel("branches");
+    await expect(request).rejects.toMatchObject({ name: "AbortError" });
+    expect(fetchImpl.mock.calls[0][0]).toBe("/api/polarities");
   });
 });

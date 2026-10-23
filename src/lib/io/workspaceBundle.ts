@@ -1,4 +1,6 @@
 import { createClientId } from "@/features/dialectic/store";
+import { normalizeThinkingSpace } from "@/features/perspectives/model";
+import { normalizeSeedInstances } from "@/features/dialectic/seedInstances";
 import { ANICCA_WORKSPACE_SCHEMA_VERSION } from "@/lib/persist/local";
 import { createEmptyGraph, Graph, StageLayouts } from "@/types/anicca";
 import {
@@ -136,6 +138,8 @@ export function serializeWorkspaceBundle(
     snapshot: {
       ...record.snapshot,
       stageLayouts: normalizeStageLayouts(record.snapshot.stageLayouts),
+      seedInstances: normalizeSeedInstances(record.snapshot.seedInstances, record.snapshot.graph),
+      thinkingSpace: normalizeThinkingSpace(record.snapshot.thinkingSpace),
       artifacts: normalizeArtifacts(record.snapshot.artifacts)
     }
   };
@@ -177,6 +181,12 @@ export function importWorkspaceBundleText(
     ? new Date(bundle.metadata.updatedAt).toISOString()
     : createdAt;
   const title = bundle.metadata.title.trim() || deriveFallbackTitle(bundle.snapshot);
+  const stageLayouts = { ...normalizeStageLayouts(bundle.snapshot.stageLayouts) };
+  const oldStageKey = `seeds:${bundle.snapshot.workspaceId}`;
+  if (stageLayouts[oldStageKey]) {
+    stageLayouts[`seeds:${workspaceId}`] = stageLayouts[oldStageKey];
+    if (oldStageKey !== `seeds:${workspaceId}`) delete stageLayouts[oldStageKey];
+  }
 
   return {
     id: workspaceId,
@@ -187,7 +197,9 @@ export function importWorkspaceBundleText(
     snapshot: {
       ...bundle.snapshot,
       workspaceId,
-      stageLayouts: normalizeStageLayouts(bundle.snapshot.stageLayouts),
+      stageLayouts,
+      seedInstances: normalizeSeedInstances(bundle.snapshot.seedInstances, bundle.snapshot.graph),
+      thinkingSpace: normalizeThinkingSpace(bundle.snapshot.thinkingSpace),
       artifacts: normalizeArtifacts(bundle.snapshot.artifacts)
     }
   };

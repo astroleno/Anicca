@@ -1,6 +1,7 @@
 "use client";
 
 import { SeedGuide } from "./SeedGuide";
+import { EvolutionOverview } from "./EvolutionOverview";
 
 import {
   ChangeEvent,
@@ -22,20 +23,26 @@ import { buildWorkspaceContext } from "@/chat/workspaceContext";
 import { BranchSidebar } from "@/components/dialogue/BranchSidebar";
 import { BubbleStage } from "@/components/dialogue/BubbleStage";
 import { SeedInspector } from "@/components/dialogue/SeedInspector";
-import { SeedReadingCard } from "@/components/dialogue/SeedReadingCard";
+import { SeedReadingContent } from "@/components/dialogue/SeedReadingContent";
 import { DialogueComposer } from "@/components/dialogue/DialogueComposer";
+import { PerspectiveControls } from "@/components/dialogue/PerspectiveControls";
+import { annotatePerspective, normalizeThinkingSpace, perspectiveLabel, type AxisSuggestion, type ThinkingAxis, type ThinkingSpace } from "@/features/perspectives/model";
+import { normalizePolarityOrigin, polarityAxis } from "@/features/perspectives/polarity";
+import type { SeedViewDirection } from "./liquid/space";
 import { WorkspaceBar } from "@/components/dialogue/WorkspaceBar";
 import { createDialogueDemoWorkspace } from "@/features/dialectic/demoWorkspace";
 import { isAbortError } from "@/features/dialectic/api";
 import {
   commitBranchesResult,
+  commitPolarityResult,
   commitSeedSplitResult,
   commitSynthesisResult,
   DialogueController,
   ownsPendingResponse
 } from "@/features/dialectic/controller";
 import { observeDialogueViewport } from "@/features/dialectic/platform";
-import { buildSeedContext, buildSeedScene, seedPairAction } from "@/features/dialectic/seeds";
+import { buildSeedContext, seedLabel } from "@/features/dialectic/seeds";
+import { buildSeedInstanceScene, seedConceptId, seedInstancePairAction, sourceInstances, unfoldedSourcePositions } from "@/features/dialectic/seedInstances";
 import { arrangeSeedScene } from "@/features/dialectic/seedPlacement";
 import { createClientId, DialogueErrorState, PendingRequest, useDialogueUiStore } from "@/features/dialectic/store";
 import {
@@ -67,6 +74,8 @@ import { Message } from "@/types/chat";
 import { Graph } from "@/types/anicca";
 import { WorkspaceRegistryEntry, WorkspaceRoundtableArtifact } from "@/types/workspace";
 import styles from "./DialogueShell.module.css";
+import { useDialogueTheme } from "./useDialogueTheme";
+
 
 type DialogueLocationLike = Pick<Location, "hostname" | "search">;
 type RoundtableResponse = {
@@ -229,6 +238,10 @@ function formatDialogueError(error: unknown): DialogueErrorState {
       detail: "上游当前没有容量处理这轮请求，当前图和圆桌记录都没有被改动。",
       recovery: "稍后重试，或临时切换到其他模型服务。"
     };
+  }
+
+  if (message.startsWith("polarities_failed")) {
+    return { title: "这一轮两端没有展开", detail: "起点仍在原处，没有留下半颗种子。", recovery: "稍后重试，或换一条维度再看。" };
   }
 
   if (message.startsWith("branches_failed")) {
@@ -474,7 +487,10 @@ function shouldAutoFocusPendingResult(pendingRequest: PendingRequest, graph: Gra
   return deriveDialogueView(graph, currentFocusedNodeId).focusSnapshotId === pendingRequest.focusSnapshotId;
 }
 
+type SeedExpansionResult = { sourceId: string; firstId: string; secondId: string; axis?: ThinkingAxis; lens?: string };
+
 export function DialogueShell() {
+  const { theme, preference: themePreference, selectTheme } = useDialogueTheme();
   const graphSnapshot = useSyncExternalStore(
     branchGraphStore.subscribe.bind(branchGraphStore),
     branchGraphStore.getSnapshot.bind(branchGraphStore),
@@ -492,20 +508,33 @@ export function DialogueShell() {
   const [roundtableArtifact, setRoundtableArtifact] = useState<WorkspaceRoundtableArtifact | null>(null);
   const [roundtablePendingRequest, setRoundtablePendingRequest] = useState<RoundtablePendingRequest | null>(null);
   const [workspaceStatus, setWorkspaceStatus] = useState<string | null>(null);
+  const [generationAnnouncement, setGenerationAnnouncement] = useState<string | null>(null);
   const [synthesisRevealId, setSynthesisRevealId] = useState<string | null>(null);
   const [lineageOpen, setLineageOpen] = useState(false);
+  const [evolutionOpen, setEvolutionOpen] = useState(false);
   const [readingOpen, setReadingOpen] = useState(false);
   const [guideRequest, setGuideRequest] = useState(0);
+  const [atmosphereVisible, setAtmosphereVisible] = useState(false);
+  const [axisSuggestions, setAxisSuggestions] = useState<AxisSuggestion[]>([]);
+  const [cameraView, setCameraView] = useState<{ direction: SeedViewDirection; revision: number } | null>(null);
+  const pendingPerspectiveRef = useRef<ThinkingSpace | null>(null);
   const [combineSourceId, setCombineSourceId] = useState<string | null>(null);
   const [selectedPair, setSelectedPair] = useState<DialogueSynthesisAction | null>(null);
-  const dismissSeedCard = useCallback(() => {
+  const [activeInstanceId, setActiveInstanceId] = useState<string | null>(null);
+  const [expandedResultId, setExpandedResultId] = useState<string | null>(null);
+  const [expansionResult, setExpansionResult] = useState<SeedExpansionResult | null>(null);
+  const dismissSeedReading = useCallback(() => {
     setReadingOpen(false);
     setCombineSourceId(null);
+  }, []);
+  const openEvolution = useCallback(() => {
+    setEvolutionOpen(true); setReadingOpen(false); setLineageOpen(false); setCombineSourceId(null);
   }, []);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const composerRootRef = useRef<HTMLFormElement | null>(null);
   const composerTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const roundtableDrawerRef = useRef<HTMLElement | null>(null);
+  const lineageDrawerRef = useRef<HTMLDivElement | null>(null);
   const roundtableSummonButtonRef = useRef<HTMLButtonElement | null>(null);
   const roundtableSavedButtonRef = useRef<HTMLButtonElement | null>(null);
   const roundtableReturnFocusRef = useRef<HTMLButtonElement | null>(null);
@@ -522,6 +551,15 @@ export function DialogueShell() {
   const focusedNodeId = useDialogueUiStore((state) => state.focusedNodeId);
   const composerParentId = useDialogueUiStore((state) => state.composerParentId);
   const stageLayouts = useDialogueUiStore((state) => state.stageLayouts);
+  const seedInstances = useDialogueUiStore((state) => state.seedInstances);
+  const thinkingSpace = useDialogueUiStore((state) => state.thinkingSpace);
+  const setThinkingSpace = useDialogueUiStore((state) => state.setThinkingSpace);
+  const arrangeStage = useDialogueUiStore((state) => state.arrangeStage);
+  useEffect(() => {
+    setAxisSuggestions([]); setCameraView(null); pendingPerspectiveRef.current = null;
+    setActiveInstanceId(null); setExpandedResultId(null); setExpansionResult(null);
+    setEvolutionOpen(false);
+  }, [workspaceSessionId]);
   const pendingAction = useDialogueUiStore((state) => state.pendingAction);
   const pending = useDialogueUiStore((state) => state.pending);
   const errorState = useDialogueUiStore((state) => state.errorState);
@@ -620,7 +658,9 @@ export function DialogueShell() {
       workspaceSessionId: activeWorkspace.snapshot.workspaceSessionId,
       focusedNodeId: activeWorkspace.snapshot.focusedNodeId,
       composerParentId: activeWorkspace.snapshot.composerParentId,
-      stageLayouts: activeWorkspace.snapshot.stageLayouts
+      stageLayouts: activeWorkspace.snapshot.stageLayouts,
+      seedInstances: activeWorkspace.snapshot.seedInstances,
+      thinkingSpace: activeWorkspace.snapshot.thinkingSpace
     });
     setWorkspaceReady(true);
     refreshWorkspaceRegistryView(activeWorkspace.snapshot.workspaceId);
@@ -637,12 +677,43 @@ export function DialogueShell() {
   }, []);
 
   const view = useMemo(() => deriveDialogueView(graphSnapshot.graph, focusedNodeId), [graphSnapshot, focusedNodeId]);
-  const seedScene = useMemo(() => arrangeSeedScene(buildSeedScene(graphSnapshot.graph, focusedNodeId, combineSourceId)), [graphSnapshot, focusedNodeId, combineSourceId]);
-  const resolveSeedPair = useCallback((left: string, right: string) => seedPairAction(graphSnapshot.graph, left, right), [graphSnapshot]);
+  const focusedInstanceId = seedConceptId(graphSnapshot.graph, seedInstances, activeInstanceId) === view.focusNodeId
+    ? activeInstanceId : view.focusNodeId;
+  const visibleExpansion = useMemo<SeedExpansionResult | null>(() => {
+    if (expansionResult) return expansionResult;
+    const node = graphSnapshot.graph.nodes[view.focusNodeId || ""];
+    const origin = normalizePolarityOrigin(node?.meta?.polarity);
+    if (!origin || !node?.parents[0]) return null;
+    const siblings = (graphSnapshot.graph.nodes[node.parents[0]]?.children || []).map(id => graphSnapshot.graph.nodes[id])
+      .filter(sibling => normalizePolarityOrigin(sibling?.meta?.polarity)?.groupId === origin.groupId);
+    const first = siblings.find(sibling => sibling.meta?.polarity?.pole === -1);
+    const second = siblings.find(sibling => sibling.meta?.polarity?.pole === 1);
+    return first && second ? { sourceId: node.parents[0], firstId: first.id, secondId: second.id, axis: polarityAxis(origin),
+      lens: perspectiveLabel({ ...origin.frame, focus: Object.fromEntries(Object.entries(origin.frame.focus).filter(([id]) => id !== origin.axisId)) }) } : null;
+  }, [expansionResult, graphSnapshot, view.focusNodeId]);
+  const seedScene = useMemo(() => arrangeSeedScene(buildSeedInstanceScene({
+    graph: graphSnapshot.graph, instances: seedInstances, focusId: view.focusNodeId,
+    activeInstanceId: focusedInstanceId, expandedResultId, thinkingSpace,
+    pinnedInstanceIds: selectedPair?.sourceInstanceIds || (combineSourceId ? [combineSourceId]
+      : visibleExpansion ? [visibleExpansion.sourceId, visibleExpansion.firstId, visibleExpansion.secondId] : [])
+  })), [graphSnapshot, seedInstances, view.focusNodeId, focusedInstanceId, expandedResultId, thinkingSpace, selectedPair, combineSourceId, visibleExpansion]);
+  const attentionIds = useMemo(() => {
+    if (selectedPair?.sourceInstanceIds) return selectedPair.sourceInstanceIds;
+    if (expandedResultId) return [expandedResultId, ...sourceInstances(graphSnapshot.graph, seedInstances, expandedResultId)];
+    if (visibleExpansion) return [visibleExpansion.sourceId, visibleExpansion.firstId, visibleExpansion.secondId];
+    const sources = focusedInstanceId ? sourceInstances(graphSnapshot.graph, seedInstances, focusedInstanceId) : [];
+    if (sources.length) return [focusedInstanceId!, ...sources];
+    if (readingOpen && focusedInstanceId) return [focusedInstanceId, ...(graphSnapshot.graph.nodes[view.currentNode?.id || ""]?.parents || [])];
+    return null;
+  }, [selectedPair, expandedResultId, graphSnapshot, seedInstances, visibleExpansion, focusedInstanceId, readingOpen, view.currentNode]);
+  const resolveSeedPair = useCallback((left: string, right: string) => seedInstancePairAction(graphSnapshot.graph, seedInstances, left, right), [graphSnapshot, seedInstances]);
   const isEmptyWorkspace = graphSnapshot.graph.entryIds.length === 0;
   const isBranchPending = pending.branches !== null;
   const isSynthesisPending = pending.synthesis !== null;
   const hasPendingRequest = isBranchPending || isSynthesisPending;
+  const composerPerspectiveLabel = pending.branches?.polarityAxis
+    ? `${pending.branches.polarityAxis.negative} ↔ ${pending.branches.polarityAxis.positive}`
+    : perspectiveLabel(hasPendingRequest && pendingPerspectiveRef.current ? pendingPerspectiveRef.current : thinkingSpace);
   const roundtablePending = roundtablePendingRequest !== null;
   const frozenComposerTarget = pending.branches
     ? getComposerTargetFromNodeId(graphSnapshot.graph, pending.branches.composerTargetId)
@@ -658,12 +729,25 @@ export function DialogueShell() {
     setReadingOpen(false);
     setLineageOpen(false);
     setCombineSourceId(null);
-    const id = useDialogueUiStore.getState().focusedNodeId;
+    const id = focusedInstanceId;
     window.setTimeout(() => {
       const button = document.querySelector<HTMLElement>(`[data-testid="dialogue-stage-node-${id}"]`);
       (button || composerTextareaRef.current)?.focus();
     }, 0);
+  }, [focusedInstanceId]);
+
+  const closeLineagePanel = useCallback(() => {
+    setLineageOpen(false);
+    window.setTimeout(() => document.querySelector<HTMLElement>('[data-testid="dialogue-more-button"]')?.focus(), 0);
   }, []);
+
+  useEffect(() => {
+    if (!lineageOpen) return;
+    const timer = window.setTimeout(() => lineageDrawerRef.current?.querySelector<HTMLButtonElement>("button")?.focus(), 0);
+    return () => window.clearTimeout(timer);
+  }, [lineageOpen]);
+
+  useEffect(() => { setGenerationAnnouncement(null); }, [workspaceSessionId]);
 
   useEffect(() => {
     if (!readingOpen || roundtableArtifactRef.current) return;
@@ -672,11 +756,11 @@ export function DialogueShell() {
   }, [readingOpen, view.currentNode?.id, combineSourceId]);
 
   useEffect(() => {
-    if ((!readingOpen && !lineageOpen) || roundtableArtifact) return;
-    const close = (event: KeyboardEvent) => { if (event.key === "Escape") { event.preventDefault(); closeSeedPanel(); } };
+    if ((!readingOpen && !lineageOpen) || roundtableArtifact || evolutionOpen) return;
+    const close = (event: KeyboardEvent) => { if (event.key === "Escape" && !document.querySelector("dialog[open]")) { event.preventDefault(); if (lineageOpen) closeLineagePanel(); else closeSeedPanel(); } };
     window.addEventListener("keydown", close);
     return () => window.removeEventListener("keydown", close);
-  }, [readingOpen, lineageOpen, roundtableArtifact, closeSeedPanel]);
+  }, [readingOpen, lineageOpen, roundtableArtifact, evolutionOpen, closeSeedPanel, closeLineagePanel]);
 
   const beginRoundtablePending = (request: RoundtablePendingRequest) => {
     roundtablePendingRef.current = request;
@@ -742,6 +826,8 @@ export function DialogueShell() {
       focusedNodeId: view.focusNodeId,
       composerParentId: composerTarget.nodeId,
       stageLayouts,
+      seedInstances,
+      thinkingSpace,
       artifacts: existingRecord?.snapshot.artifacts
     });
     refreshWorkspaceRegistryView(workspaceId);
@@ -749,6 +835,8 @@ export function DialogueShell() {
     graphSnapshot,
     refreshWorkspaceRegistryView,
     stageLayouts,
+    seedInstances,
+    thinkingSpace,
     composerTarget.nodeId,
     view.focusNodeId,
     workspaceId,
@@ -778,9 +866,14 @@ export function DialogueShell() {
       }
       return;
     }
+    const conceptId = seedConceptId(graphSnapshot.graph, seedInstances, nodeId);
+    if (!conceptId) return;
+    if (expansionResult && ![expansionResult.sourceId, expansionResult.firstId, expansionResult.secondId].some(id =>
+      seedConceptId(graphSnapshot.graph, seedInstances, id) === conceptId)) setExpansionResult(null);
+    setActiveInstanceId(nodeId);
     startTransition(() => {
-      setFocusedNodeId(nodeId);
-      if (!hasPendingRequest) setComposerParentId(nodeId);
+      setFocusedNodeId(conceptId);
+      if (!hasPendingRequest) setComposerParentId(conceptId);
     });
     setLineageOpen(false);
     setReadingOpen(true);
@@ -788,6 +881,48 @@ export function DialogueShell() {
 
   const handleSelectStageNode = (nodeId: string) => {
     handleSelectNode(nodeId);
+  };
+
+  const handleCreateInstance = () => {
+    if (!view.currentNode?.text?.trim() || hasPendingRequest) return;
+    attentionVersionRef.current += 1;
+    const id = useDialogueUiStore.getState().addSeedInstance(view.currentNode.id);
+    setActiveInstanceId(id);
+    setExpandedResultId(null);
+    useDialogueUiStore.getState().endStagePreview();
+    dismissSeedReading();
+    setGenerationAnnouncement("已创建分身，与原种子共享内容，可以分别组合。");
+    window.setTimeout(() => document.querySelector<HTMLElement>(`[data-testid="dialogue-stage-node-${id}"]`)?.focus(), 0);
+  };
+
+  const handleRemoveInstance = () => {
+    if (!focusedInstanceId || !seedInstances[focusedInstanceId] || hasPendingRequest) return;
+    attentionVersionRef.current += 1;
+    useDialogueUiStore.getState().removeSeedInstance(focusedInstanceId);
+    setActiveInstanceId(view.focusNodeId);
+    setExpandedResultId(null);
+    useDialogueUiStore.getState().endStagePreview();
+    dismissSeedReading();
+    setGenerationAnnouncement("已收起这个分身，概念和融合记录仍保留。");
+  };
+
+  const handleExpandSources = () => {
+    if (!focusedInstanceId) return;
+    const graph = graphSnapshot.graph;
+    const sources = sourceInstances(graph, seedInstances, focusedInstanceId);
+    if (!sources.length) return;
+    attentionVersionRef.current += 1;
+    const nodes = arrangeSeedScene(buildSeedInstanceScene({ graph, instances: seedInstances,
+      focusId: view.focusNodeId, activeInstanceId: focusedInstanceId, expandedResultId: focusedInstanceId, thinkingSpace }));
+    const state = useDialogueUiStore.getState(), key = `seeds:${workspaceId || "local"}`;
+    const layout = state.stagePreview?.layoutKey === key ? state.stagePreview.view : state.stageLayouts[key];
+    state.beginStagePreview(key,
+      unfoldedSourcePositions(nodes, layout?.nodePositions || {}, focusedInstanceId, sources, false),
+      unfoldedSourcePositions(nodes, layout?.compact?.nodePositions || {}, focusedInstanceId, sources, true));
+    setExpandedResultId(focusedInstanceId);
+    setExpansionResult(null);
+    dismissSeedReading();
+    setGenerationAnnouncement("来源已展开，合与来源均保留，可以继续拖动或阅读。");
   };
 
   const handleLoadDemoWorkspace = () => {
@@ -806,7 +941,9 @@ export function DialogueShell() {
       workspaceSessionId: activatedSnapshot.workspaceSessionId,
       focusedNodeId: activatedSnapshot.focusedNodeId,
       composerParentId: activatedSnapshot.composerParentId,
-      stageLayouts: activatedSnapshot.stageLayouts
+      stageLayouts: activatedSnapshot.stageLayouts,
+      seedInstances: activatedSnapshot.seedInstances,
+      thinkingSpace: activatedSnapshot.thinkingSpace
     });
     refreshWorkspaceRegistryView(activatedSnapshot.workspaceId);
     const record = loadWorkspaceRecord(activatedSnapshot.workspaceId);
@@ -847,7 +984,9 @@ export function DialogueShell() {
       workspaceSessionId: activeWorkspace.snapshot.workspaceSessionId,
       focusedNodeId: activeWorkspace.snapshot.focusedNodeId,
       composerParentId: activeWorkspace.snapshot.composerParentId,
-      stageLayouts: activeWorkspace.snapshot.stageLayouts
+      stageLayouts: activeWorkspace.snapshot.stageLayouts,
+      seedInstances: activeWorkspace.snapshot.seedInstances,
+      thinkingSpace: activeWorkspace.snapshot.thinkingSpace
     });
     refreshWorkspaceRegistryView(activeWorkspace.snapshot.workspaceId);
     setDraft("");
@@ -879,7 +1018,9 @@ export function DialogueShell() {
       workspaceSessionId: activatedSnapshot.workspaceSessionId,
       focusedNodeId: activatedSnapshot.focusedNodeId,
       composerParentId: activatedSnapshot.composerParentId,
-      stageLayouts: activatedSnapshot.stageLayouts
+      stageLayouts: activatedSnapshot.stageLayouts,
+      seedInstances: activatedSnapshot.seedInstances,
+      thinkingSpace: activatedSnapshot.thinkingSpace
     });
     refreshWorkspaceRegistryView(activatedSnapshot.workspaceId);
     const record = loadWorkspaceRecord(activatedSnapshot.workspaceId);
@@ -988,7 +1129,9 @@ export function DialogueShell() {
         workspaceSessionId: activeWorkspace.snapshot.workspaceSessionId,
         focusedNodeId: activeWorkspace.snapshot.focusedNodeId,
         composerParentId: activeWorkspace.snapshot.composerParentId,
-        stageLayouts: activeWorkspace.snapshot.stageLayouts
+        stageLayouts: activeWorkspace.snapshot.stageLayouts,
+        seedInstances: activeWorkspace.snapshot.seedInstances,
+        thinkingSpace: activeWorkspace.snapshot.thinkingSpace
       });
       setDraft("");
       clearRoundtableRuntime();
@@ -1000,7 +1143,7 @@ export function DialogueShell() {
     }
   };
 
-  const handleSubmit = async (splitSeedId?: string, retry?: { text: string; targetId: string | null; draftVersion: number }) => {
+  const handleSubmit = async (splitSeedId?: string, retry?: { text: string; targetId: string | null; draftVersion: number; perspective?: ThinkingSpace }, frame?: ThinkingSpace) => {
     const text = retry?.text ?? (splitSeedId ? graphSnapshot.graph.nodes[splitSeedId]?.text?.trim() || "" : draft.trim());
     if (!text || useDialogueUiStore.getState().pendingAction) {
       return;
@@ -1010,8 +1153,14 @@ export function DialogueShell() {
     const targetId = retry ? retry.targetId : splitSeedId || composerTarget.nodeId;
     const draftVersion = retry?.draftVersion ?? draftVersionRef.current;
     const attentionVersion = attentionVersionRef.current;
+    const source = splitSeedId ? graphSnapshot.graph.nodes[splitSeedId] : null;
+    const inheritedFrame = normalizePolarityOrigin(source?.meta?.polarity)?.frame || source?.meta?.fissionFrame;
+    const requestPerspective = normalizeThinkingSpace(retry?.perspective || frame || inheritedFrame || useDialogueUiStore.getState().thinkingSpace);
+    pendingPerspectiveRef.current = requestPerspective;
     submittedTextRef.current = text;
-    retryRef.current = { sessionId: workspaceSessionId, run: () => { void handleSubmit(splitSeedId, { text, targetId, draftVersion }); } };
+    setExpansionResult(null); setExpandedResultId(null);
+    useDialogueUiStore.getState().endStagePreview();
+    retryRef.current = { sessionId: workspaceSessionId, run: () => { void handleSubmit(splitSeedId, { text, targetId, draftVersion, perspective: requestPerspective }); } };
     beginPending("branches", {
       requestId,
       workspaceSessionId,
@@ -1032,6 +1181,7 @@ export function DialogueShell() {
       const response = await dialogueControllerRef.current!.generateBranches({
         requestId,
         userText: text,
+        perspective: requestPerspective,
         contextMessages
       });
       const activePending = useDialogueUiStore.getState().pending.branches;
@@ -1044,18 +1194,23 @@ export function DialogueShell() {
       }
 
       let resultFocusId: string;
+      let nextExpansion: SeedExpansionResult | null = null;
       if (splitSeedId) {
-        commitSeedSplitResult(branchGraphStore, splitSeedId, response);
+        const pair = commitSeedSplitResult(branchGraphStore, splitSeedId, response, requestPerspective);
+        nextExpansion = { sourceId: focusedInstanceId && seedConceptId(graphSnapshot.graph, seedInstances, focusedInstanceId) === splitSeedId
+          ? focusedInstanceId : splitSeedId, firstId: pair.thesisId, secondId: pair.antithesisId, lens: perspectiveLabel(requestPerspective) };
         resultFocusId = splitSeedId;
       } else {
         resultFocusId = commitBranchesResult(branchGraphStore, {
-          targetAssistantId: targetId, userText: text, response
+          targetAssistantId: targetId, userText: text, response, perspective: annotatePerspective(requestPerspective)
         }).userNodeId;
       }
       const updatedGraph = branchGraphStore.getGraph();
+      setAxisSuggestions(response.suggestedAxes || []);
       const shouldAutoFocus = attentionVersion === attentionVersionRef.current && shouldAutoFocusPendingResult(activePending, updatedGraph);
 
       clearPending("branches");
+      setGenerationAnnouncement("正反已生成，点开种子可以阅读或组合。");
       if (!splitSeedId && draftVersion === draftVersionRef.current) setDraft("");
       retryRef.current = null;
       setErrorState(null);
@@ -1063,6 +1218,7 @@ export function DialogueShell() {
         buildContinuationCreatedEvent(updatedGraph, targetId)
       );
       if (shouldAutoFocus) {
+        setExpansionResult(nextExpansion);
         setComposerParentId(null);
         setReadingOpen(false);
         setWorkspaceStatus(null);
@@ -1084,7 +1240,57 @@ export function DialogueShell() {
       }
       const formatted = formatDialogueError(error);
       if (retryRef.current) retryRef.current.error = formatted;
+      setGenerationAnnouncement(null);
       setErrorState(formatted);
+    }
+  };
+
+  const handlePolarityExpansion = async (seedId: string, axisId: string, frame: ThinkingSpace,
+    retry?: { text: string; sourceInstanceId: string; contextMessages: ReturnType<typeof buildSeedContext> }) => {
+    const text = retry?.text ?? graphSnapshot.graph.nodes[seedId]?.text?.trim() ?? "";
+    if (!text || useDialogueUiStore.getState().pendingAction) return;
+    const requestPerspective = normalizeThinkingSpace(frame);
+    const axis = requestPerspective.axes.find(item => item.id === axisId);
+    if (!axis) return;
+    const sourceInstanceId = retry?.sourceInstanceId || (focusedInstanceId &&
+      seedConceptId(graphSnapshot.graph, seedInstances, focusedInstanceId) === seedId ? focusedInstanceId : seedId);
+    const contextMessages = retry?.contextMessages || buildSeedContext(graphSnapshot.graph, [seedId]);
+    const requestId = createClientId("req"), attentionVersion = attentionVersionRef.current;
+    pendingPerspectiveRef.current = requestPerspective;
+    submittedTextRef.current = text;
+    retryRef.current = { sessionId: workspaceSessionId, run: () => {
+      void handlePolarityExpansion(seedId, axisId, requestPerspective, { text, sourceInstanceId, contextMessages });
+    } };
+    setReadingOpen(false); setCombineSourceId(null); setExpansionResult(null); setExpandedResultId(null);
+    useDialogueUiStore.getState().endStagePreview();
+    beginPending("branches", { requestId, workspaceSessionId, focusSnapshotId: view.focusSnapshotId,
+      composerTargetId: seedId, polarityAxis: axis });
+    try {
+      const response = await dialogueControllerRef.current!.generatePolarity({ requestId, userText: text,
+        contextMessages, perspective: requestPerspective, axisId });
+      const activePending = useDialogueUiStore.getState().pending.branches;
+      if (!ownsPendingResponse(activePending, response.requestId, useDialogueUiStore.getState().workspaceSessionId)) return;
+      const pair = commitPolarityResult(branchGraphStore, seedId, requestPerspective, response);
+      const shouldAutoFocus = attentionVersion === attentionVersionRef.current &&
+        shouldAutoFocusPendingResult(activePending, branchGraphStore.getGraph());
+      clearPending("branches");
+      retryRef.current = null; setErrorState(null);
+      setGenerationAnnouncement(`已沿「${axis.label}」展开「${axis.negative}」与「${axis.positive}」，两端都可以继续正反裂变。`);
+      if (shouldAutoFocus) {
+        setActiveInstanceId(sourceInstanceId);
+        setExpansionResult({ sourceId: sourceInstanceId, firstId: pair.negativeId, secondId: pair.positiveId, axis,
+          lens: perspectiveLabel({ ...requestPerspective, focus: Object.fromEntries(Object.entries(requestPerspective.focus).filter(([id]) => id !== axis.id)) }) });
+        setComposerParentId(null); setWorkspaceStatus(null);
+        startTransition(() => setFocusedNodeId(seedId));
+      } else setWorkspaceStatus(`「${axis.negative}」与「${axis.positive}」已生成。`);
+    } catch (error) {
+      const activePending = useDialogueUiStore.getState().pending.branches;
+      if (!activePending || activePending.requestId !== requestId) return;
+      clearPending("branches");
+      if (isAbortError(error)) return;
+      const formatted = formatDialogueError(error);
+      if (retryRef.current) retryRef.current.error = formatted;
+      setGenerationAnnouncement(null); setErrorState(formatted);
     }
   };
 
@@ -1122,10 +1328,11 @@ export function DialogueShell() {
     clearPending(activeSlot);
     setSelectedPair(null);
     setCombineSourceId(null);
+    setGenerationAnnouncement(null);
     setWorkspaceStatus(activeSlot === "synthesis" ? "已取消本次合流。" : "已取消本次生成，输入内容仍保留。");
   };
 
-  const handleContinueFromCurrentNode = () => {
+  const handleContinueFromCurrentNode = (frame?: ThinkingSpace) => {
     const currentNodeId = view.currentNode?.id || null;
     const currentNode = currentNodeId ? graphSnapshot.graph.nodes[currentNodeId] : null;
     if (!currentNode) {
@@ -1133,7 +1340,7 @@ export function DialogueShell() {
     }
 
     setReadingOpen(false);
-    void handleSubmit(currentNode.id);
+    void handleSubmit(currentNode.id, undefined, frame);
   };
 
   const handleSummonRoundtable = async () => {
@@ -1347,7 +1554,7 @@ export function DialogueShell() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleCloseRoundtableDrawer, roundtableArtifact]);
 
-  const handleGenerateSynthesis = async (action: DialogueSynthesisAction) => {
+  const handleGenerateSynthesis = async (action: DialogueSynthesisAction, retryPerspective?: ThinkingSpace) => {
     if (!action.available || useDialogueUiStore.getState().pendingAction) {
       return;
     }
@@ -1360,9 +1567,12 @@ export function DialogueShell() {
     }
     const rootInput = [thesisNode.text, antithesisNode.text].filter(Boolean).join("\n\n");
     if (!rootInput.trim()) return;
-    retryRef.current = { sessionId: workspaceSessionId, run: () => { void handleGenerateSynthesis(action); } };
+    const requestPerspective = normalizeThinkingSpace(retryPerspective || useDialogueUiStore.getState().thinkingSpace);
+    pendingPerspectiveRef.current = requestPerspective;
+    retryRef.current = { sessionId: workspaceSessionId, run: () => { void handleGenerateSynthesis(action, requestPerspective); } };
     const attentionVersion = attentionVersionRef.current;
     setSelectedPair(action);
+    setExpansionResult(null);
     setCombineSourceId(null);
     setReadingOpen(false);
 
@@ -1387,18 +1597,19 @@ export function DialogueShell() {
       const response = await dialogueControllerRef.current!.generateSynthesis({
         requestId,
         rootInput,
+        perspective: requestPerspective,
         sources: [{
           id: thesisNode.id,
           text: thesisNode.text || "",
           summary: thesisNode.meta?.summary || "",
           label: thesisNode.meta?.label || thesisNode.branchType || "正",
-          stance: thesisNode.branchType || "想法"
+          stance: thesisNode.branchType || (normalizePolarityOrigin(thesisNode.meta?.polarity) ? "视角" : "想法")
         }, {
           id: antithesisNode.id,
           text: antithesisNode.text || "",
           summary: antithesisNode.meta?.summary || "",
           label: antithesisNode.meta?.label || antithesisNode.branchType || "反",
-          stance: antithesisNode.branchType || "想法"
+          stance: antithesisNode.branchType || (normalizePolarityOrigin(antithesisNode.meta?.polarity) ? "视角" : "想法")
         }],
         contextMessages
       });
@@ -1414,18 +1625,24 @@ export function DialogueShell() {
       const synthesisId = commitSynthesisResult(branchGraphStore, {
         thesisId: action.thesisId,
         antithesisId: action.antithesisId,
+        sourceInstanceIds: action.sourceInstanceIds,
         response
       });
+      setAxisSuggestions(response.suggestedAxes || []);
       const updatedGraph = branchGraphStore.getGraph();
       const shouldAutoFocus = attentionVersion === attentionVersionRef.current && shouldAutoFocusPendingResult(activePending, updatedGraph);
 
       clearPending("synthesis");
+      setGenerationAnnouncement("合已生成，可以阅读来源或继续写。");
       retryRef.current = null;
       setSelectedPair(null);
       setCombineSourceId(null);
       setErrorState(null);
       void emitDialogueTelemetry(buildSynthesisCreatedEvent(updatedGraph, synthesisId));
       if (shouldAutoFocus) {
+        setActiveInstanceId(synthesisId);
+        setExpandedResultId(null);
+        useDialogueUiStore.getState().endStagePreview();
         setComposerParentId(null);
         setWorkspaceStatus(null);
         setSynthesisRevealId(synthesisId);
@@ -1433,7 +1650,7 @@ export function DialogueShell() {
           setFocusedNodeId(synthesisId);
         });
       } else {
-        setWorkspaceStatus("合流已生成：查看合流记录，或基于它继续追问。");
+        setWorkspaceStatus("合流已生成，继续从这里想。");
       }
     } catch (error: unknown) {
       const activePending = useDialogueUiStore.getState().pending.synthesis;
@@ -1448,6 +1665,7 @@ export function DialogueShell() {
       }
       const formatted = formatDialogueError(error);
       if (retryRef.current) retryRef.current.error = formatted;
+      setGenerationAnnouncement(null);
       setErrorState(formatted);
     }
   };
@@ -1484,17 +1702,19 @@ export function DialogueShell() {
     ? {
         kind: "branches" as const,
         anchorNodeId: pending.branches.composerTargetId,
-        prompt: submittedTextRef.current
+        prompt: submittedTextRef.current,
+        polarityAxis: pending.branches.polarityAxis
       }
     : pending.synthesis && relevantSynthesisAction && pending.synthesis.synthesisActionKey === relevantSynthesisAction.key
       ? {
           kind: "synthesis" as const,
-          thesisId: relevantSynthesisAction.thesisId,
-          antithesisId: relevantSynthesisAction.antithesisId,
+          thesisId: relevantSynthesisAction.sourceInstanceIds?.[0] || relevantSynthesisAction.thesisId,
+          antithesisId: relevantSynthesisAction.sourceInstanceIds?.[1] || relevantSynthesisAction.antithesisId,
           label: pending.synthesis.sourceLabel || relevantSynthesisAction.label
         }
       : null;
-  const flowStatusHandledInContext = workspaceStatus?.startsWith("画作视角已生成");
+  const flowStatusHandledInContext = workspaceStatus?.startsWith("画作视角已生成") ||
+    workspaceStatus === "正反已生成。" || workspaceStatus === "合流已生成，继续从这里想。";
   const retrievalDebugPreview = useMemo(() => {
     if (!retrievalDebugPreviewEnabled) {
       return null;
@@ -1559,7 +1779,7 @@ export function DialogueShell() {
 
   if (!workspaceReady) {
     return (
-      <main ref={shellRef} className={styles.shell} data-testid="dialogue-shell" aria-busy="true">
+      <main ref={shellRef} className={styles.shell} data-theme={theme} data-testid="dialogue-shell" aria-busy="true">
         <div className={styles.ambient} />
         <div className={styles.ambientSecondary} />
         <div className={styles.ambientTertiary} />
@@ -1573,7 +1793,11 @@ export function DialogueShell() {
   }
 
   return (
-    <main ref={shellRef} className={styles.shell} data-testid="dialogue-shell">
+    <main ref={shellRef} className={styles.shell} data-theme={theme} data-testid="dialogue-shell" data-reading={readingOpen && view.currentNode ? "true" : undefined}
+      data-composer-context={composerTarget.nodeId || pendingAction === "synthesis" || composerPerspectiveLabel ? "true" : undefined}>
+      <a className={styles.skipToInput} href="#dialogue-input" onClick={(event) => {
+        event.preventDefault(); dismissSeedReading(); setLineageOpen(false); focusComposerSoon();
+      }}>直接输入想法</a>
       <div className={styles.ambient} />
       <div className={styles.ambientSecondary} />
       <div className={styles.ambientTertiary} />
@@ -1587,22 +1811,35 @@ export function DialogueShell() {
       </header>
 
       <WorkspaceBar
+        onOpenEvolution={openEvolution}
         currentWorkspaceId={workspaceId}
         currentTitle={
           workspaceEntries.find((entry) => entry.id === workspaceId)?.title || "未命名工作区"
         }
         items={workspaceEntries}
-        statusMessage={roundtablePendingSourceLabel ? `正在从「${roundtablePendingSourceLabel}」召集圆桌` : workspaceStatus}
+        statusMessage={roundtablePendingSourceLabel ? `正在从「${roundtablePendingSourceLabel}」召集圆桌`
+          : pendingAction === "branches" ? pending.branches?.polarityAxis
+            ? `正在沿「${pending.branches.polarityAxis.label}」探索两端，你可以取消本次生成。`
+            : "正在展开正反两种视角，你可以取消本次生成。"
+          : pendingAction === "synthesis" ? "正在寻找两颗想法的新联系，你可以取消本次合成。"
+          : workspaceStatus || generationAnnouncement}
         onCreate={handleCreateWorkspace}
         onSelect={handleSwitchWorkspace}
         onRename={handleRenameWorkspace}
         onExport={handleExportWorkspace}
         onImport={() => importInputRef.current?.click()}
         extraActions={<>
-          <button type="button" className={styles.workspaceOverflowItem} onClick={() => setGuideRequest(value => value + 1)}>操作提示</button>
-          <a className={styles.workspaceOverflowItem} href="/labs">视觉实验</a>
+          <fieldset className={styles.themeControls}>
+            <legend>外观</legend>
+            <div>{([ ["light","浅色"], ["dark","深色"], ["system","跟随系统"] ] as const).map(([value,label]) =>
+              <label key={value}><input type="radio" name="dialogue-theme" value={value}
+                checked={themePreference === value} onChange={() => selectTheme(value)} /><span>{label}</span></label>
+            )}</div>
+          </fieldset>
+          <div className={styles.workspaceOverflowGroup} role="group" aria-label="想法操作">
+          <h3>想法</h3>
           <button type="button" className={styles.workspaceOverflowItem}
-            onClick={() => { setLineageOpen(true); setReadingOpen(false); setCombineSourceId(null); }}>所有 seed · {view.sidebarItems.length}</button>
+            onClick={() => { setLineageOpen(true); setReadingOpen(false); setCombineSourceId(null); }}>所有种子 · {view.sidebarItems.length}</button>
           <button type="button" className={styles.workspaceOverflowItem} disabled={!draft.trim() || hasPendingRequest}
             onClick={handleGrowthSubmit}>画作视角</button>
           <button type="button" ref={roundtableSummonButtonRef} className={styles.workspaceOverflowItem}
@@ -1612,8 +1849,22 @@ export function DialogueShell() {
           </button>
           {latestSavedRoundtableArtifact ? <button type="button" ref={roundtableSavedButtonRef} className={styles.workspaceOverflowItem}
             onClick={() => openRoundtableArtifact(latestSavedRoundtableArtifact)}>查看最近圆桌记录</button> : null}
+          </div>
+          <div className={styles.workspaceOverflowGroup} role="group" aria-label="帮助与实验">
+            <h3>帮助与实验</h3>
+            <button type="button" className={styles.workspaceOverflowItem} aria-pressed={atmosphereVisible}
+              onClick={() => setAtmosphereVisible(value => !value)}>{atmosphereVisible ? "隐藏氛围背景" : "显示氛围背景"}</button>
+            <button type="button" className={styles.workspaceOverflowItem} onClick={() => setGuideRequest(value => value + 1)}>操作提示</button>
+            <a className={styles.workspaceOverflowItem} href="/labs">视觉实验</a>
+          </div>
         </>}
       />
+      <PerspectiveControls key={workspaceSessionId} space={thinkingSpace}
+        topic={draft.trim() || view.currentNode?.text || graphSnapshot.graph.nodes[graphSnapshot.graph.entryIds[0]]?.text || ""}
+        suggestions={axisSuggestions.filter(axis => !thinkingSpace.axes.some(existing => existing.negative === axis.negative && existing.positive === axis.positive))}
+        onChange={setThinkingSpace}
+        onLook={direction => setCameraView(current => ({ direction, revision: (current?.revision || 0) + 1 }))}
+        onArrange={() => { setExpandedResultId(null); arrangeStage(`seeds:${workspaceId || "local"}`); }} />
       <input
         ref={importInputRef}
         data-testid="dialogue-import-input"
@@ -1624,7 +1875,10 @@ export function DialogueShell() {
         className={styles.hiddenFileInput}
         onChange={handleImportWorkspace}
       />
-      <SeedGuide empty={isEmptyWorkspace} requested={guideRequest} pending={hasPendingRequest} />
+      {workspaceReady ? <SeedGuide empty={isEmptyWorkspace} requested={guideRequest} pending={hasPendingRequest}
+        reading={readingOpen} combining={Boolean(combineSourceId)}
+        completed={Object.values(graphSnapshot.graph.nodes).some(node => node.branchType === "合")}
+        onStart={focusComposerSoon} /> : null}
       {workspaceStatus && !flowStatusHandledInContext ? (
         <p className={styles.flowStatus} aria-hidden="true" data-testid="dialogue-flow-status">
           {workspaceStatus}
@@ -1633,16 +1887,26 @@ export function DialogueShell() {
 
       <div className={styles.workspace}>
         <BubbleStage
+          suspended={evolutionOpen}
+          reading={readingOpen}
+          attentionIds={attentionIds}
+          cameraView={cameraView}
+          theme={theme}
+          atmosphereVisible={atmosphereVisible}
           layoutKey={`seeds:${workspaceId || "local"}`}
           nodes={seedScene}
-          focusNodeId={view.focusNodeId}
+          focusNodeId={focusedInstanceId}
           convergenceEventId={relevantSynthesisAction?.synthesisId || null}
           eventNodeId={synthesisRevealId}
+          arrivals={expansionResult}
           pendingPreview={stagePendingPreview}
           synthesisAction={relevantSynthesisAction}
           resolveSynthesisAction={resolveSeedPair}
-          onSplit={(id) => { setReadingOpen(false); void handleSubmit(id); }}
-          onInteractionStart={dismissSeedCard}
+          onSplit={(id) => {
+            const conceptId = seedConceptId(graphSnapshot.graph, seedInstances, id);
+            if (conceptId) { setReadingOpen(false); void handleSubmit(conceptId); }
+          }}
+          onInteractionStart={dismissSeedReading}
           generationBusy={hasPendingRequest}
           onProposeSynthesis={handleGenerateSynthesis}
           onSelect={handleSelectStageNode}
@@ -1660,8 +1924,31 @@ export function DialogueShell() {
               : null
           }
         />
+        {expandedResultId && !readingOpen && !hasPendingRequest ? <div className={styles.sourceContextBar} aria-label="来源展开" data-testid="dialogue-source-context" data-stage-label-chrome="top">
+          <span>来源 · {seedLabel(graphSnapshot.graph, seedConceptId(graphSnapshot.graph, seedInstances, expandedResultId) || "")}</span>
+          <button type="button" onClick={() => handleSelectNode(expandedResultId)}>阅读合</button>
+          <button type="button" onClick={() => { setExpandedResultId(null); useDialogueUiStore.getState().endStagePreview(); }}>收起来源</button>
+        </div> : null}
+        {!expandedResultId && !readingOpen && !hasPendingRequest && visibleExpansion ? <div className={styles.explorationContext}
+          role="region" aria-label="本轮展开" data-testid="dialogue-expansion-context" data-stage-label-chrome="top">
+          <span>{visibleExpansion.axis ? `沿「${visibleExpansion.axis.label}」展开` : "正反裂变"}</span>
+          <p>{visibleExpansion.axis ? `${visibleExpansion.axis.negative} ↔ ${visibleExpansion.axis.positive}` : "深化主张 ↔ 质疑前提"}
+            {visibleExpansion.lens ? ` · ${visibleExpansion.lens}` : ""}</p>
+          <button type="button" onClick={() => handleSelectNode(visibleExpansion.sourceId)}>回看起点</button>
+          <button type="button" onClick={openEvolution}>看全景</button>
+        </div> : null}
+        {!expandedResultId && !readingOpen && !hasPendingRequest && !visibleExpansion && view.currentNode?.branchType === "合" ? <div
+          className={styles.explorationContext} role="region" aria-label="本轮合流" data-testid="dialogue-synthesis-context" data-stage-label-chrome="top">
+          <span>合流 · {seedLabel(graphSnapshot.graph, view.currentNode.id)}</span>
+          <p className={styles.synthesisInsight}>{view.currentNode.summary || graphSnapshot.graph.nodes[view.currentNode.id]?.meta?.summary}</p>
+          <button type="button" onClick={() => setReadingOpen(true)}>阅读推演</button>
+          <button type="button" onClick={handleExpandSources}>展开来源</button>
+        </div> : null}
         <div
           id="dialogue-lineage-drawer"
+          ref={lineageDrawerRef}
+          role="region"
+          aria-label="种子谱系"
           className={styles.lineageDrawer}
           data-open={lineageOpen ? "true" : "false"}
           inert={lineageOpen ? undefined : true}
@@ -1669,7 +1956,7 @@ export function DialogueShell() {
           <button
             type="button"
             className={styles.drawerCloseButton}
-            onClick={() => setLineageOpen(false)}
+            onClick={closeLineagePanel}
             aria-label="收起谱系"
           >
             收起
@@ -1681,18 +1968,24 @@ export function DialogueShell() {
             onSelect={handleSelectNode}
           />
         </div>
-        {readingOpen && view.currentNode ? (
-          <SeedReadingCard nodeId={combineSourceId || view.currentNode.id} onDismiss={dismissSeedCard}>
+        {view.currentNode ? (
+          <SeedReadingContent open={readingOpen} originNodeId={combineSourceId || focusedInstanceId || view.currentNode.id} onDismiss={dismissSeedReading}>
             <SeedInspector key={combineSourceId || view.currentNode.id}
-              graph={graphSnapshot.graph} nodeId={combineSourceId || view.currentNode.id}
+              space={thinkingSpace}
+              graph={graphSnapshot.graph} nodeId={seedConceptId(graphSnapshot.graph, seedInstances, combineSourceId) || view.currentNode.id}
+              instances={seedInstances} instanceId={focusedInstanceId || view.currentNode.id}
               combining={Boolean(combineSourceId)} busy={hasPendingRequest}
               onClose={closeSeedPanel}
               onSplit={handleContinueFromCurrentNode}
+              onExpandPolarity={(axisId, frame) => void handlePolarityExpansion(view.currentNode!.id, axisId, frame)}
               onWrite={() => { setComposerParentId(view.currentNode!.id); setReadingOpen(false); focusComposerSoon(); }}
-              onCombine={() => { setCombineSourceId(view.currentNode!.id); setSelectedPair(null); }}
+              onCombine={() => { setCombineSourceId(focusedInstanceId || view.currentNode!.id); setSelectedPair(null); }}
+              onCreateInstance={handleCreateInstance}
+              onRemoveInstance={handleRemoveInstance}
+              onExpandSources={handleExpandSources}
               onPick={handleSelectNode}
             />
-          </SeedReadingCard>
+          </SeedReadingContent>
         ) : null}
         {retrievalDebugPreview ? (
           <aside className={styles.retrievalDebugPanel} data-testid="dialogue-retrieval-debug" aria-label="Retrieval debug preview">
@@ -1736,10 +2029,12 @@ export function DialogueShell() {
         ) : null}
         {shouldShowComposer ? (
           <DialogueComposer
+            perspectiveLabel={composerPerspectiveLabel}
             target={composerTarget}
             value={draft}
             disabled={hasPendingRequest}
             pendingAction={pendingAction}
+            pendingMessage={pending.branches?.polarityAxis ? `正在沿「${pending.branches.polarityAxis.label}」展开两端` : undefined}
             isEmptyStart={isEmptyWorkspace}
             emptyStartOpen={emptyComposerOpen}
             targetFrozen={composerTargetFrozen}
@@ -1854,6 +2149,8 @@ export function DialogueShell() {
           )}
         </aside>
       ) : null}
+      {evolutionOpen ? <EvolutionOverview key={workspaceSessionId} graph={graphSnapshot.graph} initialNodeId={focusedNodeId}
+        theme={theme} onDismiss={() => setEvolutionOpen(false)} onEnter={id => { setEvolutionOpen(false); handleSelectNode(id); }} /> : null}
     </main>
   );
 }

@@ -15,6 +15,7 @@ type WorkspaceBarProps = {
   onExport: () => void;
   onImport: () => void;
   extraActions?: ReactNode;
+  onOpenEvolution?: () => void;
 };
 
 export function WorkspaceBar({
@@ -27,13 +28,15 @@ export function WorkspaceBar({
   onRename,
   onExport,
   onImport,
-  extraActions
+  extraActions,
+  onOpenEvolution
 }: WorkspaceBarProps) {
   const [renaming, setRenaming] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
   const [draftTitle, setDraftTitle] = useState(currentTitle);
   const overflowActionsId = useId();
   const overflowButtonRef = useRef<HTMLButtonElement | null>(null);
+  const overflowRef = useRef<HTMLDivElement | null>(null);
   const firstOverflowItemRef = useRef<HTMLButtonElement | null>(null);
   const renameInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -43,10 +46,17 @@ export function WorkspaceBar({
     }
   }, [currentTitle, renaming]);
 
+  const closeRename = () => {
+    setRenaming(false);
+    window.requestAnimationFrame(() => {
+      overflowButtonRef.current?.focus();
+    });
+  };
+
   const handleSubmitRename = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     onRename(draftTitle);
-    setRenaming(false);
+    closeRename();
   };
 
   useEffect(() => {
@@ -81,6 +91,22 @@ export function WorkspaceBar({
     });
   };
 
+  useEffect(() => {
+    if (!actionsOpen) return;
+    const outside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !overflowRef.current?.contains(event.target)) setActionsOpen(false);
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      event.preventDefault();
+      setActionsOpen(false);
+      overflowButtonRef.current?.focus();
+    };
+    document.addEventListener("pointerdown",outside);
+    document.addEventListener("keydown",escape);
+    return () => { document.removeEventListener("pointerdown",outside); document.removeEventListener("keydown",escape); };
+  },[actionsOpen]);
+
   return (
     <section
       className={styles.workspaceBar}
@@ -93,7 +119,10 @@ export function WorkspaceBar({
           <strong>{currentTitle || "未命名工作区"}</strong>
         </div>
         <div className={styles.workspaceBarActions}>
+          {onOpenEvolution ? <button type="button" className={styles.workspaceBarGhostButton} aria-haspopup="dialog" aria-label="演化全景"
+            onClick={onOpenEvolution}><span className={styles.evolutionLabelFull}>演化全景</span><span className={styles.evolutionLabelShort} aria-hidden="true">全景</span></button> : null}
           <div
+            ref={overflowRef}
             className={styles.workspaceOverflow}
             onKeyDown={(event) => {
               if (event.key === "Escape" && actionsOpen) {
@@ -128,7 +157,12 @@ export function WorkspaceBar({
                   }
                 }}
               >
-                {extraActions}
+                <div className={styles.workspaceOverflowIdentity}>
+                  <span>当前工作区</span>
+                  <h2>{currentTitle || "未命名工作区"}</h2>
+                </div>
+                <div className={styles.workspaceOverflowGroup} role="group" aria-label="工作区操作">
+                <h3>工作区</h3>
                 <button type="button" className={styles.workspaceOverflowItem} onClick={() => { onCreate(); setActionsOpen(false); }}>新建工作区</button>
                 <button
                   type="button"
@@ -161,9 +195,11 @@ export function WorkspaceBar({
                 >
                   导入工作区
                 </button>
+                </div>
+                {extraActions}
                 {items.length ? (
-                  <div className={styles.workspaceOverflowRecent} aria-label="最近工作区">
-                    <span className={styles.workspaceOverflowLabel}>最近工作区</span>
+                  <div className={`${styles.workspaceOverflowRecent} ${styles.workspaceOverflowGroup}`} role="group" aria-label="最近工作区">
+                    <h3>最近工作区</h3>
                     {items.map((item) => (
                       <button
                         key={`overflow-${item.id}`}
@@ -186,7 +222,7 @@ export function WorkspaceBar({
         </div>
       </div>
 
-      <p className={styles.workspaceStatus} role="status" aria-live="polite">
+      <p className={styles.workspaceStatus} role="status" aria-live="polite" aria-atomic="true">
         {statusMessage || "已就绪。"}
       </p>
 
@@ -213,7 +249,7 @@ export function WorkspaceBar({
               className={styles.workspaceBarGhostButton}
               onClick={() => {
                 setDraftTitle(currentTitle);
-                setRenaming(false);
+                closeRename();
               }}
             >
               取消

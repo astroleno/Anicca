@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import {
   RoundtableCommand,
   RoundtableResponse,
@@ -114,6 +114,8 @@ export default function RoundtablePage() {
   const [pending, setPending] = useState<RoundtableCommand | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showLabUi, setShowLabUi] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const topicRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setShowLabUi(new URLSearchParams(window.location.search).get("lab") === "1");
@@ -161,6 +163,7 @@ export default function RoundtablePage() {
     }
 
     setPending(command);
+    setConfirmClear(false);
     setError(null);
 
     try {
@@ -194,6 +197,8 @@ export default function RoundtablePage() {
     setParticipantName("");
     setError(null);
     window.localStorage.removeItem(STORAGE_KEY);
+    setConfirmClear(false);
+    window.setTimeout(() => topicRef.current?.focus(), 0);
   };
 
   const active = state?.status === "active";
@@ -233,9 +238,10 @@ export default function RoundtablePage() {
             <label className={styles.label}>
               议题
               <textarea
+                ref={topicRef}
                 className={styles.textarea}
                 value={topic}
-                onChange={(event) => setTopic(event.target.value)}
+                onChange={(event) => { setTopic(event.target.value); setConfirmClear(false); }}
                 placeholder="例如：AI 是否拥有真正的创造力？"
                 disabled={Boolean(pending)}
               />
@@ -245,10 +251,11 @@ export default function RoundtablePage() {
                 {pending === "start" ? "启动中..." : state ? "重开圆桌" : "启动圆桌"}
               </button>
               {state ? (
-                <button className={styles.secondaryButton} type="button" onClick={reset} disabled={Boolean(pending)}>
-                  清空
+                <button className={styles.secondaryButton} type="button" onClick={() => confirmClear ? reset() : setConfirmClear(true)} disabled={Boolean(pending)}>
+                  {confirmClear ? "确认清空圆桌" : "清空"}
                 </button>
               ) : null}
+              {confirmClear ? <button className={styles.secondaryButton} type="button" onClick={() => setConfirmClear(false)}>保留圆桌</button> : null}
             </div>
             {error ? <p className={styles.error} role="alert">{error}</p> : null}
           </form>

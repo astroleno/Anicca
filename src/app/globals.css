@@ -14,3 +14,8 @@
 @source "./src/lib";
 @source "./src/store";
 @source "./src/types";
+
+:root {
+  --anicca-font-literary: "Songti SC", "Noto Serif SC", STSong, SimSun, serif;
+  --anicca-font-interface: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}

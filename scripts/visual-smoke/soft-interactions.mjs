@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import path from "node:path";
+import { waitForSeedLayout } from "./seeds.mjs";
 
 export async function runSeedRecoveryAndTouch(browser, { baseUrl, outputDir, setActivePage }) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 1 });
@@ -45,9 +46,7 @@ export async function runSeedRecoveryAndTouch(browser, { baseUrl, outputDir, set
     await page.waitForFunction(() => document.querySelector('[data-testid="dialogue-stage-track"]')?.dataset.metaballRenderer === "ready");
     // Both axes spring out from the source. An unset or settled X alone does
     // not mean the label has reached its touch target, especially in staggered layouts.
-    await page.waitForFunction(() => [...document.querySelectorAll('[data-testid^="dialogue-stage-node-"]')].every(node =>
-      node.style.translate && node.style.translate.split(/\s+/).every(value => Math.abs(parseFloat(value)) < .2)
-    ));
+    await waitForSeedLayout(page);
     const a = await page.locator('[data-testid^="dialogue-stage-node-"][data-metaball-role="thesis"]').boundingBox();
     const b = await page.locator('[data-testid^="dialogue-stage-node-"][data-metaball-role="antithesis"]').boundingBox();
     assert(a && b);

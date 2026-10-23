@@ -3,8 +3,10 @@ import {
   generateBranches,
   isAbortError
 } from "./api";
+import { getRecentGenerationMetrics, resetDialogueTelemetrySinkForTests } from "@/lib/analytics/dialogue";
 
 describe("dialectic api", () => {
+  beforeEach(() => resetDialogueTelemetrySinkForTests());
   it("sends typed branch requests with cancellation", async () => {
     const controller = new AbortController();
     const fetchImpl = vi.fn(async () => new Response(JSON.stringify({
@@ -20,6 +22,8 @@ describe("dialectic api", () => {
     }, { signal: controller.signal, fetchImpl });
 
     expect(response.requestId).toBe("req_1");
+    expect(getRecentGenerationMetrics()[0].payload).toMatchObject({ endpoint: "branches", outcome: "success", status: 200 });
+    expect(JSON.stringify(getRecentGenerationMetrics())).not.toContain("是否继续");
     expect(fetchImpl).toHaveBeenCalledWith("/api/branches", expect.objectContaining({
       method: "POST",
       signal: controller.signal
@@ -49,5 +53,20 @@ describe("dialectic api", () => {
   it("recognizes cancellation without conflating it with API failure", () => {
     expect(isAbortError(new DOMException("cancelled", "AbortError"))).toBe(true);
     expect(isAbortError(new Error("branches_failed"))).toBe(false);
+  });
+
+  it("records cancellation even if the fetch implementation returns a late response", async () => {
+    const controller = new AbortController();
+    const fetchImpl = vi.fn(async () => { controller.abort(); return new Response("{}"); });
+    await expect(generateBranches({ requestId: "private-id", userText: "private-text", contextMessages: [] },
+      { signal: controller.signal, fetchImpl })).rejects.toMatchObject({ name: "AbortError" });
+    expect(getRecentGenerationMetrics()[0].payload.outcome).toBe("cancelled");
+    expect(JSON.stringify(getRecentGenerationMetrics())).not.toContain("private");
+  });
+
+  it("records unreadable successful responses as failures", async () => {
+    await expect(generateBranches({ requestId: "req_1", userText: "test", contextMessages: [] },
+      { fetchImpl: vi.fn(async () => new Response("not json")) })).rejects.toMatchObject({ code: "invalid_model_output" });
+    expect(getRecentGenerationMetrics()[0].payload).toMatchObject({ outcome: "failed", status: 200 });
   });
 });

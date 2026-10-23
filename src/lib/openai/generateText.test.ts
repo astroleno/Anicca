@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type OpenAI from "openai";
 import { generateText, prefersChatCompletions } from "@/lib/openai/generateText";
 import { readChatCompletionText } from "@/lib/openai/readChatCompletionText";
 
@@ -160,5 +161,24 @@ describe("generateText", () => {
 
     expect(client.responses.create).toHaveBeenCalledTimes(1);
     expect(client.chat.completions.create).not.toHaveBeenCalled();
+  });
+
+  it("reads DeepSeek cache tokens and leaves absent usage fields unknown", async () => {
+    const client = { chat: { completions: { create: vi.fn().mockResolvedValue({
+      choices: [{ message: { content: "result" } }],
+      usage: { prompt_tokens: 100, prompt_cache_hit_tokens: 64 }
+    }) } } } as unknown as OpenAI;
+    await expect(generateText({ client, model: "deepseek-test", input: "hello", maxOutputTokens: 32 }))
+      .resolves.toMatchObject({ usage: { inputTokens: 100, outputTokens: null, cachedInputTokens: 64 } });
+  });
+
+  it("does not call the provider for an already cancelled request", async () => {
+    const abort = new AbortController();
+    abort.abort();
+    const create = vi.fn();
+    const client = { responses: { create } } as unknown as OpenAI;
+    await expect(generateText({ client, model: "gpt-test", input: "hello", maxOutputTokens: 32, signal: abort.signal }))
+      .rejects.toMatchObject({ name: "AbortError" });
+    expect(create).not.toHaveBeenCalled();
   });
 });

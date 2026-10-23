@@ -1,4 +1,7 @@
 import { AniccaNode, AniccaNodeMeta, BranchType, Edge, Graph, createEmptyGraph } from "@/types/anicca";
+import { normalizeSeedPerspective, normalizeThinkingSpace } from "@/features/perspectives/model";
+import { normalizePolarityOrigin, polarityFrame, type PolarityOrigin } from "@/features/perspectives/polarity";
+import type { ThinkingSpace } from "@/features/perspectives/model";
 
 type AssistantDraft = {
   text?: string;
@@ -7,6 +10,10 @@ type AssistantDraft = {
   model?: string;
   seedId?: number;
   temperature?: number;
+  perspective?: AniccaNodeMeta["perspective"];
+  sourceInstanceIds?: string[];
+  polarity?: PolarityOrigin;
+  fissionFrame?: ThinkingSpace;
 };
 
 type GrowthAssistantDraft = AssistantDraft & {
@@ -35,7 +42,7 @@ export class BranchGraphStore {
     return this.snapshot;
   }
 
-  createUserNode(text: string): string {
+  createUserNode(text: string, perspective?: AniccaNodeMeta["perspective"]): string {
     const id = this.generateId("user");
     const node: AniccaNode = {
       id,
@@ -45,13 +52,14 @@ export class BranchGraphStore {
       parents: [],
       children: []
     };
+    if (perspective) node.meta = { perspective: normalizeSeedPerspective(perspective) };
     this.graph.nodes[id] = node;
     this.graph.entryIds.push(id);
     this.emit();
     return id;
   }
 
-  createChildUserNode(parentAssistantId: string, text: string): string {
+  createChildUserNode(parentAssistantId: string, text: string, perspective?: AniccaNodeMeta["perspective"]): string {
     const parent = this.graph.nodes[parentAssistantId];
     if (!parent) {
       throw new Error(`parent not found: ${parentAssistantId}`);
@@ -64,7 +72,8 @@ export class BranchGraphStore {
       text,
       createdAt: new Date().toISOString(),
       parents: [parentAssistantId],
-      children: []
+      children: [],
+      ...(perspective ? { meta: { perspective: normalizeSeedPerspective(perspective) } } : {})
     };
     this.graph.nodes[id] = node;
     parent.children.push(id);
@@ -163,17 +172,33 @@ export class BranchGraphStore {
     return id;
   }
 
-  createAssistantPair(parentUserId: string, opts?: { thesis?: AssistantDraft; antithesis?: AssistantDraft }) {
+  createAssistantPair(parentUserId: string, opts?: { thesis?: AssistantDraft; antithesis?: AssistantDraft; frame?: ThinkingSpace }) {
     const parent = this.graph.nodes[parentUserId];
     if (!parent) {
       throw new Error(`parent not found: ${parentUserId}`);
     }
 
-    const thesisId = this.createAssistantNode(parentUserId, "正", opts?.thesis);
-    const antithesisId = this.createAssistantNode(parentUserId, "反", opts?.antithesis);
+    const thesisId = this.createAssistantNode(parentUserId, "正", { ...opts?.thesis, fissionFrame: opts?.frame });
+    const antithesisId = this.createAssistantNode(parentUserId, "反", { ...opts?.antithesis, fissionFrame: opts?.frame });
     this.emit();
 
     return { thesisId, antithesisId };
+  }
+
+  createPolarityPair(parentId: string, input: {
+    groupId: string; axisId: string; frame: ThinkingSpace;
+    negative: AssistantDraft; positive: AssistantDraft;
+  }) {
+    if (!this.graph.nodes[parentId]) throw new Error(`parent not found: ${parentId}`);
+    // Validate and capture both frames before changing the graph: no half-pair commits.
+    const negativeFrame = polarityFrame(input.frame, input.axisId, -1);
+    const positiveFrame = polarityFrame(input.frame, input.axisId, 1);
+    const negativeId = this.createAssistantNode(parentId, undefined, { ...input.negative,
+      polarity: { groupId: input.groupId, axisId: input.axisId, pole: -1, frame: negativeFrame } });
+    const positiveId = this.createAssistantNode(parentId, undefined, { ...input.positive,
+      polarity: { groupId: input.groupId, axisId: input.axisId, pole: 1, frame: positiveFrame } });
+    this.emit();
+    return { negativeId, positiveId };
   }
 
   createSynthesisAssistant(sourceNodeIds: string[], opts?: AssistantDraft): string {
@@ -212,6 +237,8 @@ export class BranchGraphStore {
       branchType: "合",
       meta: this.buildMeta({
         ...opts,
+        sourceInstanceIds: opts?.sourceInstanceIds?.length === sourceNodeIds.length
+          ? normalizedSourceIds.map(sourceId => opts.sourceInstanceIds![sourceNodeIds.indexOf(sourceId)]) : undefined,
         sourceNodeIds: normalizedSourceIds,
         lineageParentId: lineageParentId || undefined
       })
@@ -255,7 +282,7 @@ export class BranchGraphStore {
     this.graph.edges[id] = edge;
   }
 
-  private createAssistantNode(parentUserId: string, branchType: Exclude<BranchType, "合">, draft?: AssistantDraft): string {
+  private createAssistantNode(parentUserId: string, branchType: Exclude<BranchType, "合"> | undefined, draft?: AssistantDraft): string {
     const parent = this.graph.nodes[parentUserId];
     if (!parent) {
       throw new Error(`parent not found: ${parentUserId}`);
@@ -275,7 +302,7 @@ export class BranchGraphStore {
 
     this.graph.nodes[id] = node;
     parent.children.push(id);
-    this.link(parentUserId, id, branchType);
+    this.link(parentUserId, id, draft?.polarity ? "polarity" : branchType);
     return id;
   }
 
@@ -305,8 +332,12 @@ export class BranchGraphStore {
     if (typeof input.seedId === "number") meta.seedId = input.seedId;
     if (typeof input.temperature === "number") meta.temperature = input.temperature;
     if (Array.isArray(input.sourceNodeIds) && input.sourceNodeIds.length) meta.sourceNodeIds = [...input.sourceNodeIds];
+    if (Array.isArray(input.sourceInstanceIds) && input.sourceInstanceIds.length) meta.sourceInstanceIds = [...input.sourceInstanceIds];
     if (typeof input.lineageParentId === "string") meta.lineageParentId = input.lineageParentId;
     if (input.growth) meta.growth = { ...input.growth };
+    if (input.perspective) meta.perspective = normalizeSeedPerspective(input.perspective);
+    if (input.polarity) meta.polarity = normalizePolarityOrigin(input.polarity);
+    if (input.fissionFrame) meta.fissionFrame = normalizeThinkingSpace(input.fissionFrame);
     return Object.keys(meta).length ? meta : undefined;
   }
 

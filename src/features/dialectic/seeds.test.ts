@@ -6,6 +6,50 @@ import { serializeWorkspaceBundle, importWorkspaceBundleText } from "@/lib/io/wo
 import { ANICCA_WORKSPACE_SCHEMA_VERSION } from "@/lib/persist/local";
 
 describe("seed operations", () => {
+  it("retains original constraints and source identities even when an ancestor has a short summary", () => {
+    const store = new BranchGraphStore();
+    const root = store.createUserNode("愿意听取自愿反馈，但不能录屏，也不能追踪行为。");
+    const child = store.createAssistantPair(root, { thesis: { text: "让用户描述具体困难。", summary: "了解困难" } }).thesisId;
+    const graph = store.getGraph();
+    graph.nodes[root].meta = { ...graph.nodes[root].meta, summary: "了解用户" };
+    const context = buildSeedContext(graph, [child]).map(message => message.content).join("\n");
+    expect(context).toContain("不能录屏，也不能追踪行为");
+    expect(context).toContain(`来源=${root}`);
+    expect(context).toContain("让用户描述具体困难");
+  });
+
+  it("keeps both user origins through deep cross-topic merges without including unrelated roots", () => {
+    const store = new BranchGraphStore();
+    const first = store.createUserNode("桥一直存在，只在下雪时可见，不能移动或发声。");
+    const second = store.createUserNode("重画窗景，保留注意力变化。");
+    store.createUserNode("这是无关工作区主题，不应进入上下文。");
+    const descend = (root: string) => {
+      let current = root;
+      for (let i = 0; i < 9; i++) current = store.createAssistantPair(current, { thesis: { text: `深入 ${root} ${i}` } }).thesisId;
+      return current;
+    };
+    const left = descend(first), right = descend(second);
+    const merge = store.createSynthesisAssistant([left, right], { text: "观察与重现" });
+    const graph = store.getGraph();
+    const context = buildSeedContext(graph, [merge]);
+    const text = context.map(message => message.content).join("\n");
+    expect(context.length).toBeLessThanOrEqual(16);
+    for (const id of [first, second, left, right, merge]) expect(text).toContain(graph.nodes[id].text!);
+    expect(text).not.toContain("这是无关工作区主题");
+  });
+
+  it("retains a later explicit user correction alongside the origin and current candidate", () => {
+    const store = new BranchGraphStore();
+    const root = store.createUserNode("桥只在下雪时可见。");
+    let current = store.createAssistantPair(root, { thesis: { text: "旧解释" } }).thesisId;
+    const correction = store.createChildUserNode(current, "补充：桥一直存在，雪停只是不再可见。");
+    current = correction;
+    for (let i = 0; i < 7; i++) current = store.createAssistantPair(current, { thesis: { text: `新解释 ${i}` } }).thesisId;
+    const text = buildSeedContext(store.getGraph(), [current]).map(message => message.content).join("\n");
+    expect(text).toContain("桥只在下雪时可见。");
+    expect(text).toContain("补充：桥一直存在，雪停只是不再可见。");
+    expect(text).toContain("新解释 6");
+  });
   it("combines same-role seeds across themes, splits the result and combines it again without losing sources", () => {
     const store = new BranchGraphStore();
     const first = store.createUserNode("远程协作");
@@ -50,6 +94,15 @@ describe("seed operations", () => {
     expect(scene).toHaveLength(8);
     expect(scene.map((node) => node.id)).toEqual(expect.arrayContaining([ids[0], ids[1], ids[39]]));
     expect(deriveDialogueView(store.getGraph(), ids[0]).sidebarItems).toHaveLength(40);
+  });
+
+  it("keeps an older question and both of its branches visible in the quieter five-seed scene", () => {
+    const store = new BranchGraphStore(), root = store.createUserNode("旧问题"), pair = store.createAssistantPair(root);
+    const synthesis = store.createSynthesisAssistant([pair.thesisId, pair.antithesisId]);
+    for (let i=0;i<4;i++) store.createAssistantPair(store.createUserNode(`新问题 ${i}`));
+    const scene = buildSeedScene(store.getGraph(), root, null, undefined, 5);
+    expect(scene).toHaveLength(5);
+    expect(scene.map(node => node.id)).toEqual(expect.arrayContaining([root, pair.thesisId, pair.antithesisId, synthesis]));
   });
 
   it("bounds a wide ancestry while retaining both current sources", () => {

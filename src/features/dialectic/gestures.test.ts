@@ -62,4 +62,22 @@ describe("synthesis gestures", () => {
       viewport: { width: 800, height: 600 }
     })).toBeNull();
   });
+
+  it("uses the same measured surfaces for approach, contact, and retained release",()=>{
+    const input={draggedNodeId:"thesis",draggedPosition:{x:55,y:60},nodes,action,
+      viewport:{width:800,height:600},radii:{thesis:50,antithesis:50}};
+    expect(findSynthesisGestureCandidate(input)).toBeNull(); // 120px, outside new contact.
+    expect(findSynthesisGestureCandidate({...input,phase:"approach"})).not.toBeNull();
+    expect(findSynthesisGestureCandidate({...input,retainedCounterpartId:"antithesis"})).not.toBeNull();
+    expect(findSynthesisGestureCandidate({...input,draggedPosition:{x:54,y:60},retainedCounterpartId:"antithesis"})).toBeNull();
+  });
+
+  it("chooses the closest liquid surface when the nearer centre belongs to a much smaller seed",()=>{
+    const placed=[{node:node("source","正"),position:{x:40,y:50}},
+      {node:node("tiny","反"),position:{x:50,y:50}}, {node:node("large","反"),position:{x:58,y:50}}];
+    const result=findSynthesisGestureCandidate({draggedNodeId:"source",draggedPosition:{x:40,y:50},nodes:placed,
+      action:null,viewport:{width:800,height:600},phase:"approach",radii:{source:50,tiny:10,large:80},
+      resolveAction:(left,right)=>left===right?null:{...action,key:`${left}:${right}`,thesisId:left,antithesisId:right}});
+    expect(result?.counterpartNodeId).toBe("large");
+  });
 });

@@ -1,6 +1,8 @@
 import { createClientId } from "@/features/dialectic/store";
+import { normalizeThinkingSpace, type ThinkingSpace } from "@/features/perspectives/model";
 import { ANICCA_WORKSPACE_SCHEMA_VERSION, loadGraphLocal } from "@/lib/persist/local";
-import { createEmptyGraph, Graph, StageLayouts } from "@/types/anicca";
+import { createEmptyGraph, Graph, StageLayouts, SeedInstances } from "@/types/anicca";
+import { normalizeSeedInstances } from "@/features/dialectic/seedInstances";
 import {
   ActiveWorkspaceRecord,
   ActivatedWorkspaceSnapshot,
@@ -41,6 +43,8 @@ type WorkspaceRecordInput = {
   focusedNodeId: string | null;
   composerParentId: string | null;
   stageLayouts?: StageLayouts;
+  seedInstances?: SeedInstances;
+  thinkingSpace?: ThinkingSpace;
   artifacts?: WorkspaceArtifacts;
 };
 
@@ -185,6 +189,8 @@ function normalizeSnapshot(input: WorkspaceRecordInput): PersistedWorkspaceSnaps
     focusedNodeId: input.focusedNodeId,
     composerParentId: input.composerParentId,
     stageLayouts: normalizeStageLayouts(input.stageLayouts),
+    seedInstances: normalizeSeedInstances(input.seedInstances, input.graph),
+    thinkingSpace: normalizeThinkingSpace(input.thinkingSpace),
     artifacts: normalizeArtifacts(input.artifacts)
   };
 }
@@ -201,6 +207,8 @@ export function loadWorkspaceSnapshot(workspaceId: WorkspaceId): PersistedWorksp
   return {
     ...parsed,
     stageLayouts: normalizeStageLayouts(parsed.stageLayouts),
+    seedInstances: normalizeSeedInstances(parsed.seedInstances, parsed.graph),
+    thinkingSpace: normalizeThinkingSpace(parsed.thinkingSpace),
     artifacts: normalizeArtifacts(parsed.artifacts)
   };
 }
@@ -264,6 +272,8 @@ export function saveWorkspaceRecord(
       focusedNodeId: input.snapshot.focusedNodeId,
       composerParentId: input.snapshot.composerParentId,
       stageLayouts: input.snapshot.stageLayouts,
+      seedInstances: input.snapshot.seedInstances,
+      thinkingSpace: input.snapshot.thinkingSpace,
       artifacts: input.snapshot.artifacts
     },
     options

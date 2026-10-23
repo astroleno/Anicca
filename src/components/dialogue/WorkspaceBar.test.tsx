@@ -133,6 +133,7 @@ describe("WorkspaceBar", () => {
     await user.click(screen.getByRole("button", { name: "保存工作区名称" }));
 
     expect(onRename).toHaveBeenCalledWith("Renamed Workspace");
+    await waitFor(() => expect(screen.getByRole("button", { name: "更多" })).toHaveFocus());
   });
 
   it("moves focus into the overflow popover and returns it on Escape", async () => {
@@ -163,7 +164,7 @@ describe("WorkspaceBar", () => {
     await waitFor(() => expect(moreButton).toHaveFocus());
   });
 
-  it("focuses the rename input after opening rename mode", async () => {
+  it("focuses the rename input and returns to More when the edit is cancelled", async () => {
     const user = userEvent.setup();
 
     render(
@@ -184,5 +185,23 @@ describe("WorkspaceBar", () => {
     await user.click(await screen.findByRole("button", { name: "重命名工作区" }));
 
     await waitFor(() => expect(screen.getByLabelText("工作区名称")).toHaveFocus());
+    await user.type(screen.getByLabelText("工作区名称"), " discarded");
+    await user.click(screen.getByRole("button", { name: "取消" }));
+    expect(screen.queryByLabelText("工作区名称")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("button", { name: "更多" })).toHaveFocus());
+    await user.click(screen.getByRole("button", { name: "更多" }));
+    await user.click(screen.getByRole("button", { name: "重命名工作区" }));
+    expect(screen.getByLabelText("工作区名称")).toHaveValue("Current Workspace");
+  });
+
+  it("dismisses on an outside input click without returning focus to More",async()=>{
+    const user=userEvent.setup();
+    render(<><WorkspaceBar currentWorkspaceId="workspace_current" currentTitle="Current Workspace" items={[]}
+      statusMessage={null} onCreate={vi.fn()} onSelect={vi.fn()} onRename={vi.fn()} onExport={vi.fn()} onImport={vi.fn()} />
+      <input aria-label="正在写的想法" /></>);
+    await user.click(screen.getByRole("button",{name:"更多"}));
+    await user.click(screen.getByRole("textbox",{name:"正在写的想法"}));
+    expect(screen.getByRole("button",{name:"更多"})).toHaveAttribute("aria-expanded","false");
+    expect(screen.getByRole("textbox",{name:"正在写的想法"})).toHaveFocus();
   });
 });

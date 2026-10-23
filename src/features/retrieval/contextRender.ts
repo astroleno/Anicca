@@ -1,5 +1,7 @@
 import type { BranchType } from "@/types/anicca";
 import type { RetrievalNode, RetrievalSubgraph } from "./types";
+import { perspectiveLabel, seedPerspectiveLabel } from "@/features/perspectives/model";
+import { polarityAxis, polarityLabel } from "@/features/perspectives/polarity";
 
 type SanitizeOptions = {
   maxChars?: number;
@@ -74,6 +76,12 @@ function renderNodeLine(node: RetrievalNode, seedNodeIds: Set<string>, includeFu
   if (node.branchType) {
     parts.push(`branch=${sanitizeRetrievalField(BRANCH_DISPLAY[node.branchType], { maxChars: 20 })}`);
   }
+  const axis = node.polarity && polarityAxis(node.polarity);
+  if (axis) {
+    parts.push(`polarity=${sanitizeRetrievalField(`${axis.label}:${polarityLabel(node.polarity)}`, { maxChars: 80 })}`);
+  }
+  const lens = node.polarity ? perspectiveLabel(node.polarity.frame) : node.fissionFrame ? perspectiveLabel(node.fissionFrame) : seedPerspectiveLabel(node.perspective);
+  if (lens) parts.push(`lens=${sanitizeRetrievalField(lens, { maxChars: 80 })}`);
 
   const label = sanitizeRetrievalField(node.label, { maxChars: LABEL_MAX_CHARS });
   if (label) {

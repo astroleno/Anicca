@@ -5,6 +5,15 @@ export type WorkspaceResumedSource = "boot" | "switch";
 
 export type DialogueTelemetryEvent =
   | {
+      name: "generation_finished";
+      payload: {
+        endpoint: "branches" | "synthesis" | "polarities";
+        elapsedMs: number;
+        outcome: "success" | "failed" | "cancelled";
+        status: number | null;
+      };
+    }
+  | {
       name: "workspace_resumed";
       payload: {
         source: WorkspaceResumedSource;
@@ -42,6 +51,12 @@ const noopSink: DialogueTelemetrySink = {
 };
 
 let dialogueTelemetrySink: DialogueTelemetrySink = noopSink;
+const recentGenerations: Extract<DialogueTelemetryEvent, { name: "generation_finished" }>[] = [];
+
+/** Volatile, bounded diagnostics; no prompt, node, user, or workspace identifiers. */
+export function getRecentGenerationMetrics() {
+  return recentGenerations.map(event => ({ ...event, payload: { ...event.payload } }));
+}
 
 function getGraphCounts(graph: Graph) {
   return {
@@ -56,9 +71,14 @@ export function setDialogueTelemetrySink(sink: DialogueTelemetrySink | null | un
 
 export function resetDialogueTelemetrySinkForTests() {
   dialogueTelemetrySink = noopSink;
+  recentGenerations.length = 0;
 }
 
 export async function emitDialogueTelemetry(event: DialogueTelemetryEvent) {
+  if (event.name === "generation_finished") {
+    recentGenerations.push({ ...event, payload: { ...event.payload } });
+    if (recentGenerations.length > 100) recentGenerations.shift();
+  }
   try {
     await Promise.resolve(dialogueTelemetrySink.track(event));
   } catch (error) {

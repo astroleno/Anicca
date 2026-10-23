@@ -1,9 +1,12 @@
 import { BranchType, NodeKind } from "@/types/anicca";
+import type { SeedPerspective, ThinkingSpace } from "@/features/perspectives/model";
+import type { PolarityOrigin } from "@/features/perspectives/polarity";
 
 export type RetrievalRelation =
   | "lineage"
   | "thesis"
   | "antithesis"
+  | "polarity"
   | "synthesis"
   | "continuation"
   | "source"
@@ -24,6 +27,9 @@ export type RetrievalNode = {
   summary?: string;
   kind: Extract<NodeKind, "user" | "assistant" | "merge">;
   branchType?: BranchType;
+  polarity?: PolarityOrigin;
+  perspective?: SeedPerspective;
+  fissionFrame?: ThinkingSpace;
   growth?: {
     operator?: string;
     artworkId?: string;
@@ -51,6 +57,7 @@ export type RetrievalNodeMatch = {
     "label" |
     "summary" |
     "text" |
+    "viewpoint" |
     "branchType" |
     "growthOperator" |
     "growthArtworkId" |

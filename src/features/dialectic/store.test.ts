@@ -8,6 +8,7 @@ describe("useDialogueUiStore", () => {
       focusedNodeId: null,
       composerParentId: null,
       stageLayouts: {},
+      stagePreview: null,
       errorState: null,
       pendingAction: null,
       pending: {
@@ -72,6 +73,23 @@ describe("useDialogueUiStore", () => {
         synthesis: null
       }
     });
+  });
+
+  it("keeps source-layout dragging and new placements temporary and restores the persisted layout", () => {
+    const state = useDialogueUiStore.getState();
+    state.setStageNodePosition("seeds:w", "a", { x: 30, y: 40, z: .2 });
+    state.setStagePan("seeds:w", { x: 4, y: 6 });
+    const base = structuredClone(useDialogueUiStore.getState().stageLayouts);
+    state.beginStagePreview("seeds:w", { a: { x: 55, y: 65 } }, { a: { x: 60, y: 70 } });
+    state.setStageNodePosition("seeds:w", "a", { x: 75, y: 80 });
+    state.setStagePan("seeds:w", { x: 20, y: 30 }, "compact");
+    state.ensureStageNodePositions("seeds:w", { b: { x: 20, y: 20 } }, { b: { x: 22, y: 22 } });
+    expect(useDialogueUiStore.getState().stageLayouts).toEqual(base);
+    expect(useDialogueUiStore.getState().stagePreview?.view.nodePositions.a).toEqual({ x: 75, y: 80 });
+    expect(useDialogueUiStore.getState().stagePreview?.view.compact?.pan).toEqual({ x: 20, y: 30 });
+    state.endStagePreview();
+    expect(useDialogueUiStore.getState().stagePreview).toBeNull();
+    expect(useDialogueUiStore.getState().stageLayouts).toEqual(base);
   });
 
   it("hydrates persisted workspace identity and clears transient pending state", () => {

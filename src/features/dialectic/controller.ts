@@ -1,13 +1,17 @@
 import {
   generateBranches,
+  generatePolarity,
   generateSynthesis,
   type BranchesResponse,
   type GenerateBranchesInput,
+  type GeneratePolarityInput,
+  type PolarityResponse,
   type GenerateSynthesisInput,
   type SynthesisResponse
 } from "@/features/dialectic/api";
 import type { PendingRequest, PendingSlot } from "@/features/dialectic/store";
 import type { BranchGraphStore } from "@/store/branchGraph";
+import type { SeedPerspective, ThinkingSpace } from "@/features/perspectives/model";
 
 type ControllerRequestOptions = {
   fetchImpl?: typeof fetch;
@@ -17,6 +21,7 @@ export type BranchCommitInput = {
   targetAssistantId: string | null;
   userText: string;
   response: BranchesResponse;
+  perspective?: SeedPerspective;
 };
 
 export type BranchCommitResult = {
@@ -28,6 +33,7 @@ export type BranchCommitResult = {
 export type SynthesisCommitInput = {
   thesisId: string;
   antithesisId: string;
+  sourceInstanceIds?: [string, string];
   response: SynthesisResponse;
 };
 
@@ -48,8 +54,8 @@ export function commitBranchesResult(
   input: BranchCommitInput
 ): BranchCommitResult {
   const userNodeId = input.targetAssistantId
-    ? graphStore.createChildUserNode(input.targetAssistantId, input.userText)
-    : graphStore.createUserNode(input.userText);
+    ? graphStore.createChildUserNode(input.targetAssistantId, input.userText, input.perspective)
+    : graphStore.createUserNode(input.userText, input.perspective);
   const { thesisId, antithesisId } = graphStore.createAssistantPair(userNodeId, {
     thesis: input.response.thesis,
     antithesis: input.response.antithesis
@@ -65,7 +71,9 @@ export function commitSynthesisResult(
   return graphStore.createSynthesisAssistant([input.thesisId, input.antithesisId], {
     text: input.response.synthesis.text,
     summary: input.response.synthesis.summary,
-    label: input.response.synthesis.label
+    label: input.response.synthesis.label,
+    sourceInstanceIds: input.sourceInstanceIds,
+    perspective: input.response.synthesis.perspective
   });
 }
 
@@ -73,9 +81,15 @@ export function commitSynthesisResult(
 export function commitSeedSplitResult(
   graphStore: BranchGraphStore,
   seedId: string,
-  response: BranchesResponse
+  response: BranchesResponse,
+  frame?: ThinkingSpace
 ) {
-  return graphStore.createAssistantPair(seedId, response);
+  return graphStore.createAssistantPair(seedId, { ...response, frame });
+}
+
+export function commitPolarityResult(graphStore: BranchGraphStore, sourceId: string, frame: ThinkingSpace, response: PolarityResponse) {
+  return graphStore.createPolarityPair(sourceId, { groupId: response.requestId, axisId: response.axis.id, frame,
+    negative: response.negative, positive: response.positive });
 }
 
 /**
@@ -113,6 +127,15 @@ export class DialogueController {
       });
     } finally {
       this.release("synthesis", controller);
+    }
+  }
+
+  async generatePolarity(input: GeneratePolarityInput, options: ControllerRequestOptions = {}): Promise<PolarityResponse> {
+    const controller = this.replace("branches");
+    try {
+      return await generatePolarity(input, { signal: controller.signal, fetchImpl: options.fetchImpl });
+    } finally {
+      this.release("branches", controller);
     }
   }
 

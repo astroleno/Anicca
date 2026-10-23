@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn, spawnSync } from "node:child_process";
 import { chromium } from "playwright";
-import { runSeedViewport } from "./seeds.mjs";
+import { runSeedViewport, waitForSeedLayout } from "./seeds.mjs";
 import { runCanvasLifecycle, runSeedRecoveryAndTouch } from "./soft-interactions.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -880,6 +880,7 @@ async function ensureMetaballFusionAndSeparation(browser) {
     viewport: { width: 1440, height: 980 }
   });
   await assertMetaballStage(page, "metaball fusion and separation");
+  await waitForSeedLayout(page);
   const pair = "asst_thesis_1::user_root_1";
   const root = page.getByTestId("dialogue-stage-node-user_root_1");
   const thesis = page.getByTestId("dialogue-stage-node-asst_thesis_1");
@@ -907,7 +908,7 @@ async function ensureMetaballFusionAndSeparation(browser) {
     y: thesisBox.y + thesisBox.height / 2
   };
   const fusedCenter = {
-    x: rootBox.x + rootBox.width / 2 - 112,
+    x: rootBox.x + rootBox.width / 2,
     y: rootBox.y + rootBox.height / 2
   };
   let pointerDown = false;
@@ -927,11 +928,7 @@ async function ensureMetaballFusionAndSeparation(browser) {
       { expectedPair: pair }
     );
 
-    await waitForCondition(page, "metaball-fusion:motion-settled", () =>
-      [...document.querySelectorAll('[data-testid^="dialogue-stage-node-"]')].every(element =>
-        (element.style.translate || "0px 0px").split(/\s+/).every(value => Math.abs(parseFloat(value)) < 0.5)
-      )
-    );
+    await runStep("wait:metaball-fusion:motion-settled", () => waitForSeedLayout(page));
 
     await waitForCondition(page, "metaball-fusion:pair-neck-strengthened", () => {
       const gl = document.querySelector('[data-testid="dialogue-metaball-canvas"]')?.getContext("webgl2");
@@ -962,7 +959,7 @@ async function ensureMetaballFusionAndSeparation(browser) {
       const program = gl?.getParameter(gl.CURRENT_PROGRAM);
       if (!program) return false;
       return Array.from({ length: 8 }, (_, index) => gl.getUniform(program, gl.getUniformLocation(program, `s${index}b`)))
-        .every(blend => Math.abs(blend - 0.14) < 0.001);
+        .every(blend => blend > 0 && blend < 0.001);
     });
 
     const graphAfter = await readPersistedGraphCounts(page);
@@ -1137,6 +1134,9 @@ async function main() {
       await runStep("setup:wait-dialogue-ready", () => waitForServer(`${baseUrl}/dialogue`, server));
       browser = await runStep("setup:launch-chromium", () => chromium.launch({
         headless: true,
+        // Exercise the native GPU on macOS; software raymarching can starve
+        // unrelated checks and does not represent the interactive preview.
+        ...(process.platform === "darwin" ? { args: ["--use-angle=metal"] } : {}),
         ...(browserExecutablePath ? { executablePath: browserExecutablePath } : {})
       }));
       const results = [];

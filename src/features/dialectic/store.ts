@@ -1,5 +1,7 @@
 import { create } from "zustand";
-import { StageLayoutMode, StageLayouts, StagePan, StagePoint } from "@/types/anicca";
+import { StageLayoutMode, StageLayouts, StagePan, StagePoint, SeedInstances, type StageLayoutView } from "@/types/anicca";
+import { defaultThinkingSpace, normalizeThinkingSpace, type ThinkingSpace, type ThinkingAxis } from "@/features/perspectives/model";
+import { normalizeSeedInstances } from "./seedInstances";
 
 export type PendingSlot = "branches" | "synthesis";
 
@@ -10,6 +12,7 @@ export type PendingRequest = {
   composerTargetId: string | null;
   sourceLabel?: string;
   synthesisActionKey?: string;
+  polarityAxis?: ThinkingAxis;
 };
 
 type PendingState = Record<PendingSlot, PendingRequest | null>;
@@ -20,6 +23,8 @@ export type HydratedWorkspaceState = {
   focusedNodeId: string | null;
   composerParentId: string | null;
   stageLayouts?: StageLayouts;
+  seedInstances?: SeedInstances;
+  thinkingSpace?: ThinkingSpace;
 };
 
 export type DialogueErrorState = {
@@ -34,6 +39,16 @@ type DialogueUiState = {
   focusedNodeId: string | null;
   composerParentId: string | null;
   stageLayouts: StageLayouts;
+  stagePreview: { layoutKey: string; view: StageLayoutView } | null;
+  beginStagePreview: (layoutKey: string, wide: Record<string, StagePoint>, compact: Record<string, StagePoint>) => void;
+  endStagePreview: () => void;
+  seedInstances: SeedInstances;
+  addSeedInstance: (conceptId: string) => string;
+  removeSeedInstance: (id: string) => void;
+  setStageNodePositions: (layoutKey: string, wide: Record<string, StagePoint>, compact: Record<string, StagePoint>) => void;
+  thinkingSpace: ThinkingSpace;
+  setThinkingSpace: (space: ThinkingSpace) => void;
+  arrangeStage: (layoutKey: string) => void;
   errorState: DialogueErrorState | null;
   pendingAction: PendingSlot | null;
   pending: PendingState;
@@ -72,6 +87,16 @@ function getStageLayoutView(stageLayouts: StageLayouts, layoutKey: string) {
   };
 }
 
+function activeLayout(state: DialogueUiState, layoutKey: string) {
+  return state.stagePreview?.layoutKey === layoutKey ? state.stagePreview.view : getStageLayoutView(state.stageLayouts, layoutKey);
+}
+
+function writeLayout(state: DialogueUiState, layoutKey: string, view: StageLayoutView) {
+  return state.stagePreview?.layoutKey === layoutKey
+    ? { stagePreview: { layoutKey, view } }
+    : { stageLayouts: { ...state.stageLayouts, [layoutKey]: view } };
+}
+
 function getStageLayoutViewport(layout: ReturnType<typeof getStageLayoutView>, mode: StageLayoutMode) {
   if (mode === "compact") {
     return layout.compact || {
@@ -92,6 +117,42 @@ export const useDialogueUiStore = create<DialogueUiState>((set, get) => ({
   focusedNodeId: null,
   composerParentId: null,
   stageLayouts: {},
+  stagePreview: null,
+  beginStagePreview: (layoutKey, wide, compact) => set(state => {
+    const layout = activeLayout(state, layoutKey);
+    return { stagePreview: { layoutKey, view: { ...layout, nodePositions: wide,
+      compact: { ...getStageLayoutViewport(layout, "compact"), nodePositions: compact } } } };
+  }),
+  endStagePreview: () => set({ stagePreview: null }),
+  seedInstances: {},
+  addSeedInstance: (conceptId) => {
+    const id = createClientId("instance");
+    set(state => ({ seedInstances: { ...state.seedInstances, [id]: { id, conceptId, createdAt: new Date().toISOString(),
+      ordinal: Math.max(0, ...Object.values(state.seedInstances).filter(instance => instance.conceptId === conceptId).map(instance => instance.ordinal)) + 1 } } }));
+    return id;
+  },
+  removeSeedInstance: (id) => set(state => {
+    if (!Object.prototype.hasOwnProperty.call(state.seedInstances, id)) return state;
+    const instances = { ...state.seedInstances };
+    delete instances[id];
+    const stageLayouts = Object.fromEntries(Object.entries(state.stageLayouts).map(([key, layout]) => {
+      const wide = { ...layout.nodePositions }, compact = { ...layout.compact?.nodePositions };
+      delete wide[id]; delete compact[id];
+      return [key, { ...layout, nodePositions: wide, ...(layout.compact ? { compact: { ...layout.compact, nodePositions: compact } } : {}) }];
+    }));
+    return { seedInstances: instances, stageLayouts };
+  }),
+  setStageNodePositions: (layoutKey, wide, compact) => set(state => {
+    const layout = activeLayout(state, layoutKey);
+    return writeLayout(state, layoutKey, { ...layout, nodePositions: wide,
+      compact: { ...getStageLayoutViewport(layout, "compact"), nodePositions: compact } });
+  }),
+  thinkingSpace: defaultThinkingSpace(),
+  setThinkingSpace: (space) => set({ thinkingSpace: normalizeThinkingSpace(space) }),
+  arrangeStage: (layoutKey) => set(state => {
+    const layouts = { ...state.stageLayouts }; delete layouts[layoutKey];
+    return { stageLayouts: layouts, stagePreview: null };
+  }),
   errorState: null,
   pendingAction: null,
   pending: getInitialPending(),
@@ -102,6 +163,9 @@ export const useDialogueUiStore = create<DialogueUiState>((set, get) => ({
       focusedNodeId: state.focusedNodeId,
       composerParentId: state.composerParentId,
       stageLayouts: state.stageLayouts || {},
+      stagePreview: null,
+      seedInstances: normalizeSeedInstances(state.seedInstances),
+      thinkingSpace: normalizeThinkingSpace(state.thinkingSpace),
       errorState: null,
       pendingAction: null,
       pending: getInitialPending()
@@ -109,49 +173,39 @@ export const useDialogueUiStore = create<DialogueUiState>((set, get) => ({
   setFocusedNodeId: (nodeId) => set({ focusedNodeId: nodeId }),
   setComposerParentId: (nodeId) => set({ composerParentId: nodeId }),
   ensureStageNodePositions: (layoutKey, wide, compact) => set(state => {
-    const current = getStageLayoutView(state.stageLayouts, layoutKey);
+    const current = activeLayout(state, layoutKey);
     const narrow = getStageLayoutViewport(current, "compact");
     if (Object.keys(wide).every(id => current.nodePositions[id]) && Object.keys(compact).every(id => narrow.nodePositions[id])) return state;
-    return { stageLayouts: { ...state.stageLayouts, [layoutKey]: {
+    return writeLayout(state, layoutKey, {
       ...current, nodePositions: { ...wide, ...current.nodePositions },
       compact: { ...narrow, nodePositions: { ...compact, ...narrow.nodePositions } }
-    } } };
+    });
   }),
   setStageNodePosition: (layoutKey, nodeId, position, mode = "wide") =>
     set((state) => {
-      const currentView = getStageLayoutView(state.stageLayouts, layoutKey);
+      const currentView = activeLayout(state, layoutKey);
       const currentViewport = getStageLayoutViewport(currentView, mode);
       const nodePositions = {
         ...currentViewport.nodePositions,
         [nodeId]: position
       };
-      return {
-        stageLayouts: {
-          ...state.stageLayouts,
-          [layoutKey]: {
+      return writeLayout(state, layoutKey, {
             ...currentView,
             ...(mode === "compact"
               ? { compact: { pan: currentViewport.pan, nodePositions } }
               : { nodePositions })
-          }
-        }
-      };
+      });
     }),
   setStagePan: (layoutKey, pan, mode = "wide") =>
     set((state) => {
-      const currentView = getStageLayoutView(state.stageLayouts, layoutKey);
+      const currentView = activeLayout(state, layoutKey);
       const currentViewport = getStageLayoutViewport(currentView, mode);
-      return {
-        stageLayouts: {
-          ...state.stageLayouts,
-          [layoutKey]: {
+      return writeLayout(state, layoutKey, {
             ...currentView,
             ...(mode === "compact"
               ? { compact: { pan, nodePositions: currentViewport.nodePositions } }
               : { pan })
-          }
-        }
-      };
+      });
     }),
   beginPending: (slot, pending) =>
     set({
@@ -187,6 +241,7 @@ export const useDialogueUiStore = create<DialogueUiState>((set, get) => ({
       workspaceId,
       workspaceSessionId,
       stageLayouts,
+      stagePreview: null,
       errorState: null,
       pendingAction: null,
       pending: getInitialPending()

@@ -1,4 +1,6 @@
 import type { Message } from "@/types/chat";
+import { emitDialogueTelemetry } from "@/lib/analytics/dialogue";
+import type { AxisSuggestion, SeedPerspective, ThinkingAxis, ThinkingSpace } from "@/features/perspectives/model";
 
 export const DIALECTIC_INPUT_MAX_LENGTH = 2000;
 
@@ -9,12 +11,14 @@ export type BranchPayload = {
   summary: string;
   label: string;
   stance: "正" | "反";
+  perspective?: SeedPerspective;
 };
 
 export type BranchesResponse = {
   requestId: string;
   thesis: BranchPayload;
   antithesis: BranchPayload;
+  suggestedAxes?: AxisSuggestion[];
 };
 
 export type SynthesisPayload = {
@@ -22,17 +26,29 @@ export type SynthesisPayload = {
   summary: string;
   label: string;
   stance: "合";
+  perspective?: SeedPerspective;
 };
 
 export type SynthesisResponse = {
   requestId: string;
   synthesis: SynthesisPayload;
+  suggestedAxes?: AxisSuggestion[];
 };
 
 export type GenerateBranchesInput = {
   requestId: string;
   userText: string;
   contextMessages: DialecticContextMessage[];
+  perspective?: ThinkingSpace;
+};
+
+export type PolarityPayload = Omit<BranchPayload, "stance">;
+export type GeneratePolarityInput = GenerateBranchesInput & { perspective: ThinkingSpace; axisId: string };
+export type PolarityResponse = {
+  requestId: string;
+  axis: ThinkingAxis;
+  negative: PolarityPayload;
+  positive: PolarityPayload;
 };
 
 export type SeedSource = {
@@ -40,13 +56,14 @@ export type SeedSource = {
   text: string;
   summary: string;
   label: string;
-  stance: "正" | "反" | "合" | "想法";
+  stance: "正" | "反" | "合" | "想法" | "视角";
 };
 
 export type GenerateSynthesisInput = {
   requestId: string;
   rootInput: string;
   contextMessages: DialecticContextMessage[];
+  perspective?: ThinkingSpace;
 } & ({ sources: [SeedSource, SeedSource]; thesis?: never; antithesis?: never } |
   { sources?: never; thesis: BranchPayload; antithesis: BranchPayload });
 
@@ -70,30 +87,50 @@ export class DialecticApiError extends Error {
 }
 
 async function requestJson<T>(
-  url: string,
+  url: "/api/branches" | "/api/synthesis" | "/api/polarities",
   body: Record<string, unknown>,
   options: DialecticRequestOptions = {}
 ): Promise<T> {
   const request = options.fetchImpl || fetch;
-  const response = await request(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(body),
-    signal: options.signal
-  });
-
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new DialecticApiError({
-      status: response.status,
-      code: typeof data?.error === "string" ? data.error : `http_${response.status}`,
-      details: typeof data?.details === "string" ? data.details : ""
+  const started = performance.now();
+  let outcome: "success" | "failed" | "cancelled" = "failed";
+  let status: number | null = null;
+  try {
+    options.signal?.throwIfAborted();
+    const response = await request(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body),
+      signal: options.signal
     });
-  }
+    status = response.status;
 
-  return data as T;
+    const data = await response.json().catch(() => {
+      if (response.ok) throw new DialecticApiError({ status: response.status, code: "invalid_model_output", details: "response_invalid_json" });
+      return {};
+    });
+    options.signal?.throwIfAborted();
+    if (!response.ok) {
+      throw new DialecticApiError({
+        status: response.status,
+        code: typeof data?.error === "string" ? data.error : `http_${response.status}`,
+        details: typeof data?.details === "string" ? data.details : ""
+      });
+    }
+
+    outcome = "success";
+    return data as T;
+  } catch (error) {
+    outcome = options.signal?.aborted || isAbortError(error) ? "cancelled" : "failed";
+    throw error;
+  } finally {
+    void emitDialogueTelemetry({ name: "generation_finished", payload: {
+      endpoint: url === "/api/branches" ? "branches" : url === "/api/polarities" ? "polarities" : "synthesis",
+      elapsedMs: Math.round(performance.now() - started), outcome, status
+    } });
+  }
 }
 
 export function generateBranches(
@@ -108,6 +145,20 @@ export function generateSynthesis(
   options?: DialecticRequestOptions
 ): Promise<SynthesisResponse> {
   return requestJson<SynthesisResponse>("/api/synthesis", input, options);
+}
+
+export async function generatePolarity(input: GeneratePolarityInput, options?: DialecticRequestOptions): Promise<PolarityResponse> {
+  const response = await requestJson<PolarityResponse>("/api/polarities", input, options);
+  const expected = input.perspective.axes.find(axis => axis.id === input.axisId);
+  const completePole = (pole: PolarityPayload | undefined) => Boolean(pole && typeof pole.text === "string" && pole.text.trim() &&
+    typeof pole.summary === "string" && pole.summary.trim() && typeof pole.label === "string" && pole.label.trim() &&
+    Array.isArray(pole.perspective?.axes) && !("stance" in pole));
+  if (!expected || response?.requestId !== input.requestId || response.axis?.id !== input.axisId ||
+    response.axis.negative !== expected.negative || response.axis.positive !== expected.positive ||
+    !completePole(response.negative) || !completePole(response.positive)) {
+    throw new DialecticApiError({ status: 502, code: "invalid_model_output", details: "polarity_response_incomplete" });
+  }
+  return response;
 }
 
 export function isAbortError(error: unknown): boolean {

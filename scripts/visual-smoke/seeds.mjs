@@ -1,6 +1,23 @@
 import assert from "node:assert/strict";
 import path from "node:path";
 
+// A settled 3D projection can have a permanent screen offset. Wait for its
+// visible bounds to stop moving instead of requiring the old flat origin.
+export async function waitForSeedLayout(page) {
+  await page.evaluate(() => { delete window.__seedLayoutProbe; });
+  await page.waitForFunction(() => {
+    const elements = [...document.querySelectorAll('[data-metaball-surface]')];
+    if (!elements.length) return false;
+    const signature = elements.map(element => {
+      const rect = element.getBoundingClientRect();
+      return [rect.x, rect.y, rect.width, rect.height].map(value => Math.round(value * 4) / 4).join(",");
+    }).join(";");
+    const now = performance.now();
+    if (window.__seedLayoutProbe?.signature !== signature) window.__seedLayoutProbe = { signature, at: now };
+    return now - window.__seedLayoutProbe.at >= 200;
+  });
+}
+
 // Exercise the seed workspace with intercepted APIs in an isolated browser context.
 export async function runSeedViewport(browser, viewport, { baseUrl, outputDir, setActivePage }) {
   const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height },
@@ -41,19 +58,32 @@ export async function runSeedViewport(browser, viewport, { baseUrl, outputDir, s
     const data = JSON.parse(localStorage.getItem(`anicca_workspace_snapshot_v1:${id}`) || "null");
     return Object.keys(data?.graph.nodes || {}).length === expected;
   }, count);
+  const reveal = async id => {
+    if (await page.getByTestId(`dialogue-stage-node-${id}`).count()) return;
+    const snapshot = await graph();
+    await page.getByRole("button", { name: "演化全景", exact: true }).click();
+    const overview = page.getByTestId("evolution-overview");
+    await overview.getByRole("textbox", { name: "搜索想法或极性" }).fill(snapshot.nodes[id].text);
+    await overview.getByRole("button").filter({ hasText: snapshot.nodes[id].text.slice(0, 8) }).click();
+    await overview.getByRole("button", { name: "进入种子", exact: true }).click();
+    if (await page.getByRole("button", { name: "返回种子，收起阅读" }).isVisible()) await close();
+    await page.getByTestId(`dialogue-stage-node-${id}`).waitFor();
+    await waitForSeedLayout(page);
+  };
   const select = async id => {
-    if (await page.getByRole("button", { name: "收起阅读面板" }).isVisible()) await close();
+    if (await page.getByRole("button", { name: "返回种子，收起阅读" }).isVisible()) await close();
+    await reveal(id);
     await page.getByTestId(`dialogue-stage-node-${id}`).click();
-    await page.getByRole("button", { name: "裂变", exact: true }).waitFor();
+    await page.getByRole("button", { name: "正反裂变", exact: true }).waitFor();
     await page.waitForFunction(() => getComputedStyle(document.getElementById("dialogue-reading-drawer")).opacity === "1");
-    const card = await page.locator("#dialogue-reading-drawer").boundingBox();
+    const reading = await page.locator("#dialogue-reading-drawer").boundingBox();
     const composer = await page.getByTestId("dialogue-composer").boundingBox();
     const content = await page.getByTestId("dialogue-panel").boundingBox();
-    assert(card && content && card.height > 80 && content.y >= card.y && content.y + content.height <= card.y + card.height + 1,
-      "The reading card contains its visible content");
-    assert(composer && card.y + card.height <= composer.y - 8, "Reading card leaves the composer accessible");
+    assert(reading && content && reading.height > 80 && content.y >= reading.y && content.y + content.height <= reading.y + reading.height + 1,
+      "Reading content stays within the available stage area");
+    assert(composer && reading.y + reading.height <= composer.y - 8, "Reading leaves the composer accessible");
   };
-  const close = () => page.getByRole("button", { name: "收起阅读面板" }).click();
+  const close = () => page.getByRole("button", { name: "返回种子，收起阅读" }).click();
   const combine = async (a, b) => {
     await select(a);
     await page.getByRole("button", { name: "组合", exact: true }).click();
@@ -82,9 +112,7 @@ export async function runSeedViewport(browser, viewport, { baseUrl, outputDir, s
     const positives = Object.values(original.nodes).filter(node => node.branchType === "正");
     await page.waitForFunction(() => document.querySelector('[data-testid="dialogue-stage-track"]')?.dataset.metaballRenderer === "ready");
     // Capture the settled layout after newly generated seeds spring out of their origin.
-    await page.waitForFunction(() => [...document.querySelectorAll('[data-testid^="dialogue-stage-node-"]')].every(element =>
-      (element.style.translate || "0px 0px").split(/\s+/).every(value => Math.abs(parseFloat(value)) < 0.5)
-    ));
+    await waitForSeedLayout(page);
     const layout = await page.evaluate(() => {
       const composer = document.querySelector('[data-testid="dialogue-composer"]').getBoundingClientRect();
       return { width: innerWidth, height: visualViewport.height, scrollWidth: document.documentElement.scrollWidth,
@@ -113,17 +141,20 @@ export async function runSeedViewport(browser, viewport, { baseUrl, outputDir, s
     assert.deepEqual(synthesisRequest.sources.map(source => source.stance), ["正", "正"]);
     await select(merged.id);
     await page.screenshot({ path: path.join(outputDir, `${viewport.name}-seed.png`) });
-    await page.getByRole("button", { name: "裂变", exact: true }).click();
+    await page.getByRole("button", { name: "正反裂变", exact: true }).click();
     await waitCount(9);
     let current = await graph();
     assert.equal(current.nodes[merged.id].children.length, 2);
     assert(current.nodes[merged.id].children.every(id => current.nodes[id].kind === "assistant"));
     // Any original idea also splits without inserting another user node.
-    if (await page.getByRole("button", { name: "收起阅读面板" }).isVisible()) await close();
+    if (await page.getByRole("button", { name: "返回种子，收起阅读" }).isVisible()) await close();
     const root = original.entryIds[1];
+    // The near stage is bounded. Retrieve an older idea through the panorama
+    // instead of assuming every graph node remains a visible drag target.
+    await reveal(root);
     if (viewport.hasTouch) {
       await select(root);
-      await page.getByRole("button", { name: "裂变", exact: true }).click();
+      await page.getByRole("button", { name: "正反裂变", exact: true }).click();
     } else {
       const requestCount = requests.length;
       await page.getByTestId(`dialogue-stage-node-${root}`).dblclick();
@@ -135,7 +166,7 @@ export async function runSeedViewport(browser, viewport, { baseUrl, outputDir, s
     current = await graph();
     assert.equal(current.entryIds.length, 2);
     assert.equal(current.nodes[root].children.length, 4);
-    if (await page.getByRole("button", { name: "收起阅读面板" }).isVisible()) await close();
+    if (await page.getByRole("button", { name: "返回种子，收起阅读" }).isVisible()) await close();
     // The recent stage is bounded; history still retains every seed.
     assert((await page.locator('[data-testid^="dialogue-stage-node-"]').count()) <= 8);
     await page.reload({ waitUntil: "networkidle" });
@@ -143,7 +174,7 @@ export async function runSeedViewport(browser, viewport, { baseUrl, outputDir, s
     assert.equal(Object.keys((await graph()).nodes).length, 11);
     assert.deepEqual(issues, []);
     return { name: viewport.name, passed: true, layout, performance, requests: requests.length,
-      checks: ["new-ideas", "stable-existing-positions", "no-cursor-ball", "local-card-clear-of-composer", "cross-topic-same-stance-combination", "source-provenance", "synthesis-direct-split", "idea-direct-split", "bounded-stage", "reload", "console"] };
+      checks: ["new-ideas", "stable-existing-positions", "no-cursor-ball", "reading-clear-of-composer", "cross-topic-same-stance-combination", "source-provenance", "synthesis-direct-split", "panorama-retrieves-older-idea", "idea-direct-split", "bounded-stage", "reload", "console"] };
   } finally { await context.close(); }
 }
 

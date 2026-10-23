@@ -20,7 +20,7 @@
     linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
     linear-gradient(135deg, #11181b 0%, #070a0c 42%, #12100b 100%);
   background-size: 42px 42px, 42px 42px, auto;
-  font-family: "Avenir Next", "Helvetica Neue", sans-serif;
+  font-family: var(--anicca-font-interface);
 }
 
 .handoffShell {

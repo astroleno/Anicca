@@ -7,6 +7,9 @@ import {
   setDialogueWorkspaceRetrievalContextEnabledForTests
 } from "@/components/dialogue/DialogueShell";
 import { useDialogueUiStore } from "@/features/dialectic/store";
+import { seedLabel } from "@/features/dialectic/seeds";
+import { defaultThinkingSpace } from "@/features/perspectives/model";
+import { polarityPerspective } from "@/features/perspectives/polarity";
 import {
   DialogueTelemetryEvent,
   resetDialogueTelemetrySinkForTests,
@@ -36,6 +39,8 @@ function resetWorkspace(focusedNodeId: string | null = null) {
     focusedNodeId,
     composerParentId: null,
     stageLayouts: {},
+    stagePreview: null,
+    seedInstances: {},
     errorState: null,
     pendingAction: null,
     pending: {
@@ -116,7 +121,8 @@ function seedActiveWorkspaceFromCurrentGraph() {
       graph: branchGraphStore.getGraph(),
       focusedNodeId: state.focusedNodeId,
       composerParentId: state.composerParentId,
-      stageLayouts: state.stageLayouts
+      stageLayouts: state.stageLayouts,
+      thinkingSpace: state.thinkingSpace
     }
   });
   setActiveWorkspaceId("workspace_test");
@@ -235,7 +241,7 @@ async function moreAction(user: ReturnType<typeof userEvent.setup>, title: strin
 
 async function openLineageDrawer(user: ReturnType<typeof userEvent.setup>) {
   await openMore(user);
-  await user.click(screen.getByRole("button", { name: /所有 seed/ }));
+  await user.click(screen.getByRole("button", { name: /所有种子/ }));
   expect(document.getElementById("dialogue-lineage-drawer")).toHaveAttribute("data-open", "true");
 }
 
@@ -250,18 +256,171 @@ async function synthesizePair(user: ReturnType<typeof userEvent.setup>) {
   const right = root.children.find(id => graph.nodes[id].branchType === "反")!;
   await user.click(screen.getByTestId(`dialogue-stage-node-${left}`));
   await user.click(await screen.findByRole("button", { name: "组合" }));
-  await user.click(screen.getByTestId(`dialogue-stage-node-${right}`));
+  await user.click(within(screen.getByTestId("dialogue-panel")).getByRole("button", {
+    name: `反${seedLabel(graph, right)}`
+  }));
   await waitFor(() => expect(document.getElementById("dialogue-reading-drawer")).toBeNull());
 }
 
 describe("DialogueShell", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
     vi.unstubAllGlobals();
     setDialogueWorkspaceRetrievalContextEnabledForTests(false);
     resetDialogueTelemetrySinkForTests();
     window.history.replaceState({}, "", "/dialogue");
     resetWorkspace();
+  });
+
+  it("creates shared instances without generation and can hide one without deleting the concept", async () => {
+    const { thesisId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: thesisId });
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    render(<DialogueShell />);
+    fireEvent.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
+    fireEvent.click(await screen.findByRole("button", { name: "分身" }));
+    const first = Object.keys(useDialogueUiStore.getState().seedInstances)[0];
+    expect(await screen.findByTestId(`dialogue-stage-node-${first}`)).toHaveAttribute("data-seed-concept", thesisId);
+    fireEvent.click(screen.getByTestId(`dialogue-stage-node-${first}`));
+    fireEvent.click(await screen.findByRole("button", { name: "分身" }));
+    const second = Object.keys(useDialogueUiStore.getState().seedInstances).find(id => id !== first)!;
+    expect(await screen.findByTestId(`dialogue-stage-node-${second}`)).toHaveAttribute("data-seed-instance", "2");
+    expect(Object.keys(branchGraphStore.getGraph().nodes)).toHaveLength(3);
+    expect(fetchMock).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId(`dialogue-stage-node-${first}`));
+    fireEvent.click(await screen.findByRole("button", { name: "收起这个分身" }));
+    await waitFor(() => expect(screen.queryByTestId(`dialogue-stage-node-${first}`)).not.toBeInTheDocument());
+    expect(screen.getByTestId(`dialogue-stage-node-${second}`)).toHaveAttribute("data-seed-instance", "2");
+    expect(branchGraphStore.getGraph().nodes[thesisId].text).toBe("继续");
+    expect(loadWorkspaceRecord("workspace_test")?.snapshot.seedInstances).toMatchObject({ [second]: { conceptId: thesisId } });
+  });
+
+  it("expands one axis into stance-free poles, then performs ordinary fission within a selected endpoint", async () => {
+    const { rootUserId } = seedPair(), frame = defaultThinkingSpace(); frame.focus.horizon = 1;
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId, thinkingSpace: frame });
+    seedActiveWorkspaceFromCurrentGraph();
+    const fetchMock = vi.fn(async (url, init) => {
+      const body = JSON.parse(init.body);
+      const result = url === "/api/polarities" ? { requestId: body.requestId, axis: body.perspective.axes.find((axis: { id: string }) => axis.id === body.axisId),
+        negative: { text: "个人的探索空间", summary: "保留个人节奏", label: "个人节奏", perspective: polarityPerspective(body.perspective, body.axisId, -1) },
+        positive: { text: "共同的探索空间", summary: "保留共同问题", label: "共同问题", perspective: polarityPerspective(body.perspective, body.axisId, 1) } }
+        : { requestId: body.requestId, thesis: { text: "深化个人节奏", summary: "深化", label: "自定节奏", stance: "正" },
+          antithesis: { text: "质疑节奏前提", summary: "质疑", label: "节奏前提", stance: "反" } };
+      return new Response(JSON.stringify(result), { status: 200, headers: { "Content-Type": "application/json" } });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<DialogueShell />);
+    fireEvent.click(screen.getByTestId(`dialogue-stage-node-${rootUserId}`));
+    fireEvent.click(await screen.findByRole("button", { name: "沿极性展开" }));
+    fireEvent.click(screen.getByRole("radio", { name: /关切/ }));
+    fireEvent.click(screen.getByRole("button", { name: "沿「关切」展开" }));
+    await waitFor(() => expect(Object.values(branchGraphStore.getGraph().nodes).filter(node => node.meta?.polarity)).toHaveLength(2));
+    const pole = Object.values(branchGraphStore.getGraph().nodes).find(node => node.meta?.polarity?.pole === -1)!;
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/polarities");
+    expect(pole.branchType).toBeUndefined();
+    expect(screen.getByTestId(`dialogue-stage-node-${pole.id}`)).toHaveAttribute("data-expansion-kind", "polarity");
+    expect(screen.getByTestId("dialogue-expansion-context")).toHaveTextContent("个体 ↔ 群体");
+    fireEvent.click(screen.getByTestId(`dialogue-stage-node-${pole.id}`));
+    fireEvent.click(await screen.findByRole("button", { name: "正反裂变" }));
+    await waitFor(() => expect(branchGraphStore.getGraph().nodes[pole.id].children).toHaveLength(2));
+    expect(readFetchBody(fetchMock, 1).perspective.focus).toEqual({ concern: -1, horizon: 1 });
+    expect(screen.getByTestId("dialogue-expansion-context")).toHaveTextContent("正反裂变");
+    expect(useDialogueUiStore.getState().thinkingSpace.focus).toEqual({ horizon: 1 });
+  });
+
+  it("retries polarity expansion with its original axis snapshot after global definitions change", async () => {
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId, thinkingSpace: defaultThinkingSpace() });
+    seedActiveWorkspaceFromCurrentGraph();
+    const fetchMock = vi.fn(async (_url, init) => {
+      const body = JSON.parse(init.body);
+      if (fetchMock.mock.calls.length === 1) return new Response(JSON.stringify({ requestId: body.requestId, error: "invalid_model_output" }), { status: 502 });
+      return new Response(JSON.stringify({ requestId: body.requestId, axis: body.perspective.axes.find((axis: { id: string }) => axis.id === body.axisId),
+        negative: { text: "个体继续探索", summary: "个人节奏", label: "个人节奏", perspective: polarityPerspective(body.perspective, body.axisId, -1) },
+        positive: { text: "群体继续探索", summary: "共同问题", label: "共同问题", perspective: polarityPerspective(body.perspective, body.axisId, 1) } }), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock); render(<DialogueShell />);
+    fireEvent.click(screen.getByTestId(`dialogue-stage-node-${rootUserId}`));
+    fireEvent.click(await screen.findByRole("button", { name: "沿极性展开" }));
+    fireEvent.click(screen.getByRole("radio", { name: /关切/ }));
+    fireEvent.click(screen.getByRole("button", { name: "沿「关切」展开" }));
+    const retry = await screen.findByRole("button", { name: "重试" });
+    const changed = defaultThinkingSpace(); changed.axes[1].negative = "另一种新含义";
+    useDialogueUiStore.getState().setThinkingSpace(changed);
+    fireEvent.click(retry);
+    await waitFor(() => expect(Object.values(branchGraphStore.getGraph().nodes).filter(node => node.meta?.polarity)).toHaveLength(2));
+    expect(readFetchBody(fetchMock, 1).perspective).toEqual(readFetchBody(fetchMock, 0).perspective);
+    expect(readFetchBody(fetchMock, 1).perspective.axes[1].negative).toBe("个体");
+    expect(useDialogueUiStore.getState().thinkingSpace.axes[1].negative).toBe("另一种新含义");
+  });
+
+  it("retains the opposite pole in a crowded scene and keeps the selected alias visible while reading", async () => {
+    const root = branchGraphStore.createUserNode("共同探索"), frame = defaultThinkingSpace();
+    const pair = branchGraphStore.createPolarityPair(root, { groupId: "crowded", axisId: "concern", frame,
+      negative: { text: "个体观察", label: "个人节奏", perspective: polarityPerspective(frame, "concern", -1) },
+      positive: { text: "群体观察", label: "共同问题", perspective: polarityPerspective(frame, "concern", 1) } });
+    branchGraphStore.createAssistantPair(pair.negativeId, { thesis: { text: "深化", label: "深化个人" }, antithesis: { text: "质疑", label: "质疑个人" } });
+    branchGraphStore.createSynthesisAssistant([pair.negativeId, pair.positiveId], { text: "新的理解", label: "新的理解" });
+    const copies = Array.from({ length: 3 }, () => useDialogueUiStore.getState().addSeedInstance(pair.negativeId));
+    useDialogueUiStore.setState({ focusedNodeId: pair.negativeId, thinkingSpace: frame });
+    render(<DialogueShell />);
+    expect(screen.getByTestId(`dialogue-stage-node-${pair.positiveId}`)).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId(`dialogue-stage-node-${copies[0]}`));
+    await screen.findByRole("button", { name: "正反裂变" });
+    expect(screen.getByTestId(`dialogue-stage-node-${copies[0]}`)).toHaveAttribute("data-seed-attention", "0.65");
+    expect(screen.getByTestId(`dialogue-stage-node-${pair.positiveId}`)).toBeInTheDocument();
+  });
+
+  it("keeps reading and its focus when thinking-space settings are opened and closed", async () => {
+    const user = userEvent.setup(), { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    render(<DialogueShell />);
+    await openReadingDrawer(user);
+    await user.click(screen.getByRole("button", { name: "换个角度" }));
+    const dialog = await screen.findByRole("dialog", { name: "换个角度看" });
+    await user.click(within(dialog).getByRole("button", { name: "群体" }));
+    await user.click(within(dialog).getByRole("button", { name: "关闭思考空间" }));
+    expect(document.getElementById("dialogue-reading-drawer")).toHaveAttribute("data-open", "true");
+    expect(screen.getByTestId("dialogue-stage-track").inert).toBe(true);
+    expect(screen.getByRole("button", { name: "换个角度" })).toHaveFocus();
+  });
+
+  it("combines a chosen instance, unfolds its actual sources and collapses without losing the result", async () => {
+    const { thesisId, antithesisId } = seedPair();
+    const instance = useDialogueUiStore.getState().addSeedInstance(thesisId);
+    useDialogueUiStore.setState({ focusedNodeId: thesisId });
+    const fetchMock = vi.fn(async (_url, init) => {
+      const body = JSON.parse(init.body);
+      return new Response(JSON.stringify({ requestId: body.requestId,
+        synthesis: { text: "调整节奏，再继续。", summary: "保留探索与边界", label: "调整节奏", stance: "合" } }),
+      { status: 200, headers: { "Content-Type": "application/json" } });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<DialogueShell />);
+    fireEvent.click(screen.getByTestId(`dialogue-stage-node-${instance}`));
+    fireEvent.click(await screen.findByRole("button", { name: "组合" }));
+    fireEvent.click(within(screen.getByTestId("dialogue-panel")).getByRole("button", { name: "反暂停" }));
+    await waitFor(() => expect(useDialogueUiStore.getState().pending.synthesis).toBeNull());
+    const result = Object.values(branchGraphStore.getGraph().nodes).find(node => node.branchType === "合")!;
+    expect(result.meta?.sourceInstanceIds).toEqual([instance, antithesisId]);
+    expect(readFetchBody(fetchMock).sources[0].text).toBe("继续");
+    const originalLayout = structuredClone(useDialogueUiStore.getState().stageLayouts);
+    fireEvent.click(screen.getByTestId(`dialogue-stage-node-${result.id}`));
+    fireEvent.click(await screen.findByRole("button", { name: "展开来源" }));
+    expect(await screen.findByTestId("dialogue-source-context")).toHaveTextContent("调整节奏");
+    expect(screen.getByTestId(`dialogue-stage-node-${instance}`)).toHaveAttribute("data-source-role", "source");
+    expect(screen.getByTestId(`dialogue-stage-node-${antithesisId}`)).toHaveAttribute("data-source-role", "source");
+    expect(screen.getByTestId(`dialogue-stage-node-${result.id}`)).toHaveAttribute("data-source-role", "result");
+    expect(useDialogueUiStore.getState().stageLayouts).toEqual(originalLayout);
+    expect(useDialogueUiStore.getState().stagePreview).not.toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "收起来源" }));
+    expect(screen.queryByTestId("dialogue-source-context")).not.toBeInTheDocument();
+    expect(useDialogueUiStore.getState().stagePreview).toBeNull();
+    expect(useDialogueUiStore.getState().stageLayouts).toEqual(originalLayout);
+    expect(branchGraphStore.getGraph().nodes[result.id]).toBeDefined();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("keeps the workspace quiet and exposes actions only after selecting a seed", async () => {
@@ -272,11 +431,50 @@ describe("DialogueShell", () => {
     expect(screen.getByPlaceholderText("写下一个想法…")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "生成" })).toBeDisabled();
     expect(screen.queryByText("主决策")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "裂变" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "正反裂变" })).not.toBeInTheDocument();
     await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
-    expect(await screen.findByRole("button", { name: "裂变" })).toBeEnabled();
+    expect(await screen.findByRole("button", { name: "正反裂变" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "组合" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "继续写" })).toBeEnabled();
+  });
+
+  it("moves focus into lineage and returns to More through either close path", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    render(<DialogueShell />);
+    await openLineageDrawer(user);
+    await waitFor(() => expect(screen.getByRole("button", { name: "收起谱系" })).toHaveFocus());
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.getByRole("button", { name: "更多" })).toHaveFocus());
+    await openLineageDrawer(user);
+    await user.click(screen.getByRole("button", { name: "收起谱系" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "更多" })).toHaveFocus());
+    await user.tab({ shift: true });
+    expect(screen.getByRole("button", { name: "演化全景" })).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(screen.getByRole("link", { name: "直接输入想法" })).toHaveFocus();
+    await user.keyboard("{Enter}");
+    await waitFor(() => expect(screen.getByRole("textbox", { name: "输入" })).toHaveFocus());
+  });
+
+  it("announces generation through the same mounted status region from start to completion", async () => {
+    const user = userEvent.setup();
+    const result = createDeferred<Response>();
+    const fetchMock = vi.fn(() => result.promise);
+    vi.stubGlobal("fetch", fetchMock);
+    render(<DialogueShell />);
+    const status = screen.getByRole("status");
+    await user.type(screen.getByRole("textbox", { name: "输入" }), "留下探索的空间");
+    await user.click(screen.getByRole("button", { name: "生成" }));
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status).toHaveTextContent("正在展开正反两种视角");
+    result.resolve(new Response(JSON.stringify({ requestId: readFetchBody(fetchMock).requestId,
+      thesis: { text: "保留探索", summary: "保留探索", label: "探索", stance: "正" },
+      antithesis: { text: "邀请停留", summary: "邀请停留", label: "邀请", stance: "反" }
+    }), { status: 200, headers: { "Content-Type": "application/json" } }));
+    await waitFor(() => expect(status).toHaveTextContent("正反已生成"));
+    expect(screen.getByRole("status")).toBe(status);
   });
 
   it("loads a demo workspace from the empty-state action", async () => {
@@ -409,7 +607,7 @@ describe("DialogueShell", () => {
     );
 
     expect(screen.getByTestId("dialogue-composer")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "裂变" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "正反裂变" })).toBeEnabled();
     expect(useDialogueUiStore.getState().pending).toEqual({ branches: null, synthesis: null });
     await openMore(user);
     expect(screen.getByText("画作视角")).toBeInTheDocument();
@@ -566,7 +764,7 @@ describe("DialogueShell", () => {
     expect(body.sources).toHaveLength(2);
     expect(body.contextMessages).toEqual(expect.arrayContaining([
       expect.objectContaining({ role: "system", content: expect.stringContaining("继续参考") }),
-      expect.objectContaining({ content: expect.stringContaining("暂停重构") })
+      expect.objectContaining({ role: "assistant", content: expect.stringMatching(/\[反 .*\] 暂停$/) })
     ]));
   });
 
@@ -1300,7 +1498,7 @@ describe("DialogueShell", () => {
     expect(within(sidebar).getAllByText("收束").length).toBeGreaterThan(0);
     await userEvent.click(screen.getByTestId(`dialogue-stage-node-${synthesisId}`));
     expect(await screen.findByLabelText("合的来源")).toHaveTextContent("继续");
-    expect(screen.getByRole("button", { name: "裂变" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "正反裂变" })).toBeEnabled();
     expect(screen.queryByRole("button", { name: "合流过" })).not.toBeInTheDocument();
   });
 
@@ -1915,8 +2113,10 @@ describe("DialogueShell", () => {
     });
 
     expect(useDialogueUiStore.getState().focusedNodeId).toBe(otherRootId);
-    expect(screen.getByRole("status")).toHaveTextContent("合流已生成：查看合流记录，或基于它继续追问。");
-    expect(screen.getByTestId("dialogue-flow-status")).toHaveTextContent("合流已生成：查看合流记录，或基于它继续追问。");
+    expect(screen.getByRole("status")).toHaveTextContent("合流已生成，继续从这里想。");
+    // The live status announces completion; a second floating copy would
+    // overlap the lowest seed label on a narrow stage.
+    expect(screen.queryByTestId("dialogue-flow-status")).not.toBeInTheDocument();
   });
 
   it("makes pending states exclusive and exposes synthesis busy feedback", async () => {
