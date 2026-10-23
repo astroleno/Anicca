@@ -26,6 +26,7 @@ const requestedServerMode = process.env.DIALOGUE_SMOKE_SERVER_MODE || "dev";
 const browserExecutablePath = process.env.DIALOGUE_SMOKE_BROWSER_EXECUTABLE_PATH;
 const serverReadyTimeoutMs = readTimeoutEnv("DIALOGUE_SMOKE_READY_TIMEOUT_MS", 120000);
 const pageReadyTimeoutMs = readTimeoutEnv("DIALOGUE_SMOKE_PAGE_TIMEOUT_MS", 300000);
+const actionTimeoutMs = readTimeoutEnv("DIALOGUE_SMOKE_ACTION_TIMEOUT_MS", process.env.CI ? 60000 : 30000);
 const totalTimeoutMs = readTimeoutEnv("DIALOGUE_SMOKE_TOTAL_TIMEOUT_MS", 30 * 60 * 1000);
 const portSearchLimit = Number.parseInt(process.env.DIALOGUE_SMOKE_PORT_SEARCH_LIMIT || "40", 10);
 const viewportNameFilter = new Set(
@@ -116,6 +117,9 @@ async function runStep(step, operation, { allowFailure = false } = {}) {
 
 function setActivePage(page) {
   runProgress.activePage = page;
+  // Hosted runners rasterize the full 3D scene on the CPU. Keep actionability
+  // and all behavior assertions, with a bounded budget for that environment.
+  page?.setDefaultTimeout(actionTimeoutMs);
 }
 
 async function waitForCondition(page, label, pageFunction, arg, options, runOptions) {
@@ -1137,7 +1141,8 @@ async function main() {
         headless: true,
         // Exercise the native GPU on macOS; software raymarching can starve
         // unrelated checks and does not represent the interactive preview.
-        ...(process.platform === "darwin" ? { args: ["--use-angle=metal"] } : {}),
+        args: process.platform === "darwin" && process.env.DIALOGUE_SMOKE_SOFTWARE_GL !== "1"
+          ? ["--use-angle=metal"] : ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
         ...(browserExecutablePath ? { executablePath: browserExecutablePath } : {})
       }));
       const results = [];

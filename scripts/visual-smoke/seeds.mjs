@@ -90,6 +90,7 @@ export async function runSeedViewport(browser, viewport, { baseUrl, outputDir, s
     const snapshot = await graph();
     await page.getByTestId("dialogue-panel").getByRole("button", { name: `${snapshot.nodes[b].branchType || "想法"} ${snapshot.nodes[b].meta?.label || snapshot.nodes[b].text.slice(0, 14)}`, exact: true }).click();
   };
+  let completed = false;
   try {
     await page.goto(`${baseUrl}/dialogue`, { waitUntil: "networkidle" });
     const guideClose = page.getByRole("button", { name: "关闭提示", exact: true });
@@ -173,9 +174,14 @@ export async function runSeedViewport(browser, viewport, { baseUrl, outputDir, s
     await waitCount(11);
     assert.equal(Object.keys((await graph()).nodes).length, 11);
     assert.deepEqual(issues, []);
+    completed = true;
     return { name: viewport.name, passed: true, layout, performance, requests: requests.length,
       checks: ["new-ideas", "stable-existing-positions", "no-cursor-ball", "reading-clear-of-composer", "cross-topic-same-stance-combination", "source-provenance", "synthesis-direct-split", "panorama-retrieves-older-idea", "idea-direct-split", "bounded-stage", "reload", "console"] };
-  } finally { await context.close(); }
+  } finally {
+    // Keep a failed page available to the runner's screenshot and DOM capture.
+    // The runner always closes the browser, including these failed contexts.
+    if (completed) await context.close();
+  }
 }
 
 export async function measureIdle(page) {

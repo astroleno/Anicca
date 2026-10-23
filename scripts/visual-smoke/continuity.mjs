@@ -31,7 +31,7 @@ export async function runFlowContinuity(browser, { baseUrl, outputDir, setActive
       Object.defineProperty(window, "visualViewport", { configurable: true, value: viewport });
       window.__continuityKeyboard = open => { viewport.height = open ? 520 : height; viewport.offsetTop = open ? 40 : 0; events.dispatchEvent(new Event("resize")); };
     }, { width: spec.width, height: spec.height });
-    const page = await context.newPage(); setActivePage(page); page.setDefaultTimeout(30000);
+    const page = await context.newPage(); setActivePage(page);
     const errors = [], calls = [];
     page.on("pageerror", error => errors.push(error.message));
     await page.route("**/api/inquiry", async route => {
