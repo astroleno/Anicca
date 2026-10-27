@@ -1,4 +1,4 @@
-.change { margin: 0 0 20px; padding: 14px 16px; border-radius: 18px; background: color-mix(in srgb, var(--muted, #746c7c) 6%, transparent); color: var(--text, #494151); }
+.change { margin: 0 0 18px; padding: 0 0 0 14px; border-left: 1px solid var(--line, #d9d2df); color: var(--text, #494151); }
 .change > span { display: block; margin-bottom: 6px; font: 12px/1.6 var(--anicca-font-interface); color: var(--muted, #746c7c); letter-spacing: .06em; }
 .change p { margin: 0; font: 14px/1.85 var(--anicca-font-literary); overflow-wrap: anywhere; }
 .encounter { color: var(--text, #494151); overflow-wrap: anywhere; font: 14px/1.85 var(--anicca-font-interface); }

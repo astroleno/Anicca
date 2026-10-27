@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { SeedInspector } from "./SeedInspector";
 import { BranchGraphStore } from "@/store/branchGraph";
 import { defaultThinkingSpace } from "@/features/perspectives/model";
@@ -51,7 +51,9 @@ it("distinguishes ordinary fission from axis expansion and leaves the global len
   const onSplit = vi.fn(), onExpand = vi.fn();
   render(<SeedInspector graph={store.getGraph()} nodeId={id} space={space} combining={false} busy={false}
     onClose={vi.fn()} onWrite={vi.fn()} onCombine={vi.fn()} onPick={vi.fn()} onSplit={onSplit} onExpandPolarity={onExpand} />);
-  fireEvent.click(screen.getByRole("button", { name: "沿极性展开" }));
+  expect(screen.getByRole("button", { name: "推演正反" })).toHaveAccessibleDescription("推进判断，检验前提");
+  expect(screen.getByRole("button", { name: "看极性两端" })).toHaveAccessibleDescription("换观察位置，看见两端");
+  fireEvent.click(screen.getByRole("button", { name: "看极性两端" }));
   expect(onExpand).not.toHaveBeenCalled(); expect(onSplit).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole("radio", { name: /关切/ }));
   expect(screen.getByText("其余角度保持：长远")).toBeInTheDocument();
@@ -59,7 +61,7 @@ it("distinguishes ordinary fission from axis expansion and leaves the global len
   expect(onExpand).toHaveBeenCalledExactlyOnceWith("concern", space);
   expect(space.focus).toEqual({ horizon: 1 });
   fireEvent.click(screen.getByRole("button", { name: "返回种子阅读" }));
-  fireEvent.click(screen.getByRole("button", { name: "正反裂变" }));
+  fireEvent.click(screen.getByRole("button", { name: "推演正反" }));
   expect(onSplit).toHaveBeenCalledExactlyOnceWith(space);
 });
 
@@ -74,11 +76,20 @@ it("continues from the endpoint's captured frame until the user explicitly selec
   render(<SeedInspector graph={store.getGraph()} nodeId={pair.negativeId} space={current} combining={false} busy={false}
     onClose={vi.fn()} onWrite={vi.fn()} onCombine={vi.fn()} onPick={vi.fn()} onSplit={onSplit} onExpandPolarity={vi.fn()} />);
   expect(screen.getByText("从「个体 · 长远」继续")).toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "正反裂变" }));
+  fireEvent.click(screen.getByRole("button", { name: "推演正反" }));
   expect(onSplit.mock.calls[0][0].focus).toEqual({ concern: -1, horizon: 1 });
   fireEvent.click(screen.getByRole("button", { name: "改用当前角度" }));
-  fireEvent.click(screen.getByRole("button", { name: "正反裂变" }));
+  fireEvent.click(screen.getByRole("button", { name: "推演正反" }));
   expect(onSplit.mock.calls[1][0].focus).toEqual({ concern: 1 });
+});
+
+it("keeps identical unconstrained observation frames quiet", () => {
+  const store = new BranchGraphStore(), id = store.createUserNode("继续保留协商的余地。"), frame = defaultThinkingSpace();
+  store.patchNodeMeta(id, { fissionFrame: frame });
+  render(<SeedInspector graph={store.getGraph()} nodeId={id} space={frame} combining={false} busy={false}
+    onClose={vi.fn()} onWrite={vi.fn()} onCombine={vi.fn()} onPick={vi.fn()} onSplit={vi.fn()} onExpandPolarity={vi.fn()} />);
+  expect(screen.queryByRole("button", { name: "改用当前角度" })).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "看极性两端" })).toBeEnabled();
 });
 
 it("closes the inline axis choice with Escape without dismissing the reading parent", () => {
@@ -87,9 +98,42 @@ it("closes the inline axis choice with Escape without dismissing the reading par
   const view = render(<SeedInspector graph={store.getGraph()} nodeId={root} combining={false} busy={false}
     onClose={vi.fn()} onWrite={vi.fn()} onCombine={vi.fn()} onPick={vi.fn()} onSplit={vi.fn()} onExpandPolarity={vi.fn()} />);
   try {
-    fireEvent.click(screen.getByRole("button", { name: "沿极性展开" }));
+    fireEvent.click(screen.getByRole("button", { name: "看极性两端" }));
     fireEvent.keyDown(screen.getByRole("radio", { name: /尺度/ }), { key: "Escape" });
     expect(screen.queryByRole("group", { name: "沿哪条维度展开" })).not.toBeInTheDocument();
     expect(escape).not.toHaveBeenCalled();
   } finally { view.unmount(); window.removeEventListener("keydown", escape); }
+});
+
+it("offers this round's other endpoint before unrelated history without combining automatically", () => {
+  const store = new BranchGraphStore(), root = store.createUserNode("一起创作的条件是什么？");
+  const pair = store.createAssistantPair(root, { thesis: { text: "留出自由" }, antithesis: { text: "认领承诺" } });
+  store.createUserNode("另一段暂时无关的想法");
+  const pick = vi.fn();
+  render(<SeedInspector graph={store.getGraph()} nodeId={pair.thesisId} companionId={pair.antithesisId} combining busy={false}
+    onClose={vi.fn()} onWrite={vi.fn()} onCombine={vi.fn()} onPick={pick} onSplit={vi.fn()} />);
+  const choices = within(screen.getByRole("group", { name: "选择组合对象" }));
+  expect(choices.getAllByRole("button")[0]).toHaveTextContent("认领承诺");
+  expect(choices.getByText("本轮另一端")).toBeInTheDocument();
+  expect(pick).not.toHaveBeenCalled();
+  fireEvent.click(choices.getAllByRole("button")[0]);
+  expect(pick).toHaveBeenCalledExactlyOnceWith(pair.antithesisId);
+});
+
+it("restores a reading position and keeps it when returning from axis selection", () => {
+  const store = new BranchGraphStore(), root = store.createUserNode("可以保留不同的写作节奏。");
+  const remember = vi.fn();
+  const view = render(<SeedInspector graph={store.getGraph()} nodeId={root} combining={false} busy={false}
+    getReadingPosition={() => 120} onRememberPosition={remember}
+    onClose={vi.fn()} onWrite={vi.fn()} onCombine={vi.fn()} onPick={vi.fn()} onSplit={vi.fn()} onExpandPolarity={vi.fn()} />);
+  const panel = screen.getByTestId("dialogue-panel");
+  expect(panel.scrollTop).toBe(120);
+  panel.scrollTop = 92; fireEvent.scroll(panel);
+  fireEvent.click(screen.getByRole("button", { name: "看极性两端" }));
+  expect(panel.scrollTop).toBe(0);
+  fireEvent.click(screen.getByRole("button", { name: "返回种子阅读" }));
+  expect(panel.scrollTop).toBe(92);
+  expect(screen.getByRole("button", { name: "看极性两端" })).toHaveFocus();
+  view.unmount();
+  expect(remember).toHaveBeenLastCalledWith(root, 92);
 });

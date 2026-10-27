@@ -13,6 +13,8 @@ const synthesis = { text, summary: "识路不自动等于传路", label: "识路
 const sources = [{ id: "a", text: "熟悉地方的人凭转角找到路。", summary: "识路", label: "识路", stance: "想法" },
   { id: "b", text: "熟悉的人可能讲不清路。", summary: "传路", label: "传路", stance: "想法" }];
 const respond = (value: unknown) => ({ text: JSON.stringify(value), transport: "chat_completions" });
+const meaningCheck = { label: synthesis.label, change: { text: synthesis.change, sourceId: "source-a",
+  sourceEvidence: sources[0].text, resultEvidence: "熟悉者靠转角、气味和身体习惯找路" }, hypothesesSafe: true, issues: [], novelty: { status: "new" } };
 const request = (body: object) => new NextRequest("http://localhost/api/synthesis", { method: "POST", body: JSON.stringify({ requestId: "request", meaningVersion: 1, rootInput: "识路与传路", sources, ...body }) });
 beforeEach(() => { generate.mockReset(); vi.spyOn(console, "info").mockImplementation(() => {}); });
 afterEach(() => vi.restoreAllMocks());
@@ -28,13 +30,14 @@ it("reviews a weak connection then returns a valid deferred outcome without a fa
 
 it.each([true, false])("lets review correct either an unnecessary refusal or a forced synthesis (%s)", async (startsDeferred) => {
   generate.mockResolvedValueOnce(respond(startsDeferred ? { deferred } : { synthesis }))
-    .mockResolvedValueOnce(respond(startsDeferred ? { synthesis } : { deferred }));
+    .mockResolvedValueOnce(respond(startsDeferred ? { synthesis } : { deferred }))
+    .mockResolvedValueOnce(respond({ synthesis: meaningCheck }));
   const response = await synthesisPost(request({}));
   expect(response.status).toBe(200);
   const body = await response.json();
   if (startsDeferred) expect(body.synthesis.change).toBe(synthesis.change);
   else expect(body.outcome).toBe("deferred");
-  expect(generate).toHaveBeenCalledTimes(2);
+  expect(generate).toHaveBeenCalledTimes(startsDeferred ? 3 : 2);
 });
 
 it("rejects ambiguous or malformed outcomes after the bounded repair", async () => {
@@ -50,10 +53,12 @@ it("does not ask a model to repair an oversized user connection", async () => {
 });
 
 it("accepts quantities explicitly supplied by the user's connecting note", async () => {
-  generate.mockResolvedValue(respond({ synthesis: { ...synthesis, text: `在用户给出的 3 天观察里，${text}` } }));
+  generate.mockResolvedValueOnce(respond({ synthesis: { ...synthesis, text: `在用户给出的 3 天观察里，${text}` } }))
+    .mockResolvedValueOnce(respond({ synthesis: { ...synthesis, text: `在用户给出的 3 天观察里，${text}` } }))
+    .mockResolvedValueOnce(respond({ synthesis: meaningCheck }));
   const response = await synthesisPost(request({ connectionInput: "把 3 天的寻路观察和这些想法联系起来。" }));
   expect(response.status).toBe(200);
-  expect(generate).toHaveBeenCalledTimes(2);
+  expect(generate).toHaveBeenCalledTimes(3);
   expect((await response.json()).synthesis.text).toContain("3 天");
 });
 
@@ -64,7 +69,9 @@ it("requires an evidence-bearing change for new branch and polarity clients", as
   generate.mockReset();
   const pole = { text: branch.text, summary: branch.summary, label: branch.label };
   const complete = { ...pole, change: "从个人熟悉转向群体可传达的线索。" };
-  generate.mockResolvedValue(respond({ negative: complete, positive: { ...complete, text: `${text.slice(0, 159)}异` } }));
+  const review = { ...meaningCheck, label: "传达线索", change: { text: complete.change, sourceId: "current", sourceEvidence: "怎么找到路？", resultEvidence: "熟悉者靠转角、气味和身体习惯找路" } };
+  generate.mockResolvedValueOnce(respond({ negative: complete, positive: { ...complete, text: `${text.slice(0, 159)}异` } }))
+    .mockResolvedValueOnce(respond({ negative: review, positive: review }));
   const response = await polarityPost(request({ userText: "怎么找到路？", perspective: defaultThinkingSpace(), axisId: "concern" }));
   expect(response.status).toBe(200);
   expect((await response.json()).negative.change).toBe(complete.change);

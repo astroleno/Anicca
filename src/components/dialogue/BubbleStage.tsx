@@ -4,16 +4,18 @@ import { seedColorPolarity } from "./liquid/color";
 import { polarityLabel } from "@/features/perspectives/polarity";
 import type { ThinkingAxis } from "@/features/perspectives/model";
 
-import { PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { PointerEvent as ReactPointerEvent, useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useDialogueUiStore } from "@/features/dialectic/store";
 import { findSynthesisGestureCandidate } from "@/features/dialectic/gestures";
-import { LIQUID_DWELL_MS, LIQUID_HOLD_MS, liquidHoldRemaining } from "@/features/dialectic/liquidInteraction";
+import { LIQUID_DWELL_MS } from "@/features/dialectic/liquidInteraction";
+import { useStageTouchNavigation } from "./useStageTouchNavigation";
 import { placeSeeds } from "@/features/dialectic/seedPlacement";
 import { DialogueStageNode, DialogueSynthesisAction } from "@/features/dialectic/viewModel";
 import { StagePan, StagePoint } from "@/types/anicca";
 import dynamic from "next/dynamic";
 import { createPortal } from "react-dom";
 import type { DialogueMetaballRendererState } from "./DialogueMetaballLayer";
+import type { LiquidRendererMode, LiquidRendererStatus } from "./liquid/preference";
 import styles from "./DialogueShell.module.css";
 import type { MetaballRole } from "./metaball/model";
 import { layoutSeedLabels } from "./labelLayout";
@@ -45,6 +47,8 @@ type BubbleStageProps = {
     onTrigger: () => void;
   } | null;
   atmosphereVisible?: boolean;
+  rendererMode?: LiquidRendererMode;
+  onRendererStatus?(status: LiquidRendererStatus): void;
   theme?: DialogueTheme;
   cameraView?: { direction: SeedViewDirection; revision: number } | null;
   attentionIds?: readonly string[] | null;
@@ -84,6 +88,13 @@ type ActiveStageGesture =
       startClientY: number;
       startOrbit: SeedOrbit;
       pointerType: string;
+    }
+  | {
+      kind: "pan";
+      pointerId: number;
+      startClientX: number;
+      startClientY: number;
+      startPan: StagePan;
     };
 
 const DEFAULT_STAGE_PAN: StagePan = { x: 0, y: 0 };
@@ -112,8 +123,8 @@ function clampNodePosition(position: StagePoint, maxY = NODE_MAX_Y_PERCENT) {
   };
 }
 
-function buildStageNodeAriaLabel(node: DialogueStageNode) {
-  const parts = [node.preview || node.label];
+function buildStageNodeAriaLabel(node: DialogueStageNode, visibleLabel: string) {
+  const parts = [visibleLabel];
   if (node.branchType) {
     parts.push(`${node.branchType}方`);
   }
@@ -123,9 +134,6 @@ function buildStageNodeAriaLabel(node: DialogueStageNode) {
   if (node.sourceRole === "source") parts.push("当前合的来源");
   if (node.sourceRole === "shared") parts.push("共享概念");
   parts.push(RELATION_LABELS[node.relation]);
-  if (node.summary && node.summary !== node.preview && node.summary !== node.label) {
-    parts.push(node.summary);
-  }
   return parts.filter(Boolean).join("，");
 }
 
@@ -156,12 +164,15 @@ export function BubbleStage({
   generationBusy = false,
   emptyAction = null,
   atmosphereVisible = false,
+  rendererMode = "original",
+  onRendererStatus,
   theme = "light",
   cameraView = null,
   attentionIds = null,
   reading = false,
   suspended = false
 }: BubbleStageProps) {
+  const descriptionPrefix = useId();
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const [controlsHost, setControlsHost] = useState<HTMLElement | null>(null);
@@ -174,7 +185,7 @@ export function BubbleStage({
     labels: {} as Record<string, { width: number; height: number; anchorOffsetY: number; surfaceRadius: number }>
   });
   const activePointerTargetRef = useRef<HTMLElement | null>(null);
-  const touchHoldRef = useRef<{ timer: number; pointerId: number; x: number; y: number } | null>(null);
+  const cancelSingleGestureRef = useRef<(() => void) | null>(null);
   const stageLayout = useDialogueUiStore((state) => state.stagePreview?.layoutKey === layoutKey
     ? state.stagePreview.view : state.stageLayouts[layoutKey] || null);
   const setStageNodePosition = useDialogueUiStore((state) => state.setStageNodePosition);
@@ -186,10 +197,8 @@ export function BubbleStage({
     useState<DialogueMetaballRendererState>("loading");
   const [synthesisCandidateId, setSynthesisCandidateId] = useState<string | null>(null);
   const [attractionPartnerId, setAttractionPartnerId] = useState<string | null>(null);
-  const [holdingTouch, setHoldingTouch] = useState<{ nodeId: string; duration: number } | null>(null);
   const contactRef = useRef<string | null>(null);
   const physicalContactRef = useRef<string | null>(null);
-  const dwellProgressRef = useRef<HTMLSpanElement | null>(null);
   const [synthesisArmed, setSynthesisArmed] = useState(false);
   const armRef = useRef<{ key: string; timer: number; ready: boolean } | null>(null);
   const clickTimerRef = useRef<number | null>(null);
@@ -200,7 +209,6 @@ export function BubbleStage({
     if (armRef.current) window.clearTimeout(armRef.current.timer);
     armRef.current = null;
     physicalContactRef.current = null;
-    if (dwellProgressRef.current) dwellProgressRef.current.dataset.contact="false";
     setSynthesisArmed(false);
   }, []);
   useEffect(() => () => {
@@ -218,16 +226,13 @@ export function BubbleStage({
     return () => window.removeEventListener("pointerdown", cancelRead);
   }, []);
   const orbitRef = useRef<SeedOrbit>(DEFAULT_SEED_ORBIT);
+  const zoomRef = useRef(1);
+  const panRef = useRef<StagePan>(DEFAULT_STAGE_PAN);
   const [viewRotated, setViewRotated] = useState(false);
   const orbitAnimationRef = useRef(0);
   const stopOrbitAnimation = useCallback(() => {
-    if (orbitAnimationRef.current) { cancelAnimationFrame(orbitAnimationRef.current); setViewRotated(Math.abs(orbitRef.current.yaw) + Math.abs(orbitRef.current.pitch) > .001); }
+    if (orbitAnimationRef.current) { cancelAnimationFrame(orbitAnimationRef.current); setViewRotated(Math.abs(orbitRef.current.yaw) + Math.abs(orbitRef.current.pitch) + Math.abs(zoomRef.current - 1) + Math.abs(panRef.current.x) + Math.abs(panRef.current.y) > .001); }
     orbitAnimationRef.current = 0;
-  }, []);
-  const cancelTouchHold = useCallback(() => {
-    if (touchHoldRef.current) window.clearTimeout(touchHoldRef.current.timer);
-    touchHoldRef.current = null;
-    setHoldingTouch(null);
   }, []);
   useEffect(() => {
     setControlsHost(trackRef.current?.closest<HTMLElement>('[data-testid="dialogue-shell"]') || null);
@@ -272,32 +277,8 @@ export function BubbleStage({
   }, [layoutKey, nodes.length, placements, ensurePositions]);
 
   useEffect(() => {
-    const move = (event: PointerEvent) => {
-      const hold = touchHoldRef.current;
-      if (hold && event.pointerId === hold.pointerId && Math.hypot(event.clientX - hold.x, event.clientY - hold.y) > 10) cancelTouchHold();
-    };
-    const cancelPointer = (event: PointerEvent) => { if (touchHoldRef.current?.pointerId === event.pointerId) cancelTouchHold(); };
-    const hidden = () => { if (document.hidden) cancelTouchHold(); };
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", cancelPointer);
-    window.addEventListener("pointercancel", cancelPointer);
-    window.addEventListener("lostpointercapture", cancelPointer);
-    window.addEventListener("blur", cancelTouchHold);
-    document.addEventListener("visibilitychange", hidden);
-    return () => {
-      cancelTouchHold();
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", cancelPointer);
-      window.removeEventListener("pointercancel", cancelPointer);
-      window.removeEventListener("lostpointercapture", cancelPointer);
-      window.removeEventListener("blur", cancelTouchHold);
-      document.removeEventListener("visibilitychange", hidden);
-    };
-  }, [layoutKey, cancelTouchHold]);
-
-  useEffect(() => {
-    if (suspended) { cancelTouchHold(); stopOrbitAnimation(); }
-  }, [suspended, cancelTouchHold, stopOrbitAnimation]);
+    if (suspended) stopOrbitAnimation();
+  }, [suspended, stopOrbitAnimation]);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
@@ -466,11 +447,44 @@ export function BubbleStage({
     track.dataset.spacePitch = String(orbit.pitch);
   }, []);
 
+  const setPanPreview = useCallback((pan: StagePan) => {
+    panRef.current = pan;
+    const track = trackRef.current;
+    if (!track) return;
+    track.style.setProperty("--stage-touch-pan-x", `${pan.x}px`);
+    track.style.setProperty("--stage-touch-pan-y", `${pan.y}px`);
+    track.dataset.spacePanX = String(pan.x);
+    track.dataset.spacePanY = String(pan.y);
+  }, []);
+
   const resetView = useCallback(() => {
     stopOrbitAnimation();
     setOrbitPreview(DEFAULT_SEED_ORBIT);
+    setPanPreview(DEFAULT_STAGE_PAN);
+    zoomRef.current = 1;
+    if (trackRef.current) trackRef.current.dataset.spaceZoom = "1";
     setViewRotated(false);
-  }, [setOrbitPreview, stopOrbitAnimation]);
+  }, [setOrbitPreview, setPanPreview, stopOrbitAnimation]);
+
+  const touchNavigation = useStageTouchNavigation({
+    hostRef: trackRef, layoutKey, disabled: suspended || !canPanStage || metaballRendererState === "fallback",
+    getView: () => ({ orbit: { ...orbitRef.current }, zoom: zoomRef.current }),
+    setView: ({ orbit, zoom }) => {
+      setOrbitPreview(orbit);
+      zoomRef.current = zoom;
+      if (trackRef.current) trackRef.current.dataset.spaceZoom = String(zoom);
+      setViewRotated(Math.abs(orbit.yaw) + Math.abs(orbit.pitch) + Math.abs(zoom - 1) + Math.abs(panRef.current.x) + Math.abs(panRef.current.y) > .001);
+    },
+    onStart: () => {
+      cancelSingleGestureRef.current?.();
+      setGesture(null);
+      stopOrbitAnimation();
+      suppressDragClickRef.current = true;
+      if (clickTimerRef.current !== null) window.clearTimeout(clickTimerRef.current);
+      actionsRef.current.onInteractionStart?.();
+    },
+    onEnd: () => { suppressClickUntilRef.current = performance.now() + 180; suppressDragClickRef.current = true; }
+  });
 
   useEffect(() => {
     if (!cameraView || metaballRendererState === "fallback" || trackRef.current?.dataset.spacePaused === "true") return;
@@ -483,7 +497,7 @@ export function BubbleStage({
       const t = reduced ? 1 : Math.min(1, (now - began) / 200), eased = 1 - (1 - t) ** 3;
       setOrbitPreview({ yaw: wrapSeedYaw(start.yaw + delta * eased), pitch: start.pitch + (target.pitch - start.pitch) * eased });
       if (t < 1) orbitAnimationRef.current = requestAnimationFrame(step);
-      else { orbitAnimationRef.current = 0; setViewRotated(Math.abs(target.yaw) + Math.abs(target.pitch) > .001); }
+      else { orbitAnimationRef.current = 0; setViewRotated(Math.abs(target.yaw) + Math.abs(target.pitch) + Math.abs(zoomRef.current - 1) + Math.abs(panRef.current.x) + Math.abs(panRef.current.y) > .001); }
     };
     orbitAnimationRef.current = requestAnimationFrame(step);
     return stopOrbitAnimation;
@@ -648,11 +662,6 @@ export function BubbleStage({
             }
             else if (contactAt === null) contactAt = now;
             const remaining = contactAt === null ? LIQUID_DWELL_MS : LIQUID_DWELL_MS - (now - contactAt);
-            const progress=dwellProgressRef.current,contact=contactAt===null?"false":"true";
-            if (progress && progress.dataset.contact!==contact) {
-              if (contact==="true") progress.style.setProperty("--liquid-dwell-duration",`${Math.max(1,remaining)}ms`);
-              progress.dataset.contact=contact;
-            }
             if (remaining <= 0 && !arm.ready) { arm.ready = true; setSynthesisArmed(true); }
             // Keep checking after arming: pulling apart invalidates the dwell,
             // so reconnecting cannot submit using an old completed hold.
@@ -665,6 +674,14 @@ export function BubbleStage({
       }
 
       const dx = event.clientX - gesture.startClientX, dy = event.clientY - gesture.startClientY;
+      if (gesture.kind === "pan") {
+        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) didDragRef.current = true;
+        if (didDragRef.current) {
+          setPanPreview({ x: gesture.startPan.x + dx, y: gesture.startPan.y + dy });
+          setViewRotated(true);
+        }
+        return;
+      }
       // Vertical touch gestures remain native page scrolling.
       if (gesture.pointerType === "touch" && !didDragRef.current && (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(dy) * 1.15)) return;
       if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
@@ -673,7 +690,7 @@ export function BubbleStage({
       if (didDragRef.current) setOrbitPreview(orbitSeedSpace(gesture.startOrbit, dx, dy));
     };
 
-    const finishPointer = (event: PointerEvent, cancelled: boolean) => {
+    const finishPointer = (event: PointerEvent, cancelled: boolean, handingOver = false) => {
       if (finished || event.pointerId !== gesture.pointerId) {
         return;
       }
@@ -712,9 +729,12 @@ export function BubbleStage({
           if (element) { if (gesture.startPosition.z !== undefined) element.dataset.spaceDepth = String(gesture.startPosition.z); else delete element.dataset.spaceDepth; }
         }
         clearNodeDragPreview(gesture.nodeId);
+      } else if (gesture.kind === "pan") {
+        if (cancelled) setPanPreview(gesture.startPan);
+        setViewRotated(Math.abs(orbitRef.current.yaw) + Math.abs(orbitRef.current.pitch) + Math.abs(zoomRef.current - 1) + Math.abs(panRef.current.x) + Math.abs(panRef.current.y) > .001);
       } else {
         if (cancelled) setOrbitPreview(gesture.startOrbit);
-        setViewRotated(Math.abs(orbitRef.current.yaw) + Math.abs(orbitRef.current.pitch) > .001);
+        setViewRotated(Math.abs(orbitRef.current.yaw) + Math.abs(orbitRef.current.pitch) + Math.abs(zoomRef.current - 1) + Math.abs(panRef.current.x) + Math.abs(panRef.current.y) > .001);
       }
 
       if (didDragRef.current) {
@@ -723,6 +743,7 @@ export function BubbleStage({
       }
 
       if (
+        !handingOver &&
         activePointerTargetRef.current &&
         typeof activePointerTargetRef.current.releasePointerCapture === "function" &&
         activePointerTargetRef.current.hasPointerCapture?.(gesture.pointerId)
@@ -743,6 +764,8 @@ export function BubbleStage({
     const handlePointerCancel = (event: PointerEvent) => finishPointer(event, true);
     const handleCaptureLoss = (event: PointerEvent) => finishPointer(event, gesture.kind === "node");
     const cancelGesture = () => finishPointer({ pointerId: gesture.pointerId } as PointerEvent, true);
+    const handOverGesture = () => finishPointer({ pointerId: gesture.pointerId } as PointerEvent, gesture.kind === "node", gesture.kind === "pan");
+    cancelSingleGestureRef.current = handOverGesture;
     const suspendGesture = () => finishPointer({ pointerId: gesture.pointerId } as PointerEvent, gesture.kind === "node");
     const hidden = () => { if (document.hidden) suspendGesture(); };
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -763,6 +786,7 @@ export function BubbleStage({
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
+      if (cancelSingleGestureRef.current === handOverGesture) cancelSingleGestureRef.current = null;
       if (gesture.kind === "node") {
         clearNodeDragPreview(gesture.nodeId);
       }
@@ -783,6 +807,7 @@ export function BubbleStage({
     setNodeDragPreview,
     setStageNodePosition,
     setOrbitPreview,
+    setPanPreview,
     stageLayoutMode,
     synthesisAction,
     resolveSynthesisAction,
@@ -793,17 +818,23 @@ export function BubbleStage({
   ]);
 
   const handleStagePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (suspended || gesture || touchHoldRef.current || !canPanStage || metaballRendererState === "fallback" || event.button !== 0 || event.target !== event.currentTarget) {
+    if (suspended || gesture || touchNavigation.blocksSinglePointer() || !canPanStage || metaballRendererState === "fallback" || event.button !== 0 || (event.target !== event.currentTarget && event.target !== trackRef.current)) {
       return;
     }
-    if (event.pointerType !== "touch") event.preventDefault();
+    event.preventDefault();
     stopOrbitAnimation();
     if (typeof event.currentTarget.setPointerCapture === "function") {
       event.currentTarget.setPointerCapture(event.pointerId);
     }
     activePointerTargetRef.current = event.currentTarget;
     didDragRef.current = false;
-    setGesture({
+    setGesture(event.pointerType === "touch" ? {
+      kind: "pan",
+      pointerId: event.pointerId,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startPan: { ...panRef.current }
+    } : {
       kind: "orbit",
       pointerId: event.pointerId,
       startClientX: event.clientX,
@@ -814,7 +845,7 @@ export function BubbleStage({
   };
 
   const handleNodePointerDown = (event: ReactPointerEvent<HTMLButtonElement>, node: DialogueStageNode) => {
-    if (suspended || gesture || touchHoldRef.current) return;
+    if (suspended || gesture || touchNavigation.blocksSinglePointer()) return;
     suppressDragClickRef.current = false;
     pointerTypeRef.current = event.pointerType;
     if (event.button !== 0) {
@@ -826,28 +857,7 @@ export function BubbleStage({
     // plane would permanently move a copy away from its concept's real depth.
     const actualDepth = frame?.base.find(item => item.id === node.id)?.depth;
     const startViewDepth = actualDepth === undefined ? undefined : actualDepth / (frame?.scale || 1) * SEED_WORLD_CAMERA_DISTANCE / SEED_CAMERA_DISTANCE;
-    if (event.pointerType === "touch") {
-      const target = event.currentTarget;
-      const { pointerId, clientX, clientY } = event;
-      const remaining = liquidHoldRemaining(event.timeStamp, performance.now());
-      setHoldingTouch({ nodeId: node.id, duration: remaining });
-      const hold = { pointerId, x: clientX, y: clientY, timer: 0 };
-      hold.timer = window.setTimeout(() => {
-        if (touchHoldRef.current !== hold) return;
-        touchHoldRef.current = null;
-        setHoldingTouch(null);
-        if (!target.isConnected || trackRef.current?.dataset.spacePaused === "true") return;
-        target.setPointerCapture?.(pointerId);
-        activePointerTargetRef.current = target;
-        didDragRef.current = false;
-        setGesture({ kind: "node", pointerId, nodeId: node.id,
-          startClientX: clientX, startClientY: clientY, startPosition: getNodePosition(node),
-          startScreenPosition: getScreenNodePosition(node), startViewDepth });
-      }, remaining);
-      touchHoldRef.current = hold;
-      return;
-    }
-    event.preventDefault();
+    if (event.pointerType !== "touch") event.preventDefault();
     if (typeof event.currentTarget.setPointerCapture === "function") {
       event.currentTarget.setPointerCapture(event.pointerId);
     }
@@ -923,7 +933,7 @@ export function BubbleStage({
     : null;
   const spaceControls = nodes.length > 0 && metaballRendererState !== "fallback" ? (
     <div className={styles.spaceControls}>
-      <span>拖动空白，转动视角</span>
+      <span>{isCoarsePointer ? "拖空白平移 · 拖球合成 · 双指转动与缩放" : "拖动空白，转动视角"}</span>
       <button type="button" onClick={resetView} disabled={!viewRotated} aria-label="复位三维视角">复位视角</button>
     </div>
   ) : null;
@@ -946,16 +956,19 @@ export function BubbleStage({
         <h2 id="dialogue-stage-heading">当前结构</h2>
       </div>
       <div className={styles.stageCanvas}>
-        <DialogueMetaballLayer hostRef={trackRef} onStateChange={setMetaballRendererState} />
+        <DialogueMetaballLayer hostRef={trackRef} onStateChange={setMetaballRendererState}
+          rendererMode={rendererMode} onRendererStatus={onRendererStatus} />
         <div className={styles.stageGlow} />
         <div className={styles.stageGlowSecondary} />
         <div
           ref={viewportRef}
           className={[
             styles.stageViewport,
-            gesture?.kind === "orbit" ? styles.stageViewportPanning : ""
+            gesture?.kind === "orbit" || gesture?.kind === "pan" || touchNavigation.navigating ? styles.stageViewportPanning : ""
           ].join(" ")}
           data-testid="dialogue-stage-viewport"
+          onPointerDown={handleStagePointerDown}
+          onPointerDownCapture={touchNavigation.onPointerDownCapture}
         >
           {relationshipHint ? (
             <p className={styles.stageRelationshipHint} data-testid="dialogue-stage-hint">
@@ -970,6 +983,9 @@ export function BubbleStage({
             data-space={metaballRendererState === "fallback" ? "flat" : "3d"}
             data-space-yaw="0"
             data-space-pitch="0"
+            data-space-zoom="1"
+            data-space-pan-x="0"
+            data-space-pan-y="0"
             data-liquid-partner={attractionPartnerId || undefined}
             data-liquid-contact={synthesisCandidateId || undefined}
             data-label-inset-top={labelGeometry.insets.top}
@@ -977,19 +993,17 @@ export function BubbleStage({
             className={[
               styles.stageTrack,
               canPanStage ? styles.stageTrackInteractive : "",
-              gesture?.kind === "orbit" ? styles.stageTrackPanning : ""
+              gesture?.kind === "orbit" || gesture?.kind === "pan" ? styles.stageTrackPanning : ""
             ].join(" ")}
             style={
               {
                 "--stage-pan-x": `${resolvedPan.x}px`,
                 "--stage-pan-y": `${resolvedPan.y}px`,
-                "--liquid-hold-duration": `${LIQUID_HOLD_MS}ms`,
                 "--liquid-dwell-duration": `${LIQUID_DWELL_MS}ms`
               } as CSSProperties
             }
-            onPointerDown={handleStagePointerDown}
             tabIndex={nodes.length ? 0 : undefined}
-            aria-label={nodes.length ? "三维种子舞台：拖动空白或用方向键转动视角，Home 复位" : undefined}
+            aria-label={nodes.length ? "三维种子舞台：单指拖空白平移，拖动球体合成；双指或方向键转动视角，双指开合缩放，Home 复位" : undefined}
             onKeyDown={event => {
               if (event.key === "Enter" || event.key === " ") suppressDragClickRef.current = false;
               if (event.target !== event.currentTarget || !nodes.length || metaballRendererState === "fallback") return;
@@ -1098,15 +1112,13 @@ export function BubbleStage({
                 </span>)}
               </div>
               <p
-                className={styles.synthesisBridgePreview}
+                className={styles.screenReaderOnly}
                 role="status"
                 aria-live="polite"
                 data-testid="dialogue-synthesis-bridge-preview"
-                data-stage-label-chrome="bottom"
                 data-armed={synthesisArmed ? "true" : "false"}
               >
-                <span key={synthesisCandidateId} ref={dwellProgressRef} className={styles.synthesisDwellProgress} data-contact="false" data-testid="dialogue-physical-dwell" aria-hidden="true"><span /></span>
-                {synthesisArmed ? "松手合成 · 移开取消" : "稍停，准备合成…"}
+                {synthesisArmed ? "可以松手合成，移开取消" : "液滴正在靠近"}
               </p>
               </>
             ) : null}
@@ -1176,18 +1188,17 @@ export function BubbleStage({
                   data-seed-generation={node.generation || 0}
                   data-seed-hue-shift={polarity?.hueShift}
                   data-seed-polarity-strength={polarity?.strength}
-                  data-touch-holding={holdingTouch?.nodeId === node.id ? "true" : undefined}
                   data-liquid-color-key={node.preview || node.label}
                   data-label-handoff={synthesisLabelNodes.some(source => source.id === node.id) ||
                     (pendingPreview?.kind === "synthesis" && (pendingPreview.thesisId === node.id || pendingPreview.antithesisId === node.id)) ? "true" : undefined}
-                  aria-label={buildStageNodeAriaLabel(node)}
+                  aria-label={buildStageNodeAriaLabel(node, label)}
+                  aria-describedby={`${descriptionPrefix}-${node.id}`}
                   style={
                     {
                       left: `${position.x}%`,
                       top: `${position.y}%`,
                       "--stage-node-drag-x": "0px",
                       "--stage-node-drag-y": "0px",
-                      "--liquid-hold-duration": holdingTouch?.nodeId === node.id ? `${holdingTouch.duration}ms` : undefined,
                       "--stage-label-offset-x": `${labelOffsets[node.id]?.x || 0}px`,
                       "--stage-label-offset-y": `${labelOffsets[node.id]?.y || 0}px`
                     } as CSSProperties
@@ -1201,6 +1212,7 @@ export function BubbleStage({
                   onPointerDown={(event) => handleNodePointerDown(event, node)}
                   onContextMenu={(event) => event.preventDefault()}
                 >
+                  <span id={`${descriptionPrefix}-${node.id}`} hidden>{[node.preview, node.summary].filter(Boolean).join("；")}</span>
                   <span className={styles.seedHitArea} aria-hidden="true" />
                   <span className={styles.seedSourceGlow} aria-hidden="true" />
                   <span className={styles.stageNodeInner} data-seed-caption
@@ -1210,7 +1222,6 @@ export function BubbleStage({
                     {node.sourceRole === "source" ? <small>来源{pole || node.branchType ? ` · ${pole || node.branchType}` : ""}</small>
                       : pole || node.branchType ? <small>{pole || node.branchType}</small> : null}
                     {node.instanceNumber ? <em className={styles.seedInstanceMark}>分身 {node.instanceNumber}</em> : null}
-                    <span className={styles.stageHoldProgress} aria-hidden="true"><span /></span>
                   </span>
                 </button>
               );

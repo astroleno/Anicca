@@ -4,6 +4,7 @@ import { perspectiveEnvelope, responsePerspective } from "@/features/perspective
 import { getDialecticModel, getDialecticOpenAiClient } from "@/lib/openai/client";
 import { createGenerationTrace, type GenerationTrace } from "@/features/dialectic/server/generationTrace";
 import { describeProviderFailure } from "@/lib/openai/providerErrors";
+import { finalizeMeaning, userReportedMaterial } from "@/features/dialectic/server/meaningReview";
 import type { DeferredDraft } from "@/features/dialectic/meaning";
 import {
   analyzeSynthesisOutput,
@@ -220,10 +221,29 @@ export async function POST(req: NextRequest) {
 
     let synthesis = critic.synthesis;
     let selectedOutput = critic.outputText;
+    const meaningInput = {
+      sources: [{ id: "source-a", ...context.thesis }, { id: "source-b", ...context.antithesis }],
+      userMaterial: [rootInput, connectionInput, userReportedMaterial(body.contextMessages)].join("\n"),
+      context: context.contextMessages, perspective, meaning: Boolean(context.meaning), trace, client, signal: req.signal
+    };
+    const checked = await finalizeMeaning({ ...meaningInput, results: { synthesis },
+      repair: async issues => {
+        const output = await trace!.generate("critic", { client, maxOutputTokens: perspective ? 1800 : 1400,
+          input: `${buildSynthesisCriticPrompt(context, synthesis)}\n${thinkingSpacePrompt(perspective, "synthesis", context.meaning)}\n必须逐句修复以下假设语气问题：${issues.join("；")}` }, true, 12000);
+        const repaired = analyzeSynthesisOutput(perspectiveEnvelope(output.text, perspective).content,
+          [rootInput, connectionInput].filter(Boolean).join("\n"), { meaning: context.meaning });
+        trace!.check("critic", Boolean(repaired.synthesis), true);
+        if (!repaired.synthesis) return null;
+        selectedOutput = output.text;
+        return { synthesis: repaired.synthesis };
+      }
+    });
+    if (!checked) { trace.finish("invalid_output"); return invalidModelOutput(requestId, "hypothesis grounding could not be verified"); }
+    synthesis = checked.synthesis;
     if (isHighRiskDialectic(cards)) {
       const auditResponse = await trace.generate("audit", {
         client,
-        input: buildSynthesisAuditPrompt(context, critic.synthesis),
+        input: buildSynthesisAuditPrompt(context, synthesis),
         maxOutputTokens: 1800
       });
       const audit = parseSynthesisAudit(auditResponse.text, cards);
@@ -237,7 +257,7 @@ export async function POST(req: NextRequest) {
         trace,
         "final",
         client,
-        buildSynthesisFinalPrompt(context, critic.synthesis, audit),
+        buildSynthesisFinalPrompt(context, synthesis, audit),
         context
       );
       if (final.deferred) {
@@ -251,8 +271,12 @@ export async function POST(req: NextRequest) {
       }
       synthesis = final.synthesis;
       selectedOutput = final.outputText;
+      const checkedFinal = await finalizeMeaning({ ...meaningInput, results: { synthesis } });
+      if (!checkedFinal) { trace.finish("invalid_output"); return invalidModelOutput(requestId, "final hypothesis grounding could not be verified"); }
+      synthesis = checkedFinal.synthesis;
     }
 
+    req.signal.throwIfAborted();
     trace.finish("success");
     const envelope = perspectiveEnvelope(selectedOutput, perspective);
     return NextResponse.json({ requestId, synthesis: { ...synthesis, ...responsePerspective(perspective, envelope.spatial.synthesis) },

@@ -22,6 +22,17 @@ it("retains the writing but drops a stale quote or missing target", () => {
   expect(loadComposerDraft("a", store.getGraph())).toEqual({ text: "原句已不在，问题仍然保留", targetId: null });
 });
 
+it("restores the second occurrence and retains writing when its stored position becomes stale", () => {
+  const store = new BranchGraphStore(), quote = "相同的句子。", text = `开头。${quote}不同语境。${quote}`;
+  const id = store.createUserNode(text);
+  const draft = { text: "第二处在什么条件下成立？", targetId: id,
+    inquiry: { sourceNodeId: id, quote, quoteStart: text.lastIndexOf(quote), intent: "premise" as const } };
+  saveComposerDraft("position", draft);
+  expect(loadComposerDraft("position", store.getGraph())).toEqual(draft);
+  store.getGraph().nodes[id].text = `开头。${quote}`;
+  expect(loadComposerDraft("position", store.getGraph())).toEqual({ text: draft.text, targetId: id });
+});
+
 it("rejects malformed records and reports actual storage failure without throwing", () => {
   localStorage.setItem(COMPOSER_DRAFT_KEY_PREFIX + "a", "not JSON");
   expect(loadComposerDraft("a", new BranchGraphStore().getGraph())).toBeNull();

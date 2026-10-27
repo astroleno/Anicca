@@ -3,10 +3,11 @@ import { chatRun } from "@/chat/core";
 import { Message } from "@/types/chat";
 import { buildParentContext } from "@/chat/context";
 import { normalizeSummary, isValidSummary } from "@/chat/summary";
+import { appPath } from "@/lib/appPath";
 
 async function fetchPrompt(type: 'thesis'|'antithesis'): Promise<string> {
   try {
-    const res = await fetch(`/api/prompts?type=${type}`, { cache: 'no-store' as any });
+    const res = await fetch(appPath(`/api/prompts?type=${type}`), { cache: 'no-store' as any });
     const data = await res.json();
     return String(data?.content || '');
   } catch (e) {

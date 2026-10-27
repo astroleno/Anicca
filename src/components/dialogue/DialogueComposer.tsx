@@ -16,6 +16,7 @@ type Props = {
   pendingMessage?: string;
   connectionTarget?: string;
   inquiryTarget?: InquiryTarget;
+  inline?: boolean;
   draftSaveError?: boolean;
   onRemember?(): void;
   isEmptyStart?: boolean;
@@ -33,7 +34,7 @@ type Props = {
 };
 
 export function DialogueComposer({
-  target, perspectiveLabel, value, disabled, pendingAction, pendingMessage, connectionTarget, inquiryTarget, draftSaveError, onRemember, isEmptyStart, errorState,
+  target, perspectiveLabel, value, disabled, pendingAction, pendingMessage, connectionTarget, inquiryTarget, inline, draftSaveError, onRemember, isEmptyStart, errorState,
   rootRef, textareaRef, onChange, onSubmit, onCancel, onRetry, onResetTarget
 }: Props) {
   const [elapsed, setElapsed] = useState(0);
@@ -55,11 +56,17 @@ export function DialogueComposer({
     const field = fieldRef.current;
     if (!field || typeof ResizeObserver === "undefined") return;
     let width = field.clientWidth;
+    let frame = 0;
     const observer = new ResizeObserver(() => {
-      if (field.clientWidth !== width) { width = field.clientWidth; fitField(); }
+      if (field.clientWidth !== width) {
+        width = field.clientWidth;
+        cancelAnimationFrame(frame);
+        // Resizing the observed field inside this callback creates a resize loop during handoff.
+        frame = requestAnimationFrame(() => { frame = 0; fitField(); });
+      }
     });
     observer.observe(field);
-    return () => observer.disconnect();
+    return () => { observer.disconnect(); cancelAnimationFrame(frame); };
   }, [fitField]);
   useEffect(() => {
     setElapsed(0);
@@ -73,19 +80,20 @@ export function DialogueComposer({
       data-target={pendingAction === "synthesis" ? "synthesis" : target.nodeId ? "seed" : "root"}
       data-empty-start={isEmptyStart ? "true" : undefined} data-empty-open="true"
       data-inquiry={inquiryTarget ? "true" : undefined}
+      data-inline={inline ? "true" : undefined}
       data-testid="dialogue-composer" aria-busy={Boolean(pendingAction)}
       data-perspective={perspectiveLabel ? "true" : undefined}
       onSubmit={(event) => { event.preventDefault(); onSubmit(); }}>
       {connectionTarget || target.nodeId || pendingAction === "synthesis" || !isEmptyStart || perspectiveLabel ? (
         <div className={styles.seedComposerTarget} aria-live="polite" aria-label={perspectiveLabel ? "生成视角与续写对象" : "续写对象"}>
           <span title={perspectiveLabel ? `从「${perspectiveLabel}」看${target.nodeId ? ` · ${target.label}` : ""}` : pendingAction === "synthesis" ? target.label : target.nodeId ? target.label : "独立的新想法"}>
-            {inquiryTarget ? `${inquiryLabel(inquiryTarget.intent)} · ${target.label}` : connectionTarget ? `补充联系：${connectionTarget}` : perspectiveLabel ? `从「${perspectiveLabel}」看${target.nodeId ? ` · ${target.label}` : ""}`
+            {inquiryTarget ? inline ? inquiryLabel(inquiryTarget.intent) : `${inquiryLabel(inquiryTarget.intent)} · ${target.label}` : connectionTarget ? `补充联系：${connectionTarget}` : perspectiveLabel ? `从「${perspectiveLabel}」看${target.nodeId ? ` · ${target.label}` : ""}`
               : pendingAction === "synthesis" ? `本次合成：${target.label}` : target.nodeId ? `${pendingAction ? "本次" : ""}基于「${target.label}」` : "独立的新想法"}
           </span>
-          {connectionTarget || target.nodeId ? <button type="button" disabled={disabled} onClick={onResetTarget}>写新想法</button> : null}
+          {!inline && (connectionTarget || target.nodeId) ? <button type="button" disabled={disabled} onClick={onResetTarget}>写新想法</button> : null}
         </div>
       ) : null}
-      {inquiryTarget ? <blockquote className={styles.composerQuote} aria-label="本次追问的原句">{inquiryTarget.quote}</blockquote> : null}
+      {inquiryTarget && !inline ? <blockquote className={styles.composerQuote} aria-label="本次追问的原句">{inquiryTarget.quote}</blockquote> : null}
       <label className={styles.composerField}>
         <span className={styles.composerLabel}>输入</span>
         <textarea id="dialogue-input" ref={attachField} aria-label="输入" rows={1} value={value}

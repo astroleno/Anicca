@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { appPath } from "@/lib/appPath";
 import { defaultThinkingSpace, johariThinkingSpace, newThinkingAxis, normalizeAxisSuggestions, normalizeThinkingSpace, perspectiveLabel,
   type AxisPlacement, type AxisSuggestion, type ThinkingAxis } from "@/features/perspectives/model";
 import type { PerspectiveControlsProps } from "./PerspectiveControls";
@@ -41,7 +42,7 @@ export function PerspectivePanel({ space, topic, suggestions: offered, onChange,
     const controller = new AbortController(); abortRef.current?.abort(); abortRef.current = controller;
     setBusy(true); setError("");
     try {
-      const response = await fetch("/api/perspectives", { method: "POST", headers: { "Content-Type": "application/json" },
+      const response = await fetch(appPath("/api/perspectives"), { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topic, perspective: space }), signal: controller.signal });
       const body = await response.json();
       if (controller.signal.aborted) return;

@@ -1,7 +1,12 @@
 import { orbitSeedSpace, projectSpatialSeed, seedSpaceDepth, spatialStagePoint, unprojectSeedPoint, dragSpatialStagePoint, SEED_VIEWS,
-  SEED_CAMERA_DISTANCE, SEED_WORLD_CAMERA_DISTANCE, canCaptureSpatialPair, spatialPairInContact, fitSpatialSeed, fitSeedScene, spatialPairMetrics, separateSpatialSeeds } from "./space";
+  SEED_CAMERA_DISTANCE, SEED_WORLD_CAMERA_DISTANCE, canCaptureSpatialPair, spatialPairInContact, fitSpatialSeed, fitSeedScene, spatialPairMetrics, separateSpatialSeeds, clampSeedZoom } from "./space";
 
 describe("seed space projection", () => {
+  it("bounds camera zoom and keeps invalid input from creating a singular view", () => {
+    expect(clampSeedZoom(0)).toBe(.65);
+    expect(clampSeedZoom(10)).toBe(1.8);
+    for (const invalid of [NaN, Infinity, -Infinity]) expect(clampSeedZoom(invalid)).toBe(1);
+  });
   it("separates a deferred pair across all six viewing directions without moving other seeds", () => {
     const saved = { a: { x: 48, y: 53, z: -.12 }, b: { x: 52, y: 53, z: -.12 }, other: { x: 18, y: 24, z: .3 } };
     for (const compact of [true, false]) for (const orbit of Object.values(SEED_VIEWS)) {
@@ -70,7 +75,7 @@ describe("seed space projection", () => {
 
   it("drags on a camera-facing plane in all six views without jumps or singularities", () => {
     for (const viewport of [{ width: 1280, height: 600 }, { width: 320, height: 400 }]) {
-      for (const orbit of Object.values(SEED_VIEWS)) for (const scale of [1, .48]) {
+      for (const orbit of Object.values(SEED_VIEWS)) for (const scale of [1, .48, .65, 1.8]) {
         const start = { x: 64, y: 37, z: .24 };
         const screen = spatialStagePoint(start, "drag", orbit, viewport, 800, false, scale);
         const moved = { x: screen.x + 4, y: screen.y - 5 };

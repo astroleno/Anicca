@@ -1,5 +1,2 @@
-import { redirect } from "next/navigation";
-
-export default function HomePage() {
-  redirect("/dialogue");
-}
+// Keep the public /Anicca entry in the address bar while sharing the same UI.
+export { default } from "./dialogue/page";

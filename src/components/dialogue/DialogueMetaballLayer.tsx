@@ -6,10 +6,11 @@ import styles from "./DialogueShell.module.css";
 import { LiquidMotion } from "./liquid/motion";
 import { LiquidDepthMotion } from "./liquid/depth";
 import { captionInk } from "./liquid/color";
-import { AsyncPixelReadback } from "./liquid/pixelReadback";
+import { AsyncPixelReadback, type PixelReadback } from "./liquid/pixelReadback";
+import type { LiquidRendererMode, LiquidRendererStatus } from "./liquid/preference";
 import { LiquidQuality } from "./liquid/quality";
 import { LiquidSceneClock } from "./liquid/clock";
-import { projectSpatialSeed, readSeedOrbit, publishSpatialFrame, clearSpatialFrame, fitSpatialSeed, fitSeedScene } from "./liquid/space";
+import { DEFAULT_SEED_ORBIT, projectSpatialSeed, readSeedOrbit, readSeedZoom, publishSpatialFrame, clearSpatialFrame, fitSpatialSeed, fitSeedScene } from "./liquid/space";
 import { layoutSeedLabels } from "./labelLayout";
 import {
   computeFusedPairs,
@@ -30,6 +31,8 @@ export type DialogueMetaballRendererState = "loading" | "ready" | "fallback";
 type Props = {
   hostRef: RefObject<HTMLDivElement | null>;
   onStateChange(state: DialogueMetaballRendererState): void;
+  rendererMode?: LiquidRendererMode;
+  onRendererStatus?(status: LiquidRendererStatus): void;
 };
 
 const METABALL_ROLES = new Set<MetaballRole>([
@@ -118,20 +121,33 @@ function readSurfaceRects(host: HTMLDivElement, offsets: Map<string, SurfaceProj
   });
 }
 
-export function DialogueMetaballLayer({ hostRef, onStateChange }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "original", onRendererStatus }: Props) {
+  const mountRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const mount = mountRef.current;
+    if (!mount) return;
+    const makeCanvas = () => {
+      const element = document.createElement("canvas");
+      element.className = styles.stageMetaballCanvas;
+      element.dataset.testid = "dialogue-metaball-canvas";
+      element.dataset.rendererRequested = rendererMode;
+      element.setAttribute("aria-hidden", "true");
+      mount.replaceChildren(element);
+      return element;
+    };
+    let canvas = makeCanvas();
 
     const host = hostRef.current;
     if (!host) return;
     let renderer: DialogueMetaballRenderer | null = null;
-    let context: WebGL2RenderingContext | null = null;
+    const initialization = new AbortController();
+    let initializationTimer = 0;
+    let usingTsl = rendererMode !== "original";
     let lastInkUpdate = -Infinity;
     let inkTheme = "";
-    let inkReadback: AsyncPixelReadback<{ signature: string; ground: number[]; captions: Array<{ element: HTMLElement; offset: number }> }> | null = null;
+    type InkToken = { signature: string; ground: number[]; captions: Array<{ element: HTMLElement; offset: number }> };
+    let inkReadback: PixelReadback<InkToken> | null = null;
     let animationFrame = 0;
     let idleTimer = 0;
     let disposed = false;
@@ -161,6 +177,8 @@ export function DialogueMetaballLayer({ hostRef, onStateChange }: Props) {
     let depthActive = false;
     let fitActive = false;
     let renderedNodes = cachedNodes;
+    let framingSource: typeof cachedNodes | null = null;
+    let framingNodes = cachedNodes;
     let spatialNodes = cachedNodes;
     let unfittedNodes = cachedNodes;
     let displayNodes = cachedNodes;
@@ -205,18 +223,37 @@ export function DialogueMetaballLayer({ hostRef, onStateChange }: Props) {
       }
       motionOffsets.clear();
     };
-    const enterFallback = () => {
+    const enterFallback = (error?: unknown) => {
       if (disposed) return;
+      window.clearTimeout(initializationTimer);
+      initialization.abort();
       cancelScheduledFrame();
       inkReadback?.dispose();
       inkReadback = null;
       renderer?.dispose();
       renderer = null;
-      context = null;
+      if (usingTsl) {
+        usingTsl = false;
+        // A canvas that has claimed WebGPU cannot subsequently claim WebGL2.
+        // The effect owns this child, so React keeps the stable mount only.
+        canvas = makeCanvas();
+        canvas.dataset.motion = prefersReducedMotion ? "reduced" : "animated";
+        canvas.dataset.rendererState = "loading";
+        canvas.dataset.rendererFallback = "true";
+        canvas.dataset.rendererFailure = error instanceof Error ? error.message.slice(0, 240) : "graphics_context_lost";
+        reportedReady = false;
+        geometryDirty = true;
+        lastInkUpdate = -Infinity;
+        onStateChange("loading");
+        startOriginal();
+        return;
+      }
       clearSpatialFrame(host);
       clearProjection();
       for (const caption of host.querySelectorAll<HTMLElement>("[data-seed-caption]")) caption.style.removeProperty("--seed-caption-ink");
       canvas.dataset.rendererState = "fallback";
+      canvas.dataset.rendererBackend = "unavailable";
+      onRendererStatus?.({ requested: rendererMode, backend: "unavailable", fallback: true });
       onStateChange("fallback");
     };
     const updateMotionPreference = () => {
@@ -272,7 +309,7 @@ export function DialogueMetaballLayer({ hostRef, onStateChange }: Props) {
           labelsDirty = false;
         }
         if (motionActive) {
-          const result = motion.step(cachedNodes, sceneTime, prefersReducedMotion, pressedId,
+          const result = motion.step(cachedNodes, sceneTime, prefersReducedMotion, host.dataset.spaceNavigating === "true" ? null : pressedId,
             pointerDown ? host.dataset.liquidPartner || null : null,12/hostRect.height);
           renderedNodes = result.nodes;
           motionActive = result.moving;
@@ -286,21 +323,31 @@ export function DialogueMetaballLayer({ hostRef, onStateChange }: Props) {
           unfittedNodes = renderedNodes.map(node => projectSpatialSeed(node, pivot, orbit));
           spatialLayoutDirty = false;
         }
+        const manipulatingSeed = pointerDown && host.dataset.spaceNavigating !== "true";
         const depth = depthMotion.step(unfittedNodes, sceneTime, prefersReducedMotion,
-          pointerDown ? pressedId : null, pointerDown ? host.dataset.liquidPartner || null : null);
+          manipulatingSeed ? pressedId : null, manipulatingSeed ? host.dataset.liquidPartner || null : null);
         depthActive = depth.moving;
         const rawChanged = lastLayoutBase !== unfittedNodes || lastLayoutDepth !== depth.nodes;
-        const dragging = pointerDown && Boolean(pressedId);
-        if (rawChanged && trackRect && !dragging) fitGoal = fitSeedScene(depth.nodes, spatialPivot, trackRect, hostRect.height);
+        const dragging = manipulatingSeed && Boolean(pressedId);
+        if (rawChanged && trackRect && !dragging) {
+          // Automatic framing belongs to the scene layout. Reframing the rotated
+          // projection changes camera distance during a rotation, even at fixed zoom.
+          if (framingSource !== renderedNodes) {
+            framingSource = renderedNodes;
+            framingNodes = renderedNodes.map(node => projectSpatialSeed(node, spatialPivot, DEFAULT_SEED_ORBIT));
+          }
+          fitGoal = fitSeedScene(framingNodes, spatialPivot, trackRect, hostRect.height);
+        }
         const fitElapsed = lastFitTime === null ? 1 : Math.max(0, (sceneTime - lastFitTime) / 1000);
         const fitDt = lastFitTime === null || fitActive ? fitElapsed : Math.min(1 / 60, fitElapsed);
         lastFitTime = sceneTime;
         if (!dragging) viewFit = prefersReducedMotion || fitGoal < viewFit || Math.abs(fitGoal - viewFit) < .0001 ? fitGoal : viewFit + (fitGoal - viewFit) * (1 - Math.exp(-12 * fitDt));
         fitActive = !dragging && Math.abs(fitGoal - viewFit) >= .0001;
-        if ((rawChanged || viewFit !== lastLayoutFit) && trackRect) {
-          lastLayoutBase = unfittedNodes; lastLayoutDepth = depth.nodes; lastLayoutFit = viewFit;
-          spatialNodes = viewFit === 1 ? unfittedNodes : unfittedNodes.map(node => fitSpatialSeed(node, spatialPivot, viewFit));
-          displayNodes = viewFit === 1 ? depth.nodes : depth.nodes.map(node => fitSpatialSeed(node, spatialPivot, viewFit));
+        const sceneFit = viewFit * readSeedZoom(host);
+        if ((rawChanged || sceneFit !== lastLayoutFit) && trackRect) {
+          lastLayoutBase = unfittedNodes; lastLayoutDepth = depth.nodes; lastLayoutFit = sceneFit;
+          spatialNodes = sceneFit === 1 ? unfittedNodes : unfittedNodes.map(node => fitSpatialSeed(node, spatialPivot, sceneFit));
+          displayNodes = sceneFit === 1 ? depth.nodes : depth.nodes.map(node => fitSpatialSeed(node, spatialPivot, sceneFit));
           for (const element of surfaces) {
             const id = element.dataset.metaballSurface!;
             const target = cachedNodes.find(node => node.id === id);
@@ -356,7 +403,7 @@ export function DialogueMetaballLayer({ hostRef, onStateChange }: Props) {
           }
           for (const element of surfaces) ownStyles.set(element, element.getAttribute("style") || "");
         }
-        publishSpatialFrame(host, { base: spatialNodes, rendered: displayNodes, pivot: spatialPivot, height: hostRect.height, scale: viewFit });
+        publishSpatialFrame(host, { base: spatialNodes, rendered: displayNodes, pivot: spatialPivot, height: hostRect.height, scale: sceneFit });
         for (const element of surfaces) {
           const node=displayNodes.find(item=>item.id===element.dataset.metaballSurface);
           if (!node) continue;
@@ -399,7 +446,7 @@ export function DialogueMetaballLayer({ hostRef, onStateChange }: Props) {
         const cap = hostRect.width <= 640 ? 0.62 : 0.8;
         renderer.resize(hostRect.width, hostRect.height, Math.min(window.devicePixelRatio || 1, cap) * qualityScale);
         renderer.render(displayNodes, prefersReducedMotion ? 0 : sceneTime / 1000,
-          { draggedId: pointerDown ? pressedId : null, partnerId: pointerDown ? host.dataset.liquidPartner || null : null,
+          { draggedId: manipulatingSeed ? pressedId : null, partnerId: manipulatingSeed ? host.dataset.liquidPartner || null : null,
             atmosphere: host.dataset.atmosphere === "true", dark: host.dataset.theme === "dark", ground, orbit });
         // Tiny, throttled GPU batches adapt ink without blocking a gesture.
         if (!atmosphere) {
@@ -512,7 +559,7 @@ export function DialogueMetaballLayer({ hostRef, onStateChange }: Props) {
         !(record.type === "attributes" && record.attributeName === "style" && ownStyles.get(record.target as HTMLElement) === (record.target as HTMLElement).getAttribute("style") &&
           (!(record.target as HTMLElement).dataset.metaballSurface || measuredInputs.get(record.target as HTMLElement) === inputStyle(record.target as HTMLElement))));
       if (!changed.length) return;
-      if (changed.every(record => record.attributeName === "data-space-yaw" || record.attributeName === "data-space-pitch")) {
+      if (changed.every(record => ["data-space-yaw", "data-space-pitch", "data-space-zoom", "data-space-navigating"].includes(record.attributeName || ""))) {
         spatialLayoutDirty = true; activeUntil = performance.now() + 250; wake(); return;
       }
       if (changed.some(record => record.type === "childList" || record.type === "characterData" || record.attributeName === "class")) { labelsDirty = true; activeUntil = performance.now() + 500; }
@@ -520,7 +567,7 @@ export function DialogueMetaballLayer({ hostRef, onStateChange }: Props) {
       invalidate();
     });
     mutationObserver.observe(host, { subtree: true, childList: true, characterData: true, attributes: true,
-      attributeFilter: ["style", "class", "data-space-paused", "data-label-inset-top", "data-label-inset-bottom", "data-metaball-role", "data-metaball-relation", "data-liquid-origins", "data-liquid-color-key", "data-atmosphere", "data-theme", "data-liquid-partner", "data-liquid-contact", "data-label-handoff", "data-space-yaw", "data-space-pitch", "data-space-depth", "data-seed-generation", "data-seed-hue-shift", "data-seed-polarity-strength", "data-seed-attention"] });
+      attributeFilter: ["style", "class", "data-space-paused", "data-label-inset-top", "data-label-inset-bottom", "data-metaball-role", "data-metaball-relation", "data-liquid-origins", "data-liquid-color-key", "data-atmosphere", "data-theme", "data-liquid-partner", "data-liquid-contact", "data-label-handoff", "data-space-yaw", "data-space-pitch", "data-space-zoom", "data-space-navigating", "data-space-depth", "data-seed-generation", "data-seed-hue-shift", "data-seed-polarity-strength", "data-seed-attention"] });
     const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(remeasure) : null;
     resizeObserver?.observe(host);
     host.addEventListener("pointerdown", handlePointerDown, { passive: true });
@@ -540,20 +587,41 @@ export function DialogueMetaballLayer({ hostRef, onStateChange }: Props) {
     canvas.dataset.rendererState = "loading";
 
     onStateChange("loading");
-    try {
-      context = canvas.getContext("webgl2", { alpha: true, antialias: false, premultipliedAlpha: true, powerPreference: "high-performance" });
-      if (!context) {
-        throw new Error("liquid_webgl2_unavailable");
-      }
-      renderer = createDialogueMetaballRenderer(canvas, enterFallback);
-      inkReadback = new AsyncPixelReadback(context);
-      wake();
-    } catch {
-      enterFallback();
+    function startOriginal() {
+      try {
+        const context = canvas.getContext("webgl2", { alpha: true, antialias: false, premultipliedAlpha: true, powerPreference: "high-performance" });
+        if (!context) throw new Error("liquid_webgl2_unavailable");
+        renderer = createDialogueMetaballRenderer(canvas, enterFallback);
+        inkReadback = new AsyncPixelReadback(context);
+        canvas.dataset.rendererBackend = "original";
+        onRendererStatus?.({ requested: rendererMode, backend: "original", fallback: rendererMode !== "original" });
+        wake();
+      } catch (error) { enterFallback(error); }
+    }
+    if (!usingTsl) startOriginal();
+    else {
+      initializationTimer = window.setTimeout(() => enterFallback(new Error("liquid_initialization_timeout")), 20000);
+      void import("./liquid/tslRenderer").then(module => {
+        if (initialization.signal.aborted) return null;
+        return module.createTslMetaballRenderer(canvas, rendererMode === "tsl-webgl", enterFallback, initialization.signal);
+      }).then(session => {
+        if (!session) return;
+        if (disposed || initialization.signal.aborted) { session.renderer.dispose(); return; }
+        window.clearTimeout(initializationTimer);
+        renderer = session.renderer;
+        inkReadback = session.createReadback<InkToken>();
+        canvas.dataset.rendererBackend = session.backend;
+        onRendererStatus?.({ requested: rendererMode, backend: session.backend, fallback: false });
+        wake();
+      }).catch(error => {
+        if (!disposed && !initialization.signal.aborted) enterFallback(error);
+      });
     }
 
     return () => {
       disposed = true;
+      initialization.abort();
+      window.clearTimeout(initializationTimer);
       cancelScheduledFrame();
       mutationObserver.disconnect();
       resizeObserver?.disconnect();
@@ -575,14 +643,14 @@ export function DialogueMetaballLayer({ hostRef, onStateChange }: Props) {
       clearProjection();
       for (const caption of host.querySelectorAll<HTMLElement>("[data-seed-caption]")) caption.style.removeProperty("--seed-caption-ink");
       renderer = null;
+      mount.replaceChildren();
     };
-  }, [hostRef, onStateChange]);
+  }, [hostRef, onStateChange, rendererMode, onRendererStatus]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className={styles.stageMetaballCanvas}
-      data-testid="dialogue-metaball-canvas"
+    <div
+      ref={mountRef}
+      className={styles.stageMetaballMount}
       aria-hidden="true"
     />
   );

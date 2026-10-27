@@ -8,7 +8,7 @@ import { describeProviderFailure } from "@/lib/openai/providerErrors";
 import { normalizeDialecticLabel, normalizeDialecticSummary } from "@/features/dialectic/outputContract";
 import { readUnderstandingChange, UNDERSTANDING_CHANGE_PROMPT } from "@/features/dialectic/meaning";
 import { readComparisonSeeds } from "@/features/dialectic/novelty";
-import { reviewNovelty } from "@/features/dialectic/server/noveltyReview";
+import { finalizeMeaning, userReportedMaterial } from "@/features/dialectic/server/meaningReview";
 
 type ContextMessage = {
   role?: string;
@@ -260,14 +260,27 @@ export async function POST(req: NextRequest) {
       return invalidModelOutput(requestId, "branch output failed contract after one repair");
     }
 
-    const novelty = meaning && comparisonSeeds.length ? await reviewNovelty({
-      results: { thesis, antithesis }, sources: comparisonSeeds, trace, client, signal: req.signal
-    }) : undefined;
+    const checked = await finalizeMeaning({ results: { thesis, antithesis },
+      sources: [{ id: "current", label: "当前来源", text: userText }], comparisons: comparisonSeeds,
+      userMaterial: userReportedMaterial(body.contextMessages) || (!hasAssistantContext(body.contextMessages) ? userText : ""),
+      context: serializeContextMessages(body.contextMessages), perspective, meaning, trace, client, signal: req.signal,
+      repair: async issues => {
+        const repair = await trace!.generate("branches", { client,
+          input: [buildBranchesRepairPrompt(userText, body.contextMessages, selectedOutputText, issues, perspective, meaning), lensPrompt].filter(Boolean).join("\n\n"),
+          maxOutputTokens: 2000 }, true, 12000);
+        selectedOutputText = repair.text;
+        envelope = perspectiveEnvelope(repair.text, perspective);
+        const repaired = analyzeBranchesOutput(envelope.content, meaning);
+        trace!.check("branches", Boolean(repaired.thesis && repaired.antithesis), true);
+        return repaired.thesis && repaired.antithesis ? { thesis: repaired.thesis, antithesis: repaired.antithesis } : null;
+      }
+    });
+    if (!checked) { trace.finish("invalid_output"); return invalidModelOutput(requestId, "hypothesis grounding could not be verified"); }
     req.signal.throwIfAborted();
     trace.finish("success");
     return NextResponse.json({ requestId,
-      thesis: { ...thesis, ...responsePerspective(perspective, envelope.spatial.thesis), ...(novelty ? { novelty: novelty.thesis } : {}) },
-      antithesis: { ...antithesis, ...responsePerspective(perspective, envelope.spatial.antithesis), ...(novelty ? { novelty: novelty.antithesis } : {}) },
+      thesis: { ...checked.thesis, ...responsePerspective(perspective, envelope.spatial.thesis) },
+      antithesis: { ...checked.antithesis, ...responsePerspective(perspective, envelope.spatial.antithesis) },
       ...(envelope.suggestions.length ? { suggestedAxes: envelope.suggestions } : {}) });
   } catch (error: unknown) {
     if (req.signal.aborted) return NextResponse.json({ requestId, error: "cancelled" }, { status: 499 });

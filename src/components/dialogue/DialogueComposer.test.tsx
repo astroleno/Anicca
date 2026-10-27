@@ -34,3 +34,34 @@ it("shows elapsed time without inventing server progress and releases the timer"
     expect(vi.getTimerCount()).toBe(0);
   } finally { vi.useRealTimers(); }
 });
+
+it("fits wrapped writing after a width change without mutating height during resize delivery", () => {
+  let resized: ResizeObserverCallback = () => {};
+  const frames = new Map<number, FrameRequestCallback>(); let nextFrame = 0;
+  const disconnect = vi.fn();
+  vi.stubGlobal("ResizeObserver", class {
+    constructor(callback: ResizeObserverCallback) { resized = callback; }
+    observe() {}
+    disconnect = disconnect;
+  });
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { frames.set(++nextFrame, callback); return nextFrame; });
+  vi.stubGlobal("cancelAnimationFrame", (id: number) => frames.delete(id));
+  try {
+    const view = render(<DialogueComposer target={{ nodeId: null, label: "新的想法", kind: "root", displayRole: "node" }}
+      value="在窄屏继续写一段会换行的问题" disabled={false} pendingAction={null} errorState={null} onChange={vi.fn()} onSubmit={vi.fn()} />);
+    const field = screen.getByRole("textbox", { name: "输入" });
+    let width = 200;
+    Object.defineProperty(field, "clientWidth", { get: () => width });
+    Object.defineProperty(field, "scrollHeight", { get: () => 88 });
+    const deliver = () => resized([], {} as ResizeObserver);
+    act(deliver);
+    expect(field.style.height).toBe("44px");
+    width = 180; act(deliver);
+    expect(frames.size).toBe(1);
+    act(() => { const pending = [...frames.values()]; frames.clear(); pending.forEach(callback => callback(0)); });
+    expect(field.style.height).toBe("88px");
+    width = 160; act(deliver); expect(frames.size).toBe(1);
+    view.unmount();
+    expect(frames.size).toBe(0); expect(disconnect).toHaveBeenCalledOnce();
+  } finally { vi.unstubAllGlobals(); }
+});

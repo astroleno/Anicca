@@ -148,9 +148,11 @@ describe("dialectic routes", () => {
 
   it("does not allow spatial metadata to invent Johari knowledge", async () => {
     const perspective = johariThinkingSpace(); perspective.focus["johari-self"] = -1;
-    createResponse.mockResolvedValue({ output_text: JSON.stringify({ thesis: { text: VALID_THESIS_TEXT, summary: "继续推进", label: "继续", stance: "正" },
+    createResponse.mockResolvedValueOnce({ output_text: JSON.stringify({ thesis: { text: VALID_THESIS_TEXT, summary: "继续推进", label: "继续", stance: "正" },
       antithesis: { text: VALID_ANTITHESIS_TEXT, summary: "暂停重构", label: "暂停", stance: "反" },
-      spatial: { thesis: { "johari-self": 1, "johari-others": 1 } } }) });
+      spatial: { thesis: { "johari-self": 1, "johari-others": 1 } } }) })
+      .mockResolvedValueOnce({ output_text: JSON.stringify({ thesis: { label: "继续", change: null, hypothesesSafe: true, issues: [], personalEvidence: [] },
+        antithesis: { label: "暂停", change: null, hypothesesSafe: true, issues: [], personalEvidence: [] } }) });
     const response = await branchesPost(new NextRequest("http://localhost/api/branches", { method: "POST", body: JSON.stringify({ requestId: "self-report", userText: "如何理解他人的反馈", perspective }) }));
     expect(response.status).toBe(200);
     expect((await response.json()).thesis.perspective.axes.map((axis: { value: number; source: string }) => [axis.value, axis.source])).toEqual([[-1, "viewpoint"], [0, "viewpoint"]]);
@@ -324,7 +326,7 @@ describe("dialectic routes", () => {
     await expect(response.json()).resolves.toEqual({
       requestId: "req-compact-branches",
       thesis: { text: VALID_THESIS_TEXT, summary: "继续推进 但保留回退", label: "支持", stance: "正" },
-      antithesis: { text: VALID_ANTITHESIS_TEXT, summary: "暂停重构", label: "受控分享更安全合", stance: "反" }
+      antithesis: { text: VALID_ANTITHESIS_TEXT, summary: "暂停重构", label: "反向", stance: "反" }
     });
   });
 

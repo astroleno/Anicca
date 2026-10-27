@@ -1,5 +1,5 @@
 import { BranchGraphStore } from "@/store/branchGraph";
-import { readInquiryTarget, inquirySentences } from "./inquiry";
+import { readInquiryTarget, inquirySentences, inquirySentenceRanges } from "./inquiry";
 import { buildSeedContext } from "./seeds";
 import { projectEvolution, evolutionPath, searchEvolution } from "./evolution";
 import { normalizeGraphForRetrieval } from "@/features/retrieval/workspaceGraphQuery";
@@ -27,4 +27,30 @@ it("refuses fabricated, stale or oversized quotes before mutating the graph", ()
   expect(() => store.createInquiry(invalid, { text: "回答" })).toThrow();
   expect(Object.keys(store.getGraph().nodes)).toHaveLength(1);
   expect(inquirySentences("第一句。第二句？\n第三句！")).toEqual(["第一句。", "第二句？", "第三句！"]);
+});
+
+it("marks a shortened inquiry source title while retaining the exact original quotation after reload", () => {
+  const store = new BranchGraphStore(), quote = "🌱这些角落可以让成员发现新的共同活动。";
+  const sourceNodeId = store.createUserNode(quote);
+  const origin = { sourceNodeId, quote, quoteStart: 0, intent: "premise" as const, question: "这一判断依赖什么？" };
+  const { questionId } = store.createInquiry(origin, { text: "只有成员有机会改变用途，这个判断才成立。" });
+  store.setGraph(JSON.parse(JSON.stringify(store.getGraph())));
+  expect(store.getGraph().nodes[questionId].meta?.label).toBe("追问前提 · 🌱这些角落可以让成员发现…");
+  expect(store.getGraph().nodes[questionId].meta?.inquiry).toEqual(origin);
+});
+
+it("preserves a repeated quote's UTF-16 position through graph reload and rejects incorrect offsets", () => {
+  const store = new BranchGraphStore(), quote = "相同的句子。", text = `🌱开头。${quote}不同语境。${quote}`;
+  const sourceNodeId = store.createUserNode(text), quoteStart = text.lastIndexOf(quote);
+  const origin = { sourceNodeId, quote, quoteStart, intent: "premise" as const, question: "这里依赖什么？" };
+  const { responseId } = store.createInquiry(origin, { text: "回答原句所依赖的条件。" });
+  store.setGraph(JSON.parse(JSON.stringify(store.getGraph())));
+  expect(store.getGraph().nodes[responseId].meta?.inquiry).toEqual(origin);
+  for (const invalid of [-1, 1.5, Infinity, NaN, quoteStart + 1, text.length]) {
+    expect(readInquiryTarget({ ...origin, quoteStart: invalid }, store.getGraph())).toBeUndefined();
+  }
+  expect(readInquiryTarget({ ...origin, quoteStart: undefined }, store.getGraph())?.quote).toBe(quote);
+  const sentences = inquirySentenceRanges(`  ${quote}\n🌱背景。 ${quote}`);
+  expect(sentences.map(item => item.quote)).toEqual([quote, "🌱背景。", quote]);
+  expect(sentences[2].quoteStart).toBe(`  ${quote}\n🌱背景。 `.length);
 });

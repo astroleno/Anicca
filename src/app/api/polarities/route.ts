@@ -6,6 +6,7 @@ import { readThinkingSpaceRequest } from "@/features/perspectives/model";
 import { polarityPerspective } from "@/features/perspectives/polarity";
 import { analyzePolarityOutput, buildPolarityPrompt } from "@/features/perspectives/polarityGeneration";
 import { DIALECTIC_INPUT_MAX_LENGTH } from "@/features/dialectic/api";
+import { finalizeMeaning, userReportedMaterial } from "@/features/dialectic/server/meaningReview";
 
 export async function POST(req: NextRequest) {
   let body: Record<string, unknown>;
@@ -43,11 +44,26 @@ export async function POST(req: NextRequest) {
       trace.finish("invalid_output");
       return NextResponse.json({ requestId, error: "invalid_model_output", details: "polarity output failed contract after one repair" }, { status: 502 });
     }
+    const checked = await finalizeMeaning({ results: { negative: result.negative, positive: result.positive },
+      sources: [{ id: "current", label: "当前来源", text: userText }],
+      userMaterial: userReportedMaterial(body.contextMessages), context: JSON.stringify(body.contextMessages || []),
+      perspective: space, meaning: input.meaning, trace, client, signal: req.signal,
+      repair: async issues => {
+        const repair = await trace!.generate("polarities", { client,
+          input: buildPolarityPrompt({ ...input, repair: { output: JSON.stringify(result), errors: issues } }), maxOutputTokens: 2200 }, true, 12000);
+        const repaired = analyzePolarityOutput(repair.text, axis, input.meaning);
+        trace!.check("polarities", Boolean(repaired.negative && repaired.positive), true);
+        if (!repaired.negative || !repaired.positive) return null;
+        result = repaired;
+        return { negative: repaired.negative, positive: repaired.positive };
+      }
+    });
+    if (!checked) { trace.finish("invalid_output"); return NextResponse.json({ requestId, error: "invalid_model_output", details: "hypothesis grounding could not be verified" }, { status: 502 }); }
     req.signal.throwIfAborted();
     trace.finish("success");
     return NextResponse.json({ requestId, axis,
-      negative: { ...result.negative, perspective: polarityPerspective(space, axis.id, -1, result.spatial.negative) },
-      positive: { ...result.positive, perspective: polarityPerspective(space, axis.id, 1, result.spatial.positive) } });
+      negative: { ...checked.negative, perspective: polarityPerspective(space, axis.id, -1, result.spatial.negative) },
+      positive: { ...checked.positive, perspective: polarityPerspective(space, axis.id, 1, result.spatial.positive) } });
   } catch (error) {
     if (req.signal.aborted) return NextResponse.json({ requestId, error: "cancelled" }, { status: 499 });
     const failure = describeProviderFailure(error);

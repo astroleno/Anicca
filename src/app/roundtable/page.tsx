@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { appPath } from "@/lib/appPath";
 import {
   RoundtableCommand,
   RoundtableResponse,
@@ -53,7 +54,7 @@ function formatError(error: unknown) {
 }
 
 async function postRoundtable(body: Record<string, unknown>): Promise<RoundtableResponse> {
-  const response = await fetch("/api/roundtable", {
+  const response = await fetch(appPath("/api/roundtable"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -211,7 +212,7 @@ export default function RoundtablePage() {
           <p className={styles.eyebrow}>Roundtable Theater</p>
           <h1 id="roundtable-handoff-title">圆桌已经并入对话场。</h1>
           <p>旁路讨论会贴在当前问题谱系旁边，不再把你带进独立后台页。</p>
-          <a className={styles.navLink} href="/dialogue" data-testid="roundtable-theater-exit">
+          <a className={styles.navLink} href={appPath("/dialogue")} data-testid="roundtable-theater-exit">
             回到对话场
           </a>
         </section>
@@ -229,7 +230,7 @@ export default function RoundtablePage() {
             <p className={styles.copy}>
               真实代表人物围绕同一议题交锋，主持人每轮提炼核心争议和下一层问题。
             </p>
-            <a className={styles.navLink} href="/dialogue">
+            <a className={styles.navLink} href={appPath("/dialogue")}>
               返回对话场
             </a>
           </header>

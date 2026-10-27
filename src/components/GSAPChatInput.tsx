@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useRef, useEffect } from 'react'
 import { useMetaballStore } from '@/store/metaballStore'
+import { appPath } from '@/lib/appPath'
 
 interface GSAPChatInputProps {
   isOpen: boolean
@@ -28,7 +29,7 @@ export default function GSAPChatInput({ isOpen, onClose, selectedBallId }: GSAPC
     setIsLoading(true)
     try {
       // 调用现有的chat API
-      const response = await fetch('/api/chat', {
+      const response = await fetch(appPath('/api/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

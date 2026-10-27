@@ -4,11 +4,10 @@ import {
 } from "shader-park-core/dist/shader-park-core.esm.js";
 
 import {
-  MAX_DIALOGUE_METABALLS,
   type DialogueMetaballNode
 } from "../metaball/model";
 import { buildLiquidSpCode, buildLiquidFlowSource, buildLiquidDistanceSource, buildLiquidMaterialSource, LIQUID_SEED_SLOTS } from "./spcode";
-import { liquidBlendTargets, RESTING_LIQUID_BLEND } from "./fusion";
+import { LiquidFrame } from "./frame";
 import type { SeedOrbit } from "./space";
 
 export const DIALOGUE_METABALL_SMOOTHNESS = 0.055;
@@ -240,19 +239,7 @@ export function createDialogueMetaballRenderer(
   let disposed = false;
   let cssWidth = 1;
   let cssHeight = 1;
-  let previousNodes: DialogueMetaballNode[] | null = null;
-  let previousOrder = "";
-  const blends = new Map<string, number>();
-  const pressures = new Map<string, number>();
-  const attentions = new Map<string, number>();
-  const attentionTargets = new Map<string, number>();
-  let fusionPair: string[] = [];
-  const previousSlotBlends: number[] = [];
-  const previousSlotPressures: number[] = [];
-  const previousSlotAttentions: number[] = [];
-  let previousTime: number | null = null;
-  let previousDraggedId: string | null = null;
-  let previousPartnerId: string | null = null;
+  const frame = new LiquidFrame();
 
   const handleContextLost = (event: Event) => {
     event.preventDefault();
@@ -275,7 +262,6 @@ export function createDialogueMetaballRenderer(
 
     render(nodes, timeSeconds, interaction) {
       if (disposed) return;
-      const count = Math.min(nodes.length, MAX_DIALOGUE_METABALLS, LIQUID_SEED_SLOTS);
       gl.useProgram(program);
       set1f("time", timeSeconds);
       set1f("atmosphere", interaction?.atmosphere ? 1 : 0);
@@ -290,84 +276,7 @@ export function createDialogueMetaballRenderer(
         gl.uniform2f(resolution, canvas.width, canvas.height);
       }
 
-      // The soft union is ordered: join the chosen pair first, then add every
-      // unrelated surface with a hard union so a third seed cannot grow a neck.
-      if (interaction?.draggedId && interaction.partnerId) fusionPair = [interaction.draggedId, interaction.partnerId];
-      else if (!fusionPair.some(id => (blends.get(id) || 0) > RESTING_LIQUID_BLEND + .0001)) fusionPair = [];
-      const pair = fusionPair;
-      const visibleNodes = [...nodes.slice(0, count)].sort((a, b) => {
-        const rank = (id: string) => { const i = pair.indexOf(id); return i < 0 ? 2 : i; };
-        return rank(a.id) - rank(b.id);
-      });
-      set1f("edgeSoftness", Math.max(.008, ...visibleNodes.map(node => node.radius*1.75*.18)));
-      const targets = liquidBlendTargets(visibleNodes, interaction?.draggedId, interaction?.partnerId);
-      // time=0 is the reduced-motion path: update geometry without interpolation.
-      const draggedId = interaction?.draggedId || null, partnerId = interaction?.partnerId || null;
-      const changedInteraction = draggedId !== previousDraggedId || partnerId !== previousPartnerId;
-      const elapsed = Math.max(0,timeSeconds-(previousTime ?? timeSeconds));
-      const dt = changedInteraction ? Math.min(1 / 60, elapsed) : elapsed;
-      previousDraggedId = draggedId; previousPartnerId = partnerId;
-      const immediate = previousTime === null || timeSeconds === 0;
-      const pressureAmount = previousTime === null || timeSeconds === 0 ? 1
-        : 1 - Math.exp(-5 * dt);
-      previousTime = timeSeconds;
-      const ids = new Set(visibleNodes.map(node => node.id));
-      for (const id of blends.keys()) if (!ids.has(id)) blends.delete(id);
-      for (const id of pressures.keys()) if (!ids.has(id)) pressures.delete(id);
-      for (const id of attentions.keys()) if (!ids.has(id)) attentions.delete(id);
-      for (const id of attentionTargets.keys()) if (!ids.has(id)) attentionTargets.delete(id);
-      for (let index = 0; index < LIQUID_SEED_SLOTS; index++) {
-        const node = visibleNodes[index];
-        const attentionTarget = node?.attention ?? 1;
-        const previousAttention = node ? attentions.get(node.id) ?? attentionTarget : 1;
-        const attentionDt = node && attentionTargets.get(node.id) !== attentionTarget ? Math.min(1 / 60, dt) : dt;
-        const attention = immediate || Math.abs(attentionTarget - previousAttention) < .001 ? attentionTarget
-          : previousAttention + (attentionTarget - previousAttention) * (1 - Math.exp(-12 * attentionDt));
-        if (node) { attentions.set(node.id, attention); attentionTargets.set(node.id, attentionTarget); }
-        if (previousSlotAttentions[index] !== attention) set1f(`s${index}p`, attention);
-        previousSlotAttentions[index] = attention;
-        const target = targets[index] ?? RESTING_LIQUID_BLEND;
-        const current = node ? (blends.get(node.id) ?? RESTING_LIQUID_BLEND) : RESTING_LIQUID_BLEND;
-        const amount = immediate ? 1 : 1-Math.exp(-(target > current ? 16 : 10)*dt);
-        const value = !pair.includes(node?.id || "") && interaction?.partnerId ? RESTING_LIQUID_BLEND
-          : Math.abs(target - current) < 0.0001 ? target : current + (target - current) * amount;
-        if (node) blends.set(node.id, value);
-        if (previousSlotBlends[index] !== value) set1f(`s${index}b`, value);
-        previousSlotBlends[index] = value;
-        const pressureTarget = node && node.id === interaction?.draggedId ? 1 : 0;
-        const previousPressure = node ? (pressures.get(node.id) || 0) : 0;
-        const pressure = Math.abs(pressureTarget-previousPressure) < .0001 ? pressureTarget
-          : previousPressure+(pressureTarget-previousPressure)*pressureAmount;
-        if (node) pressures.set(node.id, pressure);
-        if (previousSlotPressures[index] !== pressure) set1f(`s${index}h`, pressure);
-        previousSlotPressures[index] = pressure;
-      }
-
-      const order = visibleNodes.map(node => node.id).join("\0");
-      if (nodes !== previousNodes || order !== previousOrder) {
-        previousNodes = nodes;
-        previousOrder = order;
-        for (let index = 0; index < LIQUID_SEED_SLOTS; index += 1) {
-          const node = visibleNodes[index] || null;
-          const prefix = `s${index}`;
-          if (node) {
-            const z = (node.depth || 0) * 1.75;
-            const perspective = 1 + z / 2;
-            set1f(`${prefix}x`, node.center[0] * 1.75 * perspective);
-            set1f(`${prefix}y`, node.center[1] * 1.75 * perspective);
-            set1f(`${prefix}z`, z);
-            set1f(`${prefix}r`, Math.max(0.001, node.radius * 1.75 * perspective));
-            set1f(`${prefix}cr`, node.color[0]);
-            set1f(`${prefix}cg`, node.color[1]);
-            set1f(`${prefix}cb`, node.color[2]);
-          } else {
-            set1f(`${prefix}x`, 999);
-            set1f(`${prefix}y`, 999);
-            set1f(`${prefix}z`, 0);
-            set1f(`${prefix}r`, 0.001);
-          }
-        }
-      }
+      frame.update(nodes, timeSeconds, interaction, set1f);
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLES, 0, 3);

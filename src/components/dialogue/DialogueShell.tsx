@@ -1,6 +1,9 @@
 "use client";
 
+import { appPath } from "@/lib/appPath";
 import { SeedGuide } from "./SeedGuide";
+import { useLiquidRenderer } from "./useLiquidRenderer";
+import { LIQUID_RENDERER_OPTIONS, type LiquidRendererStatus } from "./liquid/preference";
 import { EvolutionOverview } from "./EvolutionOverview";
 
 import {
@@ -33,7 +36,7 @@ import { readSeedOrbit, readSpatialFrame, separateSpatialSeeds, type SeedViewDir
 import { WorkspaceBar } from "@/components/dialogue/WorkspaceBar";
 import { createDialogueDemoWorkspace } from "@/features/dialectic/demoWorkspace";
 import { isAbortError } from "@/features/dialectic/api";
-import { deferredSyntheses } from "@/features/dialectic/meaning";
+import { deferredSyntheses, readUnderstandingChange } from "@/features/dialectic/meaning";
 import { buildComparisonSeeds } from "@/features/dialectic/novelty";
 import { inquiryQuestion, readInquiryTarget, type InquiryTarget, type InquiryOrigin } from "@/features/dialectic/inquiry";
 import { loadComposerDraft, saveComposerDraft, type ComposerDraft } from "@/lib/persist/composerDraft";
@@ -46,7 +49,7 @@ import {
   ownsPendingResponse
 } from "@/features/dialectic/controller";
 import { observeDialogueViewport } from "@/features/dialectic/platform";
-import { buildSeedContext, seedLabel } from "@/features/dialectic/seeds";
+import { buildSeedContext, fissionPair, seedLabel } from "@/features/dialectic/seeds";
 import { buildSeedInstanceScene, seedConceptId, seedInstancePairAction, sourceInstances, unfoldedSourcePositions, separatedEncounterPositions } from "@/features/dialectic/seedInstances";
 import { arrangeSeedScene } from "@/features/dialectic/seedPlacement";
 import { createClientId, DialogueErrorState, PendingRequest, useDialogueUiStore } from "@/features/dialectic/store";
@@ -332,7 +335,7 @@ function serializeContextMessages(messages: Message[]) {
 }
 
 async function postJson<T>(url: string, body: Record<string, unknown>): Promise<T> {
-  const response = await fetch(url, {
+  const response = await fetch(appPath(url), {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -496,6 +499,8 @@ type SeedExpansionResult = { sourceId: string; firstId: string; secondId: string
 
 export function DialogueShell() {
   const { theme, preference: themePreference, selectTheme } = useDialogueTheme();
+  const { rendererMode, selectRenderer } = useLiquidRenderer();
+  const [rendererStatus, setRendererStatus] = useState<LiquidRendererStatus | null>(null);
   const graphSnapshot = useSyncExternalStore(
     branchGraphStore.subscribe.bind(branchGraphStore),
     branchGraphStore.getSnapshot.bind(branchGraphStore),
@@ -565,6 +570,9 @@ export function DialogueShell() {
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const composerRootRef = useRef<HTMLFormElement | null>(null);
   const composerTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const readingPositionsRef = useRef(new Map<string, number>());
+  const getReadingPosition = useCallback((id: string) => readingPositionsRef.current.get(id) || 0, []);
+  const rememberReadingPosition = useCallback((id: string, position: number) => { readingPositionsRef.current.set(id, position); }, []);
   const roundtableDrawerRef = useRef<HTMLElement | null>(null);
   const lineageDrawerRef = useRef<HTMLDivElement | null>(null);
   const roundtableSummonButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -591,6 +599,7 @@ export function DialogueShell() {
     setAxisSuggestions([]); setCameraView(null); pendingPerspectiveRef.current = null;
     setActiveInstanceId(null); setExpandedResultId(null); setExpansionResult(null);
     setEvolutionOpen(false);
+    readingPositionsRef.current.clear();
     setActiveDeferredId(null); setConnectionTargetId(null);
   }, [workspaceSessionId]);
   const pendingAction = useDialogueUiStore((state) => state.pendingAction);
@@ -639,37 +648,23 @@ export function DialogueShell() {
       return;
     }
 
-    return observeDialogueViewport((viewport) => {
+    let focusFrame: number | null = null;
+    const stop = observeDialogueViewport((viewport) => {
       shell.style.setProperty("--dialogue-viewport-height", `${viewport.height}px`);
       shell.style.setProperty("--dialogue-viewport-offset-top", `${viewport.offsetTop}px`);
       shell.style.setProperty("--dialogue-keyboard-inset", `${viewport.keyboardInset}px`);
       shell.dataset.keyboardOpen = viewport.keyboardInset > 96 ? "true" : "false";
-    });
-  }, []);
-
-  useEffect(() => {
-    const shell = shellRef.current;
-    const composer = composerRootRef.current;
-    if (!shell || !composer) {
-      return;
-    }
-
-    const syncComposerHeight = () => {
-      const height = Math.ceil(composer.getBoundingClientRect().height);
-      if (height > 0) {
-        shell.style.setProperty("--dialogue-composer-height", `${height}px`);
+      if (focusFrame !== null) { window.cancelAnimationFrame(focusFrame); focusFrame = null; }
+      if (viewport.keyboardInset > 96 && composerTextareaRef.current?.closest('[data-inline="true"]')) {
+        focusFrame = window.requestAnimationFrame(() => {
+          focusFrame = null;
+          const field = composerTextareaRef.current;
+          if (field && document.activeElement === field) field.closest<HTMLElement>('form[data-inline="true"]')?.scrollIntoView?.({ block: "nearest" });
+        });
       }
-    };
-
-    syncComposerHeight();
-    if (typeof ResizeObserver === "undefined") {
-      return;
-    }
-
-    const observer = new ResizeObserver(syncComposerHeight);
-    observer.observe(composer);
-    return () => observer.disconnect();
-  }, [workspaceReady]);
+    });
+    return () => { stop(); if (focusFrame !== null) window.cancelAnimationFrame(focusFrame); };
+  }, []);
 
   useEffect(() => {
     const controller = dialogueControllerRef.current;
@@ -744,6 +739,9 @@ export function DialogueShell() {
   const visibleExpansion = useMemo<SeedExpansionResult | null>(() => {
     if (expansionResult) return expansionResult;
     const node = graphSnapshot.graph.nodes[view.focusNodeId || ""];
+    const ordinaryPair = node && fissionPair(graphSnapshot.graph, node.id);
+    if (ordinaryPair) return { ...ordinaryPair,
+      lens: node.meta?.fissionFrame ? perspectiveLabel(normalizeThinkingSpace(node.meta.fissionFrame)) : undefined };
     const origin = normalizePolarityOrigin(node?.meta?.polarity);
     if (!origin || !node?.parents[0]) return null;
     const siblings = (graphSnapshot.graph.nodes[node.parents[0]]?.children || []).map(id => graphSnapshot.graph.nodes[id])
@@ -796,7 +794,24 @@ export function DialogueShell() {
   const composerTarget = frozenComposerTarget || getComposerTargetFromNodeId(graphSnapshot.graph, composerParentId);
   const composerTargetFrozenReason = pending.branches ? "branches" : pending.synthesis ? "synthesis" : null;
   const composerTargetFrozen = Boolean(frozenComposerTarget);
-  const shouldShowComposer = true;
+  const inlineInquiry = Boolean(readingOpen && inquiryTarget && inquiryTarget.sourceNodeId === view.currentNode?.id &&
+    !combineSourceId && !activeDeferredId && !evolutionOpen);
+  const companionId = visibleExpansion ? visibleExpansion.firstId === view.currentNode?.id ? visibleExpansion.secondId
+    : visibleExpansion.secondId === view.currentNode?.id ? visibleExpansion.firstId : undefined : undefined;
+
+  useEffect(() => {
+    const shell = shellRef.current, composer = composerRootRef.current;
+    if (!shell || !composer) return;
+    const syncComposerHeight = () => {
+      const height = Math.ceil(composer.getBoundingClientRect().height);
+      if (height > 0) shell.style.setProperty("--dialogue-composer-height", `${height}px`);
+    };
+    syncComposerHeight();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(syncComposerHeight);
+    observer.observe(composer);
+    return () => observer.disconnect();
+  }, [workspaceReady, inlineInquiry]);
 
   const closeSeedPanel = useCallback(() => {
     setReadingOpen(false);
@@ -825,7 +840,7 @@ export function DialogueShell() {
 
   useEffect(() => {
     if (!readingOpen || roundtableArtifactRef.current) return;
-    const timer = window.setTimeout(() => document.getElementById("conversation-panel-heading")?.focus(), 0);
+    const timer = window.setTimeout(() => document.getElementById("conversation-panel-heading")?.focus({ preventScroll: true }), 0);
     return () => window.clearTimeout(timer);
   }, [readingOpen, view.currentNode?.id, combineSourceId]);
 
@@ -861,7 +876,9 @@ export function DialogueShell() {
   const focusComposerSoon = useCallback(() => {
     setEmptyComposerOpen(true);
     window.setTimeout(() => {
-      composerTextareaRef.current?.focus();
+      const field = composerTextareaRef.current;
+      field?.focus({ preventScroll: true });
+      if (field?.closest('[data-inline="true"]')) field.scrollIntoView?.({ block: "nearest" });
     }, 0);
   }, []);
 
@@ -1806,8 +1823,8 @@ export function DialogueShell() {
     if (!valid || hasPendingRequest) return;
     attentionVersionRef.current += 1;
     setInquiryTarget(valid); setConnectionTargetId(null); setComposerParentId(valid.sourceNodeId);
-    setReadingOpen(false); setCombineSourceId(null);
-    if (!draft.trim()) handleDraftChange(inquiryQuestion(valid.intent));
+    setReadingOpen(true); setCombineSourceId(null);
+    if (!draft.trim() || (inquiryTarget && draft === inquiryQuestion(inquiryTarget.intent))) handleDraftChange(inquiryQuestion(valid.intent));
     focusComposerSoon();
   };
 
@@ -1977,6 +1994,40 @@ export function DialogueShell() {
     view.focusNodeId
   ]);
 
+  const pendingMessage = pendingAction === "branches"
+    ? pending.branches?.inquiry ? "正在围绕这句话继续想"
+      : pending.branches?.polarityAxis ? `正在沿「${pending.branches.polarityAxis.label}」展开两端`
+      : "正在展开正反两种视角"
+    : pendingAction === "synthesis" ? "正在寻找两颗想法的新联系" : undefined;
+  const resultContextVisible = !readingOpen && !hasPendingRequest && Boolean(
+    expandedResultId || visibleExpansion || view.currentNode?.branchType === "合");
+
+  const composer = <DialogueComposer
+    inline={inlineInquiry}
+    perspectiveLabel={composerPerspectiveLabel}
+    inquiryTarget={inquiryTarget || undefined}
+    draftSaveError={draftSaveError}
+    onRemember={!inquiryTarget && !connectionTarget ? rememberIdea : undefined}
+    connectionTarget={connectionTarget ? connectionTarget.sourceNodeIds.map(id => seedLabel(graphSnapshot.graph, id)).join(" / ") : undefined}
+    target={composerTarget}
+    value={draft}
+    disabled={hasPendingRequest}
+    pendingAction={pendingAction}
+    pendingMessage={pendingMessage}
+    isEmptyStart={isEmptyWorkspace}
+    emptyStartOpen={emptyComposerOpen}
+    targetFrozen={composerTargetFrozen}
+    targetFrozenReason={composerTargetFrozenReason}
+    errorState={errorState}
+    rootRef={inlineInquiry ? undefined : composerRootRef}
+    textareaRef={composerTextareaRef}
+    onChange={handleDraftChange}
+    onSubmit={submitComposer}
+    onCancel={handleCancelPending}
+    onRetry={errorState && retryRef.current?.error === errorState && retryRef.current?.sessionId === workspaceSessionId ? () => retryRef.current?.run() : undefined}
+    onResetTarget={() => { setInquiryTarget(null); setConnectionTargetId(null); setComposerParentId(null); dismissSeedReading(); focusComposerSoon(); }}
+  />;
+
   if (!workspaceReady) {
     return (
       <main ref={shellRef} className={styles.shell} data-theme={theme} data-testid="dialogue-shell" aria-busy="true">
@@ -1994,6 +2045,7 @@ export function DialogueShell() {
 
   return (
     <main ref={shellRef} className={styles.shell} data-theme={theme} data-testid="dialogue-shell" data-reading={readingOpen && view.currentNode ? "true" : undefined}
+      data-inline-inquiry={inlineInquiry ? "true" : undefined}
       data-composer-context={composerTarget.nodeId || pendingAction === "synthesis" || composerPerspectiveLabel ? "true" : undefined}>
       <a className={styles.skipToInput} href="#dialogue-input" onClick={(event) => {
         event.preventDefault(); dismissSeedReading(); setLineageOpen(false); focusComposerSoon();
@@ -2018,10 +2070,7 @@ export function DialogueShell() {
         }
         items={workspaceEntries}
         statusMessage={roundtablePendingSourceLabel ? `正在从「${roundtablePendingSourceLabel}」召集圆桌`
-          : pendingAction === "branches" ? pending.branches?.polarityAxis
-            ? `正在沿「${pending.branches.polarityAxis.label}」探索两端，你可以取消本次生成。`
-            : "正在展开正反两种视角，你可以取消本次生成。"
-          : pendingAction === "synthesis" ? "正在寻找两颗想法的新联系，你可以取消本次合成。"
+          : pendingMessage ? `${pendingMessage}，你可以取消本次${pendingAction === "synthesis" ? "合成" : "生成"}。`
           : workspaceStatus || generationAnnouncement}
         onCreate={handleCreateWorkspace}
         onSelect={handleSwitchWorkspace}
@@ -2052,10 +2101,27 @@ export function DialogueShell() {
           </div>
           <div className={styles.workspaceOverflowGroup} role="group" aria-label="帮助与实验">
             <h3>帮助与实验</h3>
+            <fieldset className={styles.themeControls}>
+              <legend>液体渲染对照</legend>
+              <div>{LIQUID_RENDERER_OPTIONS.map(([value, label]) =>
+                <label key={value}><input type="radio" name="liquid-renderer" value={value}
+                  checked={rendererMode === value} onChange={() => selectRenderer(value)} /><span>{label}</span></label>
+              )}</div>
+              <p role="status" className={styles.rendererStatus}>
+                {rendererStatus?.requested !== rendererMode ? "正在切换…"
+                  : rendererStatus.backend === "unavailable" ? "图形不可用，已使用简化画面"
+                  : rendererStatus.fallback ? "TSL 不可用，已回退原版"
+                  : rendererStatus.backend === "original" ? "当前使用原版"
+                  : `当前使用 TSL · ${rendererStatus.backend === "webgpu" ? "WebGPU" : "WebGL2"}`}
+              </p>
+            </fieldset>
             <button type="button" className={styles.workspaceOverflowItem} aria-pressed={atmosphereVisible}
               onClick={() => setAtmosphereVisible(value => !value)}>{atmosphereVisible ? "隐藏氛围背景" : "显示氛围背景"}</button>
-            <button type="button" className={styles.workspaceOverflowItem} onClick={() => setGuideRequest(value => value + 1)}>操作提示</button>
-            <a className={styles.workspaceOverflowItem} href="/labs">视觉实验</a>
+            <button type="button" className={styles.workspaceOverflowItem} onClick={() => {
+              if (view.currentNode) setReadingOpen(true);
+              setGuideRequest(value => value + 1);
+            }}>操作提示</button>
+            <a className={styles.workspaceOverflowItem} href={appPath("/labs")}>视觉实验</a>
           </div>
         </>}
       />
@@ -2076,6 +2142,7 @@ export function DialogueShell() {
         onChange={handleImportWorkspace}
       />
       {workspaceReady ? <SeedGuide empty={isEmptyWorkspace} requested={guideRequest} pending={hasPendingRequest}
+        suspended={resultContextVisible}
         reading={readingOpen} combining={Boolean(combineSourceId)}
         completed={Object.values(graphSnapshot.graph.nodes).some(node => node.branchType === "合")}
         onStart={focusComposerSoon} /> : null}
@@ -2087,6 +2154,8 @@ export function DialogueShell() {
 
       <div className={styles.workspace}>
         <BubbleStage
+          rendererMode={rendererMode}
+          onRendererStatus={setRendererStatus}
           suspended={evolutionOpen}
           reading={readingOpen}
           attentionIds={attentionIds}
@@ -2134,14 +2203,23 @@ export function DialogueShell() {
           <span>{visibleExpansion.axis ? `沿「${visibleExpansion.axis.label}」展开` : "正反裂变"}</span>
           <p>{visibleExpansion.axis ? `${visibleExpansion.axis.negative} ↔ ${visibleExpansion.axis.positive}` : "深化主张 ↔ 质疑前提"}
             {visibleExpansion.lens ? ` · ${visibleExpansion.lens}` : ""}</p>
-          <button type="button" onClick={() => handleSelectNode(visibleExpansion.sourceId)}>回看起点</button>
-          <button type="button" onClick={openEvolution}>看全景</button>
+          <div className={styles.seedResultReads} aria-label="阅读本轮两端">
+            <button type="button" onClick={() => handleSelectNode(visibleExpansion.firstId)}
+              aria-label={`阅读${visibleExpansion.axis?.negative || "正"}「${seedLabel(graphSnapshot.graph, visibleExpansion.firstId)}」`}>
+              <small>{visibleExpansion.axis?.negative || "正"}</small><span>{seedLabel(graphSnapshot.graph, visibleExpansion.firstId)}</span>
+            </button>
+            <button type="button" onClick={() => handleSelectNode(visibleExpansion.secondId)}
+              aria-label={`阅读${visibleExpansion.axis?.positive || "反"}「${seedLabel(graphSnapshot.graph, visibleExpansion.secondId)}」`}>
+              <small>{visibleExpansion.axis?.positive || "反"}</small><span>{seedLabel(graphSnapshot.graph, visibleExpansion.secondId)}</span>
+            </button>
+          </div>
+          <button className={styles.seedResultTrail} type="button" onClick={() => handleSelectNode(visibleExpansion.sourceId)}>回看起点</button>
         </div> : null}
         {!expandedResultId && !readingOpen && !hasPendingRequest && !visibleExpansion && view.currentNode?.branchType === "合" ? <div
           className={styles.explorationContext} role="region" aria-label="本轮合流" data-testid="dialogue-synthesis-context" data-stage-label-chrome="top">
           <span>合流 · {seedLabel(graphSnapshot.graph, view.currentNode.id)}</span>
-          <p className={styles.synthesisInsight}>{view.currentNode.summary || graphSnapshot.graph.nodes[view.currentNode.id]?.meta?.summary}</p>
-          <button type="button" onClick={() => setReadingOpen(true)}>阅读推演</button>
+          <p className={styles.synthesisInsight}>{readUnderstandingChange(graphSnapshot.graph.nodes[view.currentNode.id]?.meta?.change) || view.currentNode.summary || graphSnapshot.graph.nodes[view.currentNode.id]?.meta?.summary}</p>
+          <button type="button" onClick={() => setReadingOpen(true)}>继续展开</button>
           <button type="button" onClick={handleExpandSources}>展开来源</button>
         </div> : null}
         <div
@@ -2179,6 +2257,10 @@ export function DialogueShell() {
               onClose={closeSeedPanel}
               onSplit={handleContinueFromCurrentNode}
               onInquiry={startInquiry}
+              inquiryTarget={inquiryTarget?.sourceNodeId === view.currentNode.id ? inquiryTarget : undefined}
+              inquiryComposer={inlineInquiry ? composer : undefined}
+              companionId={companionId}
+              getReadingPosition={getReadingPosition} onRememberPosition={rememberReadingPosition}
               onExpandPolarity={(axisId, frame) => void handlePolarityExpansion(view.currentNode!.id, axisId, frame)}
               onWrite={() => { setInquiryTarget(null); setConnectionTargetId(null); setComposerParentId(view.currentNode!.id); setReadingOpen(false); focusComposerSoon(); }}
               onCombine={() => { setCombineSourceId(focusedInstanceId || view.currentNode!.id); setSelectedPair(null); }}
@@ -2229,32 +2311,7 @@ export function DialogueShell() {
             )}
           </aside>
         ) : null}
-        {shouldShowComposer ? (
-          <DialogueComposer
-            perspectiveLabel={composerPerspectiveLabel}
-            inquiryTarget={inquiryTarget || undefined}
-            draftSaveError={draftSaveError}
-            onRemember={!inquiryTarget && !connectionTarget ? rememberIdea : undefined}
-            connectionTarget={connectionTarget ? connectionTarget.sourceNodeIds.map(id => seedLabel(graphSnapshot.graph, id)).join(" / ") : undefined}
-            target={composerTarget}
-            value={draft}
-            disabled={hasPendingRequest}
-            pendingAction={pendingAction}
-            pendingMessage={pending.branches?.inquiry ? "正在围绕这句话继续想" : pending.branches?.polarityAxis ? `正在沿「${pending.branches.polarityAxis.label}」展开两端` : undefined}
-            isEmptyStart={isEmptyWorkspace}
-            emptyStartOpen={emptyComposerOpen}
-            targetFrozen={composerTargetFrozen}
-            targetFrozenReason={composerTargetFrozenReason}
-            errorState={errorState}
-            rootRef={composerRootRef}
-            textareaRef={composerTextareaRef}
-            onChange={handleDraftChange}
-            onSubmit={submitComposer}
-            onCancel={handleCancelPending}
-            onRetry={errorState && retryRef.current?.error === errorState && retryRef.current?.sessionId === workspaceSessionId ? () => retryRef.current?.run() : undefined}
-            onResetTarget={() => { setInquiryTarget(null); setConnectionTargetId(null); setComposerParentId(null); focusComposerSoon(); }}
-          />
-        ) : null}
+        {!inlineInquiry ? composer : null}
       </div>
 
       {roundtableArtifact ? (

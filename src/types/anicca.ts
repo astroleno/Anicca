@@ -29,6 +29,7 @@ export interface AniccaNodeMeta {
   perspective?: SeedPerspective;
   polarity?: PolarityOrigin;
   fissionFrame?: ThinkingSpace;
+  fissionGroupId?: string; // 同一次普通正反展开的配对标识，跨刷新保留
   change?: string;
   connectionInput?: string;
   inquiry?: InquiryOrigin;

@@ -304,6 +304,60 @@ describe("DialogueShell", () => {
     expect(loadComposerDraft("workspace_test", branchGraphStore.getGraph())).toBeNull();
   });
 
+  it("dismisses the guide without dismissing the current reading", async () => {
+    const root = branchGraphStore.createUserNode("继续从这句话想下去。");
+    useDialogueUiStore.setState({ focusedNodeId: root }); seedActiveWorkspaceFromCurrentGraph();
+    render(<DialogueShell />);
+    fireEvent.click(screen.getByTestId(`dialogue-stage-node-${root}`));
+    const panel = await screen.findByTestId("dialogue-panel");
+    const close = await screen.findByRole("button", { name: "关闭提示" });
+    fireEvent.pointerDown(close); fireEvent.click(close);
+    expect(screen.getByTestId("dialogue-panel")).toBe(panel);
+    expect(screen.queryByRole("button", { name: "关闭提示" })).not.toBeInTheDocument();
+  });
+
+  it("keeps a quoted question in the reading flow and preserves it when returning to the same seed", async () => {
+    const root = branchGraphStore.createUserNode("先缩小投入。仍然保留值得验证的问题。");
+    useDialogueUiStore.setState({ focusedNodeId: root }); seedActiveWorkspaceFromCurrentGraph();
+    render(<DialogueShell />);
+    fireEvent.click(screen.getByTestId(`dialogue-stage-node-${root}`));
+    fireEvent.click(await screen.findByRole("button", { name: "选一句追问" }));
+    fireEvent.click(screen.getByRole("button", { name: "先缩小投入。" }));
+    expect(screen.queryByRole("button", { name: "推演正反" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "追问前提" }));
+    const input = screen.getByRole("textbox", { name: "输入" });
+    expect(screen.getByTestId("dialogue-panel")).toContainElement(input);
+    expect(screen.getAllByTestId("dialogue-composer")).toHaveLength(1);
+    expect(screen.getByTestId("dialogue-shell")).toHaveAttribute("data-inline-inquiry", "true");
+    fireEvent.change(input, { target: { value: "什么样的小试验仍能改变判断？" } });
+    fireEvent.click(screen.getByRole("button", { name: "返回种子，收起阅读" }));
+    await waitFor(() => expect(screen.queryByTestId("dialogue-panel")).not.toBeInTheDocument());
+    expect(screen.getByRole("textbox", { name: "输入" })).toHaveValue("什么样的小试验仍能改变判断？");
+    fireEvent.click(screen.getByTestId(`dialogue-stage-node-${root}`));
+    expect(await screen.findByTestId("dialogue-panel")).toContainElement(screen.getByRole("textbox", { name: "输入" }));
+    expect(screen.getByLabelText("本次追问的原句")).toHaveTextContent("先缩小投入。");
+    expect(Object.keys(branchGraphStore.getGraph().nodes)).toHaveLength(1);
+  });
+
+  it("keeps the inline question in view when the mobile keyboard reduces the visible height", async () => {
+    const events = new EventTarget();
+    const viewport = { width: 320, height: 568, offsetTop: 0, scale: 1,
+      addEventListener: events.addEventListener.bind(events), removeEventListener: events.removeEventListener.bind(events) };
+    vi.stubGlobal("visualViewport", viewport); vi.stubGlobal("innerHeight", 568);
+    const root = branchGraphStore.createUserNode("保留协商的余地。");
+    useDialogueUiStore.setState({ focusedNodeId: root }); seedActiveWorkspaceFromCurrentGraph();
+    render(<DialogueShell />);
+    fireEvent.click(screen.getByTestId(`dialogue-stage-node-${root}`));
+    fireEvent.click(await screen.findByRole("button", { name: "选一句追问" }));
+    fireEvent.click(within(screen.getByLabelText("选择要追问的原句")).getByRole("button"));
+    fireEvent.click(screen.getByRole("button", { name: "追问前提" }));
+    const field = screen.getByRole("textbox", { name: "输入" });
+    await waitFor(() => expect(field).toHaveFocus());
+    const form = screen.getByTestId("dialogue-composer"), scroll = vi.fn(); form.scrollIntoView = scroll;
+    viewport.height = 338; events.dispatchEvent(new Event("resize"));
+    await waitFor(() => expect(scroll).toHaveBeenCalledWith({ block: "nearest" }));
+  });
+
   it("restores a quoted inquiry, commits one response and preserves newer writing", async () => {
     const root = branchGraphStore.createUserNode("自由探索可以持续。每条伏线都需要认领吗？");
     const frame = defaultThinkingSpace(); frame.focus.concern = -1;
@@ -320,6 +374,8 @@ describe("DialogueShell", () => {
     expect(await screen.findByLabelText("本次追问的原句")).toHaveTextContent("自由探索可以持续。");
     expect(screen.getByRole("textbox", { name: "输入" })).toHaveValue("什么条件让探索能持续？");
     fireEvent.click(screen.getByRole("button", { name: "追问" }));
+    expect(screen.getByRole("status")).toHaveTextContent("正在围绕这句话继续想");
+    expect(screen.getByRole("status")).not.toHaveTextContent("正在展开正反");
     const request = readFetchBody(fetchMock, 0);
     expect(fetchMock.mock.calls[0][0]).toBe("/api/inquiry");
     expect(request.origin).toMatchObject({ sourceNodeId: root, quote: "自由探索可以持续。", question: "什么条件让探索能持续？" });
@@ -451,7 +507,7 @@ describe("DialogueShell", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<DialogueShell />);
     fireEvent.click(screen.getByTestId(`dialogue-stage-node-${rootUserId}`));
-    fireEvent.click(await screen.findByRole("button", { name: "沿极性展开" }));
+    fireEvent.click(await screen.findByRole("button", { name: "看极性两端" }));
     fireEvent.click(screen.getByRole("radio", { name: /关切/ }));
     fireEvent.click(screen.getByRole("button", { name: "沿「关切」展开" }));
     await waitFor(() => expect(Object.values(branchGraphStore.getGraph().nodes).filter(node => node.meta?.polarity)).toHaveLength(2));
@@ -461,7 +517,7 @@ describe("DialogueShell", () => {
     expect(screen.getByTestId(`dialogue-stage-node-${pole.id}`)).toHaveAttribute("data-expansion-kind", "polarity");
     expect(screen.getByTestId("dialogue-expansion-context")).toHaveTextContent("个体 ↔ 群体");
     fireEvent.click(screen.getByTestId(`dialogue-stage-node-${pole.id}`));
-    fireEvent.click(await screen.findByRole("button", { name: "正反裂变" }));
+    fireEvent.click(await screen.findByRole("button", { name: "推演正反" }));
     await waitFor(() => expect(branchGraphStore.getGraph().nodes[pole.id].children).toHaveLength(2));
     expect(readFetchBody(fetchMock, 1).perspective.focus).toEqual({ concern: -1, horizon: 1 });
     expect(screen.getByTestId("dialogue-expansion-context")).toHaveTextContent("正反裂变");
@@ -481,7 +537,7 @@ describe("DialogueShell", () => {
     });
     vi.stubGlobal("fetch", fetchMock); render(<DialogueShell />);
     fireEvent.click(screen.getByTestId(`dialogue-stage-node-${rootUserId}`));
-    fireEvent.click(await screen.findByRole("button", { name: "沿极性展开" }));
+    fireEvent.click(await screen.findByRole("button", { name: "看极性两端" }));
     fireEvent.click(screen.getByRole("radio", { name: /关切/ }));
     fireEvent.click(screen.getByRole("button", { name: "沿「关切」展开" }));
     const retry = await screen.findByRole("button", { name: "重试" });
@@ -506,7 +562,7 @@ describe("DialogueShell", () => {
     render(<DialogueShell />);
     expect(screen.getByTestId(`dialogue-stage-node-${pair.positiveId}`)).toBeInTheDocument();
     fireEvent.click(screen.getByTestId(`dialogue-stage-node-${copies[0]}`));
-    await screen.findByRole("button", { name: "正反裂变" });
+    await screen.findByRole("button", { name: "推演正反" });
     expect(screen.getByTestId(`dialogue-stage-node-${copies[0]}`)).toHaveAttribute("data-seed-attention", "0.65");
     expect(screen.getByTestId(`dialogue-stage-node-${pair.positiveId}`)).toBeInTheDocument();
   });
@@ -569,11 +625,47 @@ describe("DialogueShell", () => {
     expect(screen.getByPlaceholderText("写下一个想法…")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "生成" })).toBeDisabled();
     expect(screen.queryByText("主决策")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "正反裂变" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "推演正反" })).not.toBeInTheDocument();
     await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
-    expect(await screen.findByRole("button", { name: "正反裂变" })).toBeEnabled();
+    expect(await screen.findByRole("button", { name: "推演正反" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "组合" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "继续写" })).toBeEnabled();
+  });
+
+  it("restores this ordinary round's companion ahead of newer unrelated thoughts after remount", async () => {
+    const { thesisId, antithesisId } = seedPair();
+    const fetchMock = vi.fn(async (_url, init) => new Response(JSON.stringify({ requestId: JSON.parse(init.body).requestId,
+      synthesis: { text: "先调整节奏再继续。", summary: "调整后继续", label: "调整节奏", stance: "合" } }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    branchGraphStore.createAssistantPair(branchGraphStore.getGraph().nodes[thesisId].parents[0], {
+      thesis: { text: "下一轮正端" }, antithesis: { text: "下一轮反端" }
+    });
+    branchGraphStore.createUserNode("更新但无关的其他想法。");
+    useDialogueUiStore.setState({ focusedNodeId: thesisId });
+    seedActiveWorkspaceFromCurrentGraph();
+    const first = render(<DialogueShell />); first.unmount();
+    branchGraphStore.setGraph(createEmptyGraph());
+    render(<DialogueShell />);
+    fireEvent.click(await screen.findByTestId(`dialogue-stage-node-${thesisId}`));
+    fireEvent.click(await screen.findByRole("button", { name: "组合" }));
+    const choices = within(screen.getByRole("group", { name: "选择组合对象" }));
+    expect(choices.getByText("本轮另一端")).toBeInTheDocument();
+    expect(choices.getAllByRole("button")[0]).toHaveTextContent("暂停");
+    fireEvent.click(choices.getAllByRole("button")[0]);
+    await waitFor(() => expect(useDialogueUiStore.getState().pending.synthesis).toBeNull());
+    expect(readFetchBody(fetchMock).sources.map((source: { id: string }) => source.id)).toEqual([thesisId, antithesisId]);
+  });
+
+  it("opens requested help in the current reading when the result context has suspended first-visit hints", async () => {
+    const { thesisId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: thesisId }); seedActiveWorkspaceFromCurrentGraph();
+    render(<DialogueShell />);
+    expect(screen.getByTestId("dialogue-expansion-context")).toBeInTheDocument();
+    expect(screen.queryByLabelText("探索提示")).not.toBeInTheDocument();
+    await moreAction(userEvent.setup(), "操作提示");
+    expect(await screen.findByLabelText("探索提示")).toBeInTheDocument();
+    expect(document.getElementById("dialogue-reading-drawer")).toHaveAttribute("data-open", "true");
+    expect(screen.queryByTestId("dialogue-expansion-context")).not.toBeInTheDocument();
   });
 
   it("moves focus into lineage and returns to More through either close path", async () => {
@@ -766,7 +858,7 @@ describe("DialogueShell", () => {
     );
 
     expect(screen.getByTestId("dialogue-composer")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "正反裂变" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "推演正反" })).toBeEnabled();
     expect(useDialogueUiStore.getState().pending).toEqual({ branches: null, synthesis: null });
     await openMore(user);
     expect(screen.getByText("画作视角")).toBeInTheDocument();
@@ -1657,7 +1749,7 @@ describe("DialogueShell", () => {
     expect(within(sidebar).getAllByText("收束").length).toBeGreaterThan(0);
     await userEvent.click(screen.getByTestId(`dialogue-stage-node-${synthesisId}`));
     expect(await screen.findByLabelText("合的来源")).toHaveTextContent("继续");
-    expect(screen.getByRole("button", { name: "正反裂变" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "推演正反" })).toBeEnabled();
     expect(screen.queryByRole("button", { name: "合流过" })).not.toBeInTheDocument();
   });
 
@@ -2058,7 +2150,7 @@ describe("DialogueShell", () => {
     const result = Object.values(branchGraphStore.getGraph().nodes).find(node => node.branchType === "合")!;
     expect(result.meta?.connectionInput).toBe("在同一作品里保留探索与收束的不同阶段。");
     expect(branchGraphStore.getGraph().deferredSyntheses?.[requestId].resolvedNodeId).toBe(result.id);
-    await user.click(await screen.findByRole("button", { name: "阅读推演" }));
+    await user.click(await screen.findByRole("button", { name: "继续展开" }));
     expect(await screen.findByLabelText("这一步的理解变化")).toHaveTextContent("把相斥的路线");
   });
 

@@ -1,4 +1,4 @@
-import { normalizeDialecticLabel, normalizeDialecticSummary } from "@/features/dialectic/outputContract";
+import { normalizeDialecticLabel, normalizeDialecticSummary, quoteExcerpt } from "@/features/dialectic/outputContract";
 
 describe("dialectic output contract", () => {
   it("normalizes whitespace and takes the first Chinese-delimited label segment", () => {
@@ -16,7 +16,9 @@ describe("dialectic output contract", () => {
   });
 
   it("limits labels to eight Unicode characters", () => {
-    expect(normalizeDialecticLabel("这是一个超过八个字的标签", "正向", "正")).toBe("这是一个超过八个");
+    expect(normalizeDialecticLabel("这是一个超过八个字的标签", "正向", "正")).toBe("正向");
+    expect(normalizeDialecticLabel("可辨认与可发言的条件", "正向", "正")).toBe("正向");
+    expect(normalizeDialecticLabel("可辨认与可发言的", "正向", "正")).toBe("正向");
   });
 
   it("strips redundant stance suffixes without corrupting protected synthesis words", () => {
@@ -29,4 +31,9 @@ describe("dialectic output contract", () => {
     expect(normalizeDialecticLabel("主线合流", "合流", "合")).toBe("主线合流");
     expect(normalizeDialecticLabel("局部结合", "合流", "合")).toBe("局部结合");
   });
+});
+
+it("marks a quoted excerpt as shortened without splitting Unicode characters", () => {
+  expect(quoteExcerpt("🌱甲乙丙丁戊己庚辛壬癸子丑")).toBe("🌱甲乙丙丁戊己庚辛壬癸子…");
+  expect(quoteExcerpt("原句完整。", 12)).toBe("原句完整。");
 });

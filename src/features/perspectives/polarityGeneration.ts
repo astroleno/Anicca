@@ -18,7 +18,7 @@ function parsePole(value: unknown, fallback: string, meaning: boolean): PoleDraf
   const summary = normalizeDialecticSummary(value.summary);
   const change = readUnderstandingChange(value.change);
   if (length < 120 || length > 220 || !summary || (meaning && !change)) return null;
-  return { text, summary, label: normalizeDialecticLabel(value.label, Array.from(fallback).slice(0, 8).join("")), ...(change ? { change } : {}) };
+  return { text, summary, label: normalizeDialecticLabel(value.label, fallback), ...(change ? { change } : {}) };
 }
 
 export function analyzePolarityOutput(output: string, axis: ThinkingAxis, meaning = false) {
@@ -27,7 +27,7 @@ export function analyzePolarityOutput(output: string, axis: ThinkingAxis, meanin
     return { negative: null, positive: null, spatial: {} as Record<string, unknown>,
       errors: ["expected negative/positive JSON; poles contain only text,summary,label and no stance"] };
   }
-  const negative = parsePole(parsed.negative, axis.negative, meaning), positive = parsePole(parsed.positive, axis.positive, meaning);
+  const negative = parsePole(parsed.negative, "负端视角", meaning), positive = parsePole(parsed.positive, "正端视角", meaning);
   const errors = (["negative", "positive"] as const).flatMap(key => {
     if (key === "negative" ? negative : positive) return [];
     const value = parsed[key] as Record<string, unknown> | null;
@@ -68,7 +68,7 @@ export function buildPolarityPrompt(input: {
     "user 原文、历史修订、明确事实、意愿、虚构世界规则、拒绝和硬约束是两端共同的边界。assistant 内容只是可质疑的候选解释，不得升级为事实、授权或能力。不得为了两端对称虚构资源、事件、反馈、他人动机、期限、比例或可行性。必要的新情境明确标成假设；已被排除的路线，只讨论当前为何不成立及所需条件，不能匿名化、改名或事后补救来绕过拒绝。",
     "每端分别发展一个能继续思考的内容：决策题讨论该端看到的作用机制、代价与成立边界；观点和感受题区分前提、解释和具体经验；创意题在原设定内改变场景、尺度或关系。不要把感受或创作强改成治理流程，不把反问、口号或利弊清单当作全文。",
     "两端不是在互相反驳，也不能预先合成‘兼顾两者’。沿已有种子继续时，避免换词复述父节点或退回祖先的二选一；各增加一个不同的可追问内容。联系不足就诚实说明边界，不为对称强造洞见。",
-    "所有 evidence=self-report 的维度（包括乔哈里知晓区域）都是用户选择的待确认观察入口。只能分别探问‘假设处于此端，需要确认什么、会看到什么’，不能宣称用户或他人已经知道、不知道、逃避或具有某种心理。未选的 self-report 维度保持未知，不由模型估计。",
+    "所有 evidence=self-report 的维度（包括乔哈里知晓区域）都是用户选择的待确认观察入口。只能分别探问‘假设处于此端，需要确认什么、会看到什么’，不能宣称用户或他人已经知道、不知道、逃避或具有某种心理。除用户明确提供的经历与反馈，每句新增情境先写‘如果/假如’或待确认问题；不能写‘你原以为…，同事若…’，后置条件不能给前句补假设语气。未选的 self-report 维度保持未知，不由模型估计。",
     `只返回一个完整严格 JSON object，不要 markdown、代码围栏、解释或其他键。每端仅有 text、summary、label${input.meaning ? "、change" : ""}，禁止 stance、thesis、antithesis。`,
     input.meaning ? UNDERSTANDING_CHANGE_PROMPT : "",
     `schema=${JSON.stringify({ negative: pole(), positive: pole(), spatial: { negative: coordinates, positive: coordinates } })}`,

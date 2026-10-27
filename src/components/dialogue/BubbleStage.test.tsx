@@ -77,7 +77,120 @@ function stubPointerMode(pointer: "fine" | "coarse", narrow = false) {
   );
 }
 
+function mockTouchFrames() {
+  let id = 0;
+  const frames = new Map<number, FrameRequestCallback>();
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { frames.set(++id, callback); return id; });
+  vi.stubGlobal("cancelAnimationFrame", (frameId: number) => frames.delete(frameId));
+  return (timestamp = performance.now()) => act(() => { const pending = [...frames.values()]; frames.clear(); pending.forEach(callback => callback(timestamp)); });
+}
+
 describe("BubbleStage", () => {
+  it("uses a two-finger slide for view rotation while leaving seed positions unchanged", () => {
+    const nextTouchFrame = mockTouchFrames();
+    render(<BubbleStage layoutKey="two-finger-orbit" nodes={[{ id: "a", label: "a", kind: "user", relation: "focus", seedX: 50, seedY: 50 }]} focusNodeId="a" onSelect={vi.fn()} />);
+    const track = screen.getByTestId("dialogue-stage-track"), before = structuredClone(useDialogueUiStore.getState().stageLayouts["two-finger-orbit"]);
+    fireEvent.pointerDown(track, { pointerType: "touch", pointerId: 101, clientX: 100, clientY: 150 });
+    fireEvent.pointerDown(track, { pointerType: "touch", pointerId: 102, clientX: 300, clientY: 150 });
+    fireEvent.pointerMove(window, { pointerId: 101, clientX: 130, clientY: 160 });
+    fireEvent.pointerMove(window, { pointerId: 102, clientX: 330, clientY: 160 });
+    nextTouchFrame();
+    expect(Number(track.dataset.spaceYaw)).toBeCloseTo(.24);
+    expect(Number(track.dataset.spacePitch)).toBeCloseTo(.06);
+    expect(Number(track.dataset.spaceZoom)).toBeCloseTo(1);
+    fireEvent.pointerMove(window, { pointerId: 101, clientX: 90, clientY: 160 });
+    fireEvent.pointerMove(window, { pointerId: 102, clientX: 370, clientY: 160 });
+    nextTouchFrame();
+    expect(track).toHaveAttribute("data-space-touch-mode", "rotate");
+    expect(Number(track.dataset.spaceZoom)).toBeCloseTo(1);
+    fireEvent.pointerUp(window, { pointerId: 102 });
+    const yaw = track.dataset.spaceYaw;
+    fireEvent.pointerMove(window, { pointerId: 101, clientX: 380, clientY: 240 });
+    expect(track.dataset.spaceYaw).toBe(yaw);
+    fireEvent.pointerUp(window, { pointerId: 101 });
+    expect(useDialogueUiStore.getState().stageLayouts["two-finger-orbit"]).toEqual(before);
+  });
+
+  it("pinches the shared view without rotating it and restores both scale and angle through reset", () => {
+    const nextTouchFrame = mockTouchFrames();
+    render(<BubbleStage layoutKey="pinch" nodes={[{ id: "a", label: "a", kind: "user", relation: "focus", seedX: 50, seedY: 50 }]} focusNodeId="a" onSelect={vi.fn()} />);
+    const track = screen.getByTestId("dialogue-stage-track");
+    fireEvent.pointerDown(track, { pointerType: "touch", pointerId: 103, clientX: 100, clientY: 150 });
+    fireEvent.pointerDown(track, { pointerType: "touch", pointerId: 104, clientX: 300, clientY: 150 });
+    fireEvent.pointerMove(window, { pointerId: 103, clientX: 80, clientY: 150 });
+    fireEvent.pointerMove(window, { pointerId: 104, clientX: 320, clientY: 150 });
+    nextTouchFrame();
+    expect(Number(track.dataset.spaceZoom)).toBeCloseTo(1.2);
+    expect(Number(track.dataset.spaceYaw)).toBeCloseTo(0);
+    fireEvent.pointerMove(window, { pointerId: 103, clientX: -2000, clientY: 150 });
+    nextTouchFrame();
+    expect(Number(track.dataset.spaceZoom)).toBe(1.8);
+    expect(Number(track.dataset.spaceYaw)).toBeCloseTo(0);
+    expect(track).toHaveAttribute("data-space-touch-mode", "zoom");
+    fireEvent.pointerUp(window, { pointerId: 103 }); fireEvent.pointerUp(window, { pointerId: 104 });
+    fireEvent.click(screen.getByRole("button", { name: "复位三维视角" }));
+    expect(track).toHaveAttribute("data-space-zoom", "1");
+    expect(track).toHaveAttribute("data-space-yaw", "0");
+  });
+
+  it("keeps view control through an old seed capture loss and ignores a third finger", () => {
+    const nextTouchFrame = mockTouchFrames();
+    render(<BubbleStage layoutKey="capture-transfer" nodes={[{ id: "a", label: "a", kind: "user", relation: "focus", seedX: 50, seedY: 50 }]} focusNodeId="a" onSelect={vi.fn()} />);
+    const track = screen.getByTestId("dialogue-stage-track"), seed = screen.getByTestId("dialogue-stage-node-a");
+    fireEvent.pointerDown(seed, { button: 0, pointerType: "touch", pointerId: 121, clientX: 100, clientY: 150 });
+    fireEvent.pointerDown(track, { pointerType: "touch", pointerId: 122, clientX: 300, clientY: 150 });
+    fireEvent.lostPointerCapture(seed, { pointerType: "touch", pointerId: 121 });
+    fireEvent.pointerDown(track, { pointerType: "touch", pointerId: 123, clientX: 200, clientY: 50 });
+    fireEvent.pointerUp(window, { pointerId: 123 });
+    expect(track).toHaveAttribute("data-space-navigating", "true");
+    fireEvent.pointerMove(window, { pointerId: 121, clientX: 130, clientY: 150 });
+    fireEvent.pointerMove(window, { pointerId: 122, clientX: 330, clientY: 150 });
+    nextTouchFrame();
+    expect(Number(track.dataset.spaceYaw)).toBeCloseTo(.24);
+    fireEvent.pointerUp(window, { pointerId: 122 });
+    expect(track).toHaveAttribute("data-space-navigating", "true");
+    fireEvent.pointerUp(window, { pointerId: 121 });
+    expect(track).not.toHaveAttribute("data-space-navigating");
+    expect(useDialogueUiStore.getState().stageLayouts["capture-transfer"].nodePositions.a).toEqual({ x: 50, y: 50 });
+  });
+
+  it("ends two-finger navigation on overview and permits a fresh pinch after returning", () => {
+    const nextTouchFrame = mockTouchFrames();
+    const props = { layoutKey: "pinch-overview", nodes: [{ id: "a", label: "a", kind: "user" as const, relation: "focus" as const, seedX: 50, seedY: 50 }], focusNodeId: "a", onSelect: vi.fn() };
+    const { rerender } = render(<BubbleStage {...props} />);
+    const track = screen.getByTestId("dialogue-stage-track");
+    fireEvent.pointerDown(track, { pointerType: "touch", pointerId: 105, clientX: 100, clientY: 150 });
+    fireEvent.pointerDown(track, { pointerType: "touch", pointerId: 106, clientX: 300, clientY: 150 });
+    fireEvent.pointerMove(window, { pointerId: 105, clientX: 80, clientY: 150 });
+    nextTouchFrame();
+    rerender(<BubbleStage {...props} suspended />);
+    const zoom = track.dataset.spaceZoom;
+    expect(track).not.toHaveAttribute("data-space-navigating");
+    fireEvent.pointerMove(window, { pointerId: 106, clientX: 400, clientY: 150 });
+    expect(track.dataset.spaceZoom).toBe(zoom);
+    rerender(<BubbleStage {...props} />);
+    fireEvent.pointerDown(track, { pointerType: "touch", pointerId: 107, clientX: 100, clientY: 150 });
+    fireEvent.pointerDown(track, { pointerType: "touch", pointerId: 108, clientX: 300, clientY: 150 });
+    fireEvent.pointerMove(window, { pointerId: 107, clientX: 80, clientY: 150 });
+    fireEvent.pointerMove(window, { pointerId: 108, clientX: 320, clientY: 150 });
+    nextTouchFrame();
+    expect(Number(track.dataset.spaceZoom)).toBeGreaterThan(Number(zoom));
+  });
+
+  it("allows one-finger-stationary pinching after resolving ambiguous initial movement", () => {
+    const nextTouchFrame = mockTouchFrames();
+    render(<BubbleStage layoutKey="stationary-pinch" nodes={[{ id: "a", label: "a", kind: "user", relation: "focus", seedX: 50, seedY: 50 }]} focusNodeId="a" onSelect={vi.fn()} />);
+    const track = screen.getByTestId("dialogue-stage-track");
+    fireEvent.pointerDown(track, { pointerType: "touch", pointerId: 131, clientX: 100, clientY: 150 });
+    fireEvent.pointerDown(track, { pointerType: "touch", pointerId: 132, clientX: 300, clientY: 150 });
+    fireEvent.pointerMove(window, { pointerId: 132, clientX: 350, clientY: 150 });
+    nextTouchFrame(1000);
+    expect(Number(track.dataset.spaceZoom)).toBe(1);
+    nextTouchFrame(1100);
+    expect(Number(track.dataset.spaceZoom)).toBe(1.25);
+    expect(Number(track.dataset.spaceYaw)).toBe(0);
+  });
+
   it("updates the caption boundary when the external context appears and disappears", async () => {
     const nodes: DialogueStageNode[] = [{ id: "seed", label: "想法", kind: "user", relation: "focus", seedX: 50, seedY: 50 }];
     const scene = (context: boolean) => <div data-testid="dialogue-shell">
@@ -329,11 +442,11 @@ describe("BubbleStage", () => {
     }
   });
 
-  it("keeps full node meaning in the accessible name when the visual label is short", () => {
+  it("starts the accessible name with the visible title and describes the full meaning separately", () => {
     const nodes: DialogueStageNode[] = [
       {
         id: "thesis",
-        label: "继续",
+        label: "缩小范围",
         preview: "继续，但是把范围切小一点。",
         summary: "先缩范围，再推进。",
         kind: "assistant",
@@ -346,7 +459,8 @@ describe("BubbleStage", () => {
 
     render(<BubbleStage layoutKey="focus:root" nodes={nodes} focusNodeId="thesis" onSelect={vi.fn()} />);
 
-    expect(screen.getByRole("button", { name: /继续，但是把范围切小一点。.*正方.*下游节点.*先缩范围/ })).toBeInTheDocument();
+    const button = screen.getByRole("button", { name: /^缩小范围，正方，.*下游节点/ });
+    expect(button).toHaveAccessibleDescription("继续，但是把范围切小一点。；先缩范围，再推进。");
   });
 
   it("marks a growth stage and preserves its lower growth layout seed", () => {
@@ -523,7 +637,7 @@ describe("BubbleStage", () => {
     expect(track).toHaveAttribute("data-space-pitch", "0");
   });
 
-  it("does not start stage pan from touch scroll gestures on the track", () => {
+  it("pans blank space with one finger without rotating or moving saved seeds", () => {
     const nodes: DialogueStageNode[] = [
       {
         id: "root",
@@ -542,9 +656,62 @@ describe("BubbleStage", () => {
 
     fireEvent.pointerDown(track, { button: 0, pointerId: 8, pointerType: "touch", clientX: 140, clientY: 110 });
     fireEvent.pointerMove(window, { pointerId: 8, pointerType: "touch", clientX: 140, clientY: 190 });
+    expect(track).toHaveAttribute("data-space-pan-y", "80");
+    expect(track.style.getPropertyValue("--stage-touch-pan-y")).toBe("80px");
     fireEvent.pointerUp(window, { pointerId: 8, pointerType: "touch", clientX: 140, clientY: 190 });
 
     expect(useDialogueUiStore.getState().stageLayouts["focus:root"].pan).toEqual({ x: 0, y: 0 });
+    expect(useDialogueUiStore.getState().stageLayouts["focus:root"].nodePositions.root).toEqual({ x: 50, y: 50 });
+    expect(track).toHaveAttribute("data-space-yaw", "0");
+    expect(track).toHaveAttribute("data-space-zoom", "1");
+    fireEvent.keyDown(track, { key: "Home" });
+    expect(track).toHaveAttribute("data-space-pan-y", "0");
+  });
+
+  it("hands a pan over to two-finger rotation without a jump and keeps blank space reachable", () => {
+    const nextTouchFrame = mockTouchFrames();
+    render(<BubbleStage layoutKey="pan-handoff" nodes={[{ id: "a", label: "a", kind: "user", relation: "focus", seedX: 50, seedY: 50 }]} focusNodeId="a" onSelect={vi.fn()} />);
+    const track = screen.getByTestId("dialogue-stage-track"), viewport = screen.getByTestId("dialogue-stage-viewport");
+    mockViewportRect(viewport);
+    fireEvent.pointerDown(track, { button: 0, pointerType: "touch", pointerId: 141, clientX: 100, clientY: 150 });
+    fireEvent.pointerMove(window, { pointerId: 141, clientX: 130, clientY: 170 });
+    expect(track).toHaveAttribute("data-space-pan-x", "30");
+    fireEvent.pointerDown(track, { button: 0, pointerType: "touch", pointerId: 142, clientX: 300, clientY: 170 });
+    expect(track).toHaveAttribute("data-space-pan-x", "30");
+    fireEvent.pointerMove(window, { pointerId: 141, clientX: 160, clientY: 180 });
+    fireEvent.pointerMove(window, { pointerId: 142, clientX: 330, clientY: 180 }); nextTouchFrame();
+    expect(Number(track.dataset.spaceYaw)).toBeCloseTo(.24);
+    expect(track).toHaveAttribute("data-space-pan-x", "30");
+    fireEvent.pointerUp(window, { pointerId: 142 });
+    fireEvent.pointerMove(window, { pointerId: 141, clientX: 300, clientY: 240 });
+    expect(track).toHaveAttribute("data-space-pan-x", "30");
+    fireEvent.pointerUp(window, { pointerId: 141 });
+    fireEvent.pointerDown(viewport, { button: 0, pointerType: "touch", pointerId: 143, clientX: 10, clientY: 50 });
+    fireEvent.pointerMove(window, { pointerId: 143, clientX: -30, clientY: 80 });
+    fireEvent.pointerUp(window, { pointerId: 143, clientX: -30, clientY: 80 });
+    expect(track).toHaveAttribute("data-space-pan-x", "-10");
+    expect(track).toHaveAttribute("data-space-pan-y", "50");
+    expect(useDialogueUiStore.getState().stageLayouts["pan-handoff"].nodePositions.a).toEqual({ x: 50, y: 50 });
+  });
+
+  it("cancels an unfinished pan with Escape and ends it safely when reading covers the stage", () => {
+    const props = { layoutKey: "cancel-pan", nodes: [{ id: "a", label: "a", kind: "user" as const, relation: "focus" as const, seedX: 50, seedY: 50 }], focusNodeId: "a", onSelect: vi.fn() };
+    const { rerender } = render(<BubbleStage {...props} />);
+    const track = screen.getByTestId("dialogue-stage-track");
+    mockViewportRect(screen.getByTestId("dialogue-stage-viewport"));
+    fireEvent.pointerDown(track, { button: 0, pointerType: "touch", pointerId: 144, clientX: 100, clientY: 150 });
+    fireEvent.pointerMove(window, { pointerId: 144, clientX: 140, clientY: 180 });
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(track).toHaveAttribute("data-space-pan-x", "0");
+    fireEvent.pointerUp(window, { pointerId: 144 });
+    fireEvent.pointerDown(track, { button: 0, pointerType: "touch", pointerId: 145, clientX: 100, clientY: 150 });
+    fireEvent.pointerMove(window, { pointerId: 145, clientX: 140, clientY: 180 });
+    rerender(<BubbleStage {...props} suspended />);
+    fireEvent.pointerMove(window, { pointerId: 145, clientX: 200, clientY: 250 });
+    expect(track).toHaveAttribute("data-space-pan-x", "40");
+    rerender(<BubbleStage {...props} />);
+    fireEvent.keyDown(track, { key: "Home" });
+    expect(track).toHaveAttribute("data-space-pan-x", "0");
   });
 
   it("keeps a dragged seed under the pointer after the camera rotates", () => {
@@ -574,7 +741,7 @@ describe("BubbleStage", () => {
     expect(useDialogueUiStore.getState().stageLayouts["spatial-drag"].nodePositions[node.id]).toEqual(beforeReset);
   });
 
-  it("does not drag nodes from touch scroll gestures", () => {
+  it("drags a seed vertically with one finger without waiting for pickup", () => {
     const nodes: DialogueStageNode[] = [
       {
         id: "root",
@@ -595,10 +762,10 @@ describe("BubbleStage", () => {
     fireEvent.pointerMove(window, { pointerId: 9, pointerType: "touch", clientX: 200, clientY: 230 });
     fireEvent.pointerUp(window, { pointerId: 9, pointerType: "touch", clientX: 200, clientY: 230 });
 
-    expect(useDialogueUiStore.getState().stageLayouts["focus:root"].nodePositions.root).toEqual({ x: 50, y: 50 });
+    expect(useDialogueUiStore.getState().stageLayouts["focus:root"].nodePositions.root.y).toBeCloseTo(76.6666667);
   });
 
-  it("lets touch users hold, dwell and release to combine", () => {
+  it("lets touch users drag immediately, dwell and release to combine without a visible progress bar", () => {
     vi.useFakeTimers();
     try {
       const action = { key: "a:b", lineageParentId: "", thesisId: "a", antithesisId: "b", synthesisId: null, label: "a / b", available: true };
@@ -612,9 +779,9 @@ describe("BubbleStage", () => {
       mockViewportRect(screen.getByTestId("dialogue-stage-viewport"));
       const seed = screen.getByTestId("dialogue-stage-node-a");
       fireEvent.pointerDown(seed, { button: 0, pointerId: 12, pointerType: "touch", clientX: 100, clientY: 150 });
-      act(() => vi.advanceTimersByTime(350));
       fireEvent.pointerMove(window, { pointerId: 12, pointerType: "touch", clientX: 280, clientY: 150 });
       expect(screen.getByTestId("dialogue-synthesis-bridge-preview")).toBeInTheDocument();
+      expect(screen.queryByTestId("dialogue-physical-dwell")).not.toBeInTheDocument();
       act(() => vi.advanceTimersByTime(320));
       fireEvent.pointerUp(window, { pointerId: 12, pointerType: "touch", clientX: 280, clientY: 150 });
       expect(preview).toHaveBeenCalledWith(action);
@@ -638,13 +805,13 @@ describe("BubbleStage", () => {
     render(<BubbleStage layoutKey="lost-orbit" nodes={[{ id: "a", label: "a", kind: "user", relation: "focus", seedX: 50, seedY: 50 }]} focusNodeId="a" onSelect={vi.fn()} />);
     mockViewportRect(screen.getByTestId("dialogue-stage-viewport"));
     const track = screen.getByTestId("dialogue-stage-track");
-    fireEvent.pointerDown(track, { button: 0, pointerId: 85, pointerType: "touch", clientX: 100, clientY: 150 });
+    fireEvent.pointerDown(track, { button: 0, pointerId: 85, pointerType: "mouse", clientX: 100, clientY: 150 });
     fireEvent.pointerMove(window, { pointerId: 85, clientX: 160, clientY: 150 });
     const yaw = Number(track.dataset.spaceYaw);
     fireEvent.lostPointerCapture(track, { pointerId: 85 });
     fireEvent.pointerMove(window, { pointerId: 85, clientX: 250, clientY: 150 });
     expect(Number(track.dataset.spaceYaw)).toBe(yaw);
-    fireEvent.pointerDown(track, { button: 0, pointerId: 86, pointerType: "touch", clientX: 100, clientY: 150 });
+    fireEvent.pointerDown(track, { button: 0, pointerId: 86, pointerType: "mouse", clientX: 100, clientY: 150 });
     fireEvent.pointerMove(window, { pointerId: 86, clientX: 140, clientY: 150 });
     fireEvent.pointerUp(window, { pointerId: 86, clientX: 140, clientY: 150 });
     expect(Number(track.dataset.spaceYaw)).toBeGreaterThan(yaw);
@@ -697,7 +864,7 @@ describe("BubbleStage", () => {
     } finally { vi.useRealTimers(); }
   });
 
-  it("uses the remaining physical hold for a delayed touch and matches its visible progress", () => {
+  it("picks up a delayed touch immediately without a hold indicator", () => {
     vi.useFakeTimers();
     const clock = vi.spyOn(performance, "now").mockReturnValue(1000);
     try {
@@ -708,9 +875,7 @@ describe("BubbleStage", () => {
       const event = createEvent.pointerDown(seed, { button: 0, pointerId: 55, pointerType: "touch", clientX: 200, clientY: 150 });
       Object.defineProperty(event, "timeStamp", { value: 880 });
       fireEvent(seed, event);
-      expect(seed.style.getPropertyValue("--liquid-hold-duration")).toBe("230ms");
-      act(() => vi.advanceTimersByTime(229)); expect(seed).toHaveAttribute("data-touch-holding", "true");
-      act(() => vi.advanceTimersByTime(1)); expect(seed).not.toHaveAttribute("data-touch-holding");
+      expect(seed).not.toHaveAttribute("data-touch-holding");
       fireEvent.pointerMove(window, { pointerId: 55, pointerType: "touch", clientX: 260, clientY: 150 });
       fireEvent.pointerUp(window, { pointerId: 55, pointerType: "touch", clientX: 260, clientY: 150 });
       expect(useDialogueUiStore.getState().stageLayouts["delayed-touch"].nodePositions.a.x).toBe(65);
@@ -735,7 +900,7 @@ describe("BubbleStage", () => {
     } finally { clock.mockRestore(); vi.useRealTimers(); }
   });
 
-  it("keeps the first touch in control when a second finger touches and releases", () => {
+  it("cancels an unfinished seed drag when a second finger takes over, without accidental synthesis", () => {
     vi.useFakeTimers();
     try {
       const action = { key: "a:b", lineageParentId: "", thesisId: "a", antithesisId: "b", synthesisId: null, label: "a / b", available: true };
@@ -748,11 +913,12 @@ describe("BubbleStage", () => {
       const first = screen.getByTestId("dialogue-stage-node-a"), second = screen.getByTestId("dialogue-stage-node-b");
       fireEvent.pointerDown(first, { button: 0, pointerId: 41, pointerType: "touch", clientX: 100, clientY: 150 });
       fireEvent.pointerDown(second, { button: 0, pointerId: 42, pointerType: "touch", clientX: 300, clientY: 150 });
-      expect(first).toHaveAttribute("data-touch-holding", "true");
+      expect(screen.getByTestId("dialogue-stage-track")).toHaveAttribute("data-space-navigating", "true");
+      expect(first.className).not.toContain("stageNodeDragging");
       fireEvent.pointerUp(window, { pointerId: 42, pointerType: "touch" });
       act(() => vi.advanceTimersByTime(350));
       fireEvent.pointerMove(window, { pointerId: 41, pointerType: "touch", clientX: 280, clientY: 150 });
-      expect(screen.getByTestId("dialogue-synthesis-bridge-preview")).toBeInTheDocument();
+      expect(screen.queryByTestId("dialogue-synthesis-bridge-preview")).not.toBeInTheDocument();
       fireEvent.pointerCancel(window, { pointerId: 41, pointerType: "touch" });
       expect(useDialogueUiStore.getState().stageLayouts["touch-owner"].nodePositions.a).toEqual({ x: 25, y: 50 });
     } finally { vi.useRealTimers(); }
@@ -898,7 +1064,8 @@ describe("BubbleStage", () => {
       render(<BubbleStage layoutKey="focus:root" nodes={nodes} focusNodeId="root" onSelect={vi.fn()} />);
 
       const track = screen.getByTestId("dialogue-stage-track");
-      const root = screen.getByRole("button", { name: /要不要继续这个项目/ });
+      const root = screen.getByRole("button", { name: /^主题，/ });
+      expect(root).toHaveAccessibleDescription("要不要继续这个项目？");
       await waitFor(() => expect(track).toHaveAttribute("data-metaball-renderer", rendererState));
       expect(root).toBeEnabled();
       expect(root.className).toContain("stageNode");

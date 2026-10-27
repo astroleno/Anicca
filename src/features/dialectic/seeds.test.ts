@@ -1,11 +1,45 @@
 import { BranchGraphStore } from "@/store/branchGraph";
 import { deriveDialogueView } from "./viewModel";
-import { buildSeedContext, buildSeedScene, seedPairAction } from "./seeds";
+import { buildSeedContext, buildSeedScene, fissionPair, seedPairAction } from "./seeds";
 import { commitSeedSplitResult } from "./controller";
 import { serializeWorkspaceBundle, importWorkspaceBundleText } from "@/lib/io/workspaceBundle";
 import { ANICCA_WORKSPACE_SCHEMA_VERSION } from "@/lib/persist/local";
 
 describe("seed operations", () => {
+  it("restores exact ordinary pairs across reload, repeated expansion, and synthesis continuation", () => {
+    const store = new BranchGraphStore(), source = store.createUserNode("保留开放的角落。");
+    const first = store.createAssistantPair(source), second = store.createAssistantPair(source);
+    const synthesis = store.createSynthesisAssistant([first.thesisId, first.antithesisId], { text: "共同协商用途与维护。" });
+    const continued = store.createAssistantPair(synthesis);
+    store.setGraph(JSON.parse(JSON.stringify(store.getGraph())));
+    const graph = store.getGraph();
+    for (const [parent, pair] of [[source, first], [source, second], [synthesis, continued]] as const) {
+      expect(fissionPair(graph, pair.thesisId)).toEqual({ sourceId: parent, firstId: pair.thesisId, secondId: pair.antithesisId });
+      expect(fissionPair(graph, pair.antithesisId)).toEqual(fissionPair(graph, pair.thesisId));
+      expect(graph.nodes[pair.thesisId].meta?.fissionGroupId).toBeTruthy();
+    }
+    expect(graph.nodes[first.thesisId].meta?.fissionGroupId).not.toBe(graph.nodes[second.thesisId].meta?.fissionGroupId);
+    expect(fissionPair(graph, source)).toBeNull();
+    delete graph.nodes[first.antithesisId];
+    expect(fissionPair(graph, first.thesisId)).toBeNull();
+    // A damaged same-group extra endpoint must not silently select a different sibling.
+    graph.nodes[second.antithesisId].meta!.fissionGroupId = graph.nodes[continued.antithesisId].meta!.fissionGroupId;
+    expect(fissionPair(graph, second.thesisId)).toBeNull();
+    expect(fissionPair(graph, continued.thesisId)?.secondId).toBe(continued.antithesisId);
+  });
+
+  it("recovers only an unambiguous legacy pair and does not guess from sibling order", () => {
+    const store = new BranchGraphStore(), source = store.createUserNode("旧工作区"), pair = store.createAssistantPair(source);
+    const graph = store.getGraph();
+    for (const id of [pair.thesisId, pair.antithesisId]) delete graph.nodes[id].meta!.fissionGroupId;
+    expect(fissionPair(graph, pair.thesisId)?.secondId).toBe(pair.antithesisId);
+    const later = store.createAssistantPair(source);
+    expect(fissionPair(graph, pair.thesisId)?.secondId).toBe(pair.antithesisId);
+    for (const id of [later.thesisId, later.antithesisId]) delete graph.nodes[id].meta!.fissionGroupId;
+    expect(fissionPair(graph, pair.thesisId)).toBeNull();
+    expect(fissionPair(graph, later.thesisId)).toBeNull();
+  });
+
   it("retains original constraints and source identities even when an ancestor has a short summary", () => {
     const store = new BranchGraphStore();
     const root = store.createUserNode("愿意听取自愿反馈，但不能录屏，也不能追踪行为。");
@@ -75,6 +109,7 @@ describe("seed operations", () => {
     const restored = importWorkspaceBundleText(bundle);
     expect(restored.snapshot.graph).toEqual(graph);
     expect(restored.snapshot.composerParentId).toBe(combined);
+    expect(fissionPair(restored.snapshot.graph, split.thesisId)).toEqual({ sourceId: combined, firstId: split.thesisId, secondId: split.antithesisId });
   });
 
   it("rejects self-combination and missing sources without leaving a partial graph", () => {

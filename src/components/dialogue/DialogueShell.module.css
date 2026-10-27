@@ -333,7 +333,21 @@
   position: absolute;
   inset: 0;
   will-change: transform;
-  transform: translate(var(--stage-pan-x, 0px), var(--stage-pan-y, 0px));
+  transform: translate(calc(var(--stage-pan-x, 0px) + var(--stage-touch-pan-x, 0px)), calc(var(--stage-pan-y, 0px) + var(--stage-touch-pan-y, 0px)));
+}
+
+.stageMetaballMount {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.rendererStatus {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
 }
 
 .stageMetaballCanvas {
@@ -3732,13 +3746,14 @@
   }
 }
 
-.seedInquiryOrigin { margin-bottom: 20px; color: var(--muted, #746c7c); font: 13px/1.85 var(--anicca-font-interface); overflow-wrap: anywhere; }
+.seedInquiryOrigin { margin-bottom: 16px; color: var(--muted, #746c7c); font: 12px/1.85 var(--anicca-font-interface); overflow-wrap: anywhere; flex-shrink: 0; }
+.seedInquiryOrigin summary { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; min-height: 32px; }
 .seedInquiryOrigin button { color: inherit; background: transparent; border: 0; padding: 4px 0; min-height: 44px; font: inherit; text-align: left; cursor: pointer; }
 .seedInquiryOrigin blockquote { margin: 8px 0; padding-left: 12px; border-left: 1px solid color-mix(in srgb, currentColor 20%, transparent); }
 .seedInquiryOrigin p { margin: 8px 0; }
 .composerQuote { grid-column: 1 / -1; margin: 0 10px 4px; padding-left: 10px; border-left: 1px solid color-mix(in srgb, var(--muted) 22%, transparent); color: var(--muted); font: 12px/1.8 var(--anicca-font-literary); overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .draftSaveError { grid-column: 1 / -1; margin: 4px 10px; font: 12px/1.7 var(--anicca-font-interface); color: var(--text); }
-.seedInquiryOrigin button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
+.seedInquiryOrigin :is(button, summary):focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
 
 @media (max-width: 520px) {
   .hero {
@@ -3842,6 +3857,8 @@
 .seedGuide button:hover { color: #302a42; }
 .seedGuide button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: 4px; }
 .stageNode { touch-action: none; -webkit-touch-callout: none; }
+.stageTrack, .stageViewport { touch-action: none; }
+.screenReaderOnly { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; pointer-events: none; }
 .emptyStagePrompt { position: absolute; z-index: 2; left: 50%; top: 38%; transform: translate(-50%, -50%); width: max-content; max-width: calc(100% - 48px); min-height: 44px; padding: 8px 0; border: 0; border-radius: 0; background: transparent; color: var(--text); font: 14px/1.8 var(--anicca-font-literary); letter-spacing: .12em; text-align: center; cursor: text; }
 .emptyStagePrompt:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 6px; }
 .stageNodeInner strong, .stageNodeInner small {
@@ -4017,7 +4034,10 @@
 .seedInspector[data-mode="polarity"] .polarityPicker { margin-top: 16px; }
 .seedInspector[data-mode="polarity"] .polarityAxes { max-height: 170px; }
 .seedPolarityOrigin { margin: -12px 0 20px; color: var(--muted); font: 12px/1.8 var(--anicca-font-interface); overflow-wrap: anywhere; }
-.seedExpansionActions { display: flex; gap: 32px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line); flex-shrink: 0; }
+.seedContinuation { flex-shrink: 0; margin: 0 0 24px; }
+.seedNextPrompt { margin: 0; color: var(--muted); font: 12px/1.8 var(--anicca-font-interface); }
+.seedExpansionAnchor { margin: 0 0 12px; color: var(--text); font: 14px/1.85 var(--anicca-font-literary); overflow-wrap: anywhere; }
+.seedExpansionActions { display: flex; gap: 32px; margin-top: 4px; flex-shrink: 0; }
 .seedExpansionActions button { display: flex; flex: 1; min-width: 0; min-height: 58px; flex-direction: column; align-items: flex-start; gap: 5px; padding: 8px 0; border: 0; border-radius: 0; color: var(--text); background: transparent; font: 13px/1.7 var(--anicca-font-interface); text-align: left; cursor: pointer; }
 .seedExpansionActions button small { color: var(--muted); font: 11px/1.8 var(--anicca-font-interface); }
 .seedExpansionActions button:hover:not(:disabled) > span { text-decoration: underline; text-underline-offset: 5px; }
@@ -4049,6 +4069,14 @@
   .explorationContext > button:first-of-type { grid-column: 2; grid-row: 1; }
   .explorationContext > button:last-of-type { grid-column: 3; grid-row: 1; }
 }
+.explorationContext:has(.seedResultReads) { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 20px; }
+.explorationContext:has(.seedResultReads) > span { grid-column: 1; grid-row: 1; max-width: none; }
+.explorationContext:has(.seedResultReads) > p { grid-column: 1 / -1; grid-row: 2; }
+.explorationContext:has(.seedResultReads) > .seedResultTrail { grid-column: 2; grid-row: 1; }
+.seedResultReads { grid-column: 1 / -1; grid-row: 3; display: flex; gap: 20px; min-width: 0; pointer-events: auto; }
+.seedResultReads button { display: flex; align-items: baseline; gap: 8px; min-width: 0; max-width: 220px; }
+.seedResultReads button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.seedResultReads small { flex-shrink: 0; color: var(--muted); font-size: 11px; }
 .seedActions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; padding-top: 2px; border-top: 1px solid rgba(67,56,91,.1); }
 .seedActions button { min-height: 44px; flex: 1; padding: 8px 4px; border: 0; border-radius: 8px; background: transparent; color: #534760; box-shadow: none; font-size: 13px; font-weight: 500; }
 .seedActions button:hover:not(:disabled) { background: rgba(255,255,255,.44); }
@@ -4061,6 +4089,7 @@
 .seedPicker button { display: flex; align-items: center; gap: 12px; text-align: left; min-height: 48px; border: 0; border-radius: 8px; background: transparent; padding: 10px 0; color: #342d46; cursor: pointer; }
 .seedPicker button:hover:not(:disabled) { text-decoration: underline; text-underline-offset: 4px; }
 .seedPicker small { flex-shrink: 0; color: #806394; }
+.seedPickerHeading { margin: 12px 0 0; color: var(--muted); font: 12px/1.8 var(--anicca-font-interface); }
 .seedCombineBar { position: absolute; left: 50%; bottom: calc(var(--dialogue-composer-height) + 30px + var(--safe-bottom)); transform: translateX(-50%); z-index: 14; display: flex; gap: 8px; align-items: center; width: min(620px, calc(100vw - 32px)); padding: 12px; border: 1px solid #ded6e7; border-radius: 20px; background: #faf9fc; box-shadow: 0 8px 30px rgba(69,48,91,.08); }
 .seedCombineBar > span { flex: 1; min-width: 0; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
 .seedCombineBar button { flex-shrink: 0; min-height: 44px; }
@@ -4119,6 +4148,7 @@
 
 .shell[data-composer-context="true"] .stageViewport { bottom: calc(var(--dialogue-composer-height) + 76px); }
 .shell[data-composer-context="true"] .seedReadingContent { bottom: calc(var(--dialogue-composer-height) + 96px); }
+.shell[data-inline-inquiry="true"] .seedReadingContent { bottom: calc(24px + var(--safe-bottom)); }
 
 /* Both appearances share the reference material, spacing and type. */
 .shell {
@@ -4186,6 +4216,15 @@
 .shell .composer .primaryButton { color: var(--text); }
 .shell .composer .primaryButton:hover:not(:disabled) { background: var(--dialogue-hover); }
 .shell .composer .primaryButton:disabled { opacity: .55; }
+.shell .composer[data-inline="true"] { position: relative; inset: auto; transform: none; grid-template-areas: "target target" "field actions" "progress progress" "error error"; width: 100%; max-width: none; margin: 8px 0 0; padding: 0; border: 0; border-radius: 0; background: transparent; backdrop-filter: none; box-shadow: none; }
+.composer[data-inline="true"] .seedComposerTarget { position: static; grid-area: target; margin-bottom: 4px; font-size: 12px; }
+.composer[data-inline="true"] .composerField { border-bottom: 1px solid var(--line); }
+.composer[data-inline="true"] textarea { padding-inline: 2px; }
+.composer[data-inline="true"] .composerActions { gap: 4px; }
+.composer[data-inline="true"] .composerActions button { min-width: 44px; padding-inline: 6px; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.composer[data-inline="true"] .generationProgress { grid-area: progress; padding-inline: 0; }
+.composer[data-inline="true"] .draftSaveError { margin-inline: 0; }
+.shell .composer[data-inline="true"] .errorPanel { padding: 8px 0; border: 0; border-radius: 0; background: transparent; }
 .shell :is(.seedReadingContent, .seedReadingContent .seedInspector) { color: var(--text); }
 .shell :is(.seedSearch, .seedActions) { border-color: var(--line); }
 .shell .seedActions button:hover:not(:disabled) { background: var(--dialogue-hover); }
@@ -4207,22 +4246,6 @@
 .themeControls span { display: flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 4px; border-radius: 8px; color: var(--muted); font-size: 12px; }
 .themeControls input:checked + span { color: var(--text); background: var(--dialogue-hover); }
 .themeControls input:focus-visible + span { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
-.stageHoldProgress, .synthesisDwellProgress { overflow: hidden; height: 2px; border-radius: 2px; color: inherit; background: color-mix(in srgb, currentColor 15%, transparent); }
-.stageHoldProgress { display: none; position: absolute; top: calc(100% + 3px); left: calc(50% - 14px); width: 28px; }
-.stageNode[data-touch-holding="true"] .stageHoldProgress { display: block; }
-.stageHoldProgress > span, .synthesisDwellProgress > span { display: block; width: 100%; height: 100%; background: currentColor; transform: scaleX(0); transform-origin: left; }
-.stageNode[data-touch-holding="true"] .stageHoldProgress > span { animation: liquidReadiness var(--liquid-hold-duration, 350ms) linear forwards; }
-.synthesisDwellProgress { display: block; width: 32px; margin: 0 auto 5px; }
-.synthesisDwellProgress[data-contact="true"] > span { animation: liquidReadiness var(--liquid-dwell-duration, 320ms) linear forwards; }
-.synthesisBridgePreview[data-armed="true"] .synthesisDwellProgress > span { animation: none; transform: scaleX(1); }
-@media (max-width: 760px) and (max-height: 640px) {
-  .shell:has(.synthesisBridgePreview) .seedGuide { visibility: hidden; }
-}
-@keyframes liquidReadiness { to { transform: scaleX(1); } }
-@media (prefers-reduced-motion: reduce) {
-  .stageHoldProgress > span { animation: none !important; transform: scaleX(1); }
-  .synthesisDwellProgress > span { animation: none !important; transform: scaleX(0); }
-}
 @media (forced-colors: active) {
   .shell, .shell[data-theme="dark"] { --text: CanvasText; --muted: CanvasText; --caption-ink: CanvasText; --focus-ring: Highlight; --dialogue-input: Canvas; --dialogue-menu: Canvas; --dialogue-hover: ButtonFace; }
 }

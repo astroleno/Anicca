@@ -1,12 +1,32 @@
 import {
   DialecticApiError,
   generateBranches,
+  generateInquiry,
   isAbortError
 } from "./api";
 import { getRecentGenerationMetrics, resetDialogueTelemetrySinkForTests } from "@/lib/analytics/dialogue";
 
 describe("dialectic api", () => {
   beforeEach(() => resetDialogueTelemetrySinkForTests());
+  afterEach(() => vi.unstubAllEnvs());
+  it("keeps generated branches inside the public subpath without changing the payload", async () => {
+    vi.stubEnv("NEXT_PUBLIC_BASE_PATH", "/Anicca");
+    const input = { requestId: "subpath", userText: "让想法继续生长", contextMessages: [] };
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ requestId: input.requestId })));
+    await generateBranches(input, { fetchImpl });
+    expect(fetchImpl).toHaveBeenCalledWith("/Anicca/api/branches", expect.objectContaining({
+      method: "POST", body: JSON.stringify({ ...input, meaningVersion: 1 })
+    }));
+  });
+  it("keeps a complete inquiry readable when no understanding change could be verified", async () => {
+    const input = { requestId: "inquiry", sourceText: "原文需要继续讨论。", contextMessages: [],
+      origin: { sourceNodeId: "source", quote: "原文需要继续讨论。", intent: "premise" as const, question: "依赖什么？" } };
+    const inquiry = { text: "这个判断仍需要确认共同参与的条件。", summary: "确认参与条件", label: "参与条件" };
+    const response = await generateInquiry(input, { fetchImpl: vi.fn(async () => new Response(JSON.stringify({ requestId: "inquiry", inquiry }))) });
+    expect(response.inquiry).toEqual(inquiry);
+    await expect(generateInquiry(input, { fetchImpl: vi.fn(async () => new Response(JSON.stringify({ requestId: "inquiry", inquiry: { ...inquiry, change: "假" } }))) }))
+      .rejects.toMatchObject({ code: "invalid_model_output" });
+  });
   it("sends typed branch requests with cancellation", async () => {
     const controller = new AbortController();
     const fetchImpl = vi.fn(async () => new Response(JSON.stringify({

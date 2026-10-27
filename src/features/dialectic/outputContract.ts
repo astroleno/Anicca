@@ -19,11 +19,17 @@ export function normalizeDialecticLabel(label: string, fallback: string, redunda
   const firstSegment = compact.split(/[：:，,、\-—|/]/u).find((part) => part.trim());
   const candidate = stripRedundantStanceSuffix((firstSegment || compact).trim(), redundantSuffix);
 
-  if (!/[\u3400-\u9fff]/u.test(candidate)) {
+  if (!/[\u3400-\u9fff]/u.test(candidate) || Array.from(candidate).length > LABEL_MAX_CHARS || (/[的与及或]$/u.test(candidate) && !/(?:目的|标的)$/u.test(candidate))) {
     return fallback;
   }
 
-  return Array.from(candidate).slice(0, LABEL_MAX_CHARS).join("");
+  return candidate;
+}
+
+/** An excerpt is not a generated title: mark the omission and preserve Unicode characters. */
+export function quoteExcerpt(text: string, maxChars = 12) {
+  const chars = Array.from(text.replace(/\s+/gu, " ").trim());
+  return chars.length > maxChars ? `${chars.slice(0, maxChars).join("")}…` : chars.join("");
 }
 
 export function normalizeDialecticSummary(summary: string) {

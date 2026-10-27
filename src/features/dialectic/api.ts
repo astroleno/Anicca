@@ -1,5 +1,6 @@
 import type { Message } from "@/types/chat";
 import { emitDialogueTelemetry } from "@/lib/analytics/dialogue";
+import { appPath } from "@/lib/appPath";
 import type { AxisSuggestion, SeedPerspective, ThinkingAxis, ThinkingSpace } from "@/features/perspectives/model";
 import { readDeferredDraft, readUnderstandingChange, type DeferredDraft } from "./meaning";
 import { readNovelty, type ComparisonSeed, type NoveltyAssessment } from "./novelty";
@@ -115,7 +116,7 @@ async function requestJson<T>(
   let status: number | null = null;
   try {
     options.signal?.throwIfAborted();
-    const response = await request(url, {
+    const response = await request(appPath(url), {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -167,7 +168,7 @@ export async function generateInquiry(input: GenerateInquiryInput, options?: Dia
   const result = response?.inquiry;
   if (response?.requestId !== input.requestId || typeof result?.text !== "string" || !result.text.trim() ||
     typeof result.summary !== "string" || !result.summary.trim() || typeof result.label !== "string" || !result.label.trim() ||
-    !readUnderstandingChange(result.change) || "stance" in result) {
+    (result.change !== undefined && !readUnderstandingChange(result.change)) || "stance" in result) {
     throw new DialecticApiError({ status: 502, code: "invalid_model_output", details: "inquiry_response_incomplete" });
   }
   return response;

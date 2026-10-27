@@ -54,10 +54,13 @@ it("rejects a missing axis and oversized input before making a provider call", a
 });
 
 it("supports unmapped custom axes and keeps self-report knowledge hypothetical", async () => {
-  generate.mockResolvedValue({ text: JSON.stringify(valid()) });
+  const reviewed = (label: string) => ({ label, change: null, hypothesesSafe: true, issues: [], personalEvidence: [], novelty: { status: "unchecked" } });
+  generate.mockResolvedValueOnce({ text: JSON.stringify(valid()) }).mockResolvedValueOnce({ text: JSON.stringify({
+    negative: reviewed("个人节奏"), positive: reviewed("问题流转") }) });
   const space = johariThinkingSpace(); space.axes[0].placement = "none";
   const response = await POST(request({ perspective: space, axisId: "johari-self" }));
   expect(response.status).toBe(200);
+  expect(generate).toHaveBeenCalledTimes(2);
   expect(generate.mock.calls[0][0].input).toContain("不能宣称用户或他人已经知道");
   const body = await response.json();
   expect(body.negative.perspective.axes[0]).toMatchObject({ value: -1, source: "viewpoint" });

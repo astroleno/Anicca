@@ -1,4 +1,11 @@
 export type PixelPoint = { x: number; y: number };
+export interface PixelReadback<T> {
+  readonly pending: boolean;
+  submit(points: readonly PixelPoint[], token: T, timestamp: number): boolean;
+  poll(timestamp: number): { token: T; pixels: Uint8Array } | null;
+  cancel(): void;
+  dispose(): void;
+}
 type Pending<T> = { fence: WebGLSync; count: number; token: T; at: number };
 
 /** One bounded GPU batch. Polling never waits; read completed pixels before

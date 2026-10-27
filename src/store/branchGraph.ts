@@ -4,6 +4,7 @@ import { normalizePolarityOrigin, polarityFrame, type PolarityOrigin } from "@/f
 import type { ThinkingSpace } from "@/features/perspectives/model";
 import { readUnderstandingChange, readDeferredDraft, deferredSyntheses, type DeferredSynthesis } from "@/features/dialectic/meaning";
 import { readInquiryOrigin, inquiryLabel, type InquiryOrigin } from "@/features/dialectic/inquiry";
+import { quoteExcerpt } from "@/features/dialectic/outputContract";
 import { readNovelty, type NoveltyAssessment } from "@/features/dialectic/novelty";
 
 type AssistantDraft = {
@@ -17,6 +18,7 @@ type AssistantDraft = {
   sourceInstanceIds?: string[];
   polarity?: PolarityOrigin;
   fissionFrame?: ThinkingSpace;
+  fissionGroupId?: string;
   change?: string;
   connectionInput?: string;
   inquiry?: InquiryOrigin;
@@ -185,8 +187,9 @@ export class BranchGraphStore {
       throw new Error(`parent not found: ${parentUserId}`);
     }
 
-    const thesisId = this.createAssistantNode(parentUserId, "正", { ...opts?.thesis, fissionFrame: opts?.frame });
-    const antithesisId = this.createAssistantNode(parentUserId, "反", { ...opts?.antithesis, fissionFrame: opts?.frame });
+    const fissionGroupId = this.generateId("fission");
+    const thesisId = this.createAssistantNode(parentUserId, "正", { ...opts?.thesis, fissionFrame: opts?.frame, fissionGroupId });
+    const antithesisId = this.createAssistantNode(parentUserId, "反", { ...opts?.antithesis, fissionFrame: opts?.frame, fissionGroupId });
     this.emit();
 
     return { thesisId, antithesisId };
@@ -198,7 +201,7 @@ export class BranchGraphStore {
     const questionId = this.generateId("user");
     this.graph.nodes[questionId] = { id: questionId, kind: "user", text: captured.question,
       parents: [captured.sourceNodeId], children: [], createdAt: new Date().toISOString(),
-      meta: { inquiry: captured, label: `${inquiryLabel(captured.intent)} · ${captured.quote.slice(0, 12)}` } };
+      meta: { inquiry: captured, label: `${inquiryLabel(captured.intent)} · ${quoteExcerpt(captured.quote)}` } };
     this.graph.nodes[captured.sourceNodeId].children.push(questionId);
     this.link(captured.sourceNodeId, questionId, "inquiry");
     const responseId = this.createAssistantNode(questionId, undefined, { ...draft, inquiry: captured });
@@ -386,6 +389,7 @@ export class BranchGraphStore {
     if (input.perspective) meta.perspective = normalizeSeedPerspective(input.perspective);
     if (input.polarity) meta.polarity = normalizePolarityOrigin(input.polarity);
     if (input.fissionFrame) meta.fissionFrame = normalizeThinkingSpace(input.fissionFrame);
+    if (input.fissionGroupId) meta.fissionGroupId = input.fissionGroupId;
     return Object.keys(meta).length ? meta : undefined;
   }
 

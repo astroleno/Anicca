@@ -28,6 +28,7 @@ vi.mock("next/dynamic", () => ({
 }));
 
 import HomePage from "@/app/page";
+import DialoguePage from "@/app/dialogue/page";
 import NewframePage from "@/app/newframe/page";
 import MochiPage from "@/app/mochi/page";
 import RaymarchingPage from "@/app/raymarching/page";
@@ -39,10 +40,9 @@ describe("entrypoint smoke", () => {
     redirectMock.mockReset();
   });
 
-  it("redirects the root route to /dialogue", () => {
-    HomePage();
-
-    expect(redirectMock).toHaveBeenCalledWith("/dialogue");
+  it("renders the same dialogue at the public root without changing the address", () => {
+    expect(HomePage).toBe(DialoguePage);
+    expect(redirectMock).not.toHaveBeenCalled();
   });
 
   it.each([

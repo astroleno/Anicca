@@ -9,6 +9,22 @@ export function seedLabel(graph: Graph, id: string) {
   return node?.meta?.label || (node?.text || "想法").slice(0, 14);
 }
 
+/** Recover an exact fission pair; ambiguous legacy siblings never imply a pairing. */
+export function fissionPair(graph: Graph, nodeId: string) {
+  const node = graph.nodes[nodeId];
+  if (!node || node.kind !== "assistant" || !["正", "反"].includes(node.branchType || "") ||
+    node.meta?.polarity || node.parents.length !== 1) return null;
+  const sourceId = node.parents[0], groupId = node.meta?.fissionGroupId;
+  if (groupId !== undefined && (typeof groupId !== "string" || !groupId.trim())) return null;
+  const siblings = [...new Set(graph.nodes[sourceId]?.children || [])].map(id => graph.nodes[id]).filter(sibling =>
+    sibling?.kind === "assistant" && ["正", "反"].includes(sibling.branchType || "") && !sibling.meta?.polarity &&
+    sibling.parents.length === 1 && sibling.parents[0] === sourceId && sibling.meta?.fissionGroupId === groupId);
+  if (siblings.length !== 2 || !siblings.some(sibling => sibling.id === nodeId)) return null;
+  const first = siblings.find(sibling => sibling.branchType === "正");
+  const second = siblings.find(sibling => sibling.branchType === "反");
+  return first && second ? { sourceId, firstId: first.id, secondId: second.id } : null;
+}
+
 // The historical action field names remain compatible with saved views and pending previews.
 // They identify source A/B here and do not impose a stance or common-parent constraint.
 export function seedPairAction(graph: Graph, left: string, right: string): DialogueSynthesisAction | null {

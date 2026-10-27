@@ -4,6 +4,8 @@ import type { StagePoint } from "@/types/anicca";
 export type SeedOrbit = { yaw: number; pitch: number };
 export type SeedViewDirection = "front" | "back" | "left" | "right" | "top" | "bottom";
 export const DEFAULT_SEED_ORBIT: SeedOrbit = { yaw: 0, pitch: 0 };
+export const clampSeedZoom = (zoom: number) => Number.isFinite(zoom) ? Math.max(.65, Math.min(1.8, zoom)) : 1;
+export const readSeedZoom = (host: HTMLElement) => clampSeedZoom(Number(host.dataset.spaceZoom) || 1);
 // Shader Park's camera sits at -2, in a scene scaled by 1.75.
 export const SEED_CAMERA_DISTANCE = 2 / 1.75;
 export const SEED_WORLD_CAMERA_DISTANCE = 2.4;

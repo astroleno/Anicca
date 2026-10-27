@@ -1,5 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useRef, type CSSProperties } from "react";
+import { readSpatialFrame } from "./liquid/space";
+import type { LiquidRendererMode, LiquidRendererStatus } from "./liquid/preference";
 
 import {
   DialogueMetaballLayer,
@@ -7,6 +9,7 @@ import {
 } from "./DialogueMetaballLayer";
 
 const rendererMocks = vi.hoisted(() => ({
+  tsl: vi.fn(),
   create: vi.fn(),
   resize: vi.fn(),
   render: vi.fn(),
@@ -18,6 +21,7 @@ vi.mock("./metaball/renderer", () => ({
   DIALOGUE_METABALL_SMOOTHNESS: 0.055,
   createDialogueMetaballRenderer: rendererMocks.create
 }));
+vi.mock("./liquid/tslRenderer", () => ({ createTslMetaballRenderer: rendererMocks.tsl }));
 
 function rect(left: number, top: number, width: number, height: number): DOMRect {
   return {
@@ -33,7 +37,8 @@ function rect(left: number, top: number, width: number, height: number): DOMRect
   } as DOMRect;
 }
 
-function Harness({ onStateChange, caption = false, fallbackOffset }: { onStateChange: (state: DialogueMetaballRendererState) => void; caption?: boolean; fallbackOffset?: number }) {
+function Harness({ onStateChange, caption = false, fallbackOffset, mode, onRendererStatus }: { onStateChange: (state: DialogueMetaballRendererState) => void; caption?: boolean; fallbackOffset?: number;
+  mode?: LiquidRendererMode; onRendererStatus?: (status: LiquidRendererStatus) => void }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
 
   return (
@@ -47,7 +52,7 @@ function Harness({ onStateChange, caption = false, fallbackOffset }: { onStateCh
       >
         {caption ? <span data-seed-caption data-testid="caption"><strong>Root</strong></span> : "Root"}
       </button>
-      <DialogueMetaballLayer hostRef={hostRef} onStateChange={onStateChange} />
+      <DialogueMetaballLayer hostRef={hostRef} onStateChange={onStateChange} rendererMode={mode} onRendererStatus={onRendererStatus} />
     </div>
   );
 }
@@ -68,6 +73,7 @@ describe("DialogueMetaballLayer", () => {
     rendererMocks.render.mockReset();
     rendererMocks.dispose.mockReset();
     rendererMocks.contextLost = null;
+    rendererMocks.tsl.mockReset();
     rendererMocks.create.mockReset().mockImplementation((_canvas, onContextLost) => {
       rendererMocks.contextLost = onContextLost;
       return {
@@ -138,6 +144,79 @@ describe("DialogueMetaballLayer", () => {
     expect(onStateChange).toHaveBeenLastCalledWith("ready");
     expect(canvas).toHaveAttribute("data-motion", "animated");
     expect(canvas).toHaveAttribute("data-fused-pairs", "");
+  });
+
+  function tslSession() {
+    return { renderer: { resize: vi.fn(), render: vi.fn(), dispose: vi.fn() }, backend: "webgpu" as const,
+      createReadback: () => ({ pending: false, submit: vi.fn(), poll: vi.fn(), cancel: vi.fn(), dispose: vi.fn() }) };
+  }
+
+  it("waits for TSL initialization and its first draw before reporting ready", async () => {
+    let complete!: (value: ReturnType<typeof tslSession>) => void;
+    rendererMocks.tsl.mockImplementation(() => new Promise(resolve => { complete = resolve; }));
+    const state = vi.fn(), status = vi.fn(), session = tslSession();
+    render(<Harness mode="tsl" onStateChange={state} onRendererStatus={status} />);
+    await act(async () => {});
+    expect(rendererMocks.create).not.toHaveBeenCalled();
+    expect(frames.size).toBe(0); expect(state).toHaveBeenLastCalledWith("loading");
+    await act(async () => { complete(session); });
+    expect(state).toHaveBeenLastCalledWith("loading");
+    runNextFrame(1000);
+    expect(session.renderer.render).toHaveBeenCalledOnce(); expect(state).toHaveBeenLastCalledWith("ready");
+    expect(status).toHaveBeenLastCalledWith({ requested: "tsl", backend: "webgpu", fallback: false });
+  });
+
+  it("replaces a failed TSL canvas before restoring the original renderer", async () => {
+    rendererMocks.tsl.mockRejectedValue(new Error("adapter lost"));
+    const state = vi.fn(), status = vi.fn();
+    render(<Harness mode="tsl" onStateChange={state} onRendererStatus={status} />);
+    const first = screen.getByTestId("dialogue-metaball-canvas");
+    await act(async () => {});
+    expect(first.isConnected).toBe(false);
+    expect(rendererMocks.create.mock.calls[0][0]).toBe(screen.getByTestId("dialogue-metaball-canvas"));
+    expect(rendererMocks.create.mock.calls[0][0]).not.toBe(first);
+    runNextFrame(1000);
+    expect(state).toHaveBeenLastCalledWith("ready");
+    expect(status).toHaveBeenLastCalledWith({ requested: "tsl", backend: "original", fallback: true });
+  });
+
+  it("disposes late TSL initialization after the user switches back", async () => {
+    let complete!: (value: ReturnType<typeof tslSession>) => void;
+    rendererMocks.tsl.mockImplementation(() => new Promise(resolve => { complete = resolve; }));
+    const state = vi.fn(), status = vi.fn(), session = tslSession();
+    const { rerender } = render(<Harness mode="tsl" onStateChange={state} onRendererStatus={status} />);
+    await act(async () => {});
+    const signal = rendererMocks.tsl.mock.calls[0][3] as AbortSignal;
+    rerender(<Harness mode="original" onStateChange={state} onRendererStatus={status} />);
+    expect(signal.aborted).toBe(true);
+    await act(async () => { complete(session); });
+    expect(session.renderer.dispose).toHaveBeenCalledOnce(); expect(session.renderer.render).not.toHaveBeenCalled();
+    runNextFrame(1000);
+    expect(status).toHaveBeenLastCalledWith({ requested: "original", backend: "original", fallback: false });
+  });
+
+  it("recovers from a running TSL device loss once and releases the old session", async () => {
+    const session = tslSession(); rendererMocks.tsl.mockResolvedValue(session);
+    render(<Harness mode="tsl-webgl" onStateChange={vi.fn()} />);
+    await act(async () => {}); runNextFrame(1000);
+    expect(rendererMocks.tsl.mock.calls[0][1]).toBe(true);
+    const first = screen.getByTestId("dialogue-metaball-canvas");
+    act(() => rendererMocks.tsl.mock.calls[0][2]());
+    runNextFrame(1016);
+    expect(first.isConnected).toBe(false); expect(session.renderer.dispose).toHaveBeenCalledOnce();
+    expect(rendererMocks.render).toHaveBeenCalledOnce();
+  });
+
+  it("bounds stalled initialization and ignores its eventual result", async () => {
+    let complete!: (value: ReturnType<typeof tslSession>) => void;
+    rendererMocks.tsl.mockImplementation(() => new Promise(resolve => { complete = resolve; }));
+    const state = vi.fn(), session = tslSession();
+    render(<Harness mode="tsl" onStateChange={state} />);
+    await act(async () => {});
+    act(() => vi.advanceTimersByTime(20000)); runNextFrame(20000);
+    expect(rendererMocks.render).toHaveBeenCalledOnce(); expect(state).toHaveBeenLastCalledWith("ready");
+    await act(async () => { complete(session); });
+    expect(session.renderer.dispose).toHaveBeenCalledOnce(); expect(session.renderer.render).not.toHaveBeenCalled();
   });
 
   it("preserves a projected caption through a React fallback update and restores the fallback on context loss", () => {
@@ -258,6 +337,68 @@ describe("DialogueMetaballLayer", () => {
     render(<Harness onStateChange={vi.fn()} />); runNextFrame(0);
     fireEvent.pointerEnter(screen.getByTestId("host"));
     expect(frames.size).toBe(0);
+  });
+
+  it("applies pinch zoom to the liquid and DOM hit area together, without treating navigation as a dragged seed", async () => {
+    reducedMotion = true;
+    render(<Harness onStateChange={vi.fn()} />); runNextFrame(0);
+    const host = screen.getByTestId("host"), surface = screen.getByTestId("surface");
+    const initialRadius = rendererMocks.render.mock.lastCall![0][0].radius;
+    fireEvent.pointerDown(surface, { pointerType: "touch", pointerId: 111 }); runNextFrame(16);
+    const reads = vi.mocked(Element.prototype.getBoundingClientRect).mock.calls.length;
+    await act(async () => { host.dataset.spaceNavigating = "true"; host.dataset.spaceZoom = "1.5"; });
+    runNextFrame(32);
+    const rendered = rendererMocks.render.mock.lastCall!;
+    expect(rendered[0][0].radius).toBeGreaterThan(initialRadius);
+    expect(rendered[2].draggedId).toBeNull();
+    const scale = Number(surface.style.transform.match(/scale\(([^)]+)\)/)?.[1]);
+    expect(scale).toBeCloseTo(rendered[0][0].radius / initialRadius, 5);
+    expect(readSpatialFrame(host)!.scale).toBe(1.5);
+    expect(Element.prototype.getBoundingClientRect).toHaveBeenCalledTimes(reads);
+  });
+
+  it("keeps camera fit fixed while rotating a tightly framed scene, including after fingers lift", async () => {
+    reducedMotion = true;
+    vi.mocked(Element.prototype.getBoundingClientRect).mockImplementation(function (this: Element) {
+      return ["host", "dialogue-metaball-canvas"].includes((this as HTMLElement).dataset.testid || "")
+        ? rect(100, 50, 360, 600) : rect(120, 80, 150, 150);
+    });
+    render(<Harness onStateChange={vi.fn()} />); runNextFrame(0);
+    const host = screen.getByTestId("host"), initialScale = readSpatialFrame(host)!.scale;
+    expect(initialScale).toBeLessThan(1);
+    await act(async () => { host.dataset.spaceNavigating = "true"; host.dataset.spaceYaw = "1.2"; });
+    runNextFrame(16);
+    expect(readSpatialFrame(host)!.scale).toBeCloseTo(initialScale, 8);
+    await act(async () => { delete host.dataset.spaceNavigating; }); runNextFrame(32);
+    expect(readSpatialFrame(host)!.scale).toBeCloseTo(initialScale, 8);
+    await act(async () => { host.dataset.spaceZoom = "1.4"; }); runNextFrame(48);
+    expect(readSpatialFrame(host)!.scale).toBeCloseTo(initialScale * 1.4, 8);
+    vi.mocked(Element.prototype.getBoundingClientRect).mockImplementation(function (this: Element) {
+      return ["host", "dialogue-metaball-canvas"].includes((this as HTMLElement).dataset.testid || "")
+        ? rect(100, 50, 800, 600) : rect(120, 80, 150, 150);
+    });
+    fireEvent(window, new Event("resize")); runNextFrame(64);
+    expect(readSpatialFrame(host)!.scale).not.toBeCloseTo(initialScale * 1.4, 4);
+  });
+
+  it("pans liquid and DOM targets by the same pixels without changing camera scale", async () => {
+    reducedMotion = true;
+    let x = 0, y = 0;
+    vi.mocked(Element.prototype.getBoundingClientRect).mockImplementation(function (this: Element) {
+      const id = (this as HTMLElement).dataset.testid;
+      return id === "dialogue-metaball-canvas" ? rect(100, 50, 800, 600)
+        : id === "host" ? rect(100 + x, 50 + y, 800, 600) : rect(350 + x, 275 + y, 150, 150);
+    });
+    render(<Harness onStateChange={vi.fn()} />); runNextFrame(0);
+    const host = screen.getByTestId("host"), before = readSpatialFrame(host)!;
+    x = 80; y = -40;
+    await act(async () => { host.style.setProperty("--stage-touch-pan-x", "80px"); host.style.setProperty("--stage-touch-pan-y", "-40px"); });
+    runNextFrame(16);
+    const after = readSpatialFrame(host)!;
+    expect(after.scale).toBe(before.scale);
+    expect((after.rendered[0].center[0] - before.rendered[0].center[0]) * after.height).toBeCloseTo(80);
+    expect((after.rendered[0].center[1] - before.rendered[0].center[1]) * after.height).toBeCloseTo(40);
+    expect(screen.getByTestId("surface").style.translate).toBe("0.000px 0.000px");
   });
 
   it("keeps the liquid press bound to its original pointer until that pointer releases", () => {

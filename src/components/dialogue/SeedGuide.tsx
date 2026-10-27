@@ -6,7 +6,7 @@ import styles from "./DialogueShell.module.css";
 const STORAGE_KEY = "anicca:seed-guide:v1";
 const STEPS = {
   write: "写下一个想法，让它生出正与反",
-  read: "点一颗读读；按住拖近另一颗，稍停后松手合成",
+  read: "点一颗读读；拖空白平移，双指转动与缩放",
   explore: "继续写、裂变或组合，从这里接着想",
   combine: "再选一颗种子，寻找新的联系"
 };
@@ -15,13 +15,14 @@ type Props = {
   empty: boolean;
   requested: number;
   pending: boolean;
+  suspended?: boolean;
   reading: boolean;
   combining: boolean;
   completed: boolean;
   onStart(): void;
 };
 
-export function SeedGuide({ empty, requested, pending, reading, combining, completed, onStart }: Props) {
+export function SeedGuide({ empty, requested, pending, suspended, reading, combining, completed, onStart }: Props) {
   const [open, setOpen] = useState(false);
   const initialized = useRef(false);
   useEffect(() => {
@@ -39,9 +40,9 @@ export function SeedGuide({ empty, requested, pending, reading, combining, compl
     setOpen(false);
     try { localStorage.setItem(STORAGE_KEY, "done"); } catch { /* Help stays dismissible without storage. */ }
   };
-  if (!open || pending) return null;
+  if (!open || pending || suspended) return null;
   const step = empty ? "write" : combining ? "combine" : reading ? "explore" : "read";
-  return <aside className={styles.seedGuide} aria-label="探索提示" data-step={step}>
+  return <aside className={styles.seedGuide} aria-label="探索提示" data-step={step} data-preserve-seed-reading>
     <div aria-live="polite">
       {empty ? <button className={styles.seedGuideStart} type="button" aria-label="写下想法" onClick={onStart}>{STEPS[step]}</button>
         : <p>{STEPS[step]}</p>}
