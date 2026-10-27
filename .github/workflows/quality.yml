@@ -46,6 +46,9 @@ jobs:
     name: Production dialogue smoke
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    env:
+      NEXT_PUBLIC_BASE_PATH: /Anicca
+      DIALOGUE_SMOKE_BASE_URL: http://127.0.0.1:3211/Anicca
     steps:
       - name: Check out repository
         uses: actions/checkout@v4

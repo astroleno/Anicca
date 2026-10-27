@@ -1,0 +1,28 @@
+[Unit]
+Description=Anicca dialogue application
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=anicca
+Group=anicca
+WorkingDirectory=/opt/anicca/current
+Environment=NODE_ENV=production
+Environment=HOSTNAME=127.0.0.1
+Environment=PORT=3250
+Environment=NEXT_TELEMETRY_DISABLED=1
+EnvironmentFile=/etc/anicca/anicca.env
+ExecStart=/opt/anicca/runtime/bin/node server.js
+Restart=on-failure
+RestartSec=3
+MemoryMax=768M
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/anicca/current/.next/cache
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

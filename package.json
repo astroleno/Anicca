@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:deploy": "NEXT_PUBLIC_BASE_PATH=/Anicca next build",
     "start": "next start",
     "lint": "eslint .",
     "test": "vitest run",
@@ -15,13 +16,18 @@
   },
   "dependencies": {
     "@types/three": "^0.181.0",
-    "next": "15.5.4",
+    "next": "15.5.28",
     "openai": "^6.3.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "shader-park-core": "^0.2.8",
     "three": "^0.181.0",
     "zustand": "^4.5.2"
+  },
+  "overrides": {
+    "next": {
+      "sharp": "0.35.5"
+    }
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
@@ -35,7 +41,7 @@
     "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.39.4",
-    "eslint-config-next": "15.5.4",
+    "eslint-config-next": "15.5.28",
     "jsdom": "^29.0.2",
     "playwright": "^1.59.1",
     "postcss": "^8.5.6",

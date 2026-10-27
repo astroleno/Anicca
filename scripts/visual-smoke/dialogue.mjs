@@ -8,6 +8,7 @@ import { chromium } from "playwright";
 import { runSeedViewport, waitForSeedLayout } from "./seeds.mjs";
 import { runCanvasLifecycle, runSeedRecoveryAndTouch } from "./soft-interactions.mjs";
 import { runFlowContinuity } from "./continuity.mjs";
+import { runThoughtFlow } from "./thought-flow.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -307,7 +308,8 @@ function getBaseUrlParts(value) {
   return {
     host: url.hostname,
     port: Number.parseInt(url.port, 10),
-    origin: url.origin
+    origin: url.origin,
+    basePath: url.pathname.replace(/\/+$/, "")
   };
 }
 
@@ -338,7 +340,7 @@ async function resolveBaseUrl() {
           "Choose another DIALOGUE_SMOKE_BASE_URL or stop the existing process."
       );
     }
-    baseUrl = requested.origin;
+    baseUrl = `${requested.origin}${requested.basePath}`;
     return baseUrl;
   }
 
@@ -348,7 +350,7 @@ async function resolveBaseUrl() {
     if (await isPortAvailable(requested.host, port)) {
       const resolved = new URL(requested.origin);
       resolved.port = String(port);
-      baseUrl = resolved.origin;
+      baseUrl = `${resolved.origin}${requested.basePath}`;
       return baseUrl;
     }
   }
@@ -1160,7 +1162,7 @@ async function main() {
       for (const [name, scenario] of [["metaball-fusion-separation", ensureMetaballFusionAndSeparation], ["metaball-reduced-motion", ensureMetaballReducedMotion], ["metaball-webgl-fallback", ensureMetaballWebglFallback]]) {
         if (!scenarioNameFilter.size || scenarioNameFilter.has(name)) interactionScenarios.push(await runStep(`interaction:${name}`, () => scenario(browser)));
       }
-      for (const [name, scenario] of [["seed-recovery-and-touch", runSeedRecoveryAndTouch], ["canvas-lifecycle", runCanvasLifecycle], ["flow-continuity", runFlowContinuity]]) {
+      for (const [name, scenario] of [["seed-recovery-and-touch", runSeedRecoveryAndTouch], ["canvas-lifecycle", runCanvasLifecycle], ["flow-continuity", runFlowContinuity], ["thought-flow", runThoughtFlow]]) {
         if (!scenarioNameFilter.size || scenarioNameFilter.has(name)) interactionScenarios.push(await runStep(`interaction:${name}`, () => scenario(browser, { baseUrl, outputDir, setActivePage })));
       }
 

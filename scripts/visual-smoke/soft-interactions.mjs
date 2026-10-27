@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import path from "node:path";
 import { waitForSeedLayout } from "./seeds.mjs";
 
-export async function runSeedRecoveryAndTouch(browser, { baseUrl, outputDir, setActivePage }) {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 1 });
+export async function runSeedRecoveryAndTouch(browser, { baseUrl, outputDir, setActivePage,
+  viewport = { name: "mobile", width: 390, height: 844, hasTouch: true, isMobile: true } }) {
+  const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height },
+    hasTouch: Boolean(viewport.hasTouch), isMobile: Boolean(viewport.isMobile), deviceScaleFactor: 1 });
   const page = await context.newPage();
   setActivePage(page);
   const errors = [], requests = [];
@@ -40,13 +42,13 @@ export async function runSeedRecoveryAndTouch(browser, { baseUrl, outputDir, set
     await page.getByRole("button", { name: "生成", exact: true }).click();
     await page.getByLabel("已用时间").filter({ hasText: /^[1-9]\d* 秒$/ }).waitFor();
     await page.getByRole("textbox", { name: "输入", exact: true }).fill("等待时写下的下一颗想法");
-    await page.screenshot({ path: path.join(outputDir, "mobile-pending-elapsed.png") });
+    await page.screenshot({ path: path.join(outputDir, `${viewport.name}-pending-elapsed.png`) });
     releaseFailure();
     await page.getByRole("button", { name: "重试", exact: true }).waitFor();
     assert.equal(await page.getByRole("textbox", { name: "输入", exact: true }).inputValue(), "等待时写下的下一颗想法");
     await page.getByRole("textbox", { name: "输入", exact: true }).fill("失败之后继续完善的下一颗想法");
     await page.getByRole("button", { name: "重试", exact: true }).waitFor();
-    await page.screenshot({ path: path.join(outputDir, "mobile-failure-retry.png") });
+    await page.screenshot({ path: path.join(outputDir, `${viewport.name}-failure-retry.png`) });
     await page.getByRole("button", { name: "重试", exact: true }).click();
     await page.waitForFunction(() => document.querySelectorAll('[data-testid^="dialogue-stage-node-"]').length === 3);
     assert.equal(requests.length, 2);
@@ -59,19 +61,22 @@ export async function runSeedRecoveryAndTouch(browser, { baseUrl, outputDir, set
     const a = await page.locator('[data-testid^="dialogue-stage-node-"][data-metaball-role="thesis"]').boundingBox();
     const b = await page.locator('[data-testid^="dialogue-stage-node-"][data-metaball-role="antithesis"]').boundingBox();
     assert(a && b);
-    const session = await context.newCDPSession(page);
+    const session = viewport.hasTouch ? await context.newCDPSession(page) : null;
     const start = { x: a.x + a.width / 2, y: a.y + a.height / 2 };
     const end = { x: b.x + b.width / 2 - 15, y: b.y + b.height / 2 };
-    await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ ...start, id: 1 }] });
-    await page.waitForTimeout(400); // The hold itself is the gesture under test.
+    if (session) await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ ...start, id: 1 }] });
+    else { await page.mouse.move(start.x, start.y); await page.mouse.down(); }
     for (let step = 1; step <= 12; step++) {
-      await session.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: start.x + (end.x - start.x) * step / 12, y: start.y + (end.y - start.y) * step / 12, id: 1 }] });
+      const point = { x: start.x + (end.x - start.x) * step / 12, y: start.y + (end.y - start.y) * step / 12 };
+      if (session) await session.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ ...point, id: 1 }] });
+      else await page.mouse.move(point.x, point.y);
       await page.waitForTimeout(20);
     }
     await page.locator('[data-testid="dialogue-synthesis-bridge-preview"][data-armed="true"]').waitFor();
     assert.equal(requests.length, 2, "Dwell alone does not generate");
-    await page.screenshot({ path: path.join(outputDir, "mobile-touch-combination.png") });
-    await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await page.screenshot({ path: path.join(outputDir, `${viewport.name}-touch-combination.png`) });
+    if (session) await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    else await page.mouse.up();
     await page.waitForFunction(() => document.querySelectorAll('[data-testid^="dialogue-stage-node-"]').length === 4);
     assert.equal(requests.length, 3, "Releasing an armed pair sends exactly one synthesis request");
     assert.equal(await page.locator("#dialogue-reading-drawer").count(), 0, "Completion does not open a card");
@@ -84,8 +89,8 @@ export async function runSeedRecoveryAndTouch(browser, { baseUrl, outputDir, set
     assert.equal(await page.locator('[data-testid^="dialogue-stage-node-"]').count(), 4);
     assert.equal(await page.getByRole("textbox", { name: "输入", exact: true }).inputValue(), "失败之后继续完善的下一颗想法");
     assert.deepEqual(errors, []);
-    return { name: "seed-recovery-and-touch", passed: true, requests: requests.length,
-      checks: ["elapsed-wait", "editable-pending", "retry-original-preserves-new-draft", "long-press-drag", "dwell-release-synthesis", "no-auto-card", "cancel-late-response"] };
+    return { name: "seed-recovery-and-touch", viewport: viewport.name, passed: true, requests: requests.length,
+      checks: ["elapsed-wait", "editable-pending", "retry-original-preserves-new-draft", "direct-drag", "dwell-release-synthesis", "no-auto-card", "cancel-late-response"] };
   } finally { releaseFailure(); releaseCancelled(); await context.close(); }
 }
 

@@ -1,9 +1,27 @@
+const basePath = (process.env.NEXT_PUBLIC_BASE_PATH || "").replace(/\/+$/, "");
+if (basePath && !/^\/[A-Za-z0-9][A-Za-z0-9/_-]*$/.test(basePath)) {
+  throw new Error("NEXT_PUBLIC_BASE_PATH must be an absolute path without a query or fragment");
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  basePath,
+  env: { NEXT_PUBLIC_BASE_PATH: basePath },
+  output: "standalone",
+  ...(process.env.ANICCA_BUILD_CPUS ? {
+    experimental: {
+      cpus: Number(process.env.ANICCA_BUILD_CPUS),
+      webpackBuildWorker: true,
+      webpackMemoryOptimizations: true
+    }
+  } : {}),
   // Keep production verification separate from a running development server.
   distDir: process.env.ANICCA_NEXT_DIST_DIR || ".next",
   reactStrictMode: true,
   devIndicators: false,
+  outputFileTracingIncludes: {
+    "/api/prompts": ["./src/prompt/**/*"]
+  },
   outputFileTracingExcludes: {
     "*": [
       "./.worktrees/**/*",

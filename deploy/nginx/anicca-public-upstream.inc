@@ -1,0 +1,10 @@
+proxy_pass http://122.51.59.89;
+proxy_http_version 1.1;
+proxy_set_header Host anicca-origin.internal;
+proxy_set_header X-Forwarded-Host $host;
+proxy_set_header X-Forwarded-Proto $scheme;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+client_max_body_size 1m;
+proxy_buffering off;
+proxy_read_timeout 240s;
+proxy_redirect off;

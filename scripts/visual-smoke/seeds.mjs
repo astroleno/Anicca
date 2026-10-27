@@ -20,6 +20,7 @@ export async function waitForSeedLayout(page) {
 
 // Exercise the seed workspace with intercepted APIs in an isolated browser context.
 export async function runSeedViewport(browser, viewport, { baseUrl, outputDir, setActivePage }) {
+  const basePath = new URL(baseUrl).pathname.replace(/\/+$/, "");
   const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height },
     deviceScaleFactor: 1, hasTouch: Boolean(viewport.hasTouch), isMobile: Boolean(viewport.isMobile) });
   if (viewport.visualViewportHeight) await context.addInitScript(({ width, height }) => {
@@ -36,7 +37,7 @@ export async function runSeedViewport(browser, viewport, { baseUrl, outputDir, s
   page.on("console", message => { if (message.type() === "error") issues.push(message.text()); });
   let sequence = 0;
   await page.route("**/api/**", async route => {
-    const endpoint = new URL(route.request().url()).pathname;
+    const endpoint = new URL(route.request().url()).pathname.slice(basePath.length);
     if (!["/api/branches", "/api/synthesis"].includes(endpoint)) return route.abort();
     const input = route.request().postDataJSON();
     requests.push({ endpoint, input });
@@ -74,7 +75,7 @@ export async function runSeedViewport(browser, viewport, { baseUrl, outputDir, s
     if (await page.getByRole("button", { name: "返回种子，收起阅读" }).isVisible()) await close();
     await reveal(id);
     await page.getByTestId(`dialogue-stage-node-${id}`).click();
-    await page.getByRole("button", { name: "正反裂变", exact: true }).waitFor();
+    await page.getByRole("button", { name: "推演正反", exact: true }).waitFor();
     await page.waitForFunction(() => getComputedStyle(document.getElementById("dialogue-reading-drawer")).opacity === "1");
     const reading = await page.locator("#dialogue-reading-drawer").boundingBox();
     const composer = await page.getByTestId("dialogue-composer").boundingBox();
@@ -95,7 +96,7 @@ export async function runSeedViewport(browser, viewport, { baseUrl, outputDir, s
     await page.goto(`${baseUrl}/dialogue`, { waitUntil: "networkidle" });
     const guideClose = page.getByRole("button", { name: "关闭提示", exact: true });
     if (await guideClose.isVisible()) await guideClose.click();
-    assert(new URL(page.url()).pathname === "/dialogue");
+    assert(new URL(page.url()).pathname === `${basePath}/dialogue`);
     assert(await page.title());
     await page.getByRole("textbox", { name: "输入", exact: true }).waitFor();
     let firstPositions;
@@ -142,7 +143,7 @@ export async function runSeedViewport(browser, viewport, { baseUrl, outputDir, s
     assert.deepEqual(synthesisRequest.sources.map(source => source.stance), ["正", "正"]);
     await select(merged.id);
     await page.screenshot({ path: path.join(outputDir, `${viewport.name}-seed.png`) });
-    await page.getByRole("button", { name: "正反裂变", exact: true }).click();
+    await page.getByRole("button", { name: "推演正反", exact: true }).click();
     await waitCount(9);
     let current = await graph();
     assert.equal(current.nodes[merged.id].children.length, 2);
@@ -155,7 +156,7 @@ export async function runSeedViewport(browser, viewport, { baseUrl, outputDir, s
     await reveal(root);
     if (viewport.hasTouch) {
       await select(root);
-      await page.getByRole("button", { name: "正反裂变", exact: true }).click();
+      await page.getByRole("button", { name: "推演正反", exact: true }).click();
     } else {
       const requestCount = requests.length;
       await page.getByTestId(`dialogue-stage-node-${root}`).dblclick();
