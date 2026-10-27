@@ -44,12 +44,12 @@ export async function runSeedRecoveryAndTouch(browser, { baseUrl, outputDir, set
     await page.getByRole("textbox", { name: "输入", exact: true }).fill("等待时写下的下一颗想法");
     await page.screenshot({ path: path.join(outputDir, `${viewport.name}-pending-elapsed.png`) });
     releaseFailure();
-    await page.getByRole("button", { name: "重试", exact: true }).waitFor();
+    await page.getByRole("button", { name: "重试上次", exact: true }).waitFor();
     assert.equal(await page.getByRole("textbox", { name: "输入", exact: true }).inputValue(), "等待时写下的下一颗想法");
     await page.getByRole("textbox", { name: "输入", exact: true }).fill("失败之后继续完善的下一颗想法");
-    await page.getByRole("button", { name: "重试", exact: true }).waitFor();
+    await page.getByRole("button", { name: "重试上次", exact: true }).waitFor();
     await page.screenshot({ path: path.join(outputDir, `${viewport.name}-failure-retry.png`) });
-    await page.getByRole("button", { name: "重试", exact: true }).click();
+    await page.getByRole("button", { name: "重试上次", exact: true }).click();
     await page.waitForFunction(() => document.querySelectorAll('[data-testid^="dialogue-stage-node-"]').length === 3);
     assert.equal(requests.length, 2);
     assert.equal(requests[0].userText, requests[1].userText);

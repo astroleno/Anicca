@@ -50,7 +50,7 @@ type BubbleStageProps = {
   rendererMode?: LiquidRendererMode;
   onRendererStatus?(status: LiquidRendererStatus): void;
   theme?: DialogueTheme;
-  cameraView?: { direction: SeedViewDirection; revision: number } | null;
+  cameraView?: { direction: SeedViewDirection | "reset"; revision: number } | null;
   attentionIds?: readonly string[] | null;
   reading?: boolean;
   suspended?: boolean;
@@ -488,6 +488,7 @@ export function BubbleStage({
 
   useEffect(() => {
     if (!cameraView || metaballRendererState === "fallback" || trackRef.current?.dataset.spacePaused === "true") return;
+    if (cameraView.direction === "reset") { resetView(); return; }
     stopOrbitAnimation();
     const start = { ...orbitRef.current }, target = SEED_VIEWS[cameraView.direction];
     const delta = wrapSeedYaw(target.yaw - start.yaw);
@@ -501,7 +502,7 @@ export function BubbleStage({
     };
     orbitAnimationRef.current = requestAnimationFrame(step);
     return stopOrbitAnimation;
-  }, [cameraView, metaballRendererState, setOrbitPreview, stopOrbitAnimation]);
+  }, [cameraView, metaballRendererState, resetView, setOrbitPreview, stopOrbitAnimation]);
 
   useEffect(() => {
     if (metaballRendererState === "fallback") resetView();

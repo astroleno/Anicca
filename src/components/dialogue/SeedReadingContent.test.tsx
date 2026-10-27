@@ -124,3 +124,19 @@ it("ignores a completed old exit when reading is reopened", async () => {
     else Reflect.deleteProperty(HTMLElement.prototype, "animate");
   }
 });
+
+it("presents keyboard and restored reading immediately while retaining a brief pointer transition", () => {
+  const previous = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "animate");
+  const animate = vi.fn(() => ({ finished: new Promise(() => {}), cancel: vi.fn() }));
+  Object.defineProperty(HTMLElement.prototype, "animate", { configurable: true, value: animate });
+  const dismiss = vi.fn(), view = render(<SeedReadingContent motion="instant" onDismiss={dismiss}>正文</SeedReadingContent>);
+  try {
+    expect(animate).not.toHaveBeenCalled(); expect(screen.getByText("正文")).toBeVisible();
+    view.rerender(<SeedReadingContent motion="instant" open={false} onDismiss={dismiss}>正文</SeedReadingContent>);
+    expect(document.getElementById("dialogue-reading-drawer")).toBeNull();
+    view.rerender(<SeedReadingContent motion="soft" onDismiss={dismiss}>正文</SeedReadingContent>);
+    expect(animate).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ duration: 160 }));
+  } finally {
+    view.unmount(); if (previous) Object.defineProperty(HTMLElement.prototype, "animate", previous); else Reflect.deleteProperty(HTMLElement.prototype, "animate");
+  }
+});

@@ -1,0 +1,52 @@
+[
+  {
+    "url": "https://aitoshuu.me/Anicca",
+    "status": 200,
+    "finalUrl": "https://aitoshuu.me/Anicca"
+  },
+  {
+    "url": "https://aitoshuu.me/Anicca/dialogue",
+    "status": 200,
+    "finalUrl": "https://aitoshuu.me/Anicca/dialogue"
+  },
+  {
+    "url": "https://aitoshuu.me/Anicca/.env",
+    "status": 404,
+    "finalUrl": "https://aitoshuu.me/Anicca/.env"
+  },
+  {
+    "url": "https://aitoshuu.me/Anicca/.git/config",
+    "status": 404,
+    "finalUrl": "https://aitoshuu.me/Anicca/.git/config"
+  },
+  {
+    "url": "https://aitoshuu.me/",
+    "status": 200,
+    "finalUrl": "https://aitoshuu.me/"
+  },
+  {
+    "url": "https://tongye.me/Anicca",
+    "status": 200,
+    "finalUrl": "https://tongye.me/Anicca"
+  },
+  {
+    "url": "https://tongye.me/Anicca/dialogue",
+    "status": 200,
+    "finalUrl": "https://tongye.me/Anicca/dialogue"
+  },
+  {
+    "url": "https://tongye.me/Anicca/.env",
+    "status": 404,
+    "finalUrl": "https://tongye.me/Anicca/.env"
+  },
+  {
+    "url": "https://tongye.me/Anicca/.git/config",
+    "status": 404,
+    "finalUrl": "https://tongye.me/Anicca/.git/config"
+  },
+  {
+    "url": "https://tongye.me/",
+    "status": 200,
+    "finalUrl": "https://tongye.me/experience/"
+  }
+]

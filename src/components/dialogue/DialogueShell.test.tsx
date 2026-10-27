@@ -540,7 +540,7 @@ describe("DialogueShell", () => {
     fireEvent.click(await screen.findByRole("button", { name: "看极性两端" }));
     fireEvent.click(screen.getByRole("radio", { name: /关切/ }));
     fireEvent.click(screen.getByRole("button", { name: "沿「关切」展开" }));
-    const retry = await screen.findByRole("button", { name: "重试" });
+    const retry = await screen.findByRole("button", { name: "重试上次" });
     const changed = defaultThinkingSpace(); changed.axes[1].negative = "另一种新含义";
     useDialogueUiStore.getState().setThinkingSpace(changed);
     fireEvent.click(retry);
@@ -740,7 +740,7 @@ describe("DialogueShell", () => {
     }), { status: 200, headers: { "Content-Type": "application/json" } });
     if (retry) {
       first.resolve(new Response(JSON.stringify({ error: "branches_failed" }), { status: 502 }));
-      await user.click(await screen.findByRole("button", { name: "重试" }));
+      await user.click(await screen.findByRole("button", { name: "重试上次" }));
       expect(readFetchBody(fetchMock, 1).userText).toBe("想法 A");
       await user.click(input);
       second.resolve(response(readFetchBody(fetchMock, 1).requestId));
@@ -761,9 +761,9 @@ describe("DialogueShell", () => {
     const input = screen.getByRole("textbox", { name: "输入" });
     fireEvent.change(input, { target: { value: "想法 A" } });
     fireEvent.click(screen.getByRole("button", { name: "生成" }));
-    await screen.findByRole("button", { name: "重试" });
+    await screen.findByRole("button", { name: "重试上次" });
     fireEvent.change(input, { target: { value: "失败后继续写下的想法 B" } });
-    fireEvent.click(screen.getByRole("button", { name: "重试" }));
+    fireEvent.click(screen.getByRole("button", { name: "重试上次" }));
     const request = readFetchBody(fetchMock, 1); expect(request.userText).toBe("想法 A");
     response.resolve(new Response(JSON.stringify({ requestId: request.requestId,
       thesis: { text: "推进 A", label: "推进", summary: "推进", stance: "正" },
@@ -771,7 +771,7 @@ describe("DialogueShell", () => {
     }), { status: 200 }));
     await waitFor(() => expect(branchGraphStore.getGraph().entryIds).toHaveLength(1));
     expect(input).toHaveValue("失败后继续写下的想法 B");
-    expect(screen.queryByRole("button", { name: "重试" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "重试上次" })).not.toBeInTheDocument();
   });
 
   it("runs the artwork perspective command locally without calling the branch route", async () => {
@@ -2292,9 +2292,9 @@ describe("DialogueShell", () => {
     await user.click(screen.getByRole("button", { name: "生成" }));
 
     await waitFor(() => {
-      expect(screen.getByRole("alert")).toHaveTextContent("模型服务还没接好");
+      expect(screen.getByRole("alert")).toHaveTextContent("生成服务暂未就绪");
       expect(screen.getByRole("alert")).toHaveTextContent(
-        "当前环境没有配置 OpenAI API key，所以这轮请求没有真正发出去。"
+        "这次没有生成新内容，已有想法和当前草稿都已保留。"
       );
     });
 
@@ -2311,7 +2311,7 @@ describe("DialogueShell", () => {
         antithesis: { text: "检查前提", summary: "检查", label: "检查", stance: "反" }
       }), { status: 200, headers: { "Content-Type": "application/json" } });
     });
-    await user.click(screen.getByRole("button", { name: "重试" }));
+    await user.click(screen.getByRole("button", { name: "重试上次" }));
     await waitFor(() => expect(Object.keys(branchGraphStore.getGraph().nodes)).toHaveLength(6));
     expect(readFetchBody(vi.mocked(fetch), 1).userText).toBe(failedBody.userText);
     expect(branchGraphStore.getGraph().nodes[thesisId].children).toHaveLength(1);

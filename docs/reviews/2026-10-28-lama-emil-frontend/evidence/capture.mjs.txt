@@ -1,0 +1,162 @@
+import { createRequire } from 'node:module';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+const require = createRequire('/Users/aitoshuu/Documents/GitHub/Anicca/package.json');
+const { chromium } = require('playwright');
+const { thoughtFlowFixture } = await import('/Users/aitoshuu/Documents/GitHub/Anicca/scripts/visual-smoke/thought-flow.mjs');
+const output = '/Users/aitoshuu/Documents/GitHub/Anicca/docs/reviews/2026-10-28-lama-emil-frontend/evidence/fresh';
+await mkdir(output, { recursive: true });
+const browser = await chromium.launch({ headless: true, args: ['--use-angle=metal'] });
+const only = process.env.ANICCA_REVIEW_VIEWPORT;
+const previous = only ? await readFile(path.join(output, 'observations.json'), 'utf8').then(JSON.parse).catch(() => ({results: []})) : {results: []};
+const results = previous.results.filter(result => result.name !== only);
+const fixture = structuredClone(thoughtFlowFixture);
+fixture.graph.nodes.root.meta = { label: '社区花园', summary: '共同讨论开放用途与维护关系。' };
+fixture.graph.nodes.root.children = ['positive', 'negative'];
+for (const [id, stance, label, text] of [
+  ['positive', '正', '保留试验', '保留角落的试验空间，活动结束后共同商量哪些用途值得保留。'],
+  ['negative', '反', '维护关系', '还需要讨论谁承担维护；未参与活动的人也应能表达受到的影响。']
+]) {
+  fixture.graph.nodes[id] = { id, kind: 'assistant', branchType: stance, text, parents: ['root'], children: [], createdAt: '2026-10-28T00:00:00Z', meta: { label, summary: text } };
+  fixture.graph.edges[id] = { id, from: 'root', to: id, reason: 'branch' };
+}
+const settle = page => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+async function openReading(page, keyboard = false) {
+  const node = page.getByTestId('dialogue-stage-node-root');
+  if (keyboard) { await node.focus(); await node.press('Enter'); }
+  else await node.locator('[data-seed-caption]').click();
+  await page.locator('#dialogue-reading-drawer[data-open="true"]').waitFor();
+  await page.waitForFunction(() => { const el = document.getElementById('dialogue-reading-drawer'); return el && getComputedStyle(el).opacity === '1'; });
+  await settle(page);
+}
+async function closeReading(page) {
+  const close = page.getByRole('button', { name: '返回种子，收起阅读', exact: true });
+  if (await close.isVisible()) await close.click();
+  await page.locator('#dialogue-reading-drawer').waitFor({ state: 'hidden' });
+}
+async function contextFor(spec, seeded) {
+  const context = await browser.newContext({ viewport: { width: spec.width, height: spec.height }, hasTouch: spec.mobile, isMobile: spec.mobile, deviceScaleFactor: 1 });
+  if (seeded) await context.addInitScript(data => localStorage.setItem('anicca_workspace_v2', JSON.stringify(data)), fixture);
+  const page = await context.newPage(); page.setDefaultTimeout(20000);
+  const errors = [], blockedPosts = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.route('**/api/**', route => {
+    if (route.request().method() === 'POST') { blockedPosts.push(new URL(route.request().url()).pathname); return route.abort(); }
+    return route.continue();
+  });
+  try { await page.goto('https://aitoshuu.me/Anicca', { waitUntil: 'networkidle' }); }
+  catch (error) { console.log(JSON.stringify({ navigationRetry: String(error).split('\n')[0], viewport: spec.name })); await page.goto('https://aitoshuu.me/Anicca', { waitUntil: 'networkidle' }); }
+  await page.getByRole('textbox', { name: '输入', exact: true }).waitFor();
+  if (seeded) await page.waitForFunction(() => document.querySelector('[data-testid="dialogue-stage-track"]')?.dataset.metaballRenderer === 'ready');
+  const shot = async name => { await settle(page); await page.screenshot({ path: path.join(output, `${spec.name}-${name}.png`) }); };
+  return { context, page, errors, blockedPosts, shot };
+}
+try {
+  for (const spec of [{ name: 'desktop', width: 1440, height: 900, mobile: false }, { name: 'mobile-390', width: 390, height: 844, mobile: true }].filter(spec => !only || spec.name === only)) {
+    let c = await contextFor(spec, false);
+    const { page, shot } = c;
+    const observations = { name: spec.name, source: 'fresh isolated contexts; synthetic garden fixture; no model POST permitted' };
+    try {
+      await shot('first-visit');
+      observations.firstVisit = { title: await page.title(), url: page.url(), guideCount: await page.getByLabel('探索提示').count() };
+      await page.getByRole('button', { name: '更多', exact: true }).click(); await shot('more-menu');
+      await page.getByRole('button', { name: '更多', exact: true }).click();
+      await page.getByRole('button', { name: '换个角度', exact: true }).click(); await shot('perspective-observe');
+      const dialog = page.getByRole('dialog', { name: '换个角度看' });
+      await dialog.getByRole('button', { name: '编辑维度', exact: true }).click();
+      const name = dialog.getByLabel('名称', { exact: true }).first();
+      const original = await name.inputValue(); await name.fill('临时未保存名称'); await shot('dimension-unsaved');
+      await dialog.getByRole('button', { name: '观察', exact: true }).click();
+      await dialog.getByRole('button', { name: '编辑维度', exact: true }).click();
+      observations.unsavedDimension = { original, afterTabRoundTrip: await name.inputValue(), alertCount: await dialog.getByRole('alert').count() };
+      await shot('dimension-after-tab-roundtrip');
+      await dialog.getByRole('button', { name: '乔哈里模板', exact: true }).click();
+      await dialog.getByRole('button', { name: '保存维度', exact: true }).click(); await shot('johari-observe');
+      await dialog.getByRole('button', { name: '盲区', exact: true }).click(); await shot('johari-blind-selection');
+      await page.getByRole('button', { name: '关闭思考空间', exact: true }).click();
+      observations.emptyContext = { errors: c.errors, blockedPosts: c.blockedPosts };
+    } catch (e) { observations.emptyContextFailure = String(e); await shot('empty-case-error').catch(() => {}); }
+    finally { await c.context.close(); }
+
+    c = await contextFor(spec, true);
+    const p = c.page, snap = c.shot;
+    try {
+      const guide = p.getByRole('button', { name: '关闭提示', exact: true }); if (await guide.isVisible()) await guide.click();
+      await snap('seed-stage'); await openReading(p);
+      const panel = p.getByTestId('dialogue-panel');
+      await panel.evaluate(el => { el.scrollTop = 650; }); await settle(p);
+      observations.readingBeforeRefresh = await panel.evaluate(el => ({ scrollTop: el.scrollTop, focusedElement: document.activeElement?.id }));
+      await snap('reading-before-refresh');
+      await p.reload({ waitUntil: 'networkidle' });
+      observations.readingAfterRefresh = await p.evaluate(() => {
+        const id = localStorage.getItem('anicca_workspace_active_v1');
+        const data = JSON.parse(localStorage.getItem(`anicca_workspace_snapshot_v1:${id}`) || 'null');
+        return { readingOpen: document.getElementById('dialogue-reading-drawer')?.dataset.open === 'true', focusedNodeId: data?.focusedNodeId };
+      }); await snap('reading-after-refresh');
+      await openReading(p, true);
+      observations.keyboardReading = await p.evaluate(() => ({ activeElement: document.activeElement?.id,
+        scrollTop: document.querySelector('[data-testid="dialogue-panel"]')?.scrollTop,
+        animationDurations: document.getAnimations().map(a => a.effect?.getTiming().duration) }));
+      await snap('keyboard-open-reading');
+      await p.getByRole('button', { name: '组合', exact: true }).click();
+      await p.getByRole('textbox', { name: '搜索种子' }).fill('绝对不存在的查询词');
+      observations.combineSearch = await p.getByRole('group', { name: '选择组合对象', exact: true }).innerText();
+      await snap('combine-no-search-results');
+      await closeReading(p); await openReading(p);
+      await p.getByRole('button', { name: '看极性两端', exact: true }).click(); await snap('polarity-with-composer');
+      observations.polarity = { composerCount: await p.getByTestId('dialogue-composer').count(), inputLabel: await p.getByRole('textbox', { name: '输入', exact: true }).getAttribute('placeholder') };
+      await p.getByRole('button', { name: '返回种子阅读', exact: true }).click();
+      await panel.evaluate(el => { el.scrollTop = 650; }); await settle(p);
+      const selection = await p.locator('[data-seed-passage] p').first().evaluate(el => {
+        const text = el.firstChild, sentence = '例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。';
+        const panel = el.closest('[data-testid="dialogue-panel"]'), box = panel.getBoundingClientRect();
+        for (let start = text.textContent.indexOf(sentence); start >= 0; start = text.textContent.indexOf(sentence, start + 1)) {
+          const range = document.createRange(); range.setStart(text, start); range.setEnd(text, start + sentence.length);
+          const r = range.getBoundingClientRect();
+          if (r.top > box.top + 40 && r.bottom < box.bottom - 40) {
+            window.getSelection().removeAllRanges(); window.getSelection().addRange(range);
+            return { quote: sentence, quoteStart: start, y: r.y, bottom: r.bottom, scrollTop: panel.scrollTop };
+          }
+        }
+        return null;
+      });
+      if (selection) {
+        await p.getByLabel('围绕选句继续').waitFor(); await settle(p);
+        const rect = await p.getByLabel('围绕选句继续').locator('blockquote').boundingBox();
+        observations.nativeSelection = { before: selection, after: { y: rect.y, bottom: rect.y + rect.height, scrollTop: await panel.evaluate(el => el.scrollTop) }, method: 'DOM Range selection, not a real finger gesture' };
+        await snap('native-selection-mid-reading');
+        await p.getByRole('button', { name: '取消选句', exact: true }).click();
+      }
+      await closeReading(p);
+      if (spec.mobile) {
+        const stage = p.getByTestId('dialogue-stage-track');
+        const before = await stage.evaluate(el => ({ x: el.dataset.spacePanX, y: el.dataset.spacePanY, zoom: el.dataset.spaceZoom }));
+        const session = await c.context.newCDPSession(p);
+        for (let n = 0; n < 3; n++) {
+          await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 350, y: 650, id: 1 }] });
+          for (let step = 1; step <= 10; step++) {
+            await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 350 - 28 * step, y: 650 - 7 * step, id: 1 }] });
+          }
+          await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        }
+        await settle(p);
+        const state = () => stage.evaluate(el => ({ x: el.dataset.spacePanX, y: el.dataset.spacePanY, zoom: el.dataset.spaceZoom }));
+        const after = await state(); await snap('panned-stage');
+        const resetVisible = await p.getByRole('button', { name: '复位三维视角', exact: true }).isVisible();
+        await p.getByRole('button', { name: '换个角度', exact: true }).click();
+        await p.getByRole('button', { name: '从前方观察', exact: true }).click(); await settle(p);
+        const afterFront = await state();
+        await p.getByRole('button', { name: '换个角度', exact: true }).click();
+        await p.getByRole('button', { name: '按已有角度归位', exact: true }).click(); await settle(p);
+        const afterArrange = await state(); await snap('panned-after-arrange');
+        observations.panRecovery = { before, after, resetVisible, afterFront, afterArrange, method: 'Chromium CDP touch emulation' };
+      }
+      observations.seededContext = { errors: c.errors, blockedPosts: c.blockedPosts };
+    } catch (e) { observations.seededContextFailure = String(e); await snap('seeded-case-error').catch(() => {}); }
+    finally { await c.context.close(); }
+    results.push(observations); await writeFile(path.join(output, 'observations.json'), JSON.stringify({
+      commit: '4c0ee909fb6702a1e92bfe8ddfbe9eacddcc05d6', browser: 'Chromium', browserPlugin: 'Browser plugin not available; existing project Playwright workflow for necessary visual verification',
+      mobile: 'touch viewport emulation; not a physical-device performance test', results }, null, 2) + '\n');
+    console.log(JSON.stringify(observations));
+  }
+} finally { await browser.close(); }

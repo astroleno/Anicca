@@ -4,8 +4,8 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "re
 import styles from "./DialogueShell.module.css";
 
 /** Reading is a state of the stage, with no separate card surface. */
-export function SeedReadingContent({ open = true, suspended = false, originNodeId, onDismiss, children }: {
-  open?: boolean; suspended?: boolean; originNodeId?: string; onDismiss(): void; children: ReactNode;
+export function SeedReadingContent({ open = true, suspended = false, originNodeId, motion = "soft", onDismiss, children }: {
+  open?: boolean; suspended?: boolean; originNodeId?: string; motion?: "instant" | "soft"; onDismiss(): void; children: ReactNode;
 }) {
   const root = useRef<HTMLDivElement>(null);
   const [present, setPresent] = useState(open);
@@ -25,7 +25,7 @@ export function SeedReadingContent({ open = true, suspended = false, originNodeI
     const element = root.current;
     if (!present || !element) return;
     const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    if (reducedMotion || typeof element.animate !== "function") {
+    if (motion === "instant" || reducedMotion || typeof element.animate !== "function") {
       if (!open) setPresent(false);
       return;
     }
@@ -46,7 +46,7 @@ export function SeedReadingContent({ open = true, suspended = false, originNodeI
     const away = { opacity: 0, translate: `${origin.current.x}px ${origin.current.y}px` };
     const resting = { opacity: 1, translate: "0px 0px" };
     const animation = element.animate(open ? [away, resting] : [resting, away], {
-      duration: open ? 340 : 200,
+      duration: open ? 160 : 120,
       easing: "cubic-bezier(0.22, 1, 0.36, 1)",
       fill: "both"
     });
@@ -58,7 +58,7 @@ export function SeedReadingContent({ open = true, suspended = false, originNodeI
       cancelled = true;
       animation.cancel();
     };
-  }, [open, present, originNodeId]);
+  }, [open, present, originNodeId, motion]);
 
   useEffect(() => {
     if (!open || !present || suspended) return;

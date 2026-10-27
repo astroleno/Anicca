@@ -1,0 +1,119 @@
+{
+  "environment": "Chromium desktop and mobile touch viewport; controlled failures",
+  "results": [
+    {
+      "baseUrl": "https://aitoshuu.me/Anicca",
+      "viewport": "desktop",
+      "passed": true,
+      "dimensionDraft": "observe / close / refresh / workspace isolation / save / cancel passed",
+      "reading": {
+        "before": {
+          "scrollTop": 650,
+          "anchor": {
+            "offset": 269,
+            "top": 14.671875
+          }
+        },
+        "sameWidth": 650,
+        "afterReflow": {
+          "scrollTop": 564,
+          "anchor": {
+            "offset": 269,
+            "top": 14.375
+          }
+        },
+        "closedAfterRefresh": true
+      },
+      "search": "local clear restores both candidates without generating",
+      "errors": "retry sends previous request while preserving new draft and graph"
+    },
+    {
+      "baseUrl": "https://aitoshuu.me/Anicca",
+      "viewport": "mobile",
+      "passed": true,
+      "dimensionDraft": "observe / close / refresh / workspace isolation / save / cancel passed",
+      "reading": {
+        "before": {
+          "scrollTop": 650,
+          "anchor": {
+            "offset": 230,
+            "top": 19.546875
+          }
+        },
+        "sameWidth": 650,
+        "afterReflow": {
+          "scrollTop": 589,
+          "anchor": {
+            "offset": 230,
+            "top": 19.765625
+          }
+        },
+        "closedAfterRefresh": true
+      },
+      "search": "local clear restores both candidates without generating",
+      "reset": {
+        "panBefore": 960,
+        "restored": true,
+        "layoutUnchanged": true
+      },
+      "errors": "retry sends previous request while preserving new draft and graph"
+    },
+    {
+      "baseUrl": "https://tongye.me/Anicca",
+      "viewport": "desktop",
+      "passed": true,
+      "dimensionDraft": "observe / close / refresh / workspace isolation / save / cancel passed",
+      "reading": {
+        "before": {
+          "scrollTop": 650,
+          "anchor": {
+            "offset": 269,
+            "top": 14.671875
+          }
+        },
+        "sameWidth": 650,
+        "afterReflow": {
+          "scrollTop": 564,
+          "anchor": {
+            "offset": 269,
+            "top": 14.375
+          }
+        },
+        "closedAfterRefresh": true
+      },
+      "search": "local clear restores both candidates without generating",
+      "errors": "retry sends previous request while preserving new draft and graph"
+    },
+    {
+      "baseUrl": "https://tongye.me/Anicca",
+      "viewport": "mobile",
+      "passed": true,
+      "dimensionDraft": "observe / close / refresh / workspace isolation / save / cancel passed",
+      "reading": {
+        "before": {
+          "scrollTop": 650,
+          "anchor": {
+            "offset": 230,
+            "top": 19.546875
+          }
+        },
+        "sameWidth": 650,
+        "afterReflow": {
+          "scrollTop": 589,
+          "anchor": {
+            "offset": 230,
+            "top": 19.765625
+          }
+        },
+        "closedAfterRefresh": true
+      },
+      "search": "local clear restores both candidates without generating",
+      "reset": {
+        "panBefore": 960,
+        "restored": true,
+        "layoutUnchanged": true
+      },
+      "errors": "retry sends previous request while preserving new draft and graph"
+    }
+  ]
+}

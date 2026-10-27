@@ -885,8 +885,13 @@ async function readPersistedGraphCounts(page) {
 async function ensureMetaballFusionAndSeparation(browser) {
   const { context, page, pageIssues } = await createScenarioPage(browser, seededWorkspace, {
     viewport: { width: 1440, height: 980 }
-  });
+  }, "/dialogue", [() => localStorage.setItem("anicca.dialogue.renderer.v1", "original")]);
+  // s0b…s7b belong to the original Shader Park program. The other scenarios
+  // exercise platform defaults; deployment.mjs covers both TSL backends.
   await assertMetaballStage(page, "metaball fusion and separation");
+  if (await page.getByTestId("dialogue-metaball-canvas").getAttribute("data-renderer-backend") !== "original") {
+    throw new Error("The Shader Park uniform probe requires the original renderer");
+  }
   await waitForSeedLayout(page);
   const pair = "asst_thesis_1::user_root_1";
   const root = page.getByTestId("dialogue-stage-node-user_root_1");
@@ -941,7 +946,8 @@ async function ensureMetaballFusionAndSeparation(browser) {
       const gl = document.querySelector('[data-testid="dialogue-metaball-canvas"]')?.getContext("webgl2");
       const program = gl?.getParameter(gl.CURRENT_PROGRAM);
       if (!program) return false;
-      return Array.from({ length: 8 }, (_, index) => gl.getUniform(program, gl.getUniformLocation(program, `s${index}b`)))
+      const locations = Array.from({ length: 8 }, (_, index) => gl.getUniformLocation(program, `s${index}b`));
+      return locations.every(Boolean) && locations.map(location => gl.getUniform(program, location))
         .filter(blend => blend > 0.2).length === 2;
     });
 
@@ -965,7 +971,8 @@ async function ensureMetaballFusionAndSeparation(browser) {
       const gl = document.querySelector('[data-testid="dialogue-metaball-canvas"]')?.getContext("webgl2");
       const program = gl?.getParameter(gl.CURRENT_PROGRAM);
       if (!program) return false;
-      return Array.from({ length: 8 }, (_, index) => gl.getUniform(program, gl.getUniformLocation(program, `s${index}b`)))
+      const locations = Array.from({ length: 8 }, (_, index) => gl.getUniformLocation(program, `s${index}b`));
+      return locations.every(Boolean) && locations.map(location => gl.getUniform(program, location))
         .every(blend => blend > 0 && blend < 0.001);
     });
 
@@ -1032,7 +1039,7 @@ async function ensureMetaballWebglFallback(browser) {
     seededWorkspace,
     { viewport: { width: 1440, height: 980 } },
     "/dialogue",
-    [disableWebgl]
+    [() => localStorage.setItem("anicca.dialogue.renderer.v1", "original"), disableWebgl]
   );
   await assertMetaballStage(page, "WebGL fallback", "fallback");
   const root = page.getByTestId("dialogue-stage-node-user_root_1");

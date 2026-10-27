@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { appPath } from "@/lib/appPath";
 import { defaultThinkingSpace, johariThinkingSpace, newThinkingAxis, normalizeAxisSuggestions, normalizeThinkingSpace, perspectiveLabel,
-  type AxisPlacement, type AxisSuggestion, type ThinkingAxis } from "@/features/perspectives/model";
+  type AxisPlacement, type AxisSuggestion, type ThinkingAxis, type ThinkingSpace } from "@/features/perspectives/model";
 import type { PerspectiveControlsProps } from "./PerspectiveControls";
 import type { SeedViewDirection } from "./liquid/space";
 import styles from "./PerspectivePanel.module.css";
@@ -11,11 +11,18 @@ import styles from "./PerspectivePanel.module.css";
 const placementLabel: Record<AxisPlacement, string> = { x: "左右", y: "上下", z: "前后", none: "附加维度" };
 const poleView: Record<Exclude<AxisPlacement, "none">, [SeedViewDirection, SeedViewDirection]> = { x: ["left", "right"], y: ["bottom", "top"], z: ["front", "back"] };
 
-export function PerspectivePanel({ space, topic, suggestions: offered, onChange, onLook, onArrange, onClose }: PerspectiveControlsProps & { onClose(): void }) {
+export type PerspectivePanelProps = Omit<PerspectiveControlsProps, "workspaceId"> & {
+  draft: ThinkingSpace;
+  onDraftChange(draft: ThinkingSpace): void;
+  onDiscardDraft(): void;
+  onClose(): void;
+};
+
+export function PerspectivePanel({ space, draft, onDraftChange, onDiscardDraft, topic, suggestions: offered, onChange, onLook, onArrange, onResetView, onClose }: PerspectivePanelProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(space);
+  const setDraft = (next: ThinkingSpace | ((current: ThinkingSpace) => ThinkingSpace)) => onDraftChange(typeof next === "function" ? next(draft) : next);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [proposals, setProposals] = useState<AxisSuggestion[]>([]);
@@ -28,7 +35,7 @@ export function PerspectivePanel({ space, topic, suggestions: offered, onChange,
     return () => { abortRef.current?.abort(); previous?.focus({ preventScroll: true }); };
   }, []);
 
-  const suggestions = normalizeAxisSuggestions([...proposals, ...offered], space.axes);
+  const suggestions = normalizeAxisSuggestions([...proposals, ...offered], draft.axes);
   const selectPole = (axis: ThinkingAxis, value: number) => {
     onChange({ ...space, focus: { ...space.focus, [axis.id]: value } });
     if (axis.placement !== "none" && value) onLook(poleView[axis.placement][value > 0 ? 1 : 0]);
@@ -56,14 +63,15 @@ export function PerspectivePanel({ space, topic, suggestions: offered, onChange,
     }
   };
   const adopt = (axis: AxisSuggestion) => {
-    setDraft({ ...space, axes: [...space.axes, { ...axis, id: newThinkingAxis().id, placement: "none" }] });
+    if (draft.axes.length >= 24) return;
+    setDraft({ ...draft, axes: [...draft.axes, { ...axis, id: newThinkingAxis().id, placement: "none" }] });
     setEditing(true); setError("");
   };
   const save = () => {
     if (draft.axes.some(axis => !axis.label.trim() || !axis.negative.trim() || !axis.positive.trim() || axis.negative.trim() === axis.positive.trim())) {
       setError("给维度和两端各起一个名字，两端需要有所区别。"); return;
     }
-    onChange(normalizeThinkingSpace(draft)); setEditing(false); setError("");
+    onChange(normalizeThinkingSpace({ ...draft, focus: space.focus })); onDiscardDraft(); setEditing(false); setError("");
   };
   const hasJohari = space.axes.some(axis => axis.id === "johari-self") && space.axes.some(axis => axis.id === "johari-others");
 
@@ -74,7 +82,7 @@ export function PerspectivePanel({ space, topic, suggestions: offered, onChange,
       <button type="button" className={styles.close} aria-label="关闭思考空间" onClick={onClose}>×</button></header>
     <nav className={styles.tabs} aria-label="思考空间设置">
       <button type="button" aria-pressed={!editing} onClick={() => { setEditing(false); setError(""); }}>观察</button>
-      <button type="button" aria-pressed={editing} onClick={() => { setDraft(space); setEditing(true); setError(""); }}>编辑维度</button>
+      <button type="button" aria-pressed={editing} onClick={() => { setEditing(true); setError(""); }}>编辑维度</button>
     </nav>
     {editing ? <form className={styles.editor} onSubmit={event => { event.preventDefault(); save(); }}>
       <p className={styles.help}>三条维度可以放入空间，其余仍参与思考。新维度用于之后的生成，每颗种子保留当时的角度。</p>
@@ -92,7 +100,7 @@ export function PerspectivePanel({ space, topic, suggestions: offered, onChange,
       <div className={styles.editorActions}><button type="button" disabled={draft.axes.length >= 24} onClick={() => setDraft(current => ({ ...current, axes: [...current.axes, newThinkingAxis()] }))}>＋ 添加维度</button>
         <button type="button" onClick={() => setDraft(johariThinkingSpace())}>乔哈里模板</button>
         <button type="button" onClick={() => setDraft(defaultThinkingSpace())}>默认维度</button></div>
-      <footer className={styles.footer}><button type="button" onClick={() => { setEditing(false); setError(""); }}>取消编辑</button><button type="submit" className={styles.primary}>保存维度</button></footer>
+      <footer className={styles.footer}><button type="button" onClick={() => { onDiscardDraft(); setEditing(false); setError(""); }}>取消编辑</button><button type="submit" className={styles.primary}>保存维度</button></footer>
     </form> : <>
       <p className={styles.help}>选一端，下一次生成就从这里展开。几个角度可以叠加，正反合仍各自展开。</p>
       <p className={styles.help}>种子的色相随极性微调，偏向越明确颜色越浓，后代略亮。</p>
@@ -111,13 +119,14 @@ export function PerspectivePanel({ space, topic, suggestions: offered, onChange,
         {perspectiveLabel(space) ? <button type="button" onClick={() => onChange({ ...space, focus: {} })}>清空选择</button> : null}</div>
       <div className={styles.views}><span>只转动视角</span><div>{([ ["front", "前"], ["back", "后"], ["left", "左"], ["right", "右"], ["top", "上"], ["bottom", "下"] ] as const).map(([direction, label]) =>
         <button type="button" key={direction} aria-label={`从${label}方观察`} onClick={() => { onLook(direction); onClose(); }}>{label}</button>)}</div></div>
+      <button type="button" className={styles.arrange} onClick={() => { onResetView(); onClose(); }}>复位视角与缩放</button>
       <button type="button" className={styles.arrange} onClick={() => { onArrange(); onClose(); }}>按已有角度归位</button>
       <section className={styles.suggestions} aria-label="可补充的视角"><div className={styles.suggestionHeading}><h3>还有什么没看见</h3>
-        <button type="button" disabled={busy || !topic.trim() || space.axes.length >= 24} onClick={() => void askForAxes()}>{busy ? "正在寻找…" : "请 AI 提醒"}</button></div>
+        <button type="button" disabled={busy || !topic.trim() || draft.axes.length >= 24} onClick={() => void askForAxes()}>{busy ? "正在寻找…" : "请 AI 提醒"}</button></div>
         {!topic.trim() ? <p>先写下一个问题，再一起找新的维度。</p> : !suggestions.length ? <p>AI 可以建议新的维度，由你决定是否采用。</p> : null}
         <div aria-live="polite" aria-busy={busy}>{suggestions.map(axis => <article key={axis.id} className={styles.suggestion}>
           <h4>{axis.label} <span>{axis.negative} ↔ {axis.positive}</span></h4><p>{axis.reason}</p>
-          <button type="button" aria-label={`编辑并采用${axis.label}维度`} disabled={space.axes.length >= 24} onClick={() => adopt(axis)}>编辑并采用</button>
+          <button type="button" aria-label={`编辑并采用${axis.label}维度`} disabled={draft.axes.length >= 24} onClick={() => adopt(axis)}>编辑并采用</button>
         </article>)}</div>
       </section>
     </>}

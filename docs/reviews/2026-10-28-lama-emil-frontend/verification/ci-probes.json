@@ -1,0 +1,30 @@
+{
+  "baseUrl": "http://127.0.0.1:48830/Anicca",
+  "serverMode": "dev",
+  "generatedAt": "2026-10-27T18:30:40.869Z",
+  "headSha": "4c0ee909fb6702a1e92bfe8ddfbe9eacddcc05d6",
+  "runId": "local",
+  "runAttempt": "local",
+  "viewports": [],
+  "interactionScenarios": [
+    {
+      "name": "metaball-fusion-separation",
+      "passed": true,
+      "pair": "asst_thesis_1::user_root_1",
+      "graphBefore": {
+        "nodes": 6,
+        "edges": 6
+      },
+      "graphAfter": {
+        "nodes": 6,
+        "edges": 6
+      },
+      "screenshot": "../../../../../tmp/anicca-six-fixes-ci-probes-pass/dialogue/desktop-metaball-fused.png"
+    },
+    {
+      "name": "metaball-webgl-fallback",
+      "passed": true,
+      "screenshot": "../../../../../tmp/anicca-six-fixes-ci-probes-pass/dialogue/desktop-metaball-fallback.png"
+    }
+  ]
+}

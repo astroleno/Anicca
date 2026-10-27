@@ -11,7 +11,7 @@
 - 腾讯云 Lighthouse `122.51.59.89` 承载应用；源站只接受入口服务器和回环访问。Node 仅监听 `127.0.0.1:3250`。
 - `anicca.service` 已启用开机启动，应用与 Nginx 均为 active，验收后重启次数为 0。
 - Linux x64 / Node 22.23.4 / Next.js 15.5.28；原生 Sharp 0.35.5 已运行验证。
-- 当前发布目录：`/opt/anicca/releases/20261027-subpath-IBPSEMvmKfkwr9DoSXEkl`。62 个待提交源码文件与服务器构建目录逐文件哈希一致，已删除文件在构建目录中不存在。
+- 首次发布目录：`/opt/anicca/releases/20261027-subpath-IBPSEMvmKfkwr9DoSXEkl`。62 个待提交源码文件与服务器构建目录逐文件哈希一致，已删除文件在构建目录中不存在。
 - 服务凭据独立存放于 root 专用目录，发布包中没有 dotenv 文件；Git 暂存检查未发现生产凭据。
 - 入口 vhost 备份：`/root/anicca-deploy-backup-20261028-1793117610`。恢复办法见 `deploy/README.md`。
 
@@ -48,3 +48,9 @@
 - `renderers-rerun/summary.json`：双域名双端手动渲染切换、持久化与模拟故障回退。
 
 复测入口：`scripts/visual-smoke/deployment.mjs`，真实接口加 `--live`；仅检查渲染器加 `--renderer-only`。
+
+## 后续：Lama × Emil 六项修复
+
+同日完成四项 P2、两项 P3，当前共享发布为 `/opt/anicca/releases/20261028-six-fixes-final`，Build ID `gYvsXfhsH4WQe87NjnYgQ`。首次发布保留作为回滚点；两个域名、桌面与移动触摸视口的受控和真实接口完整流程重新通过，共 24 次真实 API 请求成功。全仓检查为 93 文件、680 项测试通过，仍保留 26 条既有 lint warning。未更改反代、证书、默认渲染器或种子材质。
+
+详见 [六项修复与公网验收](2026-10-28-lama-emil-frontend/fix-verification.md)。

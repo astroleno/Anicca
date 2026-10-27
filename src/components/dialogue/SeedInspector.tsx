@@ -12,6 +12,8 @@ import { DeferredEncounter, UnderstandingChange } from "./SeedMeaning";
 import { SeedPassage } from "./SeedPassage";
 import { inquiryLabel, readInquiryOrigin, type InquiryTarget } from "@/features/dialectic/inquiry";
 import { readNovelty } from "@/features/dialectic/novelty";
+import type { ReadingPosition } from "@/lib/persist/readingState";
+import { captureReadingPosition, restoreReadingPosition } from "./readingPosition";
 
 export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = {}, space = defaultThinkingSpace(), combining, busy, activeDeferredId, onContinueDeferred, onClose, onSplit, onExpandPolarity, onWrite, onCombine, onPick, onCreateInstance, onRemoveInstance, onExpandSources, onInquiry, inquiryTarget, inquiryComposer, companionId, getReadingPosition, onRememberPosition }: {
   graph: Graph; nodeId: string; combining: boolean; busy: boolean;
@@ -23,7 +25,7 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
   onExpandPolarity?(axisId: string, frame: ThinkingSpace): void;
   onInquiry?(target: InquiryTarget): void;
   inquiryTarget?: InquiryTarget; inquiryComposer?: ReactNode; companionId?: string;
-  getReadingPosition?(id: string): number; onRememberPosition?(id: string, position: number): void;
+  getReadingPosition?(id: string): ReadingPosition | undefined; onRememberPosition?(id: string, position: ReadingPosition): void;
   onCreateInstance?(): void; onRemoveInstance?(): void; onExpandSources?(): void;
 }) {
   const [query, setQuery] = useState("");
@@ -35,14 +37,29 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
   const inspectorRef = useRef<HTMLElement | null>(null);
   const polarityButtonRef = useRef<HTMLButtonElement>(null);
   const actionId = useId();
-  const readingScrollRef = useRef(0);
+  const readingPositionRef = useRef<ReadingPosition>({ scrollTop: 0 });
   const wasChoosingRef = useRef(false);
   useLayoutEffect(() => {
     const panel = inspectorRef.current;
     if (!panel) return;
-    readingScrollRef.current = getReadingPosition?.(nodeId) || 0;
-    panel.scrollTop = readingScrollRef.current;
-    return () => { onRememberPosition?.(nodeId, readingScrollRef.current); };
+    readingPositionRef.current = getReadingPosition?.(nodeId) || { scrollTop: 0 };
+    restoreReadingPosition(panel, readingPositionRef.current);
+    let disposed = false, interacted = false, frame = 0;
+    const interact = () => { interacted = true; };
+    const afterLayout = () => {
+      if (disposed || interacted || panel.dataset.mode !== "read") return;
+      restoreReadingPosition(panel, readingPositionRef.current);
+    };
+    frame = requestAnimationFrame(afterLayout);
+    // Font metrics may arrive after the first paint. Never move text after a
+    // reader has started interacting with it.
+    void document.fonts?.ready.then(() => { if (!disposed && !interacted) { cancelAnimationFrame(frame); frame = requestAnimationFrame(afterLayout); } });
+    panel.addEventListener("pointerdown", interact, true); panel.addEventListener("wheel", interact, true); panel.addEventListener("keydown", interact, true);
+    return () => {
+      disposed = true; cancelAnimationFrame(frame);
+      panel.removeEventListener("pointerdown", interact, true); panel.removeEventListener("wheel", interact, true); panel.removeEventListener("keydown", interact, true);
+      onRememberPosition?.(nodeId, readingPositionRef.current);
+    };
   }, [nodeId, getReadingPosition, onRememberPosition]);
   useLayoutEffect(() => {
     const panel = inspectorRef.current;
@@ -51,7 +68,7 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
       panel.scrollTop = 0;
       panel.querySelector<HTMLElement>("h2")?.focus({ preventScroll: true });
     } else if (wasChoosingRef.current) {
-      panel.scrollTop = readingScrollRef.current;
+      restoreReadingPosition(panel, readingPositionRef.current);
       polarityButtonRef.current?.focus({ preventScroll: true });
     }
     wasChoosingRef.current = polarityOpen;
@@ -80,9 +97,8 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
     }) as [string, string]
   }));
   const activeEncounter = encounters.find(item => item.id === activeDeferredId);
-  const candidates = Object.values(graph.nodes).filter((candidate) =>
-    candidate.id !== nodeId && candidate.text?.trim() &&
-    `${candidate.text} ${candidate.meta?.label || ""}`.includes(query.trim())).reverse();
+  const allCandidates = Object.values(graph.nodes).filter(candidate => candidate.id !== nodeId && candidate.text?.trim()).reverse();
+  const candidates = allCandidates.filter(candidate => `${candidate.text} ${candidate.meta?.label || ""}`.includes(query.trim()));
   const companion = candidates.find(candidate => candidate.id === companionId);
   const otherCandidates = candidates.filter(candidate => candidate.id !== companion?.id);
   const novelty = readNovelty(node.meta?.novelty);
@@ -96,7 +112,7 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
         onClick={() => onSplit(expansionFrame)}><span id={`${actionId}-split`}>推演正反</span><small id={`${actionId}-split-hint`}>推进判断，检验前提</small></button>
       {onExpandPolarity ? <button ref={polarityButtonRef} type="button" aria-labelledby={`${actionId}-polarity`} aria-describedby={`${actionId}-polarity-hint`} aria-expanded={polarityOpen}
         aria-controls="seed-polarity-picker" disabled={busy || !node.text?.trim() || !expansionFrame.axes.length}
-        onClick={() => { readingScrollRef.current = inspectorRef.current?.scrollTop || 0; setPolarityOpen(true); }}><span id={`${actionId}-polarity`}>看极性两端</span><small id={`${actionId}-polarity-hint`}>换观察位置，看见两端</small></button> : null}
+        onClick={() => { if (inspectorRef.current) readingPositionRef.current = captureReadingPosition(inspectorRef.current); setPolarityOpen(true); }}><span id={`${actionId}-polarity`}>看极性两端</span><small id={`${actionId}-polarity-hint`}>换观察位置，看见两端</small></button> : null}
     </div>
     {capturedFrame && (continuationLens || frameDiffers) ? <p className={styles.seedLensHint}>
       {continuationLens ? `从「${continuationLens}」继续` : useCurrentAngle ? "当前入口未限定极性" : "沿用原来的入口，未限定极性"}
@@ -124,7 +140,7 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
   return (
     <section ref={inspectorRef} className={styles.seedInspector} data-testid="dialogue-panel" aria-labelledby="conversation-panel-heading"
       data-mode={polarityOpen ? "polarity" : combining ? "combine" : "read"} data-selecting={selecting ? "true" : undefined}
-      onScroll={event => { if (!polarityOpen) { readingScrollRef.current = event.currentTarget.scrollTop; onRememberPosition?.(nodeId, readingScrollRef.current); } }}>
+      onScroll={event => { if (!polarityOpen && !combining) { readingPositionRef.current = captureReadingPosition(event.currentTarget); onRememberPosition?.(nodeId, readingPositionRef.current); } }}>
       <header className={styles.seedInspectorHeader}>
         <span>{polarityOpen ? `从「${seedLabel(graph, nodeId)}」继续` : combining ? "组合" : activeEncounter ? "暂不融合" : inquiry ? inquiryLabel(inquiry.intent) : origin ? "极性视角" : node.branchType || "想法"}</span>
         <button type="button" className={styles.seedReadingBack} aria-label={polarityOpen ? "返回种子阅读" : "返回种子，收起阅读"}
@@ -146,7 +162,9 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
                 <small>{polarityLabel(candidate.meta?.polarity) || candidate.branchType || "想法"}</small><span>{seedLabel(graph, candidate.id)}</span>
               </button>
             ))}
-            {!candidates.length ? <p>还没有可组合的种子。可以先写一个想法，或裂变当前种子。</p> : null}
+            {!candidates.length ? allCandidates.length ? <div role="status"><p>没有找到匹配的种子，换个词试试。</p>
+              <button type="button" onClick={() => setQuery("")}>清空搜索</button></div>
+              : <p>还没有可组合的种子。可以先写一个想法，或裂变当前种子。</p> : null}
           </div>
         </>
       ) : activeEncounter ? (
@@ -162,7 +180,7 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
             <blockquote>{inquiry.quote}</blockquote><p>{inquiry.question}</p>
           </details> : null}
           <UnderstandingChange node={node} graph={graph} onPick={onPick}
-            onReframe={onExpandPolarity && !busy && !selecting ? () => { readingScrollRef.current = inspectorRef.current?.scrollTop || 0; setPolarityOpen(true); } : undefined} />
+            onReframe={onExpandPolarity && !busy && !selecting ? () => { if (inspectorRef.current) readingPositionRef.current = captureReadingPosition(inspectorRef.current); setPolarityOpen(true); } : undefined} />
           {!selecting ? expansionControls : null}
           <SeedPassage key={node.id} nodeId={node.id} text={node.text || "这颗种子还没有正文。"} className={styles.seedBody}
             busy={busy} onInquiry={!polarityOpen && node.text?.trim() ? onInquiry : undefined}

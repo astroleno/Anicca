@@ -16,8 +16,9 @@ afterEach(() => {
 
 function Harness({ changed = vi.fn(), look = vi.fn(), close = vi.fn() }: { changed?: (space: ThinkingSpace) => void; look?: (direction: SeedViewDirection) => void; close?: () => void }) {
   const [space, setSpace] = useState(defaultThinkingSpace());
-  return <PerspectivePanel space={space} topic="如何让自由探索持续生长" suggestions={[]}
-    onChange={next => { setSpace(next); changed(next); }} onLook={look} onArrange={vi.fn()} onClose={close} />;
+  const [draft, setDraft] = useState<ThinkingSpace | null>(null);
+  return <PerspectivePanel space={space} draft={draft || space} onDraftChange={setDraft} onDiscardDraft={() => setDraft(null)} topic="如何让自由探索持续生长" suggestions={[]}
+    onChange={next => { setSpace(next); changed(next); }} onLook={look} onArrange={vi.fn()} onResetView={vi.fn()} onClose={close} />;
 }
 
 it("combines explicit generation poles while free camera choices leave the lens untouched", () => {
@@ -76,4 +77,33 @@ it("aborts an outstanding suggestion when the workspace panel unmounts and ignor
   view.unmount(); expect(signal?.aborted).toBe(true);
   await act(async () => { reply(new Response(JSON.stringify({ axes: [{ label: "资源", negative: "节制", positive: "扩张", reason: "不应串入别的工作区" }] }))); });
   expect(changed).not.toHaveBeenCalled();
+});
+
+it("keeps multiple adopted suggestions in the working draft without offering duplicates", async () => {
+  const changed = vi.fn();
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ axes: [
+    { label: "资源", negative: "节制", positive: "扩张", reason: "看看资源边界" },
+    { label: "责任", negative: "自发", positive: "共担", reason: "看看维护关系" }
+  ] }))));
+  render(<Harness changed={changed} />);
+  fireEvent.click(screen.getByRole("button", { name: "请 AI 提醒" }));
+  fireEvent.click(await screen.findByRole("button", { name: "编辑并采用资源维度" }));
+  fireEvent.click(screen.getByRole("button", { name: "观察" }));
+  expect(screen.queryByRole("button", { name: "编辑并采用资源维度" })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "编辑并采用责任维度" }));
+  expect(screen.getAllByRole("group")).toHaveLength(5);
+  expect(changed).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "保存维度" }));
+  expect(changed.mock.calls.at(-1)?.[0].axes).toHaveLength(5);
+});
+
+it("counts unsaved axes toward the limit when adopting an AI proposal", () => {
+  const space = defaultThinkingSpace(), draft = { ...space, axes: Array.from({ length: 24 }, (_, index) => ({
+    ...space.axes[0], id: `draft_${index}`, label: `维度${index}`, negative: `一端${index}`, positive: `另一端${index}`
+  })) }, changeDraft = vi.fn();
+  render(<PerspectivePanel space={space} draft={draft} onDraftChange={changeDraft} onDiscardDraft={vi.fn()} topic="花园的维护"
+    suggestions={[{ id: "new", label: "责任", negative: "自发", positive: "共担", reason: "看看维护关系", evidence: "content" }]}
+    onChange={vi.fn()} onLook={vi.fn()} onArrange={vi.fn()} onResetView={vi.fn()} onClose={vi.fn()} />);
+  const adopt = screen.getByRole("button", { name: "编辑并采用责任维度" }); expect(adopt).toBeDisabled();
+  fireEvent.click(adopt); expect(changeDraft).not.toHaveBeenCalled();
 });

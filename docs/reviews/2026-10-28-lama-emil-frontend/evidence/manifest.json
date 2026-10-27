@@ -1,0 +1,57 @@
+{
+  "baselineCommit": "4c0ee909fb6702a1e92bfe8ddfbe9eacddcc05d6",
+  "appUrl": "https://aitoshuu.me/Anicca",
+  "evidenceSource": "Same-day deployment verification; controlled states clearly distinguished from live API states",
+  "baselineScreenshots": [
+    "live-rerun/aitoshuu.me/live/thought-flow-live-desktop-inline-question.png",
+    "live-rerun/aitoshuu.me/live/thought-flow-live-desktop-response.png",
+    "live-rerun/aitoshuu.me/live/thought-flow-live-desktop-axis.png",
+    "live-rerun/aitoshuu.me/live/thought-flow-live-desktop-pair-after-refresh.png",
+    "live-rerun/aitoshuu.me/live/thought-flow-live-desktop-synthesis.png",
+    "live-rerun/aitoshuu.me/live/thought-flow-live-desktop-after-fission.png",
+    "live-rerun/aitoshuu.me/live/thought-flow-live-desktop-after-polarity.png",
+    "live-rerun/aitoshuu.me/live/thought-flow-live-mobile-390-inline-question.png",
+    "live-rerun/aitoshuu.me/live/thought-flow-live-mobile-390-response.png",
+    "live-rerun/aitoshuu.me/live/thought-flow-live-mobile-390-axis.png",
+    "live-rerun/aitoshuu.me/live/thought-flow-live-mobile-390-pair-after-refresh.png",
+    "live-rerun/aitoshuu.me/live/thought-flow-live-mobile-390-synthesis.png",
+    "live-rerun/aitoshuu.me/live/thought-flow-live-mobile-390-after-fission.png",
+    "live-rerun/aitoshuu.me/live/thought-flow-live-mobile-390-after-polarity.png",
+    "live-rerun/aitoshuu.me/live/thought-flow-live-mobile-390-keyboard.png",
+    "controlled/aitoshuu.me/controlled/desktop-pending-elapsed.png",
+    "controlled/aitoshuu.me/controlled/desktop-failure-retry.png",
+    "controlled/aitoshuu.me/controlled/desktop-touch-combination.png",
+    "controlled/aitoshuu.me/controlled/mobile-pending-elapsed.png",
+    "controlled/aitoshuu.me/controlled/mobile-failure-retry.png",
+    "controlled/aitoshuu.me/controlled/mobile-touch-combination.png"
+  ],
+  "reusedEvidenceRoot": "/tmp/anicca-public-qa-20261028",
+  "productFilesModified": false,
+  "freshCapture": {
+    "directory": "fresh",
+    "url": "https://aitoshuu.me/Anicca",
+    "viewports": [
+      "1440x900",
+      "390x844 touch emulation"
+    ],
+    "data": "Synthetic garden fixture in fresh browser contexts; no model POST sent",
+    "method": "Existing project Playwright workflow for necessary visual verification; Browser plugin not available",
+    "observations": "fresh/observations.json",
+    "productChanges": false,
+    "userStorageCleared": false
+  },
+  "independentReviews": {
+    "lama": "Lama -> appllama-app-design-skill; independent sub-agent",
+    "emil": "Emil -> emil-design-eng; independent sub-agent",
+    "sharedEvidence": true,
+    "reviewersReadEachOthersFindings": false,
+    "consolidatedBy": "Main thread"
+  },
+  "limits": [
+    "No new physical-device performance measurement",
+    "No true mobile keyboard verification",
+    "No user study or measured psychological flow",
+    "Predominantly light-theme screenshots",
+    "DOM Range selection is not a real finger gesture"
+  ]
+}

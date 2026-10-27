@@ -124,7 +124,7 @@ it("restores a reading position and keeps it when returning from axis selection"
   const store = new BranchGraphStore(), root = store.createUserNode("可以保留不同的写作节奏。");
   const remember = vi.fn();
   const view = render(<SeedInspector graph={store.getGraph()} nodeId={root} combining={false} busy={false}
-    getReadingPosition={() => 120} onRememberPosition={remember}
+    getReadingPosition={() => ({ scrollTop: 120 })} onRememberPosition={remember}
     onClose={vi.fn()} onWrite={vi.fn()} onCombine={vi.fn()} onPick={vi.fn()} onSplit={vi.fn()} onExpandPolarity={vi.fn()} />);
   const panel = screen.getByTestId("dialogue-panel");
   expect(panel.scrollTop).toBe(120);
@@ -135,5 +135,18 @@ it("restores a reading position and keeps it when returning from axis selection"
   expect(panel.scrollTop).toBe(92);
   expect(screen.getByRole("button", { name: "看极性两端" })).toHaveFocus();
   view.unmount();
-  expect(remember).toHaveBeenLastCalledWith(root, 92);
+  expect(remember).toHaveBeenLastCalledWith(root, { scrollTop: 92 });
+});
+
+it("distinguishes an unmatched query and clears it without choosing a partner", () => {
+  const store = new BranchGraphStore(), root = store.createUserNode("共同维护花园"), other = store.createUserNode("为开放用途留出空间"), pick = vi.fn();
+  render(<SeedInspector graph={store.getGraph()} nodeId={root} combining busy={false}
+    onClose={vi.fn()} onWrite={vi.fn()} onCombine={vi.fn()} onPick={pick} onSplit={vi.fn()} />);
+  fireEvent.change(screen.getByRole("textbox", { name: "搜索种子" }), { target: { value: "不匹配词" } });
+  expect(screen.getByRole("status")).toHaveTextContent("没有找到匹配的种子");
+  expect(screen.queryByText(/还没有可组合/)).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "清空搜索" }));
+  expect(screen.getByRole("textbox", { name: "搜索种子" })).toHaveValue("");
+  expect(within(screen.getByRole("group", { name: "选择组合对象" })).getAllByRole("button")).toHaveLength(1);
+  expect(store.getGraph().nodes[other]).toBeDefined(); expect(pick).not.toHaveBeenCalled();
 });

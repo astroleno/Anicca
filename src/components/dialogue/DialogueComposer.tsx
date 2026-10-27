@@ -127,7 +127,7 @@ export function DialogueComposer({
           <strong>{errorState.title}</strong><span>{errorState.detail}</span>
           {errorState.recovery ? <small>{errorState.recovery}</small> : null}
           {onRetry ? <button type="button" className={styles.secondaryButton} disabled={disabled} onClick={onRetry}
-            title="重新发送上次请求，保留当前草稿">重试</button> : null}
+            title="重新发送上次请求，保留当前草稿">重试上次</button> : null}
         </div>
       ) : null}
     </form>

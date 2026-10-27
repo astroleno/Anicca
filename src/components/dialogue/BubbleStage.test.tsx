@@ -694,6 +694,21 @@ describe("BubbleStage", () => {
     expect(useDialogueUiStore.getState().stageLayouts["pan-handoff"].nodePositions.a).toEqual({ x: 50, y: 50 });
   });
 
+  it("resets a mobile camera request without rearranging persisted seeds", () => {
+    const props = { layoutKey: "mobile-reset", nodes: [{ id: "a", label: "a", kind: "user" as const, relation: "focus" as const, seedX: 37, seedY: 61 }], focusNodeId: "a", onSelect: vi.fn() };
+    const { rerender } = render(<BubbleStage {...props} />);
+    const track = screen.getByTestId("dialogue-stage-track"); mockViewportRect(screen.getByTestId("dialogue-stage-viewport"));
+    fireEvent.pointerDown(track, { button: 0, pointerId: 181, pointerType: "touch", clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(window, { pointerId: 181, pointerType: "touch", clientX: -700, clientY: -100 });
+    fireEvent.pointerUp(window, { pointerId: 181, pointerType: "touch", clientX: -700, clientY: -100 });
+    expect(track).toHaveAttribute("data-space-pan-x", "-800");
+    const saved = structuredClone(useDialogueUiStore.getState().stageLayouts["mobile-reset"]);
+    rerender(<BubbleStage {...props} cameraView={{ direction: "reset", revision: 1 }} />);
+    expect(track).toHaveAttribute("data-space-pan-x", "0"); expect(track).toHaveAttribute("data-space-pan-y", "0");
+    expect(track).toHaveAttribute("data-space-yaw", "0"); expect(track).toHaveAttribute("data-space-pitch", "0"); expect(track).toHaveAttribute("data-space-zoom", "1");
+    expect(useDialogueUiStore.getState().stageLayouts["mobile-reset"]).toEqual(saved);
+  });
+
   it("cancels an unfinished pan with Escape and ends it safely when reading covers the stage", () => {
     const props = { layoutKey: "cancel-pan", nodes: [{ id: "a", label: "a", kind: "user" as const, relation: "focus" as const, seedX: 50, seedY: 50 }], focusNodeId: "a", onSelect: vi.fn() };
     const { rerender } = render(<BubbleStage {...props} />);

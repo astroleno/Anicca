@@ -83,6 +83,7 @@ import { Graph } from "@/types/anicca";
 import { WorkspaceRegistryEntry, WorkspaceRoundtableArtifact } from "@/types/workspace";
 import styles from "./DialogueShell.module.css";
 import { useDialogueTheme } from "./useDialogueTheme";
+import { useReadingJournal } from "./useReadingJournal";
 
 
 type DialogueLocationLike = Pick<Location, "hostname" | "search">;
@@ -202,25 +203,25 @@ function formatDialogueError(error: unknown): DialogueErrorState {
 
   if (message.startsWith("invalid_model_output")) {
     return {
-      title: "模型这轮没按约定返回",
-      detail: "结果结构不完整，所以这次没有写进图里。",
-      recovery: "换个更具体的问法，或稍后再试。"
+      title: "这次回答还不完整",
+      detail: "这次结果没有写入，已有想法和当前草稿都已保留。",
+      recovery: "可以重试上次，或调整输入后生成。"
     };
   }
 
   if (message.includes("openai_api_key_missing")) {
     return {
-      title: "模型服务还没接好",
-      detail: "当前环境没有配置 OpenAI API key，所以这轮请求没有真正发出去。",
-      recovery: "先补上 OPENAI_API_KEY，再重新生成。"
+      title: "生成服务暂未就绪",
+      detail: "这次没有生成新内容，已有想法和当前草稿都已保留。",
+      recovery: "可以先继续写，稍后再重试上次。"
     };
   }
 
   if (message.includes("provider_auth_failed")) {
     return {
-      title: "模型服务认证失败",
-      detail: "当前 API key 或代理配置没有通过校验。",
-      recovery: "检查 OPENAI_API_KEY 和 baseURL 后再试。"
+      title: "生成服务暂时无法响应",
+      detail: "这次没有生成新内容，已有想法和当前草稿都已保留。",
+      recovery: "可以先继续写，稍后再重试上次。"
     };
   }
 
@@ -228,7 +229,7 @@ function formatDialogueError(error: unknown): DialogueErrorState {
     return {
       title: "模型服务暂时不可达",
       detail: "这轮请求没有连到模型服务。",
-      recovery: "检查网络、代理或 baseURL，再重新生成。"
+      recovery: "可以重试上次，或先保留草稿继续思考。"
     };
   }
 
@@ -236,7 +237,7 @@ function formatDialogueError(error: unknown): DialogueErrorState {
     return {
       title: "模型服务触发限流",
       detail: "上游暂时拒绝了过多请求，当前图和圆桌记录都没有被改动。",
-      recovery: "等一会儿再试，或切换到负载更低的模型。"
+      recovery: "稍等一会儿再重试上次，也可以先继续写。"
     };
   }
 
@@ -244,7 +245,7 @@ function formatDialogueError(error: unknown): DialogueErrorState {
     return {
       title: "模型服务负载已满",
       detail: "上游当前没有容量处理这轮请求，当前图和圆桌记录都没有被改动。",
-      recovery: "稍后重试，或临时切换到其他模型服务。"
+      recovery: "稍后再重试上次，已有想法和当前草稿都已保留。"
     };
   }
 
@@ -256,7 +257,7 @@ function formatDialogueError(error: unknown): DialogueErrorState {
     return {
       title: "这一轮正反没有生成出来",
       detail: "主线图保持了原样，没有留下半截节点。",
-      recovery: "稍后重试，或先检查模型服务配置。"
+      recovery: "可以重试上次，或先沿已有种子继续思考。"
     };
   }
 
@@ -264,14 +265,14 @@ function formatDialogueError(error: unknown): DialogueErrorState {
     return {
       title: "这一轮收束没有完成",
       detail: "正与反还在原处，图状态没有被破坏。",
-      recovery: "稍后重试，或先检查模型服务配置。"
+      recovery: "可以重试上次，或先沿正反两端继续思考。"
     };
   }
 
   return {
     title: "这轮生成出了点问题",
     detail: "当前图状态没有被改坏，你可以直接再试一次。",
-    recovery: "如果反复失败，先检查模型服务配置。"
+    recovery: "可以重试上次；也可以继续写，准备好后再生成。"
   };
 }
 
@@ -547,7 +548,7 @@ export function DialogueShell() {
   const [guideRequest, setGuideRequest] = useState(0);
   const [atmosphereVisible, setAtmosphereVisible] = useState(false);
   const [axisSuggestions, setAxisSuggestions] = useState<AxisSuggestion[]>([]);
-  const [cameraView, setCameraView] = useState<{ direction: SeedViewDirection; revision: number } | null>(null);
+  const [cameraView, setCameraView] = useState<{ direction: SeedViewDirection | "reset"; revision: number } | null>(null);
   const pendingPerspectiveRef = useRef<ThinkingSpace | null>(null);
   const [combineSourceId, setCombineSourceId] = useState<string | null>(null);
   const [selectedPair, setSelectedPair] = useState<DialogueSynthesisAction | null>(null);
@@ -570,9 +571,7 @@ export function DialogueShell() {
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const composerRootRef = useRef<HTMLFormElement | null>(null);
   const composerTextareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const readingPositionsRef = useRef(new Map<string, number>());
-  const getReadingPosition = useCallback((id: string) => readingPositionsRef.current.get(id) || 0, []);
-  const rememberReadingPosition = useCallback((id: string, position: number) => { readingPositionsRef.current.set(id, position); }, []);
+  const readingMotionRef = useRef<"instant" | "soft">("instant");
   const roundtableDrawerRef = useRef<HTMLElement | null>(null);
   const lineageDrawerRef = useRef<HTMLDivElement | null>(null);
   const roundtableSummonButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -599,7 +598,6 @@ export function DialogueShell() {
     setAxisSuggestions([]); setCameraView(null); pendingPerspectiveRef.current = null;
     setActiveInstanceId(null); setExpandedResultId(null); setExpansionResult(null);
     setEvolutionOpen(false);
-    readingPositionsRef.current.clear();
     setActiveDeferredId(null); setConnectionTargetId(null);
   }, [workspaceSessionId]);
   const pendingAction = useDialogueUiStore((state) => state.pendingAction);
@@ -612,6 +610,23 @@ export function DialogueShell() {
   const clearPending = useDialogueUiStore((state) => state.clearPending);
   const cancelPendingRequests = useDialogueUiStore((state) => state.cancelPendingRequests);
   const setErrorState = useDialogueUiStore((state) => state.setErrorState);
+  const { getReadingPosition, rememberReadingPosition } = useReadingJournal({
+    workspaceId, sessionId: workspaceSessionId, ready: workspaceReady, graph: graphSnapshot.graph, instances: seedInstances,
+    readingOpen, activeId: seedConceptId(graphSnapshot.graph, seedInstances, activeInstanceId) === focusedNodeId ? activeInstanceId : focusedNodeId,
+    setReadingOpen,
+    onRestore: (instanceId, conceptId) => {
+      readingMotionRef.current = "instant";
+      setActiveInstanceId(instanceId); setFocusedNodeId(conceptId);
+    }
+  });
+
+  useEffect(() => {
+    const pointer = () => { readingMotionRef.current = "soft"; };
+    const keyboard = () => { readingMotionRef.current = "instant"; };
+    const activate = (event: MouseEvent) => { if (event.detail === 0) keyboard(); };
+    document.addEventListener("pointerdown", pointer, true); document.addEventListener("keydown", keyboard, true); document.addEventListener("click", activate, true);
+    return () => { document.removeEventListener("pointerdown", pointer, true); document.removeEventListener("keydown", keyboard, true); document.removeEventListener("click", activate, true); };
+  }, []);
 
   // Restore before paint so a workspace cannot briefly display or accept edits
   // into its predecessor's draft. Flush the previous owner before changing it.
@@ -2125,11 +2140,12 @@ export function DialogueShell() {
           </div>
         </>}
       />
-      <PerspectiveControls key={workspaceSessionId} space={thinkingSpace}
+      <PerspectiveControls workspaceId={workspaceId || "local"} space={thinkingSpace}
         topic={draft.trim() || view.currentNode?.text || graphSnapshot.graph.nodes[graphSnapshot.graph.entryIds[0]]?.text || ""}
         suggestions={axisSuggestions.filter(axis => !thinkingSpace.axes.some(existing => existing.negative === axis.negative && existing.positive === axis.positive))}
         onChange={setThinkingSpace}
         onLook={direction => setCameraView(current => ({ direction, revision: (current?.revision || 0) + 1 }))}
+        onResetView={() => setCameraView(current => ({ direction: "reset", revision: (current?.revision || 0) + 1 }))}
         onArrange={() => { setExpandedResultId(null); arrangeStage(`seeds:${workspaceId || "local"}`); }} />
       <input
         ref={importInputRef}
@@ -2247,8 +2263,8 @@ export function DialogueShell() {
           />
         </div>
         {view.currentNode ? (
-          <SeedReadingContent open={readingOpen} suspended={evolutionOpen} originNodeId={combineSourceId || focusedInstanceId || view.currentNode.id} onDismiss={dismissSeedReading}>
-            <SeedInspector key={combineSourceId || view.currentNode.id}
+          <SeedReadingContent open={readingOpen} suspended={evolutionOpen} motion={readingMotionRef.current} originNodeId={combineSourceId || focusedInstanceId || view.currentNode.id} onDismiss={dismissSeedReading}>
+            <SeedInspector key={`${workspaceSessionId}:${combineSourceId || view.currentNode.id}`}
               space={thinkingSpace}
               graph={graphSnapshot.graph} nodeId={seedConceptId(graphSnapshot.graph, seedInstances, combineSourceId) || view.currentNode.id}
               instances={seedInstances} instanceId={focusedInstanceId || view.currentNode.id}

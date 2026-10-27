@@ -1,0 +1,146 @@
+{
+  "commit": "4c0ee909fb6702a1e92bfe8ddfbe9eacddcc05d6",
+  "browser": "Chromium",
+  "browserPlugin": "Browser plugin not available; existing project Playwright workflow for necessary visual verification",
+  "mobile": "touch viewport emulation; not a physical-device performance test",
+  "results": [
+    {
+      "name": "desktop",
+      "source": "fresh isolated contexts; synthetic garden fixture; no model POST permitted",
+      "firstVisit": {
+        "title": "Anicca",
+        "url": "https://aitoshuu.me/Anicca",
+        "guideCount": 1
+      },
+      "unsavedDimension": {
+        "original": "尺度",
+        "afterTabRoundTrip": "尺度",
+        "alertCount": 0
+      },
+      "emptyContext": {
+        "errors": [],
+        "blockedPosts": []
+      },
+      "readingBeforeRefresh": {
+        "scrollTop": 650,
+        "focusedElement": "conversation-panel-heading"
+      },
+      "readingAfterRefresh": {
+        "readingOpen": false,
+        "focusedNodeId": "root"
+      },
+      "keyboardReading": {
+        "activeElement": "conversation-panel-heading",
+        "scrollTop": 0,
+        "animationDurations": [
+          340
+        ]
+      },
+      "combineSearch": "还没有可组合的种子。可以先写一个想法，或裂变当前种子。",
+      "polarity": {
+        "composerCount": 1,
+        "inputLabel": "补充你的想法…"
+      },
+      "nativeSelection": {
+        "before": {
+          "quote": "例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。",
+          "quoteStart": 286,
+          "y": 192.671875,
+          "bottom": 250.671875,
+          "scrollTop": 650
+        },
+        "after": {
+          "y": 208.1875,
+          "bottom": 276.1875,
+          "scrollTop": 537
+        },
+        "method": "DOM Range selection, not a real finger gesture"
+      },
+      "seededContext": {
+        "errors": [],
+        "blockedPosts": []
+      }
+    },
+    {
+      "name": "mobile-390",
+      "source": "fresh isolated contexts; synthetic garden fixture; no model POST permitted",
+      "firstVisit": {
+        "title": "Anicca",
+        "url": "https://aitoshuu.me/Anicca",
+        "guideCount": 1
+      },
+      "unsavedDimension": {
+        "original": "尺度",
+        "afterTabRoundTrip": "尺度",
+        "alertCount": 0
+      },
+      "emptyContext": {
+        "errors": [],
+        "blockedPosts": []
+      },
+      "readingBeforeRefresh": {
+        "scrollTop": 650,
+        "focusedElement": "conversation-panel-heading"
+      },
+      "readingAfterRefresh": {
+        "readingOpen": false,
+        "focusedNodeId": "root"
+      },
+      "keyboardReading": {
+        "activeElement": "conversation-panel-heading",
+        "scrollTop": 0,
+        "animationDurations": [
+          340
+        ]
+      },
+      "combineSearch": "还没有可组合的种子。可以先写一个想法，或裂变当前种子。",
+      "polarity": {
+        "composerCount": 1,
+        "inputLabel": "补充你的想法…"
+      },
+      "nativeSelection": {
+        "before": {
+          "quote": "例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。",
+          "quoteStart": 286,
+          "y": 251.109375,
+          "bottom": 303.5,
+          "scrollTop": 650
+        },
+        "after": {
+          "y": 266.625,
+          "bottom": 327.40625,
+          "scrollTop": 538
+        },
+        "method": "DOM Range selection, not a real finger gesture"
+      },
+      "panRecovery": {
+        "before": {
+          "x": "0",
+          "y": "0",
+          "zoom": "1"
+        },
+        "after": {
+          "x": "-840",
+          "y": "-210",
+          "zoom": "1"
+        },
+        "resetVisible": false,
+        "afterFront": {
+          "x": "-840",
+          "y": "-210",
+          "zoom": "1"
+        },
+        "afterArrange": {
+          "x": "-840",
+          "y": "-210",
+          "zoom": "1"
+        },
+        "method": "Chromium CDP touch emulation"
+      },
+      "seededContext": {
+        "errors": [],
+        "blockedPosts": []
+      }
+    }
+  ]
+}
