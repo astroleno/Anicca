@@ -105,6 +105,7 @@ function readSurfaceRects(host: HTMLDivElement, offsets: Map<string, SurfaceProj
         colorKey: element.dataset.liquidColorKey,
         role,
         relation,
+        ...(element.dataset.liquidPending === "true" ? { generating: true } : {}),
         generation: Number(element.dataset.seedGeneration) || 0,
         ...(element.dataset.seedAttention !== undefined && Number.isFinite(Number(element.dataset.seedAttention))
           ? { attention: Math.max(0, Math.min(1, Number(element.dataset.seedAttention))) } : {}),
@@ -567,7 +568,7 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
       invalidate();
     });
     mutationObserver.observe(host, { subtree: true, childList: true, characterData: true, attributes: true,
-      attributeFilter: ["style", "class", "data-space-paused", "data-label-inset-top", "data-label-inset-bottom", "data-metaball-role", "data-metaball-relation", "data-liquid-origins", "data-liquid-color-key", "data-atmosphere", "data-theme", "data-liquid-partner", "data-liquid-contact", "data-label-handoff", "data-space-yaw", "data-space-pitch", "data-space-zoom", "data-space-navigating", "data-space-depth", "data-seed-generation", "data-seed-hue-shift", "data-seed-polarity-strength", "data-seed-attention"] });
+      attributeFilter: ["style", "class", "data-space-paused", "data-label-inset-top", "data-label-inset-bottom", "data-metaball-role", "data-metaball-relation", "data-liquid-origins", "data-liquid-color-key", "data-liquid-pending", "data-atmosphere", "data-theme", "data-liquid-partner", "data-liquid-contact", "data-label-handoff", "data-space-yaw", "data-space-pitch", "data-space-zoom", "data-space-navigating", "data-space-depth", "data-seed-generation", "data-seed-hue-shift", "data-seed-polarity-strength", "data-seed-attention"] });
     const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(remeasure) : null;
     resizeObserver?.observe(host);
     host.addEventListener("pointerdown", handlePointerDown, { passive: true });

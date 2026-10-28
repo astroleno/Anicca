@@ -1,0 +1,5159 @@
+{
+  "baseUrl": "https://tongye.me/Anicca",
+  "results": [
+    {
+      "name": "desktop-original",
+      "passed": true,
+      "errors": [],
+      "states": [
+        {
+          "name": "navigation-320-568",
+          "width": 320,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 300,
+            "bottom": 60,
+            "width": 280,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 200,
+              "y": 16,
+              "right": 244,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 256,
+              "y": 16,
+              "right": 300,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 499,
+            "right": 248,
+            "bottom": 543,
+            "width": 232,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 544,
+            "actionsBottom": 544,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "navigation-390-844",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 775,
+            "right": 318,
+            "bottom": 819,
+            "width": 302,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 820,
+            "actionsBottom": 820,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "navigation-768-1024",
+          "width": 768,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 744,
+            "bottom": 60,
+            "width": 720,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 624,
+              "y": 16,
+              "right": 680,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 700,
+              "y": 16,
+              "right": 744,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 104,
+            "y": 955,
+            "right": 608,
+            "bottom": 999,
+            "width": 504,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 1000,
+            "actionsBottom": 1000,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "navigation-980-700",
+          "width": 980,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 956,
+            "bottom": 60,
+            "width": 932,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 836,
+              "y": 16,
+              "right": 892,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 912,
+              "y": 16,
+              "right": 956,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 210,
+            "y": 631,
+            "right": 714,
+            "bottom": 675,
+            "width": 504,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 676,
+            "actionsBottom": 676,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "navigation-981-700",
+          "width": 981,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 957,
+            "bottom": 60,
+            "width": 933,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 837,
+              "y": 16,
+              "right": 893,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 913,
+              "y": 16,
+              "right": 957,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 210.5,
+            "y": 631,
+            "right": 714.5,
+            "bottom": 675,
+            "width": 504,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 676,
+            "actionsBottom": 676,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "navigation-844-390",
+          "width": 844,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 820,
+            "bottom": 60,
+            "width": 796,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 700,
+              "y": 16,
+              "right": 756,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 776,
+              "y": 16,
+              "right": 820,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 142,
+            "y": 321,
+            "right": 646,
+            "bottom": 365,
+            "width": 504,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 366,
+            "actionsBottom": 366,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "navigation-1440-900",
+          "width": 1440,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 1416,
+            "bottom": 60,
+            "width": 1392,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 1296,
+              "y": 16,
+              "right": 1352,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 1372,
+              "y": 16,
+              "right": 1416,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 440,
+            "y": 831,
+            "right": 944,
+            "bottom": 875,
+            "width": 504,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 876,
+            "actionsBottom": 876,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "line-input-focused",
+          "width": 1440,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 1416,
+            "bottom": 60,
+            "width": 1392,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 1296,
+              "y": 16,
+              "right": 1352,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 1372,
+              "y": 16,
+              "right": 1416,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 440,
+            "y": 830,
+            "right": 882,
+            "bottom": 874,
+            "width": 442,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 876,
+            "actionsBottom": 876,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "2px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "generation-surface",
+          "width": 1440,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 1416,
+            "bottom": 60,
+            "width": 1392,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 1296,
+              "y": 16,
+              "right": 1352,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 1372,
+              "y": 16,
+              "right": 1416,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 440,
+            "y": 795,
+            "right": 868,
+            "bottom": 839,
+            "width": 428,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 840,
+            "actionsBottom": 840,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [
+            "empty-root",
+            "pending-thesis",
+            "pending-antithesis"
+          ],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "complete",
+          "width": 1440,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 1416,
+            "bottom": 60,
+            "width": 1392,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 1296,
+              "y": 16,
+              "right": 1352,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 1372,
+              "y": 16,
+              "right": 1416,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 440,
+            "y": 831,
+            "right": 944,
+            "bottom": 875,
+            "width": 504,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 876,
+            "actionsBottom": 876,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "direct-polarity",
+          "width": 1440,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 1416,
+            "bottom": 60,
+            "width": 1392,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 1296,
+              "y": 16,
+              "right": 1352,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 1372,
+              "y": 16,
+              "right": 1416,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 440,
+            "y": 831,
+            "right": 944,
+            "bottom": 875,
+            "width": 504,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 876,
+            "actionsBottom": 876,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": {
+            "x": 458.7128601074219,
+            "y": 241.9827880859375,
+            "right": 990.7128601074219,
+            "bottom": 662.0452880859375,
+            "width": 532,
+            "height": 420.0625
+          },
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "pending-failure",
+          "width": 1440,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 1416,
+            "bottom": 60,
+            "width": 1392,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 1296,
+              "y": 16,
+              "right": 1352,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 1372,
+              "y": 16,
+              "right": 1416,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 440,
+            "y": 795,
+            "right": 868,
+            "bottom": 839,
+            "width": 428,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 840,
+            "actionsBottom": 840,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": {
+            "x": 458.1653137207031,
+            "y": 306.77557373046875,
+            "right": 990.1653137207031,
+            "bottom": 553.1661987304688,
+            "width": 532,
+            "height": 246.390625
+          },
+          "pending": [
+            "pending-thesis",
+            "pending-antithesis"
+          ],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "failed",
+          "width": 1440,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 1416,
+            "bottom": 60,
+            "width": 1392,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 1296,
+              "y": 16,
+              "right": 1352,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 1372,
+              "y": 16,
+              "right": 1416,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 440,
+            "y": 682,
+            "right": 882,
+            "bottom": 726,
+            "width": 442,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 727,
+            "actionsBottom": 727,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": {
+            "x": 457.77825927734375,
+            "y": 247.42318725585938,
+            "right": 989.7782592773438,
+            "bottom": 493.8138122558594,
+            "width": 532,
+            "height": 246.390625
+          },
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "cancelled",
+          "width": 1440,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 1416,
+            "bottom": 60,
+            "width": 1392,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 1296,
+              "y": 16,
+              "right": 1352,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 1372,
+              "y": 16,
+              "right": 1416,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 440,
+            "y": 831,
+            "right": 882,
+            "bottom": 875,
+            "width": 442,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 876,
+            "actionsBottom": 876,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "name": "desktop-tsl",
+      "passed": true,
+      "errors": [],
+      "states": [
+        {
+          "name": "line-input-focused",
+          "width": 1440,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 1416,
+            "bottom": 60,
+            "width": 1392,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 1296,
+              "y": 16,
+              "right": 1352,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 1372,
+              "y": 16,
+              "right": 1416,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 440,
+            "y": 830,
+            "right": 882,
+            "bottom": 874,
+            "width": 442,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 876,
+            "actionsBottom": 876,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "2px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "webgpu",
+          "overflow": false
+        },
+        {
+          "name": "generation-surface",
+          "width": 1440,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 1416,
+            "bottom": 60,
+            "width": 1392,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 1296,
+              "y": 16,
+              "right": 1352,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 1372,
+              "y": 16,
+              "right": 1416,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 440,
+            "y": 795,
+            "right": 868,
+            "bottom": 839,
+            "width": 428,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 840,
+            "actionsBottom": 840,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [
+            "empty-root",
+            "pending-thesis",
+            "pending-antithesis"
+          ],
+          "backend": "webgpu",
+          "overflow": false
+        },
+        {
+          "name": "complete",
+          "width": 1440,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 1416,
+            "bottom": 60,
+            "width": 1392,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 1296,
+              "y": 16,
+              "right": 1352,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 1372,
+              "y": 16,
+              "right": 1416,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 440,
+            "y": 831,
+            "right": 944,
+            "bottom": 875,
+            "width": 504,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 876,
+            "actionsBottom": 876,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "webgpu",
+          "overflow": false
+        },
+        {
+          "name": "direct-polarity",
+          "width": 1440,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 1416,
+            "bottom": 60,
+            "width": 1392,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 1296,
+              "y": 16,
+              "right": 1352,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 1372,
+              "y": 16,
+              "right": 1416,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 440,
+            "y": 831,
+            "right": 944,
+            "bottom": 875,
+            "width": 504,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 876,
+            "actionsBottom": 876,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": {
+            "x": 458.6512451171875,
+            "y": 241.5853271484375,
+            "right": 990.6512451171875,
+            "bottom": 661.6478271484375,
+            "width": 532,
+            "height": 420.0625
+          },
+          "pending": [],
+          "backend": "webgpu",
+          "overflow": false
+        },
+        {
+          "name": "pending-failure",
+          "width": 1440,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 1416,
+            "bottom": 60,
+            "width": 1392,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 1296,
+              "y": 16,
+              "right": 1352,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 1372,
+              "y": 16,
+              "right": 1416,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 440,
+            "y": 795,
+            "right": 868,
+            "bottom": 839,
+            "width": 428,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 840,
+            "actionsBottom": 840,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": {
+            "x": 458.1466369628906,
+            "y": 306.71575927734375,
+            "right": 990.1466369628906,
+            "bottom": 553.1063842773438,
+            "width": 532,
+            "height": 246.390625
+          },
+          "pending": [
+            "pending-thesis",
+            "pending-antithesis"
+          ],
+          "backend": "webgpu",
+          "overflow": false
+        },
+        {
+          "name": "failed",
+          "width": 1440,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 1416,
+            "bottom": 60,
+            "width": 1392,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 1296,
+              "y": 16,
+              "right": 1352,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 1372,
+              "y": 16,
+              "right": 1416,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 440,
+            "y": 682,
+            "right": 882,
+            "bottom": 726,
+            "width": 442,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 727,
+            "actionsBottom": 727,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": {
+            "x": 457.75079345703125,
+            "y": 247.315185546875,
+            "right": 989.7507934570312,
+            "bottom": 493.705810546875,
+            "width": 532,
+            "height": 246.390625
+          },
+          "pending": [],
+          "backend": "webgpu",
+          "overflow": false
+        },
+        {
+          "name": "cancelled",
+          "width": 1440,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 1416,
+            "bottom": 60,
+            "width": 1392,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 1296,
+              "y": 16,
+              "right": 1352,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 1372,
+              "y": 16,
+              "right": 1416,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 440,
+            "y": 831,
+            "right": 882,
+            "bottom": 875,
+            "width": 442,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 876,
+            "actionsBottom": 876,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "webgpu",
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "name": "desktop-tsl-webgl",
+      "passed": true,
+      "errors": [],
+      "states": [
+        {
+          "name": "line-input-focused",
+          "width": 1440,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 1416,
+            "bottom": 60,
+            "width": 1392,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 1296,
+              "y": 16,
+              "right": 1352,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 1372,
+              "y": 16,
+              "right": 1416,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 440,
+            "y": 830,
+            "right": 882,
+            "bottom": 874,
+            "width": 442,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 876,
+            "actionsBottom": 876,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "2px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "webgl2",
+          "overflow": false
+        },
+        {
+          "name": "generation-surface",
+          "width": 1440,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 1416,
+            "bottom": 60,
+            "width": 1392,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 1296,
+              "y": 16,
+              "right": 1352,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 1372,
+              "y": 16,
+              "right": 1416,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 440,
+            "y": 795,
+            "right": 868,
+            "bottom": 839,
+            "width": 428,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 840,
+            "actionsBottom": 840,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [
+            "empty-root",
+            "pending-thesis",
+            "pending-antithesis"
+          ],
+          "backend": "webgl2",
+          "overflow": false
+        },
+        {
+          "name": "complete",
+          "width": 1440,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 1416,
+            "bottom": 60,
+            "width": 1392,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 1296,
+              "y": 16,
+              "right": 1352,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 1372,
+              "y": 16,
+              "right": 1416,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 440,
+            "y": 831,
+            "right": 944,
+            "bottom": 875,
+            "width": 504,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 876,
+            "actionsBottom": 876,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "webgl2",
+          "overflow": false
+        },
+        {
+          "name": "direct-polarity",
+          "width": 1440,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 1416,
+            "bottom": 60,
+            "width": 1392,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 1296,
+              "y": 16,
+              "right": 1352,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 1372,
+              "y": 16,
+              "right": 1416,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 440,
+            "y": 831,
+            "right": 944,
+            "bottom": 875,
+            "width": 504,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 876,
+            "actionsBottom": 876,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": {
+            "x": 457.69549560546875,
+            "y": 234.59579467773438,
+            "right": 989.6954956054688,
+            "bottom": 654.6583251953125,
+            "width": 532,
+            "height": 420.0625305175781
+          },
+          "pending": [],
+          "backend": "webgl2",
+          "overflow": false
+        },
+        {
+          "name": "pending-failure",
+          "width": 1440,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 1416,
+            "bottom": 60,
+            "width": 1392,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 1296,
+              "y": 16,
+              "right": 1352,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 1372,
+              "y": 16,
+              "right": 1416,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 440,
+            "y": 795,
+            "right": 868,
+            "bottom": 839,
+            "width": 428,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 840,
+            "actionsBottom": 840,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": {
+            "x": 458.802001953125,
+            "y": 311.52557373046875,
+            "right": 990.802001953125,
+            "bottom": 557.9161987304688,
+            "width": 532,
+            "height": 246.390625
+          },
+          "pending": [
+            "pending-thesis",
+            "pending-antithesis"
+          ],
+          "backend": "webgl2",
+          "overflow": false
+        },
+        {
+          "name": "failed",
+          "width": 1440,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 1416,
+            "bottom": 60,
+            "width": 1392,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 1296,
+              "y": 16,
+              "right": 1352,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 1372,
+              "y": 16,
+              "right": 1416,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 440,
+            "y": 682,
+            "right": 882,
+            "bottom": 726,
+            "width": 442,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 727,
+            "actionsBottom": 727,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": {
+            "x": 457.8650817871094,
+            "y": 248.1656036376953,
+            "right": 989.8650817871094,
+            "bottom": 494.55621337890625,
+            "width": 532,
+            "height": 246.39060974121094
+          },
+          "pending": [],
+          "backend": "webgl2",
+          "overflow": false
+        },
+        {
+          "name": "cancelled",
+          "width": 1440,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 1416,
+            "bottom": 60,
+            "width": 1392,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 1296,
+              "y": 16,
+              "right": 1352,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 1372,
+              "y": 16,
+              "right": 1416,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 440,
+            "y": 831,
+            "right": 882,
+            "bottom": 875,
+            "width": 442,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 876,
+            "actionsBottom": 876,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "webgl2",
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "name": "mobile-original",
+      "passed": true,
+      "errors": [],
+      "states": [
+        {
+          "name": "navigation-320-568",
+          "width": 320,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 300,
+            "bottom": 60,
+            "width": 280,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 200,
+              "y": 16,
+              "right": 244,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 256,
+              "y": 16,
+              "right": 300,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 499,
+            "right": 248,
+            "bottom": 543,
+            "width": 232,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 544,
+            "actionsBottom": 544,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "navigation-390-844",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 775,
+            "right": 318,
+            "bottom": 819,
+            "width": 302,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 820,
+            "actionsBottom": 820,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "navigation-768-1024",
+          "width": 768,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 744,
+            "bottom": 60,
+            "width": 720,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 624,
+              "y": 16,
+              "right": 680,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 700,
+              "y": 16,
+              "right": 744,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 104,
+            "y": 955,
+            "right": 608,
+            "bottom": 999,
+            "width": 504,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 1000,
+            "actionsBottom": 1000,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "navigation-980-700",
+          "width": 980,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 956,
+            "bottom": 60,
+            "width": 932,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 836,
+              "y": 16,
+              "right": 892,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 912,
+              "y": 16,
+              "right": 956,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 210,
+            "y": 631,
+            "right": 714,
+            "bottom": 675,
+            "width": 504,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 676,
+            "actionsBottom": 676,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "navigation-981-700",
+          "width": 981,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 957,
+            "bottom": 60,
+            "width": 933,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 837,
+              "y": 16,
+              "right": 893,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 913,
+              "y": 16,
+              "right": 957,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 210.5,
+            "y": 631,
+            "right": 714.5,
+            "bottom": 675,
+            "width": 504,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 676,
+            "actionsBottom": 676,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "navigation-844-390",
+          "width": 844,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 820,
+            "bottom": 60,
+            "width": 796,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 700,
+              "y": 16,
+              "right": 756,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 776,
+              "y": 16,
+              "right": 820,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 142,
+            "y": 321,
+            "right": 646,
+            "bottom": 365,
+            "width": 504,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 366,
+            "actionsBottom": 366,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "navigation-1440-900",
+          "width": 1440,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 1416,
+            "bottom": 60,
+            "width": 1392,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 1296,
+              "y": 16,
+              "right": 1352,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 1372,
+              "y": 16,
+              "right": 1416,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 440,
+            "y": 831,
+            "right": 944,
+            "bottom": 875,
+            "width": 504,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 876,
+            "actionsBottom": 876,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "line-input-focused",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 750,
+            "right": 240,
+            "bottom": 818,
+            "width": 224,
+            "height": 68,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 820,
+            "actionsBottom": 820,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "2px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "generation-surface",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 715,
+            "right": 234,
+            "bottom": 783,
+            "width": 218,
+            "height": 68,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 784,
+            "actionsBottom": 784,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [
+            "empty-root",
+            "pending-thesis",
+            "pending-antithesis"
+          ],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "complete",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 775,
+            "right": 318,
+            "bottom": 819,
+            "width": 302,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 820,
+            "actionsBottom": 820,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "direct-polarity",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 775,
+            "right": 318,
+            "bottom": 819,
+            "width": 302,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 820,
+            "actionsBottom": 820,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": {
+            "x": 23.547103881835938,
+            "y": 197.43353271484375,
+            "right": 377.54710388183594,
+            "bottom": 640.8866577148438,
+            "width": 354,
+            "height": 443.453125
+          },
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "pending-failure",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 739,
+            "right": 234,
+            "bottom": 783,
+            "width": 218,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 784,
+            "actionsBottom": 784,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": {
+            "x": 23.762680053710938,
+            "y": 284.7870178222656,
+            "right": 377.76268005371094,
+            "bottom": 531.1776123046875,
+            "width": 354,
+            "height": 246.39059448242188
+          },
+          "pending": [
+            "pending-thesis",
+            "pending-antithesis"
+          ],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "failed",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 604,
+            "right": 240,
+            "bottom": 648,
+            "width": 224,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 649,
+            "actionsBottom": 649,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": {
+            "x": 23.580490112304688,
+            "y": 211.521240234375,
+            "right": 377.5804901123047,
+            "bottom": 457.911865234375,
+            "width": 354,
+            "height": 246.390625
+          },
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "cancelled",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 775,
+            "right": 240,
+            "bottom": 819,
+            "width": 224,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 820,
+            "actionsBottom": 820,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "name": "mobile-tsl",
+      "passed": true,
+      "errors": [],
+      "states": [
+        {
+          "name": "line-input-focused",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 750,
+            "right": 240,
+            "bottom": 818,
+            "width": 224,
+            "height": 68,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 820,
+            "actionsBottom": 820,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "2px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "webgpu",
+          "overflow": false
+        },
+        {
+          "name": "generation-surface",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 715,
+            "right": 234,
+            "bottom": 783,
+            "width": 218,
+            "height": 68,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 784,
+            "actionsBottom": 784,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [
+            "empty-root",
+            "pending-thesis",
+            "pending-antithesis"
+          ],
+          "backend": "webgpu",
+          "overflow": false
+        },
+        {
+          "name": "complete",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 775,
+            "right": 318,
+            "bottom": 819,
+            "width": 302,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 820,
+            "actionsBottom": 820,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "webgpu",
+          "overflow": false
+        },
+        {
+          "name": "direct-polarity",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 775,
+            "right": 318,
+            "bottom": 819,
+            "width": 302,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 820,
+            "actionsBottom": 820,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": {
+            "x": 23.729995727539062,
+            "y": 203.2911376953125,
+            "right": 377.72999572753906,
+            "bottom": 646.7442626953125,
+            "width": 354,
+            "height": 443.453125
+          },
+          "pending": [],
+          "backend": "webgpu",
+          "overflow": false
+        },
+        {
+          "name": "pending-failure",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 739,
+            "right": 234,
+            "bottom": 783,
+            "width": 218,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 784,
+            "actionsBottom": 784,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": {
+            "x": 23.628677368164062,
+            "y": 280.6422119140625,
+            "right": 377.62867736816406,
+            "bottom": 527.0328369140625,
+            "width": 354,
+            "height": 246.390625
+          },
+          "pending": [
+            "pending-thesis",
+            "pending-antithesis"
+          ],
+          "backend": "webgpu",
+          "overflow": false
+        },
+        {
+          "name": "failed",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 604,
+            "right": 240,
+            "bottom": 648,
+            "width": 224,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 649,
+            "actionsBottom": 649,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": {
+            "x": 23.5499267578125,
+            "y": 210.6705780029297,
+            "right": 377.5499267578125,
+            "bottom": 457.06121826171875,
+            "width": 354,
+            "height": 246.39064025878906
+          },
+          "pending": [],
+          "backend": "webgpu",
+          "overflow": false
+        },
+        {
+          "name": "cancelled",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 775,
+            "right": 240,
+            "bottom": 819,
+            "width": 224,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 820,
+            "actionsBottom": 820,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "webgpu",
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "name": "mobile-tsl-webgl",
+      "passed": true,
+      "errors": [],
+      "states": [
+        {
+          "name": "line-input-focused",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 750,
+            "right": 240,
+            "bottom": 818,
+            "width": 224,
+            "height": 68,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 820,
+            "actionsBottom": 820,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "2px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "webgl2",
+          "overflow": false
+        },
+        {
+          "name": "generation-surface",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 715,
+            "right": 234,
+            "bottom": 783,
+            "width": 218,
+            "height": 68,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 784,
+            "actionsBottom": 784,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [
+            "empty-root",
+            "pending-thesis",
+            "pending-antithesis"
+          ],
+          "backend": "webgl2",
+          "overflow": false
+        },
+        {
+          "name": "complete",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 775,
+            "right": 318,
+            "bottom": 819,
+            "width": 302,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 820,
+            "actionsBottom": 820,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "webgl2",
+          "overflow": false
+        },
+        {
+          "name": "direct-polarity",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 775,
+            "right": 318,
+            "bottom": 819,
+            "width": 302,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 820,
+            "actionsBottom": 820,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": {
+            "x": 23.374893188476562,
+            "y": 195.01791381835938,
+            "right": 377.37489318847656,
+            "bottom": 638.4710693359375,
+            "width": 354,
+            "height": 443.4531555175781
+          },
+          "pending": [],
+          "backend": "webgl2",
+          "overflow": false
+        },
+        {
+          "name": "pending-failure",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 739,
+            "right": 234,
+            "bottom": 783,
+            "width": 218,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 784,
+            "actionsBottom": 784,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": {
+            "x": 23.672317504882812,
+            "y": 283.5176696777344,
+            "right": 377.6723175048828,
+            "bottom": 529.9082641601562,
+            "width": 354,
+            "height": 246.39059448242188
+          },
+          "pending": [
+            "pending-thesis",
+            "pending-antithesis"
+          ],
+          "backend": "webgl2",
+          "overflow": false
+        },
+        {
+          "name": "failed",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 604,
+            "right": 240,
+            "bottom": 648,
+            "width": 224,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 649,
+            "actionsBottom": 649,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": {
+            "x": 23.420669555664062,
+            "y": 209.27542114257812,
+            "right": 377.42066955566406,
+            "bottom": 455.6660461425781,
+            "width": 354,
+            "height": 246.390625
+          },
+          "pending": [],
+          "backend": "webgl2",
+          "overflow": false
+        },
+        {
+          "name": "cancelled",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 775,
+            "right": 240,
+            "bottom": 819,
+            "width": 224,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 820,
+            "actionsBottom": 820,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "webgl2",
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "name": "mobile-reduced-motion",
+      "passed": true,
+      "errors": [],
+      "states": [
+        {
+          "name": "navigation-320-568",
+          "width": 320,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 300,
+            "bottom": 60,
+            "width": 280,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 200,
+              "y": 16,
+              "right": 244,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 256,
+              "y": 16,
+              "right": 300,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 499,
+            "right": 248,
+            "bottom": 543,
+            "width": 232,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 544,
+            "actionsBottom": 544,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "navigation-390-844",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 775,
+            "right": 318,
+            "bottom": 819,
+            "width": 302,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 820,
+            "actionsBottom": 820,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "navigation-768-1024",
+          "width": 768,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 744,
+            "bottom": 60,
+            "width": 720,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 624,
+              "y": 16,
+              "right": 680,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 700,
+              "y": 16,
+              "right": 744,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 104,
+            "y": 955,
+            "right": 608,
+            "bottom": 999,
+            "width": 504,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 1000,
+            "actionsBottom": 1000,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "navigation-980-700",
+          "width": 980,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 956,
+            "bottom": 60,
+            "width": 932,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 836,
+              "y": 16,
+              "right": 892,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 912,
+              "y": 16,
+              "right": 956,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 210,
+            "y": 631,
+            "right": 714,
+            "bottom": 675,
+            "width": 504,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 676,
+            "actionsBottom": 676,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "navigation-981-700",
+          "width": 981,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 957,
+            "bottom": 60,
+            "width": 933,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 837,
+              "y": 16,
+              "right": 893,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 913,
+              "y": 16,
+              "right": 957,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 210.5,
+            "y": 631,
+            "right": 714.5,
+            "bottom": 675,
+            "width": 504,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 676,
+            "actionsBottom": 676,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "navigation-844-390",
+          "width": 844,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 820,
+            "bottom": 60,
+            "width": 796,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 700,
+              "y": 16,
+              "right": 756,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 776,
+              "y": 16,
+              "right": 820,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 142,
+            "y": 321,
+            "right": 646,
+            "bottom": 365,
+            "width": 504,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 366,
+            "actionsBottom": 366,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "navigation-1440-900",
+          "width": 1440,
+          "navigation": {
+            "x": 24,
+            "y": 16,
+            "right": 1416,
+            "bottom": 60,
+            "width": 1392,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 24,
+              "y": 23.359375,
+              "right": 81.46875,
+              "bottom": 52.625,
+              "width": 57.46875,
+              "height": 29.265625
+            },
+            {
+              "text": "演化全景全景",
+              "x": 1296,
+              "y": 16,
+              "right": 1352,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 1372,
+              "y": 16,
+              "right": 1416,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 105.46875,
+              "y": 16,
+              "right": 161.46875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 440,
+            "y": 831,
+            "right": 944,
+            "bottom": 875,
+            "width": 504,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 876,
+            "actionsBottom": 876,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "line-input-focused",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 750,
+            "right": 240,
+            "bottom": 818,
+            "width": 224,
+            "height": 68,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 820,
+            "actionsBottom": 820,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "2px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "generation-surface",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 715,
+            "right": 234,
+            "bottom": 783,
+            "width": 218,
+            "height": 68,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 784,
+            "actionsBottom": 784,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [
+            "empty-root",
+            "pending-thesis",
+            "pending-antithesis"
+          ],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "complete",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 775,
+            "right": 318,
+            "bottom": 819,
+            "width": 302,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 820,
+            "actionsBottom": 820,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "direct-polarity",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 775,
+            "right": 318,
+            "bottom": 819,
+            "width": 302,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 820,
+            "actionsBottom": 820,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": {
+            "x": 24,
+            "y": 211.765625,
+            "right": 378,
+            "bottom": 655.21875,
+            "width": 354,
+            "height": 443.453125
+          },
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "pending-failure",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 739,
+            "right": 234,
+            "bottom": 783,
+            "width": 218,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 784,
+            "actionsBottom": 784,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [
+            "pending-thesis",
+            "pending-antithesis"
+          ],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "failed",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 604,
+            "right": 240,
+            "bottom": 648,
+            "width": 224,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 649,
+            "actionsBottom": 649,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        },
+        {
+          "name": "cancelled",
+          "width": 390,
+          "navigation": {
+            "x": 20,
+            "y": 16,
+            "right": 370,
+            "bottom": 60,
+            "width": 350,
+            "height": 44
+          },
+          "controls": [
+            {
+              "text": "anicca",
+              "x": 20,
+              "y": 24.578125,
+              "right": 72.671875,
+              "bottom": 51.40625,
+              "width": 52.671875,
+              "height": 26.828125
+            },
+            {
+              "text": "演化全景全景",
+              "x": 270,
+              "y": 16,
+              "right": 314,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "更多",
+              "x": 326,
+              "y": 16,
+              "right": 370,
+              "bottom": 60,
+              "width": 44,
+              "height": 44
+            },
+            {
+              "text": "换个角度",
+              "x": 84.671875,
+              "y": 16,
+              "right": 140.671875,
+              "bottom": 60,
+              "width": 56,
+              "height": 44
+            }
+          ],
+          "input": {
+            "x": 16,
+            "y": 775,
+            "right": 240,
+            "bottom": 819,
+            "width": 224,
+            "height": 44,
+            "radius": "0px",
+            "outline": "none",
+            "fontSize": "16px",
+            "lineBottom": 820,
+            "actionsBottom": 820,
+            "formRadius": "0px",
+            "background": "rgba(0, 0, 0, 0)",
+            "underline": "1px"
+          },
+          "reader": null,
+          "pending": [],
+          "backend": "original",
+          "overflow": false
+        }
+      ],
+      "reducedTimes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

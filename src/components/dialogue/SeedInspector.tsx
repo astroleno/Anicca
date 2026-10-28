@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import type { Graph, SeedInstances } from "@/types/anicca";
 import { seedLabel } from "@/features/dialectic/seeds";
 import { conceptInstances, sourceInstances, seedConceptId } from "@/features/dialectic/seedInstances";
@@ -14,8 +14,9 @@ import { inquiryLabel, readInquiryOrigin, type InquiryTarget } from "@/features/
 import { readNovelty } from "@/features/dialectic/novelty";
 import type { ReadingPosition } from "@/lib/persist/readingState";
 import { captureReadingPosition, restoreReadingPosition } from "./readingPosition";
+import { SeedPrimaryActions } from "./SeedPrimaryActions";
 
-export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = {}, space = defaultThinkingSpace(), combining, busy, activeDeferredId, onContinueDeferred, onClose, onSplit, onExpandPolarity, onWrite, onCombine, onPick, onCreateInstance, onRemoveInstance, onExpandSources, onInquiry, inquiryTarget, inquiryComposer, companionId, getReadingPosition, onRememberPosition, onReadingIntent, onReadNewResponse }: {
+export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = {}, space = defaultThinkingSpace(), combining, busy, activeDeferredId, onContinueDeferred, onClose, onSplit, onExpandPolarity, onWrite, onCombine, onPick, onCreateInstance, onRemoveInstance, onExpandSources, onInquiry, inquiryTarget, inquiryComposer, companionId, getReadingPosition, onRememberPosition, onReadingIntent, onReadNewResponse, polarityRequest = 0 }: {
   graph: Graph; nodeId: string; combining: boolean; busy: boolean;
   instanceId?: string; instances?: SeedInstances;
   space?: ThinkingSpace;
@@ -27,6 +28,7 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
   inquiryTarget?: InquiryTarget; inquiryComposer?: ReactNode; companionId?: string;
   getReadingPosition?(id: string): ReadingPosition | undefined; onRememberPosition?(id: string, position: ReadingPosition): void;
   onReadingIntent?(): void; onReadNewResponse?(): void;
+  polarityRequest?: number;
   onCreateInstance?(): void; onRemoveInstance?(): void; onExpandSources?(): void;
 }) {
   const [query, setQuery] = useState("");
@@ -37,10 +39,17 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
   const selecting = selectionActive || Boolean(inquiryTarget);
   const inspectorRef = useRef<HTMLElement | null>(null);
   const polarityButtonRef = useRef<HTMLButtonElement>(null);
-  const actionId = useId();
+  const lastPolarityRequest = useRef(0);
   const readingPositionRef = useRef<ReadingPosition>({ scrollTop: 0 });
   const wasChoosingRef = useRef(false);
   const wasInlineRef = useRef(Boolean(inquiryComposer));
+  useLayoutEffect(() => {
+    if (polarityRequest && polarityRequest !== lastPolarityRequest.current) {
+      if (inspectorRef.current) readingPositionRef.current = captureReadingPosition(inspectorRef.current);
+      setPolarityOpen(true);
+    }
+    lastPolarityRequest.current = polarityRequest;
+  }, [polarityRequest]);
   useLayoutEffect(() => {
     const panel = inspectorRef.current;
     if (!panel) return;
@@ -115,14 +124,9 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
     || node.meta?.summary || seedLabel(graph, nodeId);
   const expansionControls = <div className={styles.seedContinuation} aria-label="接着这个想法展开">
     {polarityOpen ? <p className={styles.seedExpansionAnchor}>围绕：{continuationText}</p> :
-      <p className={styles.seedNextPrompt}>{inquiry ? "接着这次澄清" : origin ? "从这个角度继续" : node.branchType === "合" ? "沿这个新理解继续" : "接着这个想法"}</p>}
-    <div className={styles.seedExpansionActions}>
-      <button type="button" aria-labelledby={`${actionId}-split`} aria-describedby={`${actionId}-split-hint`} disabled={busy || !node.text?.trim()}
-        onClick={() => onSplit(expansionFrame)}><span id={`${actionId}-split`}>推演正反</span><small id={`${actionId}-split-hint`}>推进判断，检验前提</small></button>
-      {onExpandPolarity ? <button ref={polarityButtonRef} type="button" aria-labelledby={`${actionId}-polarity`} aria-describedby={`${actionId}-polarity-hint`} aria-expanded={polarityOpen}
-        aria-controls="seed-polarity-picker" disabled={busy || !node.text?.trim() || !expansionFrame.axes.length}
-        onClick={() => { if (inspectorRef.current) readingPositionRef.current = captureReadingPosition(inspectorRef.current); setPolarityOpen(true); }}><span id={`${actionId}-polarity`}>看极性两端</span><small id={`${actionId}-polarity-hint`}>换观察位置，看见两端</small></button> : null}
-    </div>
+      <SeedPrimaryActions disabled={busy || !node.text?.trim()} onSplit={() => onSplit(expansionFrame)} onCombine={onCombine}
+        polarityRef={polarityButtonRef} polarityOpen={polarityOpen}
+        onPolarity={onExpandPolarity ? () => { if (inspectorRef.current) readingPositionRef.current = captureReadingPosition(inspectorRef.current); setPolarityOpen(true); } : undefined} />}
     {capturedFrame && (continuationLens || frameDiffers) ? <p className={styles.seedLensHint}>
       {continuationLens ? `从「${continuationLens}」继续` : useCurrentAngle ? "当前入口未限定极性" : "沿用原来的入口，未限定极性"}
       {frameDiffers ? <button type="button" disabled={busy} onClick={() => setUseCurrentAngle(value => !value)}>
@@ -240,7 +244,6 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
             </div>
           </details> : null}
           {!selecting ? <div className={styles.seedActions}>
-            <button className={styles.secondaryButton} type="button" disabled={busy || !node.text?.trim()} onClick={onCombine}>组合</button>
             {onCreateInstance ? <button className={styles.secondaryButton} type="button" disabled={busy || !node.text?.trim()} onClick={onCreateInstance}>分身</button> : null}
             <button className={styles.secondaryButton} type="button" disabled={busy} onClick={onWrite}>继续写</button>
             {instanceId !== nodeId && onRemoveInstance ? <button className={styles.secondaryButton} type="button" disabled={busy} onClick={onRemoveInstance}>收起这个分身</button> : null}

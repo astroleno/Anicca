@@ -1,0 +1,562 @@
+{
+  "results": [
+    {
+      "mode": "original",
+      "status": "passed",
+      "frames": [
+        {
+          "scenario": "pair",
+          "index": 0,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 1,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 2,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 3,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 4,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 5,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 6,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 7,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 8,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 9,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 10,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 11,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "third",
+          "index": 0,
+          "internalHighlight": 5
+        },
+        {
+          "scenario": "third",
+          "index": 1,
+          "internalHighlight": 4
+        },
+        {
+          "scenario": "third",
+          "index": 2,
+          "internalHighlight": 3.5
+        },
+        {
+          "scenario": "third",
+          "index": 3,
+          "internalHighlight": 3.5
+        },
+        {
+          "scenario": "third",
+          "index": 4,
+          "internalHighlight": 4.5
+        },
+        {
+          "scenario": "third",
+          "index": 5,
+          "internalHighlight": 4.5
+        },
+        {
+          "scenario": "third",
+          "index": 6,
+          "internalHighlight": 4.5
+        },
+        {
+          "scenario": "third",
+          "index": 7,
+          "internalHighlight": 5
+        },
+        {
+          "scenario": "third",
+          "index": 8,
+          "internalHighlight": 4.5
+        },
+        {
+          "scenario": "third",
+          "index": 9,
+          "internalHighlight": 5
+        },
+        {
+          "scenario": "third",
+          "index": 10,
+          "internalHighlight": 5.5
+        },
+        {
+          "scenario": "third",
+          "index": 11,
+          "internalHighlight": 5.5
+        },
+        {
+          "scenario": "release",
+          "index": 0,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 1,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 2,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 3,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 4,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 5,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 6,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 7,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 8,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 9,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 10,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 11,
+          "internalHighlight": null
+        }
+      ]
+    },
+    {
+      "mode": "webgl",
+      "status": "passed",
+      "frames": [
+        {
+          "scenario": "pair",
+          "index": 0,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 1,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 2,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 3,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 4,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 5,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 6,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 7,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 8,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 9,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 10,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 11,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "third",
+          "index": 0,
+          "internalHighlight": 5
+        },
+        {
+          "scenario": "third",
+          "index": 1,
+          "internalHighlight": 4
+        },
+        {
+          "scenario": "third",
+          "index": 2,
+          "internalHighlight": 3.5
+        },
+        {
+          "scenario": "third",
+          "index": 3,
+          "internalHighlight": 3.5
+        },
+        {
+          "scenario": "third",
+          "index": 4,
+          "internalHighlight": 4.5
+        },
+        {
+          "scenario": "third",
+          "index": 5,
+          "internalHighlight": 4.5
+        },
+        {
+          "scenario": "third",
+          "index": 6,
+          "internalHighlight": 4.5
+        },
+        {
+          "scenario": "third",
+          "index": 7,
+          "internalHighlight": 5
+        },
+        {
+          "scenario": "third",
+          "index": 8,
+          "internalHighlight": 4.5
+        },
+        {
+          "scenario": "third",
+          "index": 9,
+          "internalHighlight": 5
+        },
+        {
+          "scenario": "third",
+          "index": 10,
+          "internalHighlight": 5.5
+        },
+        {
+          "scenario": "third",
+          "index": 11,
+          "internalHighlight": 5.5
+        },
+        {
+          "scenario": "release",
+          "index": 0,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 1,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 2,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 3,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 4,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 5,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 6,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 7,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 8,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 9,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 10,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 11,
+          "internalHighlight": null
+        }
+      ]
+    },
+    {
+      "mode": "webgpu",
+      "status": "passed",
+      "frames": [
+        {
+          "scenario": "pair",
+          "index": 0,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 1,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 2,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 3,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 4,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 5,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 6,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 7,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 8,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 9,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 10,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "pair",
+          "index": 11,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "third",
+          "index": 0,
+          "internalHighlight": 5
+        },
+        {
+          "scenario": "third",
+          "index": 1,
+          "internalHighlight": 4
+        },
+        {
+          "scenario": "third",
+          "index": 2,
+          "internalHighlight": 3.5
+        },
+        {
+          "scenario": "third",
+          "index": 3,
+          "internalHighlight": 3.5
+        },
+        {
+          "scenario": "third",
+          "index": 4,
+          "internalHighlight": 4.5
+        },
+        {
+          "scenario": "third",
+          "index": 5,
+          "internalHighlight": 4.5
+        },
+        {
+          "scenario": "third",
+          "index": 6,
+          "internalHighlight": 4.5
+        },
+        {
+          "scenario": "third",
+          "index": 7,
+          "internalHighlight": 5
+        },
+        {
+          "scenario": "third",
+          "index": 8,
+          "internalHighlight": 4.5
+        },
+        {
+          "scenario": "third",
+          "index": 9,
+          "internalHighlight": 5
+        },
+        {
+          "scenario": "third",
+          "index": 10,
+          "internalHighlight": 5.5
+        },
+        {
+          "scenario": "third",
+          "index": 11,
+          "internalHighlight": 5.5
+        },
+        {
+          "scenario": "release",
+          "index": 0,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 1,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 2,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 3,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 4,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 5,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 6,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 7,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 8,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 9,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 10,
+          "internalHighlight": null
+        },
+        {
+          "scenario": "release",
+          "index": 11,
+          "internalHighlight": null
+        }
+      ]
+    }
+  ]
+}

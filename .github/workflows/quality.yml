@@ -63,6 +63,9 @@ jobs:
           - group: reading-continuity
             viewports: none
             scenarios: reading-continuity
+          - group: surface-controls
+            viewports: none
+            scenarios: liquid-surface,surface-controls
           - group: thought-flow
             viewports: none
             scenarios: flow-continuity,thought-flow

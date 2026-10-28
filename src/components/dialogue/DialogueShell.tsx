@@ -27,6 +27,7 @@ import { buildWorkspaceContext } from "@/chat/workspaceContext";
 import { BranchSidebar } from "@/components/dialogue/BranchSidebar";
 import { BubbleStage } from "@/components/dialogue/BubbleStage";
 import { SeedInspector } from "@/components/dialogue/SeedInspector";
+import { SeedPrimaryActions } from "@/components/dialogue/SeedPrimaryActions";
 import { SeedReadingContent } from "@/components/dialogue/SeedReadingContent";
 import { DialogueComposer } from "@/components/dialogue/DialogueComposer";
 import { PerspectiveControls } from "@/components/dialogue/PerspectiveControls";
@@ -546,6 +547,12 @@ export function DialogueShell() {
   const [evolutionOpen, setEvolutionOpen] = useState(false);
   const evolutionReturnFocusRef = useRef<HTMLElement | null>(null);
   const [readingOpen, setReadingOpen] = useState(false);
+  const [polarityRequest, setPolarityRequest] = useState(0);
+  const [stageSelectionPending, setStageSelectionPending] = useState(false);
+  useLayoutEffect(() => {
+    // A direct stage request belongs to this reading session, never its result.
+    if (!readingOpen) setPolarityRequest(0);
+  }, [readingOpen]);
   const [guideRequest, setGuideRequest] = useState(0);
   const [atmosphereVisible, setAtmosphereVisible] = useState(false);
   const [axisSuggestions, setAxisSuggestions] = useState<AxisSuggestion[]>([]);
@@ -561,6 +568,7 @@ export function DialogueShell() {
   const dismissSeedReading = useCallback(() => {
     attentionVersionRef.current += 1;
     setReadingOpen(false);
+    setPolarityRequest(0);
     setCombineSourceId(null);
     setActiveDeferredId(null);
   }, []);
@@ -599,7 +607,7 @@ export function DialogueShell() {
   useLayoutEffect(() => {
     setAxisSuggestions([]); setCameraView(null); pendingPerspectiveRef.current = null;
     setActiveInstanceId(null); setExpandedResultId(null); setExpansionResult(null);
-    setEvolutionOpen(false); setInquiryResult(null);
+    setEvolutionOpen(false); setInquiryResult(null); setPolarityRequest(0); setStageSelectionPending(false);
     setActiveDeferredId(null); setConnectionTargetId(null);
   }, [workspaceSessionId]);
   const pendingAction = useDialogueUiStore((state) => state.pendingAction);
@@ -831,6 +839,28 @@ export function DialogueShell() {
     return () => observer.disconnect();
   }, [workspaceReady, inlineInquiry]);
 
+  useLayoutEffect(() => {
+    const shell = shellRef.current;
+    if (!shell || !workspaceReady) return;
+    const watched = new Set<Element>();
+    const measure = () => {
+      const origin = shell.getBoundingClientRect().top;
+      const bottom = Math.max(60, ...Array.from(watched, element => element.getBoundingClientRect().bottom - origin));
+      shell.style.setProperty("--dialogue-chrome-bottom", `${Math.ceil(bottom)}px`);
+    };
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    const refresh = () => {
+      const current = new Set(shell.querySelectorAll('[data-stage-label-chrome="top"]'));
+      for (const element of watched) if (!current.has(element)) { observer?.unobserve(element); watched.delete(element); }
+      for (const element of current) if (!watched.has(element)) { observer?.observe(element); watched.add(element); }
+      measure();
+    };
+    const mutation = new MutationObserver(refresh);
+    mutation.observe(shell, { subtree: true, childList: true });
+    refresh();
+    return () => { observer?.disconnect(); mutation.disconnect(); };
+  }, [workspaceReady]);
+
   const closeSeedPanel = useCallback(() => {
     dismissSeedReading();
     setLineageOpen(false);
@@ -969,6 +999,8 @@ export function DialogueShell() {
   }, [synthesisRevealId]);
 
   const handleSelectNode = (nodeId: string, fromOverview = false) => {
+    setStageSelectionPending(false);
+    setPolarityRequest(0);
     attentionVersionRef.current += 1;
     setActiveDeferredId(null);
     if (!fromOverview && combineSourceId && !selectedPair && !hasPendingRequest) {
@@ -2078,6 +2110,7 @@ export function DialogueShell() {
       <div className={styles.ambientSecondary} />
       <div className={styles.ambientTertiary} />
 
+      <nav className={styles.appNavigation} aria-label="主导航" data-testid="dialogue-navigation" data-stage-label-chrome="top">
       <header className={styles.hero}>
         <p className={styles.eyebrow}>Anicca</p>
         <h1>anicca</h1>
@@ -2156,6 +2189,8 @@ export function DialogueShell() {
         onLook={direction => setCameraView(current => ({ direction, revision: (current?.revision || 0) + 1 }))}
         onResetView={() => setCameraView(current => ({ direction: "reset", revision: (current?.revision || 0) + 1 }))}
         onArrange={() => { setExpandedResultId(null); arrangeStage(`seeds:${workspaceId || "local"}`); }} />
+      <div className={styles.navigationSceneControls} data-stage-navigation-controls />
+      </nav>
       <input
         ref={importInputRef}
         data-testid="dialogue-import-input"
@@ -2197,13 +2232,16 @@ export function DialogueShell() {
           synthesisAction={relevantSynthesisAction}
           resolveSynthesisAction={resolveSeedPair}
           onSplit={(id) => {
+            setStageSelectionPending(false);
             const conceptId = seedConceptId(graphSnapshot.graph, seedInstances, id);
             if (conceptId) { setReadingOpen(false); void handleSubmit(conceptId); }
           }}
           onInteractionStart={dismissSeedReading}
           generationBusy={hasPendingRequest}
+          generatingNodeId={pending.branches?.composerTargetId || null}
           onProposeSynthesis={handleGenerateSynthesis}
           onSelect={handleSelectStageNode}
+          onSelectionPending={() => setStageSelectionPending(true)}
           onPrimaryAction={(nodeId) => {
             if (!nodeId) {
               focusComposerSoon();
@@ -2218,6 +2256,18 @@ export function DialogueShell() {
               : null
           }
         />
+        {view.currentNode && !readingOpen && !hasPendingRequest && !evolutionOpen && !stageSelectionPending ? <div className={styles.stagePrimaryActions}
+          data-testid="dialogue-stage-primary-actions" data-stage-label-chrome="bottom">
+          <span title={seedLabel(graphSnapshot.graph, view.currentNode.id)}>{seedLabel(graphSnapshot.graph, view.currentNode.id)}</span>
+          <SeedPrimaryActions disabled={!view.currentNode.text?.trim()}
+            onSplit={() => {
+              const node = graphSnapshot.graph.nodes[view.currentNode!.id];
+              handleContinueFromCurrentNode(normalizePolarityOrigin(node?.meta?.polarity)?.frame ||
+                (node?.meta?.fissionFrame ? normalizeThinkingSpace(node.meta.fissionFrame) : thinkingSpace));
+            }}
+            onPolarity={() => { setCombineSourceId(null); setPolarityRequest(value => value + 1); setReadingOpen(true); }}
+            onCombine={() => { setPolarityRequest(0); setCombineSourceId(focusedInstanceId || view.currentNode!.id); setSelectedPair(null); setReadingOpen(true); }} />
+        </div> : null}
         {expandedResultId && !readingOpen && !hasPendingRequest ? <div className={styles.sourceContextBar} aria-label="来源展开" data-testid="dialogue-source-context" data-stage-label-chrome="top">
           <span>来源 · {seedLabel(graphSnapshot.graph, seedConceptId(graphSnapshot.graph, seedInstances, expandedResultId) || "")}</span>
           <button type="button" onClick={() => handleSelectNode(expandedResultId)}>阅读合</button>
@@ -2275,6 +2325,7 @@ export function DialogueShell() {
           <SeedReadingContent open={readingOpen} suspended={evolutionOpen} motion={readingMotionRef.current} originNodeId={combineSourceId || focusedInstanceId || view.currentNode.id} onDismiss={dismissSeedReading}>
             <SeedInspector key={`${workspaceSessionId}:${combineSourceId || view.currentNode.id}`}
               space={thinkingSpace}
+              polarityRequest={polarityRequest}
               graph={graphSnapshot.graph} nodeId={seedConceptId(graphSnapshot.graph, seedInstances, combineSourceId) || view.currentNode.id}
               instances={seedInstances} instanceId={focusedInstanceId || view.currentNode.id}
               combining={Boolean(combineSourceId)} busy={hasPendingRequest}

@@ -15,6 +15,7 @@ export class LiquidFrame {
   private readonly previousSlotBlends: number[] = [];
   private readonly previousSlotPressures: number[] = [];
   private readonly previousSlotAttentions: number[] = [];
+  private readonly previousSlotGenerating: number[] = [];
   private previousTime: number | null = null;
   private previousDraggedId: string | null = null;
   private previousPartnerId: string | null = null;
@@ -50,6 +51,9 @@ export class LiquidFrame {
     for (const id of this.attentionTargets.keys()) if (!ids.has(id)) this.attentionTargets.delete(id);
     for (let index = 0; index < LIQUID_SEED_SLOTS; index++) {
       const node = visibleNodes[index];
+      const generating = node?.generating ? 1 : 0;
+      if (this.previousSlotGenerating[index] !== generating) set1f(`s${index}g`, generating);
+      this.previousSlotGenerating[index] = generating;
       const attentionTarget = node?.attention ?? 1;
       const previousAttention = node ? this.attentions.get(node.id) ?? attentionTarget : 1;
       const attentionDt = node && this.attentionTargets.get(node.id) !== attentionTarget ? Math.min(1 / 60, dt) : dt;

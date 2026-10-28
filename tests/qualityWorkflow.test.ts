@@ -13,7 +13,8 @@ describe("quality workflow visual evidence", () => {
     expect(workflow).toContain("path: artifacts/visual-smoke/dialogue\n");
     expect(workflow).toContain("if: failure() && steps.visual-smoke.outcome == 'failure'");
     expect(workflow).toContain("path: artifacts/visual-smoke/dialogue-failure\n");
-    expect(workflow).toContain("dialogue-visual-failure-${{ github.run_id }}-${{ github.run_attempt }}");
+    expect(workflow).toContain("dialogue-visual-failure-${{ matrix.group }}-${{ github.run_id }}-${{ github.run_attempt }}");
+    expect(workflow).toContain("dialogue-visual-smoke-${{ matrix.group }}-${{ github.run_id }}-${{ github.run_attempt }}");
     expect(workflow).not.toContain("if: always()");
   });
 });

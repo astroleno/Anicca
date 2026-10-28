@@ -117,7 +117,7 @@ export async function runAppExperience(browser, { baseUrl, outputDir, setActiveP
         for (const target of ["heading", "return", "radio"]) {
           await open();
           // Preserve the pre-choice reading anchor while testing the keyboard path.
-          await page.getByRole("button", { name: "看极性两端", exact: true }).evaluate(button => button.focus({ preventScroll: true }));
+          await page.getByRole("button", { name: "极性分裂", exact: true }).evaluate(button => button.focus({ preventScroll: true }));
           await page.keyboard.press("Enter");
           await page.waitForFunction(() => document.activeElement?.id === "conversation-panel-heading"
             && document.querySelector('[data-testid="dialogue-panel"]')?.dataset.mode === "polarity");
@@ -125,7 +125,7 @@ export async function runAppExperience(browser, { baseUrl, outputDir, setActiveP
           if (target === "radio") await page.locator("#seed-polarity-picker input").first().focus();
           await page.keyboard.press("Escape"); const returned = await note(`polarity-${target}-closed`);
           assert(returned.reading && returned.mode === "read"); assert.equal(returned.scrollTop, 650);
-          assert(returned.focusText?.includes("看极性两端"));
+          assert(returned.focusText?.includes("极性分裂"));
           await page.keyboard.press("Escape"); await page.locator("#dialogue-reading-drawer").waitFor({ state: "hidden" });
           const closed = await note(`reading-after-${target}-closed`); assert.equal(closed.reading, false);
         }

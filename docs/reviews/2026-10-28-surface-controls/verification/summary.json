@@ -1,0 +1,61 @@
+{
+  "buildId": "el_X_XIjd_O9DEBX86V-2",
+  "release": "/opt/anicca/releases/20261028-surface-controls-complete",
+  "quality": {
+    "files": 93,
+    "tests": 702,
+    "lintErrors": 0,
+    "existingLintWarnings": 26,
+    "productionTypes": "passed",
+    "testTypes": "passed",
+    "linuxBuild": "passed"
+  },
+  "runtimeSourceFiles": 166,
+  "runtimeSourceMismatches": [],
+  "public": [
+    {
+      "host": "aitoshuu.me",
+      "controls": {
+        "contexts": 7,
+        "states": 70,
+        "passed": true
+      },
+      "app": {
+        "contexts": 3,
+        "states": 37,
+        "passed": true
+      },
+      "reading": {
+        "contexts": 2,
+        "states": 48,
+        "passed": true
+      }
+    },
+    {
+      "host": "tongye.me",
+      "controls": {
+        "contexts": 7,
+        "states": 70,
+        "passed": true
+      },
+      "app": {
+        "contexts": 3,
+        "states": 37,
+        "passed": true
+      },
+      "reading": {
+        "contexts": 2,
+        "states": 48,
+        "passed": true
+      }
+    }
+  ],
+  "limitations": [
+    "Mobile uses touch viewport emulation; physical iPhone and Android were not retested this iteration.",
+    "Remote CI status is separate from completed local and public checks."
+  ],
+  "realApiCalls": {
+    "total": 24,
+    "all200": true
+  }
+}

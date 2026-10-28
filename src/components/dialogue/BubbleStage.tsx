@@ -34,6 +34,7 @@ type BubbleStageProps = {
   focusNodeId: string | null;
   onSelect: (nodeId: string) => void;
   onPrimaryAction?: (nodeId: string | null) => void;
+  onSelectionPending?(): void;
   convergenceEventId?: string | null;
   eventNodeId?: string | null;
   arrivals?: { sourceId: string; firstId: string; secondId: string } | null;
@@ -44,6 +45,7 @@ type BubbleStageProps = {
   onSplit?: (nodeId: string) => void;
   onInteractionStart?: () => void;
   generationBusy?: boolean;
+  generatingNodeId?: string | null;
   emptyAction?: {
     label: string;
     onTrigger: () => void;
@@ -154,6 +156,7 @@ export function BubbleStage({
   focusNodeId,
   onSelect,
   onPrimaryAction,
+  onSelectionPending,
   convergenceEventId = null,
   eventNodeId = null,
   arrivals = null,
@@ -164,6 +167,7 @@ export function BubbleStage({
   onSplit,
   onInteractionStart,
   generationBusy = false,
+  generatingNodeId = null,
   emptyAction = null,
   atmosphereVisible = false,
   rendererMode = "original",
@@ -237,7 +241,8 @@ export function BubbleStage({
     orbitAnimationRef.current = 0;
   }, []);
   useEffect(() => {
-    setControlsHost(trackRef.current?.closest<HTMLElement>('[data-testid="dialogue-shell"]') || null);
+    const shell = trackRef.current?.closest<HTMLElement>('[data-testid="dialogue-shell"]');
+    setControlsHost(shell?.querySelector<HTMLElement>('[data-stage-navigation-controls]') || shell || null);
   }, []);
   const didDragRef = useRef(false);
   const suppressClickUntilRef = useRef(0);
@@ -869,6 +874,7 @@ export function BubbleStage({
     if (detail > 1) return;
     const select = () => { actionsRef.current.onSelect(node.id); actionsRef.current.onPrimaryAction?.(node.id); };
     if (onSplit && detail > 0 && pointerTypeRef.current !== "touch") {
+      onSelectionPending?.();
       clickTimerRef.current = window.setTimeout(select, 260);
     } else select();
   };
@@ -1016,6 +1022,7 @@ export function BubbleStage({
                     style={{ left: `${pendingBranchNodes.anchor.x}%`, top: `${pendingBranchNodes.anchor.y}%` }}
                     data-testid="dialogue-stage-pending-root"
                     data-metaball-surface="empty-root"
+                    data-liquid-pending="true"
                     data-metaball-role="user"
                     data-metaball-relation="focus"
                     data-liquid-color-key={pendingBranchNodes.prompt}
@@ -1030,6 +1037,7 @@ export function BubbleStage({
                   style={{ left: `${pendingBranchNodes.thesis.x}%`, top: `${pendingBranchNodes.thesis.y}%` }}
                   data-testid="dialogue-stage-pending-thesis"
                   data-metaball-surface="pending-thesis"
+                  data-liquid-pending="true"
                   data-liquid-origins={pendingAnchor?.node.id ? JSON.stringify([pendingAnchor.node.id]) : undefined}
                   data-metaball-role={pendingBranchNodes.axis ? "neutral" : "thesis"}
                   data-space-depth={pendingBranchNodes.thesis.z}
@@ -1045,6 +1053,7 @@ export function BubbleStage({
                   style={{ left: `${pendingBranchNodes.antithesis.x}%`, top: `${pendingBranchNodes.antithesis.y}%` }}
                   data-testid="dialogue-stage-pending-antithesis"
                   data-metaball-surface="pending-antithesis"
+                  data-liquid-pending="true"
                   data-liquid-origins={pendingAnchor?.node.id ? JSON.stringify([pendingAnchor.node.id]) : undefined}
                   data-metaball-role={pendingBranchNodes.axis ? "neutral" : "antithesis"}
                   data-space-depth={pendingBranchNodes.antithesis.z}
@@ -1071,6 +1080,7 @@ export function BubbleStage({
                   style={{ left: `${pendingSynthesisMark.center.x}%`, top: `${pendingSynthesisMark.center.y}%` }}
                   data-testid="dialogue-stage-pending-synthesis-node"
                   data-metaball-surface="pending-synthesis"
+                  data-liquid-pending="true"
                   data-liquid-origins={JSON.stringify([pendingSynthesisMark.thesis.node.id, pendingSynthesisMark.antithesis.node.id])}
                   data-metaball-role="synthesis"
                   data-metaball-relation="decorative"
@@ -1173,6 +1183,8 @@ export function BubbleStage({
                   data-liquid-color-key={node.preview || node.label}
                   data-label-handoff={synthesisLabelNodes.some(source => source.id === node.id) ||
                     (pendingPreview?.kind === "synthesis" && (pendingPreview.thesisId === node.id || pendingPreview.antithesisId === node.id)) ? "true" : undefined}
+                  data-liquid-pending={node.id === generatingNodeId || node.conceptId === generatingNodeId || (pendingPreview?.kind === "synthesis" &&
+                    (node.id === pendingPreview.thesisId || node.id === pendingPreview.antithesisId)) ? "true" : undefined}
                   aria-label={buildStageNodeAriaLabel(node, label)}
                   aria-describedby={`${descriptionPrefix}-${node.id}`}
                   style={

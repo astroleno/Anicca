@@ -45,6 +45,21 @@ it("opens the original source when an encounter's copy has since been removed", 
   expect(onPick).toHaveBeenCalledExactlyOnceWith(a);
 });
 
+it("opens polarity directly from a stage request and returns to peer primary operations", () => {
+  const store = new BranchGraphStore(), id = store.createUserNode("共同维护花园");
+  const onCombine = vi.fn();
+  render(<SeedInspector graph={store.getGraph()} nodeId={id} combining={false} busy={false} polarityRequest={1}
+    onClose={vi.fn()} onWrite={vi.fn()} onCombine={onCombine} onPick={vi.fn()} onSplit={vi.fn()} onExpandPolarity={vi.fn()} />);
+  expect(screen.getByTestId("dialogue-panel")).toHaveAttribute("data-mode", "polarity");
+  expect(screen.getByRole("heading", { name: "沿极性展开" })).toHaveFocus();
+  fireEvent.keyDown(screen.getByRole("heading", { name: "沿极性展开" }), { key: "Escape" });
+  const primary = screen.getByRole("group", { name: "种子基本操作" });
+  expect(within(primary).getAllByRole("button").map(button => button.textContent)).toEqual(["推演正反", "极性分裂", "组合"]);
+  expect(screen.getByRole("button", { name: "极性分裂" })).toHaveFocus();
+  fireEvent.click(within(primary).getByRole("button", { name: "组合" }));
+  expect(onCombine).toHaveBeenCalledOnce();
+});
+
 it("distinguishes ordinary fission from axis expansion and leaves the global lens untouched", () => {
   const store = new BranchGraphStore(), id = store.createUserNode("让探索持续下去");
   const space = defaultThinkingSpace(); space.focus.horizon = 1;
@@ -52,8 +67,8 @@ it("distinguishes ordinary fission from axis expansion and leaves the global len
   render(<SeedInspector graph={store.getGraph()} nodeId={id} space={space} combining={false} busy={false}
     onClose={vi.fn()} onWrite={vi.fn()} onCombine={vi.fn()} onPick={vi.fn()} onSplit={onSplit} onExpandPolarity={onExpand} />);
   expect(screen.getByRole("button", { name: "推演正反" })).toHaveAccessibleDescription("推进判断，检验前提");
-  expect(screen.getByRole("button", { name: "看极性两端" })).toHaveAccessibleDescription("换观察位置，看见两端");
-  fireEvent.click(screen.getByRole("button", { name: "看极性两端" }));
+  expect(screen.getByRole("button", { name: "极性分裂" })).toHaveAccessibleDescription("换观察位置，看见两端");
+  fireEvent.click(screen.getByRole("button", { name: "极性分裂" }));
   expect(onExpand).not.toHaveBeenCalled(); expect(onSplit).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole("radio", { name: /关切/ }));
   expect(screen.getByText("其余角度保持：长远")).toBeInTheDocument();
@@ -89,7 +104,7 @@ it("keeps identical unconstrained observation frames quiet", () => {
   render(<SeedInspector graph={store.getGraph()} nodeId={id} space={frame} combining={false} busy={false}
     onClose={vi.fn()} onWrite={vi.fn()} onCombine={vi.fn()} onPick={vi.fn()} onSplit={vi.fn()} onExpandPolarity={vi.fn()} />);
   expect(screen.queryByRole("button", { name: "改用当前角度" })).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "看极性两端" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "极性分裂" })).toBeEnabled();
 });
 
 it.each(["heading", "return", "radio"])("closes the inline axis choice from %s with Escape without dismissing the reading parent", target => {
@@ -98,7 +113,7 @@ it.each(["heading", "return", "radio"])("closes the inline axis choice from %s w
   const view = render(<SeedInspector graph={store.getGraph()} nodeId={root} combining={false} busy={false}
     onClose={vi.fn()} onWrite={vi.fn()} onCombine={vi.fn()} onPick={vi.fn()} onSplit={vi.fn()} onExpandPolarity={vi.fn()} />);
   try {
-    fireEvent.click(screen.getByRole("button", { name: "看极性两端" }));
+    fireEvent.click(screen.getByRole("button", { name: "极性分裂" }));
     const control = target === "heading" ? screen.getByRole("heading", { name: "沿极性展开" })
       : target === "return" ? screen.getByRole("button", { name: "返回种子阅读" })
       : screen.getByRole("radio", { name: /尺度/ });
@@ -106,7 +121,7 @@ it.each(["heading", "return", "radio"])("closes the inline axis choice from %s w
     fireEvent.keyDown(control, { key: "Escape" });
     expect(screen.queryByRole("group", { name: "沿哪条维度展开" })).not.toBeInTheDocument();
     expect(screen.getByTestId("dialogue-panel")).toHaveAttribute("data-mode", "read");
-    expect(screen.getByRole("button", { name: "看极性两端" })).toHaveFocus();
+    expect(screen.getByRole("button", { name: "极性分裂" })).toHaveFocus();
     expect(escape).not.toHaveBeenCalled();
   } finally { view.unmount(); window.removeEventListener("keydown", escape); }
 });
@@ -135,11 +150,11 @@ it("restores a reading position and keeps it when returning from axis selection"
   const panel = screen.getByTestId("dialogue-panel");
   expect(panel.scrollTop).toBe(120);
   panel.scrollTop = 92; fireEvent.scroll(panel);
-  fireEvent.click(screen.getByRole("button", { name: "看极性两端" }));
+  fireEvent.click(screen.getByRole("button", { name: "极性分裂" }));
   expect(panel.scrollTop).toBe(0);
   fireEvent.click(screen.getByRole("button", { name: "返回种子阅读" }));
   expect(panel.scrollTop).toBe(92);
-  expect(screen.getByRole("button", { name: "看极性两端" })).toHaveFocus();
+  expect(screen.getByRole("button", { name: "极性分裂" })).toHaveFocus();
   view.unmount();
   expect(remember).toHaveBeenLastCalledWith(root, { scrollTop: 92 });
 });

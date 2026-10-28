@@ -1,5 +1,5 @@
 import {sculptToFullGLSLSource} from "shader-park-core/dist/shader-park-core.esm.js";
-import {buildLiquidSpCode} from "./spcode";
+import {buildLiquidSpCode, buildLiquidDistanceSource} from "./spcode";
 import {buildLiquidFragmentSource} from "./renderer";
 
 it("compiles the complete material with the installed Shader Park DSL",()=>{
@@ -9,7 +9,7 @@ it("compiles the complete material with the installed Shader Park DSL",()=>{
 
 it("hoists the sketch flow out of geometry while retaining converged hits, soft edges and semantic colors", () => {
   const source = buildLiquidFragmentSource();
-  const distance = source.slice(source.indexOf("float aniccaBody0("), source.indexOf("ShadedMaterial shade("));
+  const distance = buildLiquidDistanceSource();
   expect(distance).not.toContain("noise(");
   expect(distance).toContain("if(s7r > .0015");
   expect(distance).toContain("if(s0h > .0001)");

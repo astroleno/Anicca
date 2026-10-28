@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useState } from "react";
 import { defaultThinkingSpace, type ThinkingSpace } from "@/features/perspectives/model";
 import { PerspectiveControls } from "./PerspectiveControls";
@@ -16,6 +16,14 @@ function Harness({ workspaceId = "a", changed = vi.fn() }: { workspaceId?: strin
 }
 
 beforeEach(() => localStorage.clear());
+
+it("returns focus to the navigation trigger after closing the lazy dialog", async () => {
+  render(<Harness />);
+  const trigger = screen.getByRole("button", { name: "换个角度" });
+  trigger.focus(); fireEvent.click(trigger);
+  fireEvent.click(screen.getByRole("button", { name: "关闭思考空间" }));
+  await waitFor(() => expect(trigger).toHaveFocus());
+});
 const openEditor = () => {
   fireEvent.click(screen.getByRole("button", { name: "换个角度" }));
   fireEvent.click(screen.getByRole("button", { name: "编辑维度" }));

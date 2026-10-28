@@ -1,0 +1,1 @@
+{"release": "/opt/anicca/releases/20261028-surface-controls-complete", "previous": "/opt/anicca/releases/20261028-reading-continuity", "buildId": "el_X_XIjd_O9DEBX86V-2", "status": 200, "service": ["NRestarts=0", "ActiveState=active", "SubState=running"], "rollbackRetained": true}

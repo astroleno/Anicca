@@ -1,0 +1,107 @@
+
+> anicca@0.1.0 build:deploy
+> NEXT_PUBLIC_BASE_PATH=/Anicca next build
+
+   ▲ Next.js 15.5.28
+   - Experiments (use with caution):
+     ✓ webpackBuildWorker
+     ✓ webpackMemoryOptimizations
+
+   Creating an optimized production build ...
+<w> [webpack.cache.PackFileCacheStrategy] Skipped not serializable cache item 'Compilation/modules|javascript/auto|/opt/anicca/build-20261028-surface-controls-final/node_modules/next/dist/build/webpack/loaders/next-flight-css-loader.js??ruleSet[1].rules[14].oneOf[5].use[0]!/opt/anicca/build-20261028-surface-controls-final/node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[1]!/opt/anicca/build-20261028-surface-controls-final/node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[2]!/opt/anicca/build-20261028-surface-controls-final/src/components/dialogue/PerspectivePanel.module.css|ssr': No serializer registered for Warning
+<w> while serializing webpack/lib/cache/PackFileCacheStrategy.PackContentItems -> webpack/lib/NormalModule -> Array { 1 items } -> webpack/lib/ModuleWarning -> Warning
+ ⚠ Compiled with warnings in 9.6s
+
+./src/components/dialogue/PerspectivePanel.module.css
+Warning
+
+(51:43) autoprefixer: end value has mixed support, consider using flex-end instead
+
+Import trace for requested module:
+./src/components/dialogue/PerspectivePanel.module.css
+./src/components/dialogue/PerspectiveControls.tsx
+./src/components/dialogue/DialogueShell.tsx
+
+ ✓ Compiled successfully in 14.8s
+   Linting and checking validity of types ...
+
+./src/app/api/prompts/route.ts
+25:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/layout.tsx
+1:8  Warning: 'Script' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/chat/core.ts
+22:54  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/chat/stream/sse.ts
+10:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/ChatOverlayMock.tsx
+2:17  Warning: 'useMemo' is defined but never used.  @typescript-eslint/no-unused-vars
+79:10  Warning: 'currentParentNodeId' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+79:31  Warning: 'setCurrentParentNodeId' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+102:14  Warning: 'e' is defined but never used.  @typescript-eslint/no-unused-vars
+166:9  Warning: 'synthesize' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/GSAPChatInput.tsx
+52:15  Warning: 'positive' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+53:15  Warning: 'negative' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/events/bus.ts
+1:27  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+15:46  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/lib/openai/generateText.test.ts
+70:10  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+97:10  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+124:10  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+151:10  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/llm/runner.ts
+10:90  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/types/chat.ts
+21:29  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+   Collecting page data ...
+   Generating static pages (0/24) ...
+   Generating static pages (6/24)
+   Generating static pages (12/24)
+   Generating static pages (18/24)
+ ✓ Generating static pages (24/24)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                      128 B         191 kB
+├ ○ /_not-found                            994 B         104 kB
+├ ƒ /api/branches                          155 B         103 kB
+├ ƒ /api/chat                              155 B         103 kB
+├ ƒ /api/inquiry                           155 B         103 kB
+├ ƒ /api/perspectives                      155 B         103 kB
+├ ƒ /api/polarities                        155 B         103 kB
+├ ƒ /api/prompts                           155 B         103 kB
+├ ƒ /api/roundtable                        155 B         103 kB
+├ ƒ /api/synthesis                         155 B         103 kB
+├ ○ /dialogue                              128 B         191 kB
+├ ○ /icon.svg                                0 B            0 B
+├ ○ /labs                                  162 B         107 kB
+├ ○ /labs/liquid                          168 kB         275 kB
+├ ○ /labs/mochi                          4.34 kB         111 kB
+├ ○ /labs/newframe                       2.31 kB         109 kB
+├ ○ /labs/raymarching                     1.9 kB         108 kB
+├ ○ /liquid                                155 B         103 kB
+├ ○ /mochi                                 155 B         103 kB
+├ ○ /newframe                              155 B         103 kB
+├ ○ /raymarching                           155 B         103 kB
+└ ○ /roundtable                             4 kB         107 kB
++ First Load JS shared by all             103 kB
+  ├ chunks/255-0785bf85795d0143.js       46.6 kB
+  ├ chunks/4bd1b696-c023c6e3521b1417.js  54.2 kB
+  └ other shared chunks (total)          2.25 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand

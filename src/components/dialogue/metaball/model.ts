@@ -20,6 +20,7 @@ export type MetaballHostRect = {
 
 export type MetaballSurfaceRect = {
   id: string;
+  generating?: boolean;
   colorKey?: string;
   generation?: number;
   attention?: number;
@@ -36,6 +37,7 @@ export type MetaballSurfaceRect = {
 
 export type DialogueMetaballNode = {
   id: string;
+  generating?: boolean;
   center: [number, number];
   radius: number;
   color: [number, number, number];
@@ -115,6 +117,7 @@ export function projectMetaballSurfaces(
         ],
         radius: Math.max(surface.width, surface.height) / 2 / host.height,
         color: getSurfaceColor(surface),
+        ...(surface.generating ? { generating: true } : {}),
         ...(surface.spaceDepth !== undefined ? { spaceDepth: surface.spaceDepth } : {}),
         ...(surface.emergeFrom?.length ? { emergeFrom: surface.emergeFrom } : {}),
         emphasis: RELATION_EMPHASIS[surface.relation],

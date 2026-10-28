@@ -1,0 +1,1199 @@
+{
+  "baseUrl": "http://127.0.0.1:48842/Anicca",
+  "results": [
+    {
+      "name": "desktop",
+      "passed": true,
+      "states": [
+        {
+          "name": "idle-pending",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 0,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "workspaceId": "workspace_91860813-b3f9-4e8f-8ff6-71ca38a9ae16",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "idle-before-response",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 0,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "workspaceId": "workspace_91860813-b3f9-4e8f-8ff6-71ca38a9ae16",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "idle-after-response",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "协商的余地",
+          "scrollTop": 0,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "协商的余地"
+          },
+          "draft": "",
+          "workspaceId": "workspace_91860813-b3f9-4e8f-8ff6-71ca38a9ae16",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 84.06380462646484,
+            "bottom": 128.06381225585938,
+            "height": 44.00000762939453,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "programmatic-pending",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 0,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "workspaceId": "workspace_91860813-b3f9-4e8f-8ff6-71ca38a9ae16",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "programmatic-before-response",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 420,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "workspaceId": "workspace_91860813-b3f9-4e8f-8ff6-71ca38a9ae16",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "programmatic-after-response",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "协商的余地",
+          "scrollTop": 0,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "协商的余地"
+          },
+          "draft": "",
+          "workspaceId": "workspace_91860813-b3f9-4e8f-8ff6-71ca38a9ae16",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 102.36638641357422,
+            "bottom": 146.36639404296875,
+            "height": 44.00000762939453,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "scroll-pending",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 0,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "workspaceId": "workspace_91860813-b3f9-4e8f-8ff6-71ca38a9ae16",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "scroll-before-response",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 650,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "workspaceId": "workspace_91860813-b3f9-4e8f-8ff6-71ca38a9ae16",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          },
+          "anchor": {
+            "offset": 286,
+            "top": 31.15625
+          }
+        },
+        {
+          "name": "scroll-after-response",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 580,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "",
+          "workspaceId": "workspace_91860813-b3f9-4e8f-8ff6-71ca38a9ae16",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": true,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          },
+          "anchor": {
+            "offset": 286,
+            "top": 31.46875
+          }
+        },
+        {
+          "name": "keyboard-pending",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 0,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "workspaceId": "workspace_91860813-b3f9-4e8f-8ff6-71ca38a9ae16",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "keyboard-before-response",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 716,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "workspaceId": "workspace_91860813-b3f9-4e8f-8ff6-71ca38a9ae16",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          },
+          "anchor": {
+            "offset": 350,
+            "top": 25.9375
+          }
+        },
+        {
+          "name": "keyboard-after-response",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 646,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "draft": "",
+          "workspaceId": "workspace_91860813-b3f9-4e8f-8ff6-71ca38a9ae16",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": true,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          },
+          "anchor": {
+            "offset": 350,
+            "top": 26.25
+          }
+        },
+        {
+          "name": "edit-pending",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 0,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "workspaceId": "workspace_91860813-b3f9-4e8f-8ff6-71ca38a9ae16",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "edit-before-response",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 0,
+          "focus": {
+            "tag": "TEXTAREA",
+            "id": "dialogue-input",
+            "text": "等待时先保留下一条问题"
+          },
+          "draft": "等待时先保留下一条问题",
+          "workspaceId": "workspace_91860813-b3f9-4e8f-8ff6-71ca38a9ae16",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "edit-after-response",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 0,
+          "focus": {
+            "tag": "TEXTAREA",
+            "id": "dialogue-input",
+            "text": "等待时先保留下一条问题"
+          },
+          "draft": "等待时先保留下一条问题",
+          "workspaceId": "workspace_91860813-b3f9-4e8f-8ff6-71ca38a9ae16",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": true,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "return-1440-900-middle",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 650,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "draft": "",
+          "workspaceId": "workspace_91860813-b3f9-4e8f-8ff6-71ca38a9ae16",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "return-1440-900-bottom",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 1218,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "draft": "",
+          "workspaceId": "workspace_91860813-b3f9-4e8f-8ff6-71ca38a9ae16",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "return-768-1024-middle",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 650,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "draft": "",
+          "workspaceId": "workspace_91860813-b3f9-4e8f-8ff6-71ca38a9ae16",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "return-768-1024-bottom",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 1094,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "draft": "",
+          "workspaceId": "workspace_91860813-b3f9-4e8f-8ff6-71ca38a9ae16",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "reading-refresh",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 650,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "draft": "",
+          "workspaceId": "workspace_91860813-b3f9-4e8f-8ff6-71ca38a9ae16",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "workspace-b-created",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": false,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区社区花园是否应该保留不"
+          },
+          "draft": "",
+          "workspaceId": "workspace_52339e4d-8147-4024-9771-4a665884f1a9",
+          "workspaceTitle": "未命名工作区",
+          "arrival": false,
+          "back": null
+        },
+        {
+          "name": "rename-existing-switch",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": false,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区社区花园是否应该保留不"
+          },
+          "draft": "",
+          "workspaceId": "workspace_52339e4d-8147-4024-9771-4a665884f1a9",
+          "workspaceTitle": "未命名工作区",
+          "arrival": false,
+          "back": null
+        },
+        {
+          "name": "rename-new-workspace",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": false,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多工作区已重命名：B 的独立名称最近工作区未命名工作区"
+          },
+          "draft": "",
+          "workspaceId": "workspace_d2ae9b79-f284-4ee4-a45e-b857bea40628",
+          "workspaceTitle": "未命名工作区",
+          "arrival": false,
+          "back": null
+        }
+      ],
+      "calls": [
+        {
+          "requestId": "inquiry_req_b52eabac-a9ef-47ce-8920-cfe36a2be8da",
+          "controlled": true
+        },
+        {
+          "requestId": "inquiry_req_b80cc685-cb6e-4b54-83f7-f9a7155ef41c",
+          "controlled": true
+        },
+        {
+          "requestId": "inquiry_req_b74c30bf-965b-4f40-8048-c822ba20af56",
+          "controlled": true
+        },
+        {
+          "requestId": "inquiry_req_7011c079-9b69-47d2-9cf9-b8a6c529a806",
+          "controlled": true
+        },
+        {
+          "requestId": "inquiry_req_a8b52d90-4032-4d18-80f7-55165b26b05d",
+          "controlled": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "mobile",
+      "passed": true,
+      "states": [
+        {
+          "name": "idle-pending",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 0,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "workspaceId": "workspace_8dadf932-8d92-4ab9-b00f-2a55ca882ecc",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "idle-before-response",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 0,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "workspaceId": "workspace_8dadf932-8d92-4ab9-b00f-2a55ca882ecc",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "idle-after-response",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "协商的余地",
+          "scrollTop": 0,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "协商的余地"
+          },
+          "draft": "",
+          "workspaceId": "workspace_8dadf932-8d92-4ab9-b00f-2a55ca882ecc",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 52.976531982421875,
+            "bottom": 96.97653198242188,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "programmatic-pending",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 0,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "workspaceId": "workspace_8dadf932-8d92-4ab9-b00f-2a55ca882ecc",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "programmatic-before-response",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 420,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "workspaceId": "workspace_8dadf932-8d92-4ab9-b00f-2a55ca882ecc",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "programmatic-after-response",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "协商的余地",
+          "scrollTop": 0,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "协商的余地"
+          },
+          "draft": "",
+          "workspaceId": "workspace_8dadf932-8d92-4ab9-b00f-2a55ca882ecc",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 69.8503189086914,
+            "bottom": 113.8503189086914,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "scroll-pending",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 0,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "workspaceId": "workspace_8dadf932-8d92-4ab9-b00f-2a55ca882ecc",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "scroll-before-response",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 440,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "workspaceId": "workspace_8dadf932-8d92-4ab9-b00f-2a55ca882ecc",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          },
+          "anchor": {
+            "offset": 111,
+            "top": 22.03125
+          }
+        },
+        {
+          "name": "scroll-after-response",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 346,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "",
+          "workspaceId": "workspace_8dadf932-8d92-4ab9-b00f-2a55ca882ecc",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": true,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          },
+          "anchor": {
+            "offset": 111,
+            "top": 22.34375
+          }
+        },
+        {
+          "name": "keyboard-pending",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 0,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "workspaceId": "workspace_8dadf932-8d92-4ab9-b00f-2a55ca882ecc",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "keyboard-before-response",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 660,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "workspaceId": "workspace_8dadf932-8d92-4ab9-b00f-2a55ca882ecc",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          },
+          "anchor": {
+            "offset": 209,
+            "top": 14.765625
+          }
+        },
+        {
+          "name": "keyboard-after-response",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 566,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "draft": "",
+          "workspaceId": "workspace_8dadf932-8d92-4ab9-b00f-2a55ca882ecc",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": true,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          },
+          "anchor": {
+            "offset": 209,
+            "top": 15.078125
+          }
+        },
+        {
+          "name": "edit-pending",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 0,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "workspaceId": "workspace_8dadf932-8d92-4ab9-b00f-2a55ca882ecc",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "edit-before-response",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 0,
+          "focus": {
+            "tag": "TEXTAREA",
+            "id": "dialogue-input",
+            "text": "等待时先保留下一条问题"
+          },
+          "draft": "等待时先保留下一条问题",
+          "workspaceId": "workspace_8dadf932-8d92-4ab9-b00f-2a55ca882ecc",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "edit-after-response",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 0,
+          "focus": {
+            "tag": "TEXTAREA",
+            "id": "dialogue-input",
+            "text": "等待时先保留下一条问题"
+          },
+          "draft": "等待时先保留下一条问题",
+          "workspaceId": "workspace_8dadf932-8d92-4ab9-b00f-2a55ca882ecc",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": true,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "return-390-844-middle",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 650,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "draft": "",
+          "workspaceId": "workspace_8dadf932-8d92-4ab9-b00f-2a55ca882ecc",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "return-390-844-bottom",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 1700,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "draft": "",
+          "workspaceId": "workspace_8dadf932-8d92-4ab9-b00f-2a55ca882ecc",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "return-320-568-middle",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 650,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "draft": "",
+          "workspaceId": "workspace_8dadf932-8d92-4ab9-b00f-2a55ca882ecc",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "return-320-568-bottom",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 2401,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "draft": "",
+          "workspaceId": "workspace_8dadf932-8d92-4ab9-b00f-2a55ca882ecc",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "return-844-390-middle",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 650,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "draft": "",
+          "workspaceId": "workspace_8dadf932-8d92-4ab9-b00f-2a55ca882ecc",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 68,
+            "bottom": 112,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "return-844-390-bottom",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 1688,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "draft": "",
+          "workspaceId": "workspace_8dadf932-8d92-4ab9-b00f-2a55ca882ecc",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 68,
+            "bottom": 112,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "reading-refresh",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": true,
+          "heading": "社区花园是否应该保留不预设用",
+          "scrollTop": 650,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "draft": "",
+          "workspaceId": "workspace_8dadf932-8d92-4ab9-b00f-2a55ca882ecc",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "arrival": false,
+          "back": {
+            "top": 76,
+            "bottom": 120,
+            "height": 44,
+            "visible": true,
+            "hittable": true
+          }
+        },
+        {
+          "name": "workspace-b-created",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": false,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区社区花园是否应该保留不"
+          },
+          "draft": "",
+          "workspaceId": "workspace_15001b84-bd99-44ec-9428-49a17babf681",
+          "workspaceTitle": "未命名工作区",
+          "arrival": false,
+          "back": null
+        },
+        {
+          "name": "rename-existing-switch",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": false,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区社区花园是否应该保留不"
+          },
+          "draft": "",
+          "workspaceId": "workspace_15001b84-bd99-44ec-9428-49a17babf681",
+          "workspaceTitle": "未命名工作区",
+          "arrival": false,
+          "back": null
+        },
+        {
+          "name": "rename-new-workspace",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "title": "Anicca",
+          "reading": false,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多工作区已重命名：B 的独立名称最近工作区未命名工作区"
+          },
+          "draft": "",
+          "workspaceId": "workspace_250a9364-48a2-4a92-8102-92ed6c4c5a72",
+          "workspaceTitle": "未命名工作区",
+          "arrival": false,
+          "back": null
+        }
+      ],
+      "calls": [
+        {
+          "requestId": "inquiry_req_1ca69c5c-66a0-4dd6-9384-ad3eb2a9c075",
+          "controlled": true
+        },
+        {
+          "requestId": "inquiry_req_f3f77c60-1170-45e3-87e3-f31424941eb3",
+          "controlled": true
+        },
+        {
+          "requestId": "inquiry_req_090394ea-0593-4715-b882-0c9bab178e72",
+          "controlled": true
+        },
+        {
+          "requestId": "inquiry_req_d09963ec-6bee-4c61-8fe3-f7fa152047f9",
+          "controlled": true
+        },
+        {
+          "requestId": "inquiry_req_a80fdee1-e788-414b-83e7-9a80edb2bbb4",
+          "controlled": true
+        }
+      ],
+      "errors": []
+    }
+  ]
+}

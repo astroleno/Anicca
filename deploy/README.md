@@ -116,7 +116,19 @@ rename ownership when creating or switching workspaces:
 ANICCA_QA_URLS=https://aitoshuu.me/Anicca,https://tongye.me/Anicca node scripts/visual-smoke/reading-continuity.mjs
 ```
 
-Visual CI partitions the existing viewport and interaction checks into five
+Surface checks cover the line input, shared primary operations, navigation
+boundaries, pending surface grain, cancellation and failure cleanup, and static
+grain under reduced motion. A temporary renderer harness checks 108 fusion,
+occlusion and separation frames using the actual original and TSL modules:
+
+```sh
+ANICCA_QA_URLS=https://aitoshuu.me/Anicca,https://tongye.me/Anicca node scripts/visual-smoke/surface-controls.mjs
+```
+
+The harness uses the already installed Vite and Sharp dependencies; it adds no
+application route and closes its temporary local server after validation.
+
+Visual CI partitions the viewport and interaction checks into six
 groups, with at most two running concurrently. Every viewport and scenario is
 retained, with the existing 30-minute smoke deadline and per-group evidence.
 

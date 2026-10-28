@@ -564,13 +564,13 @@ describe("DialogueShell", () => {
     await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
     const reading = await screen.findByTestId("dialogue-panel");
     reading.scrollTop = 120; fireEvent.scroll(reading);
-    await user.click(screen.getByRole("button", { name: "看极性两端" }));
+    await user.click(screen.getByRole("button", { name: "极性分裂" }));
     expect(screen.getByRole("heading", { name: "沿极性展开" })).toHaveFocus();
     await user.keyboard("{Escape}");
     expect(screen.getByTestId("dialogue-panel")).toBe(reading);
     expect(reading).toHaveAttribute("data-mode", "read");
     expect(reading.scrollTop).toBe(120);
-    expect(screen.getByRole("button", { name: "看极性两端" })).toHaveFocus();
+    expect(screen.getByRole("button", { name: "极性分裂" })).toHaveFocus();
     await user.keyboard("{Escape}");
     await waitFor(() => expect(document.getElementById("dialogue-reading-drawer")).not.toBeInTheDocument());
   });
@@ -630,7 +630,7 @@ describe("DialogueShell", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<DialogueShell />);
     fireEvent.click(screen.getByTestId(`dialogue-stage-node-${rootUserId}`));
-    fireEvent.click(await screen.findByRole("button", { name: "看极性两端" }));
+    fireEvent.click(await screen.findByRole("button", { name: "极性分裂" }));
     fireEvent.click(screen.getByRole("radio", { name: /关切/ }));
     fireEvent.click(screen.getByRole("button", { name: "沿「关切」展开" }));
     await waitFor(() => expect(Object.values(branchGraphStore.getGraph().nodes).filter(node => node.meta?.polarity)).toHaveLength(2));
@@ -660,7 +660,7 @@ describe("DialogueShell", () => {
     });
     vi.stubGlobal("fetch", fetchMock); render(<DialogueShell />);
     fireEvent.click(screen.getByTestId(`dialogue-stage-node-${rootUserId}`));
-    fireEvent.click(await screen.findByRole("button", { name: "看极性两端" }));
+    fireEvent.click(await screen.findByRole("button", { name: "极性分裂" }));
     fireEvent.click(screen.getByRole("radio", { name: /关切/ }));
     fireEvent.click(screen.getByRole("button", { name: "沿「关切」展开" }));
     const retry = await screen.findByRole("button", { name: "重试上次" });
@@ -740,7 +740,7 @@ describe("DialogueShell", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("keeps the workspace quiet and exposes actions only after selecting a seed", async () => {
+  it("exposes peer stage operations and keeps the same operations in reading", async () => {
     const user = userEvent.setup();
     const { rootUserId, thesisId } = seedPair();
     useDialogueUiStore.setState({ focusedNodeId: rootUserId });
@@ -748,11 +748,29 @@ describe("DialogueShell", () => {
     expect(screen.getByPlaceholderText("写下一个想法…")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "生成" })).toBeDisabled();
     expect(screen.queryByText("主决策")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "推演正反" })).not.toBeInTheDocument();
+    const actions = screen.getByTestId("dialogue-stage-primary-actions");
+    expect(within(actions).getByRole("button", { name: "推演正反" })).toBeEnabled();
+    expect(within(actions).getByRole("button", { name: "极性分裂" })).toBeEnabled();
+    expect(within(actions).getByRole("button", { name: "组合" })).toBeEnabled();
     await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
     expect(await screen.findByRole("button", { name: "推演正反" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "组合" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "继续写" })).toBeEnabled();
+  });
+
+  it("opens polarity from the stage without first opening seed reading", async () => {
+    const user = userEvent.setup();
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    render(<DialogueShell />);
+    expect(screen.queryByTestId("dialogue-panel")).not.toBeInTheDocument();
+    await user.click(within(screen.getByTestId("dialogue-stage-primary-actions")).getByRole("button", { name: "极性分裂" }));
+    expect(screen.getByTestId("dialogue-panel")).toHaveAttribute("data-mode", "polarity");
+    await user.keyboard("{Escape}");
+    expect(screen.getByTestId("dialogue-panel")).toHaveAttribute("data-mode", "read");
+    await user.click(screen.getByRole("button", { name: "返回种子，收起阅读" }));
+    await user.click(screen.getByTestId(`dialogue-stage-node-${rootUserId}`));
+    expect(await screen.findByTestId("dialogue-panel")).toHaveAttribute("data-mode", "read");
   });
 
   it("restores this ordinary round's companion ahead of newer unrelated thoughts after remount", async () => {

@@ -6,7 +6,7 @@ import {
 import {
   type DialogueMetaballNode
 } from "../metaball/model";
-import { buildLiquidSpCode, buildLiquidFlowSource, buildLiquidDistanceSource, buildLiquidMaterialSource, LIQUID_SEED_SLOTS } from "./spcode";
+import { buildLiquidSpCode, buildLiquidFlowSource, buildLiquidDistanceSource, buildLiquidMaterialSource, buildLiquidNormalSource, LIQUID_SEED_SLOTS } from "./spcode";
 import { LiquidFrame } from "./frame";
 import type { SeedOrbit } from "./space";
 
@@ -44,7 +44,8 @@ export function buildLiquidFragmentSource(): string {
     if (!material.includes(`uniform float ${name};`)) throw new Error("liquid_flow_input_missing");
     material = material.replace(`uniform float ${name};`, `float ${name};`);
   }
-  material = replaceShaderFunction(material, "float surfaceDistance(vec3 p) {", buildLiquidDistanceSource());
+  material = replaceShaderFunction(material, "float surfaceDistance(vec3 p) {", `${buildLiquidDistanceSource()}\n${buildLiquidNormalSource()}`);
+  material = replaceShaderFunction(material, "vec3 calcNormal( vec3 pos )", "vec3 calcNormal(vec3 pos);");
   material = replaceShaderFunction(material, "ShadedMaterial shade(vec3 p, vec3 normal) {", buildLiquidMaterialSource());
   const intersect = "float intersect(vec3 ro, vec3 rd, float stepFraction) {";
   const advance = "t += h*STEP_SIZE_CONSTANT;";
@@ -67,10 +68,13 @@ export function buildLiquidFragmentSource(): string {
     if(flowLayers > 1.5) {
       float exactHit=aniccaRestingLayerHit(rayOrigin,rayDirection);
       if(exactHit > 0.0 && exactHit < max_dist) t=exactHit;
-      else if(exactHit < 0.0) for(int layerStep=0;layerStep<8;layerStep++) {
+      else if(exactHit < 0.0) for(int layerStep=0;layerStep<16;layerStep++) {
         float remaining=surfaceDistance(rayOrigin+rayDirection*t);
         if(remaining < intersection_threshold || t > max_dist) break;
         t+=remaining*STEP_SIZE_CONSTANT;
+      }
+      if(surfaceDistance(rayOrigin+rayDirection*t) > intersection_threshold) {
+        t=aniccaRefineSolidHit(rayOrigin,rayDirection,t);
       }
     }
     float residual=max(0.0,surfaceDistance(rayOrigin+rayDirection*t));
@@ -95,7 +99,17 @@ export function buildLiquidFragmentSource(): string {
       liquidLayerMask=1 << frontSeed;
       if(frontSeed < 2 && (s0b > .0002 || s1b > .0002)) liquidLayerMask=3;
       float behindT=aniccaRestingLayerHit(rayOrigin,rayDirection);
-      if(behindT < 0.0) behindT=intersect(rayOrigin,rayDirection,stepSize);
+      if(behindT < 0.0) {
+        behindT=intersect(rayOrigin,rayDirection,stepSize);
+        for(int layerStep=0;layerStep<16;layerStep++) {
+          float remaining=surfaceDistance(rayOrigin+rayDirection*behindT);
+          if(remaining < intersection_threshold || behindT > max_dist) break;
+          behindT+=remaining*STEP_SIZE_CONSTANT;
+        }
+        if(surfaceDistance(rayOrigin+rayDirection*behindT) > intersection_threshold) {
+          behindT=aniccaRefineSolidHit(rayOrigin,rayDirection,behindT);
+        }
+      }
       if(behindT < max_dist) {
         vec3 behindPoint=rayOrigin+rayDirection*behindT;
         vec3 behindNormal=calcNormal(behindPoint);
@@ -216,7 +230,7 @@ export function createDialogueMetaballRenderer(
   const locations = new Map<string, WebGLUniformLocation | null>();
   const uniformNames = ["time", "resolution", "opacity", "_scale", "atmosphere", "edgeSoftness", "darkMode", "stageGround", "viewYaw", "viewPitch"];
   for (let index = 0; index < LIQUID_SEED_SLOTS; index += 1) {
-    for (const suffix of ["x", "y", "z", "r", "h", "b", "p", "cr", "cg", "cb"]) {
+    for (const suffix of ["x", "y", "z", "r", "h", "b", "p", "g", "cr", "cg", "cb"]) {
       uniformNames.push(`s${index}${suffix}`);
     }
   }

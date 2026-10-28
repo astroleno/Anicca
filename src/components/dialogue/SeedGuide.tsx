@@ -45,7 +45,7 @@ export function SeedGuide({ empty, requested, pending, suspended, reading, combi
   if (!open || pending || suspended) return null;
   const step = empty ? "write" : combining ? "combine" : reading ? "explore" : "read";
   const hint = step === "read" ? `点一颗读读；${stageGestureHint(coarsePointer)}` : STEPS[step];
-  return <aside className={styles.seedGuide} aria-label="探索提示" data-step={step} data-preserve-seed-reading>
+  return <aside className={styles.seedGuide} aria-label="探索提示" data-step={step} data-preserve-seed-reading data-stage-label-chrome="top">
     <div aria-live="polite">
       {empty ? <button className={styles.seedGuideStart} type="button" aria-label="写下想法" onClick={onStart}>{hint}</button>
         : <p>{hint}</p>}

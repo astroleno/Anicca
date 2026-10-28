@@ -12,6 +12,7 @@ uniform float materialG;
 uniform float materialB;
 uniform float fieldMix;
 float surfaceDistance(vec3 p) { return length(p); }
+vec3 calcNormal( vec3 pos ) { return normalize(pos); }
 ShadedMaterial shade(vec3 p, vec3 normal) { return ShadedMaterial(); }
 float intersect(vec3 ro, vec3 rd, float stepFraction) {
   float t = 0.0;
@@ -126,6 +127,24 @@ describe("dialogue liquid renderer", () => {
     expect(gl.uniform1f).toHaveBeenCalledWith(expect.objectContaining({ name: "s0cg" }), .7);
     expect(gl.uniform1f).toHaveBeenCalledWith(expect.objectContaining({ name: "s0cb" }), .9);
     expect(gl.drawArrays).toHaveBeenCalledWith(gl.TRIANGLES, 0, 3);
+  });
+
+  it("clears waiting grain when a seed completes or a liquid slot is reused", () => {
+    const gl = createGlMock(), canvas = document.createElement("canvas");
+    vi.spyOn(canvas, "getContext").mockReturnValue(gl as unknown as GPUCanvasContext);
+    const renderer = createDialogueMetaballRenderer(canvas, vi.fn());
+    const node = { id: "waiting", center: [0, 0] as [number, number], radius: .1,
+      color: [.5, .5, .5] as [number, number, number], emphasis: 1 };
+    const grain = () => gl.uniform1f.mock.calls.filter(([location]) =>
+      (location as unknown as { name: string }).name === "s0g").at(-1)?.[1];
+    renderer.render([{ ...node, generating: true }], 0);
+    expect(grain()).toBe(1);
+    renderer.render([node], 0);
+    expect(grain()).toBe(0);
+    renderer.render([{ ...node, generating: true }], 2);
+    renderer.render([{ ...node, id: "unrelated" }], 3);
+    expect(grain()).toBe(0);
+    renderer.dispose();
   });
 
   it("releases the vertex shader if fragment compilation fails", () => {

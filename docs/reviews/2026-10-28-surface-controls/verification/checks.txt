@@ -1,0 +1,96 @@
+
+> anicca@0.1.0 check
+> npm run lint && npm run typecheck && npm run typecheck:test && npm test
+
+
+> anicca@0.1.0 lint
+> eslint .
+
+
+/Users/aitoshuu/Documents/GitHub/Anicca/output/ego/sketch-edge-20261021/vite.config.mjs
+  1:1  warning  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+/Users/aitoshuu/Documents/GitHub/Anicca/output/ego/sketch-target-20261020/preview/vite.config.mjs
+  1:1  warning  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+/Users/aitoshuu/Documents/GitHub/Anicca/output/ego/sketch-target-20261020/round-12-stable-density-confirmation.mjs
+  18:9  warning  'track' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/aitoshuu/Documents/GitHub/Anicca/output/ego/thinking-space-20261021-1125/round-15-desktop-gestures.mjs
+  6:7  warning  'node' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/aitoshuu/Documents/GitHub/Anicca/output/ego/thinking-space-20261021-1125/vite.config.mjs
+  1:1  warning  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+/Users/aitoshuu/Documents/GitHub/Anicca/output/playwright/reference-flow-1020/reference-preview/vite.config.mjs
+  3:1  warning  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+/Users/aitoshuu/Documents/GitHub/Anicca/output/playwright/thinking-space-20261021/appearance.mjs
+  2:9  warning  'readFile' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/aitoshuu/Documents/GitHub/Anicca/src/app/api/prompts/route.ts
+  25:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/aitoshuu/Documents/GitHub/Anicca/src/app/layout.tsx
+  1:8  warning  'Script' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/aitoshuu/Documents/GitHub/Anicca/src/chat/core.ts
+  22:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/aitoshuu/Documents/GitHub/Anicca/src/chat/stream/sse.ts
+  10:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/aitoshuu/Documents/GitHub/Anicca/src/components/ChatOverlayMock.tsx
+    2:17  warning  'useMemo' is defined but never used                          @typescript-eslint/no-unused-vars
+   79:10  warning  'currentParentNodeId' is assigned a value but never used     @typescript-eslint/no-unused-vars
+   79:31  warning  'setCurrentParentNodeId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  102:14  warning  'e' is defined but never used                                @typescript-eslint/no-unused-vars
+  166:9   warning  'synthesize' is assigned a value but never used              @typescript-eslint/no-unused-vars
+
+/Users/aitoshuu/Documents/GitHub/Anicca/src/components/GSAPChatInput.tsx
+  52:15  warning  'positive' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  53:15  warning  'negative' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/aitoshuu/Documents/GitHub/Anicca/src/events/bus.ts
+   1:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  15:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/aitoshuu/Documents/GitHub/Anicca/src/lib/openai/generateText.test.ts
+   70:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   97:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  124:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  151:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/aitoshuu/Documents/GitHub/Anicca/src/llm/runner.ts
+  10:90  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/aitoshuu/Documents/GitHub/Anicca/src/types/chat.ts
+  21:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 26 problems (0 errors, 26 warnings)
+
+
+> anicca@0.1.0 typecheck
+> tsc --noEmit --incremental false
+
+
+> anicca@0.1.0 typecheck:test
+> tsc -p tsconfig.test.json --noEmit --incremental false
+
+
+> anicca@0.1.0 test
+> vitest run
+
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+ RUN  v4.1.5 /Users/aitoshuu/Documents/GitHub/Anicca
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+Browserslist: browsers data (caniuse-lite) is 13 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+
+ Test Files  93 passed (93)
+      Tests  702 passed (702)
+   Start at  20:34:59
+   Duration  52.72s (transform 1.19s, setup 2.68s, import 5.05s, tests 59.40s, environment 29.01s)

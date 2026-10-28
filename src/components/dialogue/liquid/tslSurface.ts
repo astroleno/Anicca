@@ -70,10 +70,38 @@ export function createLiquidSurface() {
     { name: "p", type: "vec3" }, { name: "tone", type: "vec3" }, { name: "mask", type: "int" }
   ] });
 
+  const bodyGradient = Fn(([p, slot, tone]: [Node, Node, Node]) => {
+    const seed = seeds.element(int(slot)), state = states.element(int(slot));
+    const local = p.sub(seed.xyz).toVar(), gradient = local.div(max(length(local), .000001)).toVar();
+    If(state.x.greaterThan(.0001), () => {
+      local.yz.assign(rotate(local.yz, orbit.y)); local.xz.assign(rotate(local.xz, orbit.x));
+      local.yz.assign(rotate(local.yz, float(Math.PI / 2)));
+      const radial = max(length(local.xz), .000001).toVar();
+      const ring = vec2(radial.sub(seed.w.mul(float(1).add(tone.x.mul(.055)))), local.y).toVar();
+      ring.divAssign(max(length(ring), .000001));
+      const torusNormal = vec3(local.x.div(radial).mul(ring.x), ring.y, local.z.div(radial).mul(ring.x)).toVar();
+      torusNormal.yz.assign(rotate(torusNormal.yz, float(-Math.PI / 2)));
+      torusNormal.xz.assign(rotate(torusNormal.xz, orbit.x.negate()));
+      torusNormal.yz.assign(rotate(torusNormal.yz, orbit.y.negate()));
+      gradient.assign(mix(gradient, torusNormal, state.x));
+    });
+    return gradient;
+  }).setLayout({ name: "liquidGradient", type: "vec3", inputs: [
+    { name: "p", type: "vec3" }, { name: "slot", type: "int" }, { name: "tone", type: "vec3" }
+  ] });
+
   const normalAt = Fn(([p, tone, mask]: [Node, Node, Node]) => {
-    const e = vec2(.0005, -.0005);
-    return normalize(e.xyy.mul(field(p.add(e.xyy), tone, mask)).add(e.yyx.mul(field(p.add(e.yyx), tone, mask)))
-      .add(e.yxy.mul(field(p.add(e.yxy), tone, mask))).add(e.xxx.mul(field(p.add(e.xxx), tone, mask))));
+    const distance = float(100).toVar(), gradient = vec3(0).toVar();
+    for (let index = 0; index < LIQUID_SEED_SLOTS; index++) {
+      const seed = seeds.element(int(index)), state = states.element(int(index));
+      If(seed.w.greaterThan(.0015).and(int(mask).bitAnd(1 << index).equal(0)), () => {
+        const surface = body(p, int(index), tone).toVar(), k = max(state.y.mul(seed.w).mul(2), .000001).toVar();
+        const incoming = clamp(float(.5).add(distance.sub(surface).mul(.5).div(k)), 0, 1).toVar();
+        If(incoming.greaterThan(0), () => { gradient.assign(mix(gradient, bodyGradient(p, int(index), tone), incoming)); });
+        distance.assign(smoothUnion(surface, distance, k));
+      });
+    }
+    return normalize(gradient);
   }).setLayout({ name: "liquidNormal", type: "vec3", inputs: [
     { name: "p", type: "vec3" }, { name: "tone", type: "vec3" }, { name: "mask", type: "int" }
   ] });
@@ -111,6 +139,41 @@ export function createLiquidSurface() {
     { name: "ray", type: "vec3" }, { name: "tone", type: "vec3" }, { name: "mask", type: "int" }
   ] });
 
+  const solidHit = Fn(([ray, tone, mask]: [Node, Node, Node]) => {
+    const nearest = float(100).toVar();
+    for (let index = 0; index < LIQUID_SEED_SLOTS; index++) {
+      const seed = seeds.element(int(index)), state = states.element(int(index));
+      If(seed.w.greaterThan(.0015).and(state.x.lessThanEqual(.0001)).and(int(mask).bitAnd(1 << index).equal(0)), () => {
+        const offset = vec3(0, 0, -2).sub(seed.xyz), radius = seed.w.mul(float(1).add(tone.x.mul(.055)));
+        const b = dot(offset, ray).toVar(), disc = b.mul(b).sub(dot(offset, offset)).add(radius.mul(radius)).toVar();
+        If(disc.greaterThanEqual(0), () => {
+          const hit = b.negate().sub(sqrt(disc)).toVar();
+          If(hit.greaterThan(0), () => { nearest.assign(min(nearest, hit)); });
+        });
+      });
+    }
+    return nearest;
+  }).setLayout({ name: "liquidSolidHit", type: "float", inputs: [
+    { name: "ray", type: "vec3" }, { name: "tone", type: "vec3" }, { name: "mask", type: "int" }
+  ] });
+
+  const refineHit = Fn(([ray, tone, mask, travel]: [Node, Node, Node, Node]) => {
+    const upper = solidHit(ray, tone, mask).toVar();
+    const result = travel.toVar();
+    If(upper.lessThan(100), () => {
+      const lower = min(travel, upper).toVar();
+      Loop(12, () => {
+        const middle = lower.add(upper).mul(.5).toVar();
+        If(field(vec3(0, 0, -2).add(ray.mul(middle)), tone, mask).greaterThan(0), () => { lower.assign(middle); })
+          .Else(() => { upper.assign(middle); });
+      });
+      result.assign(upper);
+    });
+    return result;
+  }).setLayout({ name: "liquidRefineHit", type: "float", inputs: [
+    { name: "ray", type: "vec3" }, { name: "tone", type: "vec3" }, { name: "mask", type: "int" }, { name: "travel", type: "float" }
+  ] });
+
   // Shader Park Material(tint, tint, .5, .7, 1): metallic=.5, roughness=.7.
   const light = Fn(([tint, normal, ray]: [Node, Node, Node]) => {
     const view = ray.negate(), direction = vec3(0, 1, 0), half = normalize(view.add(direction));
@@ -130,7 +193,7 @@ export function createLiquidSurface() {
   const shade = Fn(([p, normal, ray, tone, mask, presence, fieldMix]: [Node, Node, Node, Node, Node, Node, Node]) => {
     const compressed = tone.div(tone.add(1)), luma = dot(compressed, vec3(.2126, .7152, .0722));
     const texture = mix(vec3(luma), compressed, .36), tint = vec3(.6).toVar();
-    const distance = float(100).toVar(), attention = float(1).toVar(), primary = float(-1).toVar();
+    const distance = float(100).toVar(), attention = float(1).toVar(), primary = float(-1).toVar(), generating = float(0).toVar();
     for (let index = 0; index < LIQUID_SEED_SLOTS; index++) {
       const seed = seeds.element(int(index)), state = states.element(int(index));
       If(seed.w.greaterThan(.0015).and(int(mask).bitAnd(1 << index).equal(0)), () => {
@@ -139,10 +202,14 @@ export function createLiquidSurface() {
         const pearl = mix(texture, pow(tints.element(int(index)), 2.2), .56).mul(luma.mul(.82).add(.48));
         tint.assign(mix(tint, mix(pearl, tone, fieldMix), incoming));
         attention.assign(mix(attention, state.z, incoming));
+        generating.assign(mix(generating, state.w, incoming));
         If(incoming.greaterThan(.5), () => { primary.assign(index); });
         distance.assign(smoothUnion(surface, distance, k));
       });
     }
+    If(generating.greaterThan(.001), () => {
+      tint.mulAssign(float(1).add(generating.mul(noise(p.mul(120).add(vec3(time.mul(.12), 0, 0)))).mul(.24)));
+    });
     const linear = light(tint, normal, ray).toVar();
     const output = pow(linear.div(linear.add(1)), 1 / 2.2).toVar();
     const outputLuma = dot(output, vec3(.2126, .7152, .0722));
@@ -189,12 +256,15 @@ export function createLiquidSurface() {
         const exact = restingHit(ray, tone, int(0)).toVar();
         If(exact.greaterThan(0).and(exact.lessThan(100)), () => { travel.assign(exact); })
           .ElseIf(exact.lessThan(0), () => {
-            Loop(8, () => {
+            Loop(16, () => {
               const remaining = field(origin.add(ray.mul(travel)), tone, int(0)).toVar();
               If(remaining.lessThan(.00001).or(travel.greaterThan(100)), () => { Break(); });
               travel.addAssign(remaining.mul(.85));
             });
           });
+        If(field(origin.add(ray.mul(travel)), tone, int(0)).greaterThan(.00001), () => {
+          travel.assign(refineHit(ray, tone, int(0), travel));
+        });
       });
       If(travel.lessThan(100).or(atmosphere.greaterThan(.5)), () => {
         const point = origin.add(ray.mul(travel.lessThan(100).select(travel, min(traced.y, 100)))).toVar();
@@ -210,7 +280,10 @@ export function createLiquidSurface() {
           const mask = int(1).shiftLeft(int(front.w)).toVar();
           If(front.w.lessThan(2).and(states.element(int(0)).y.greaterThan(.0002).or(states.element(int(1)).y.greaterThan(.0002))), () => { mask.assign(3); });
           const behindT = restingHit(ray, tone, mask).toVar();
-          If(behindT.lessThan(0), () => { behindT.assign(march(ray, tone, mask, int(16)).x); });
+          If(behindT.lessThan(0), () => { behindT.assign(march(ray, tone, mask, int(32)).x); });
+          If(field(origin.add(ray.mul(behindT)), tone, mask).greaterThan(.00001), () => {
+            behindT.assign(refineHit(ray, tone, mask, behindT));
+          });
           If(behindT.lessThan(100), () => {
             const p = origin.add(ray.mul(behindT)).toVar(), n = normalAt(p, tone, mask).toVar();
             behindPresence.assign(coverage(p, n, ray, tone, mask));
@@ -232,7 +305,7 @@ export function createLiquidSurface() {
   geometry.forEach((seed, index) => {
     for (const [suffix, vector, channel] of [
       ["x", seed, 0], ["y", seed, 1], ["z", seed, 2], ["r", seed, 3],
-      ["h", dynamics[index], 0], ["b", dynamics[index], 1], ["p", dynamics[index], 2],
+      ["h", dynamics[index], 0], ["b", dynamics[index], 1], ["p", dynamics[index], 2], ["g", dynamics[index], 3],
       ["cr", colors[index], 0], ["cg", colors[index], 1], ["cb", colors[index], 2]
     ] as const) setters.set(`s${index}${suffix}`, value => { vector.setComponent(channel, value); });
   });

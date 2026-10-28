@@ -1,0 +1,1493 @@
+{
+  "baseUrl": "http://127.0.0.1:48842/Anicca",
+  "results": [
+    {
+      "name": "input-boundaries",
+      "passed": true,
+      "states": [
+        {
+          "name": "empty-768-1024",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 768,
+          "height": 1024,
+          "scrollY": 0,
+          "scrollWidth": 768,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 768,
+            "height": 1024,
+            "bottom": 1024,
+            "visibleHeight": 1024,
+            "hittable": true
+          },
+          "input": {
+            "x": 104,
+            "y": 955,
+            "width": 504,
+            "height": 44,
+            "bottom": 999,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 23.359375,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 52.625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区换个角度写下一个想法，让它生出正与反×舞台当前结构在下方输入一个想法，看它分裂为正与反收起谱系输入生成"
+        },
+        {
+          "name": "empty-680-700",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 680,
+          "height": 700,
+          "scrollY": 0,
+          "scrollWidth": 680,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 680,
+            "height": 700,
+            "bottom": 700,
+            "visibleHeight": 700,
+            "hittable": true
+          },
+          "input": {
+            "x": 60,
+            "y": 631,
+            "width": 504,
+            "height": 44,
+            "bottom": 675,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 23.359375,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 52.625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区换个角度写下一个想法，让它生出正与反×舞台当前结构在下方输入一个想法，看它分裂为正与反收起谱系输入生成"
+        },
+        {
+          "name": "empty-681-700",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 681,
+          "height": 700,
+          "scrollY": 0,
+          "scrollWidth": 681,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 681,
+            "height": 700,
+            "bottom": 700,
+            "visibleHeight": 700,
+            "hittable": true
+          },
+          "input": {
+            "x": 60.5,
+            "y": 631,
+            "width": 504,
+            "height": 44,
+            "bottom": 675,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 23.359375,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 52.625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区换个角度写下一个想法，让它生出正与反×舞台当前结构在下方输入一个想法，看它分裂为正与反收起谱系输入生成"
+        },
+        {
+          "name": "empty-980-700",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 980,
+          "height": 700,
+          "scrollY": 0,
+          "scrollWidth": 980,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 980,
+            "height": 700,
+            "bottom": 700,
+            "visibleHeight": 700,
+            "hittable": true
+          },
+          "input": {
+            "x": 210,
+            "y": 631,
+            "width": 504,
+            "height": 44,
+            "bottom": 675,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 23.359375,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 52.625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区换个角度写下一个想法，让它生出正与反×舞台当前结构在下方输入一个想法，看它分裂为正与反收起谱系输入生成"
+        },
+        {
+          "name": "empty-981-700",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 981,
+          "height": 700,
+          "scrollY": 0,
+          "scrollWidth": 981,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 981,
+            "height": 700,
+            "bottom": 700,
+            "visibleHeight": 700,
+            "hittable": true
+          },
+          "input": {
+            "x": 210.5,
+            "y": 631,
+            "width": 504,
+            "height": 44,
+            "bottom": 675,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 23.359375,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 52.625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区换个角度写下一个想法，让它生出正与反×舞台当前结构在下方输入一个想法，看它分裂为正与反收起谱系输入生成"
+        },
+        {
+          "name": "empty-844-390",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 844,
+          "height": 390,
+          "scrollY": 0,
+          "scrollWidth": 844,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 844,
+            "height": 390,
+            "bottom": 390,
+            "visibleHeight": 390,
+            "hittable": true
+          },
+          "input": {
+            "x": 142,
+            "y": 321,
+            "width": 504,
+            "height": 44,
+            "bottom": 365,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 23.359375,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 52.625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区换个角度写下一个想法，让它生出正与反×舞台当前结构在下方输入一个想法，看它分裂为正与反收起谱系输入生成"
+        },
+        {
+          "name": "empty-844-700",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 844,
+          "height": 700,
+          "scrollY": 0,
+          "scrollWidth": 844,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 844,
+            "height": 700,
+            "bottom": 700,
+            "visibleHeight": 700,
+            "hittable": true
+          },
+          "input": {
+            "x": 142,
+            "y": 631,
+            "width": 504,
+            "height": 44,
+            "bottom": 675,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 23.359375,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 52.625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区换个角度写下一个想法，让它生出正与反×舞台当前结构在下方输入一个想法，看它分裂为正与反收起谱系输入生成"
+        },
+        {
+          "name": "empty-320-568",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 320,
+          "height": 568,
+          "scrollY": 0,
+          "scrollWidth": 320,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 320,
+            "height": 568,
+            "bottom": 568,
+            "visibleHeight": 568,
+            "hittable": true
+          },
+          "input": {
+            "x": 16,
+            "y": 499,
+            "width": 232,
+            "height": 44,
+            "bottom": 543,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 20,
+            "y": 24.578125,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 51.40625,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区换个角度写下一个想法，让它生出正与反×舞台当前结构在下方输入一个想法，看它分裂为正与反收起谱系输入生成"
+        },
+        {
+          "name": "typing",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 320,
+          "height": 568,
+          "scrollY": 0,
+          "scrollWidth": 320,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 320,
+            "height": 568,
+            "bottom": 568,
+            "visibleHeight": 568,
+            "hittable": true
+          },
+          "input": {
+            "x": 16,
+            "y": 498,
+            "width": 154,
+            "height": 44,
+            "bottom": 542,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 20,
+            "y": 24.578125,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 51.40625,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "dialogue-input",
+          "focusText": "保留尚未完成的想法"
+        },
+        {
+          "name": "blurred",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 320,
+          "height": 568,
+          "scrollY": 0,
+          "scrollWidth": 320,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 320,
+            "height": 568,
+            "bottom": 568,
+            "visibleHeight": 568,
+            "hittable": true
+          },
+          "input": {
+            "x": 16,
+            "y": 499,
+            "width": 154,
+            "height": 44,
+            "bottom": 543,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 20,
+            "y": 24.578125,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 51.40625,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区换个角度写下一个想法，让它生出正与反×舞台当前结构在下方输入一个想法，看它分裂为正与反收起谱系输入保留"
+        },
+        {
+          "name": "draft-refresh",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 768,
+          "height": 1024,
+          "scrollY": 0,
+          "scrollWidth": 768,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 768,
+            "height": 1024,
+            "bottom": 1024,
+            "visibleHeight": 1024,
+            "hittable": true
+          },
+          "input": {
+            "x": 104,
+            "y": 955,
+            "width": 426,
+            "height": 44,
+            "bottom": 999,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 23.359375,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 52.625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区换个角度写下一个想法，让它生出正与反×舞台当前结构在下方输入一个想法，看它分裂为正与反收起谱系输入保留"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "escape-desktop",
+      "passed": true,
+      "states": [
+        {
+          "name": "menu-only-closed",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 1440,
+          "height": 900,
+          "scrollY": 0,
+          "scrollWidth": 1440,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "visibleHeight": 900,
+            "hittable": true
+          },
+          "input": {
+            "x": 440,
+            "y": 831,
+            "width": 504,
+            "height": 44,
+            "bottom": 875,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 23.359375,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 52.625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": true,
+          "mode": "read",
+          "scrollTop": 650,
+          "menu": false,
+          "focusId": "",
+          "focusText": "更多"
+        },
+        {
+          "name": "polarity-heading-closed",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 1440,
+          "height": 900,
+          "scrollY": 0,
+          "scrollWidth": 1440,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "visibleHeight": 900,
+            "hittable": true
+          },
+          "input": {
+            "x": 440,
+            "y": 831,
+            "width": 504,
+            "height": 44,
+            "bottom": 875,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 23.359375,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 52.625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": true,
+          "mode": "read",
+          "scrollTop": 650,
+          "menu": false,
+          "focusId": "",
+          "focusText": "极性分裂"
+        },
+        {
+          "name": "reading-after-heading-closed",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 1440,
+          "height": 900,
+          "scrollY": 0,
+          "scrollWidth": 1440,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "visibleHeight": 900,
+            "hittable": true
+          },
+          "input": {
+            "x": 440,
+            "y": 831,
+            "width": 504,
+            "height": 44,
+            "bottom": 875,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 23.359375,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 52.625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维"
+        },
+        {
+          "name": "polarity-return-closed",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 1440,
+          "height": 900,
+          "scrollY": 0,
+          "scrollWidth": 1440,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "visibleHeight": 900,
+            "hittable": true
+          },
+          "input": {
+            "x": 440,
+            "y": 831,
+            "width": 504,
+            "height": 44,
+            "bottom": 875,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 23.359375,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 52.625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": true,
+          "mode": "read",
+          "scrollTop": 650,
+          "menu": false,
+          "focusId": "",
+          "focusText": "极性分裂"
+        },
+        {
+          "name": "reading-after-return-closed",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 1440,
+          "height": 900,
+          "scrollY": 0,
+          "scrollWidth": 1440,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "visibleHeight": 900,
+            "hittable": true
+          },
+          "input": {
+            "x": 440,
+            "y": 831,
+            "width": 504,
+            "height": 44,
+            "bottom": 875,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 23.359375,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 52.625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维"
+        },
+        {
+          "name": "polarity-radio-closed",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 1440,
+          "height": 900,
+          "scrollY": 0,
+          "scrollWidth": 1440,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "visibleHeight": 900,
+            "hittable": true
+          },
+          "input": {
+            "x": 440,
+            "y": 831,
+            "width": 504,
+            "height": 44,
+            "bottom": 875,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 23.359375,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 52.625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": true,
+          "mode": "read",
+          "scrollTop": 650,
+          "menu": false,
+          "focusId": "",
+          "focusText": "极性分裂"
+        },
+        {
+          "name": "reading-after-radio-closed",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 1440,
+          "height": 900,
+          "scrollY": 0,
+          "scrollWidth": 1440,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "visibleHeight": 900,
+            "hittable": true
+          },
+          "input": {
+            "x": 440,
+            "y": 831,
+            "width": 504,
+            "height": 44,
+            "bottom": 875,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 23.359375,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 52.625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维"
+        },
+        {
+          "name": "换个角度-closed",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 1440,
+          "height": 900,
+          "scrollY": 0,
+          "scrollWidth": 1440,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "visibleHeight": 900,
+            "hittable": true
+          },
+          "input": {
+            "x": 440,
+            "y": 831,
+            "width": 504,
+            "height": 44,
+            "bottom": 875,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 23.359375,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 52.625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": true,
+          "mode": "read",
+          "scrollTop": 650,
+          "menu": false,
+          "focusId": "",
+          "focusText": "换个角度"
+        },
+        {
+          "name": "演化全景-closed",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 1440,
+          "height": 900,
+          "scrollY": 0,
+          "scrollWidth": 1440,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "visibleHeight": 900,
+            "hittable": true
+          },
+          "input": {
+            "x": 440,
+            "y": 831,
+            "width": 504,
+            "height": 44,
+            "bottom": 875,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 23.359375,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 52.625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": true,
+          "mode": "read",
+          "scrollTop": 650,
+          "menu": false,
+          "focusId": "",
+          "focusText": "演化全景全景"
+        },
+        {
+          "name": "existing-window-680-700",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 680,
+          "height": 700,
+          "scrollY": 0,
+          "scrollWidth": 680,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 680,
+            "height": 700,
+            "bottom": 700,
+            "visibleHeight": 700,
+            "hittable": true
+          },
+          "input": {
+            "x": 60,
+            "y": 631,
+            "width": 504,
+            "height": 44,
+            "bottom": 675,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 23.359375,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 52.625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维"
+        },
+        {
+          "name": "existing-window-681-700",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 681,
+          "height": 700,
+          "scrollY": 0,
+          "scrollWidth": 681,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 681,
+            "height": 700,
+            "bottom": 700,
+            "visibleHeight": 700,
+            "hittable": true
+          },
+          "input": {
+            "x": 60.5,
+            "y": 631,
+            "width": 504,
+            "height": 44,
+            "bottom": 675,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 23.359375,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 52.625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维"
+        },
+        {
+          "name": "existing-window-768-1024",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 768,
+          "height": 1024,
+          "scrollY": 0,
+          "scrollWidth": 768,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 768,
+            "height": 1024,
+            "bottom": 1024,
+            "visibleHeight": 1024,
+            "hittable": true
+          },
+          "input": {
+            "x": 104,
+            "y": 955,
+            "width": 504,
+            "height": 44,
+            "bottom": 999,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 23.359375,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 52.625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维"
+        },
+        {
+          "name": "existing-window-844-700",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 844,
+          "height": 700,
+          "scrollY": 0,
+          "scrollWidth": 844,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 844,
+            "height": 700,
+            "bottom": 700,
+            "visibleHeight": 700,
+            "hittable": true
+          },
+          "input": {
+            "x": 142,
+            "y": 631,
+            "width": 504,
+            "height": 44,
+            "bottom": 675,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 23.359375,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 52.625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维"
+        },
+        {
+          "name": "existing-window-980-700",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 980,
+          "height": 700,
+          "scrollY": 0,
+          "scrollWidth": 980,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 980,
+            "height": 700,
+            "bottom": 700,
+            "visibleHeight": 700,
+            "hittable": true
+          },
+          "input": {
+            "x": 210,
+            "y": 631,
+            "width": 504,
+            "height": 44,
+            "bottom": 675,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 23.359375,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 52.625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维"
+        },
+        {
+          "name": "existing-window-981-700",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 981,
+          "height": 700,
+          "scrollY": 0,
+          "scrollWidth": 981,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 981,
+            "height": 700,
+            "bottom": 700,
+            "visibleHeight": 700,
+            "hittable": true
+          },
+          "input": {
+            "x": 210.5,
+            "y": 631,
+            "width": 504,
+            "height": 44,
+            "bottom": 675,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 23.359375,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 52.625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维"
+        },
+        {
+          "name": "existing-window-844-390",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 844,
+          "height": 390,
+          "scrollY": 0,
+          "scrollWidth": 844,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 844,
+            "height": 390,
+            "bottom": 390,
+            "visibleHeight": 390,
+            "hittable": true
+          },
+          "input": {
+            "x": 142,
+            "y": 321,
+            "width": 504,
+            "height": 44,
+            "bottom": 365,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 23.359375,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 52.625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维"
+        },
+        {
+          "name": "existing-refresh-844",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 844,
+          "height": 700,
+          "scrollY": 0,
+          "scrollWidth": 844,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 844,
+            "height": 700,
+            "bottom": 700,
+            "visibleHeight": 700,
+            "hittable": true
+          },
+          "input": {
+            "x": 142,
+            "y": 631,
+            "width": 504,
+            "height": 44,
+            "bottom": 675,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 23.359375,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 52.625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。演化全景全景更多已就绪。最近工作区社区花园是否应该保留不预设用途"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "escape-mobile",
+      "passed": true,
+      "states": [
+        {
+          "name": "menu-only-closed",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 390,
+          "height": 844,
+          "scrollY": 0,
+          "scrollWidth": 390,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "visibleHeight": 844,
+            "hittable": true
+          },
+          "input": {
+            "x": 16,
+            "y": 775,
+            "width": 302,
+            "height": 44,
+            "bottom": 819,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 20,
+            "y": 24.578125,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 51.40625,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": true,
+          "mode": "read",
+          "scrollTop": 650,
+          "menu": false,
+          "focusId": "",
+          "focusText": "更多"
+        },
+        {
+          "name": "polarity-heading-closed",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 390,
+          "height": 844,
+          "scrollY": 0,
+          "scrollWidth": 390,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "visibleHeight": 844,
+            "hittable": true
+          },
+          "input": {
+            "x": 16,
+            "y": 775,
+            "width": 302,
+            "height": 44,
+            "bottom": 819,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 20,
+            "y": 24.578125,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 51.40625,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": true,
+          "mode": "read",
+          "scrollTop": 650,
+          "menu": false,
+          "focusId": "",
+          "focusText": "极性分裂"
+        },
+        {
+          "name": "reading-after-heading-closed",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 390,
+          "height": 844,
+          "scrollY": 0,
+          "scrollWidth": 390,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "visibleHeight": 844,
+            "hittable": true
+          },
+          "input": {
+            "x": 16,
+            "y": 775,
+            "width": 302,
+            "height": 44,
+            "bottom": 819,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 20,
+            "y": 24.578125,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 51.40625,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维"
+        },
+        {
+          "name": "polarity-return-closed",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 390,
+          "height": 844,
+          "scrollY": 0,
+          "scrollWidth": 390,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "visibleHeight": 844,
+            "hittable": true
+          },
+          "input": {
+            "x": 16,
+            "y": 775,
+            "width": 302,
+            "height": 44,
+            "bottom": 819,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 20,
+            "y": 24.578125,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 51.40625,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": true,
+          "mode": "read",
+          "scrollTop": 650,
+          "menu": false,
+          "focusId": "",
+          "focusText": "极性分裂"
+        },
+        {
+          "name": "reading-after-return-closed",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 390,
+          "height": 844,
+          "scrollY": 0,
+          "scrollWidth": 390,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "visibleHeight": 844,
+            "hittable": true
+          },
+          "input": {
+            "x": 16,
+            "y": 775,
+            "width": 302,
+            "height": 44,
+            "bottom": 819,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 20,
+            "y": 24.578125,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 51.40625,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维"
+        },
+        {
+          "name": "polarity-radio-closed",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 390,
+          "height": 844,
+          "scrollY": 0,
+          "scrollWidth": 390,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "visibleHeight": 844,
+            "hittable": true
+          },
+          "input": {
+            "x": 16,
+            "y": 775,
+            "width": 302,
+            "height": 44,
+            "bottom": 819,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 20,
+            "y": 24.578125,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 51.40625,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": true,
+          "mode": "read",
+          "scrollTop": 650,
+          "menu": false,
+          "focusId": "",
+          "focusText": "极性分裂"
+        },
+        {
+          "name": "reading-after-radio-closed",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 390,
+          "height": 844,
+          "scrollY": 0,
+          "scrollWidth": 390,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "visibleHeight": 844,
+            "hittable": true
+          },
+          "input": {
+            "x": 16,
+            "y": 775,
+            "width": 302,
+            "height": 44,
+            "bottom": 819,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 20,
+            "y": 24.578125,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 51.40625,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维"
+        },
+        {
+          "name": "换个角度-closed",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 390,
+          "height": 844,
+          "scrollY": 0,
+          "scrollWidth": 390,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "visibleHeight": 844,
+            "hittable": true
+          },
+          "input": {
+            "x": 16,
+            "y": 775,
+            "width": 302,
+            "height": 44,
+            "bottom": 819,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 20,
+            "y": 24.578125,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 51.40625,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": true,
+          "mode": "read",
+          "scrollTop": 650,
+          "menu": false,
+          "focusId": "",
+          "focusText": "换个角度"
+        },
+        {
+          "name": "演化全景-closed",
+          "url": "http://127.0.0.1:48842/Anicca",
+          "width": 390,
+          "height": 844,
+          "scrollY": 0,
+          "scrollWidth": 390,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "visibleHeight": 844,
+            "hittable": true
+          },
+          "input": {
+            "x": 16,
+            "y": 775,
+            "width": 302,
+            "height": 44,
+            "bottom": 819,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 20,
+            "y": 24.578125,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 51.40625,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": true,
+          "mode": "read",
+          "scrollTop": 650,
+          "menu": false,
+          "focusId": "",
+          "focusText": "演化全景全景"
+        }
+      ],
+      "errors": []
+    }
+  ]
+}
