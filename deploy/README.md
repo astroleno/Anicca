@@ -8,6 +8,8 @@ to use local storage, independently for each origin.
 
 ## Build and runtime
 
+Use the existing `ubuntu@122.51.59.89` SSH account and `sudo` for release operations.
+
 - `npm run build:deploy` builds Next.js with `NEXT_PUBLIC_BASE_PATH=/Anicca`.
   This is a build-time setting; changing it requires another build.
 - `/Anicca` and `/Anicca/dialogue` render the same dialogue. The entry does not
@@ -93,5 +95,16 @@ user's existing workspace.
 selection persistence, the prefixed lab link, and a simulated graphics-loss
 fallback to the original. It does not call model APIs. The default controlled
 suite includes these renderer checks as well.
+
+The app-experience scenario also runs in production visual CI. It checks the
+680/681 and 980/981 layout boundaries, tablet and landscape input hit areas
+before filling, draft refresh, and one-layer Escape behavior from the menu,
+polarity heading, return button and radio controls. To run it against both entries:
+
+```sh
+ANICCA_QA_URLS=https://aitoshuu.me/Anicca,https://tongye.me/Anicca node scripts/visual-smoke/app-experience.mjs
+```
+
+This scenario uses isolated synthetic workspaces and does not call model APIs.
 
 Deployment evidence: [2026-10-28 verification](../docs/reviews/2026-10-28-public-deployment.md).

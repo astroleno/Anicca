@@ -492,6 +492,40 @@ describe("DialogueShell", () => {
     expect(trigger).toHaveFocus();
   });
 
+  it("dismisses More before reading and keeps the reading position", async () => {
+    const { thesisId } = seedPair(); seedActiveWorkspaceFromCurrentGraph();
+    const user = userEvent.setup(); render(<DialogueShell />);
+    await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
+    const reading = await screen.findByTestId("dialogue-panel");
+    reading.scrollTop = 120; fireEvent.scroll(reading);
+    await openMore(user);
+    await waitFor(() => expect(screen.getByRole("button", { name: "重命名工作区" })).toHaveFocus());
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("button", { name: "重命名工作区" })).not.toBeInTheDocument();
+    expect(screen.getByTestId("dialogue-panel")).toBe(reading);
+    expect(reading.scrollTop).toBe(120);
+    await waitFor(() => expect(screen.getByRole("button", { name: "更多" })).toHaveFocus());
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(document.getElementById("dialogue-reading-drawer")).not.toBeInTheDocument());
+  });
+
+  it("dismisses the default polarity title before reading", async () => {
+    const { thesisId } = seedPair(); seedActiveWorkspaceFromCurrentGraph();
+    const user = userEvent.setup(); render(<DialogueShell />);
+    await user.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
+    const reading = await screen.findByTestId("dialogue-panel");
+    reading.scrollTop = 120; fireEvent.scroll(reading);
+    await user.click(screen.getByRole("button", { name: "看极性两端" }));
+    expect(screen.getByRole("heading", { name: "沿极性展开" })).toHaveFocus();
+    await user.keyboard("{Escape}");
+    expect(screen.getByTestId("dialogue-panel")).toBe(reading);
+    expect(reading).toHaveAttribute("data-mode", "read");
+    expect(reading.scrollTop).toBe(120);
+    expect(screen.getByRole("button", { name: "看极性两端" })).toHaveFocus();
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(document.getElementById("dialogue-reading-drawer")).not.toBeInTheDocument());
+  });
+
   it("keeps a memory copy across workspace switches when device draft storage fails", async () => {
     seedPair(); seedActiveWorkspaceFromCurrentGraph();
     const write = localStorage.setItem.bind(localStorage);

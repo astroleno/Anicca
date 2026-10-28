@@ -1,0 +1,685 @@
+{
+  "createdAt": "2026-10-28T08:56:28.260Z",
+  "revision": "8995c52917ebcb2aee7a345eb0883da928f95c33",
+  "method": "Isolated public-site Chromium contexts with synthetic root; screenshot/layout review. Temporary padding-zero style only in one context is a diagnostic, not a product change. CDP touch swipe is emulation, not physical hardware.",
+  "results": [
+    {
+      "spec": {
+        "name": "boundary-680",
+        "width": 680,
+        "height": 700,
+        "touch": true
+      },
+      "errors": [],
+      "states": [
+        {
+          "name": "initial",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 680,
+          "height": 700,
+          "scrollY": 0,
+          "bodyOverflow": "hidden",
+          "bodyScrollHeight": 700,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 680,
+            "height": 700,
+            "bottom": 700,
+            "boxSizing": "content-box",
+            "cssHeight": "700px",
+            "paddingBottom": "0px",
+            "overflow": "clip",
+            "visibleHeight": 700
+          },
+          "composer": {
+            "x": 52,
+            "y": 624,
+            "width": 576,
+            "height": 52,
+            "bottom": 676,
+            "boxSizing": "content-box",
+            "cssHeight": "44px",
+            "paddingBottom": "4px",
+            "overflow": "visible",
+            "visibleHeight": 52
+          },
+          "input": {
+            "x": 62,
+            "y": 628,
+            "width": 494,
+            "height": 44,
+            "bottom": 672,
+            "boxSizing": "border-box",
+            "cssHeight": "44px",
+            "paddingBottom": "10px",
+            "overflow": "auto hidden",
+            "visibleHeight": 44
+          },
+          "viewportHeight": "700px",
+          "legacyReserve": "0px",
+          "readingOpen": false,
+          "focus": {
+            "tag": "BODY",
+            "id": ""
+          },
+          "stageCamera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        }
+      ],
+      "completed": true
+    },
+    {
+      "spec": {
+        "name": "boundary-681",
+        "width": 681,
+        "height": 700,
+        "touch": true
+      },
+      "errors": [],
+      "states": [
+        {
+          "name": "initial",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 681,
+          "height": 700,
+          "scrollY": 0,
+          "bodyOverflow": "hidden",
+          "bodyScrollHeight": 876,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 681,
+            "height": 876,
+            "bottom": 876,
+            "boxSizing": "content-box",
+            "cssHeight": "700px",
+            "paddingBottom": "176px",
+            "overflow": "clip",
+            "visibleHeight": 700
+          },
+          "composer": {
+            "x": 52.5,
+            "y": 800,
+            "width": 576,
+            "height": 52,
+            "bottom": 852,
+            "boxSizing": "content-box",
+            "cssHeight": "44px",
+            "paddingBottom": "4px",
+            "overflow": "visible",
+            "visibleHeight": 0
+          },
+          "input": {
+            "x": 62.5,
+            "y": 804,
+            "width": 494,
+            "height": 44,
+            "bottom": 848,
+            "boxSizing": "border-box",
+            "cssHeight": "44px",
+            "paddingBottom": "10px",
+            "overflow": "auto hidden",
+            "visibleHeight": 0
+          },
+          "viewportHeight": "700px",
+          "legacyReserve": "calc(176px + 0px)",
+          "readingOpen": false,
+          "focus": {
+            "tag": "BODY",
+            "id": ""
+          },
+          "stageCamera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        }
+      ],
+      "completed": true
+    },
+    {
+      "spec": {
+        "name": "tablet-768",
+        "width": 768,
+        "height": 1024,
+        "touch": true
+      },
+      "errors": [],
+      "states": [
+        {
+          "name": "initial",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 768,
+          "height": 1024,
+          "scrollY": 0,
+          "bodyOverflow": "hidden",
+          "bodyScrollHeight": 1200,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 768,
+            "height": 1200,
+            "bottom": 1200,
+            "boxSizing": "content-box",
+            "cssHeight": "1024px",
+            "paddingBottom": "176px",
+            "overflow": "clip",
+            "visibleHeight": 1024
+          },
+          "composer": {
+            "x": 96,
+            "y": 1124,
+            "width": 576,
+            "height": 52,
+            "bottom": 1176,
+            "boxSizing": "content-box",
+            "cssHeight": "44px",
+            "paddingBottom": "4px",
+            "overflow": "visible",
+            "visibleHeight": 0
+          },
+          "input": {
+            "x": 106,
+            "y": 1128,
+            "width": 494,
+            "height": 44,
+            "bottom": 1172,
+            "boxSizing": "border-box",
+            "cssHeight": "44px",
+            "paddingBottom": "10px",
+            "overflow": "auto hidden",
+            "visibleHeight": 0
+          },
+          "viewportHeight": "1024px",
+          "legacyReserve": "calc(176px + 0px)",
+          "readingOpen": false,
+          "focus": {
+            "tag": "BODY",
+            "id": ""
+          },
+          "stageCamera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        }
+      ],
+      "completed": true
+    },
+    {
+      "spec": {
+        "name": "window-844",
+        "width": 844,
+        "height": 700,
+        "touch": false
+      },
+      "errors": [],
+      "states": [
+        {
+          "name": "initial",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 844,
+          "height": 700,
+          "scrollY": 0,
+          "bodyOverflow": "hidden",
+          "bodyScrollHeight": 876,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 844,
+            "height": 876,
+            "bottom": 876,
+            "boxSizing": "content-box",
+            "cssHeight": "700px",
+            "paddingBottom": "176px",
+            "overflow": "clip",
+            "visibleHeight": 700
+          },
+          "composer": {
+            "x": 134,
+            "y": 800,
+            "width": 576,
+            "height": 52,
+            "bottom": 852,
+            "boxSizing": "content-box",
+            "cssHeight": "44px",
+            "paddingBottom": "4px",
+            "overflow": "visible",
+            "visibleHeight": 0
+          },
+          "input": {
+            "x": 144,
+            "y": 804,
+            "width": 494,
+            "height": 44,
+            "bottom": 848,
+            "boxSizing": "border-box",
+            "cssHeight": "44px",
+            "paddingBottom": "10px",
+            "overflow": "auto hidden",
+            "visibleHeight": 0
+          },
+          "viewportHeight": "700px",
+          "legacyReserve": "calc(176px + 0px)",
+          "readingOpen": false,
+          "focus": {
+            "tag": "BODY",
+            "id": ""
+          },
+          "stageCamera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        }
+      ],
+      "completed": true
+    },
+    {
+      "spec": {
+        "name": "boundary-980",
+        "width": 980,
+        "height": 700,
+        "touch": true
+      },
+      "errors": [],
+      "states": [
+        {
+          "name": "initial",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 980,
+          "height": 700,
+          "scrollY": 0,
+          "bodyOverflow": "hidden",
+          "bodyScrollHeight": 876,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 980,
+            "height": 876,
+            "bottom": 876,
+            "boxSizing": "content-box",
+            "cssHeight": "700px",
+            "paddingBottom": "176px",
+            "overflow": "clip",
+            "visibleHeight": 700
+          },
+          "composer": {
+            "x": 202,
+            "y": 800,
+            "width": 576,
+            "height": 52,
+            "bottom": 852,
+            "boxSizing": "content-box",
+            "cssHeight": "44px",
+            "paddingBottom": "4px",
+            "overflow": "visible",
+            "visibleHeight": 0
+          },
+          "input": {
+            "x": 212,
+            "y": 804,
+            "width": 494,
+            "height": 44,
+            "bottom": 848,
+            "boxSizing": "border-box",
+            "cssHeight": "44px",
+            "paddingBottom": "10px",
+            "overflow": "auto hidden",
+            "visibleHeight": 0
+          },
+          "viewportHeight": "700px",
+          "legacyReserve": "calc(176px + 0px)",
+          "readingOpen": false,
+          "focus": {
+            "tag": "BODY",
+            "id": ""
+          },
+          "stageCamera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        }
+      ],
+      "completed": true
+    },
+    {
+      "spec": {
+        "name": "boundary-981",
+        "width": 981,
+        "height": 700,
+        "touch": true
+      },
+      "errors": [],
+      "states": [
+        {
+          "name": "initial",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 981,
+          "height": 700,
+          "scrollY": 0,
+          "bodyOverflow": "hidden",
+          "bodyScrollHeight": 700,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 981,
+            "height": 700,
+            "bottom": 700,
+            "boxSizing": "content-box",
+            "cssHeight": "700px",
+            "paddingBottom": "0px",
+            "overflow": "clip",
+            "visibleHeight": 700
+          },
+          "composer": {
+            "x": 202.5,
+            "y": 624,
+            "width": 576,
+            "height": 52,
+            "bottom": 676,
+            "boxSizing": "content-box",
+            "cssHeight": "44px",
+            "paddingBottom": "4px",
+            "overflow": "visible",
+            "visibleHeight": 52
+          },
+          "input": {
+            "x": 212.5,
+            "y": 628,
+            "width": 494,
+            "height": 44,
+            "bottom": 672,
+            "boxSizing": "border-box",
+            "cssHeight": "44px",
+            "paddingBottom": "10px",
+            "overflow": "auto hidden",
+            "visibleHeight": 44
+          },
+          "viewportHeight": "700px",
+          "legacyReserve": "calc(176px + 0px)",
+          "readingOpen": false,
+          "focus": {
+            "tag": "BODY",
+            "id": ""
+          },
+          "stageCamera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        }
+      ],
+      "completed": true
+    },
+    {
+      "spec": {
+        "name": "landscape-844",
+        "width": 844,
+        "height": 390,
+        "touch": true
+      },
+      "errors": [],
+      "states": [
+        {
+          "name": "initial",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 844,
+          "height": 390,
+          "scrollY": 0,
+          "bodyOverflow": "hidden",
+          "bodyScrollHeight": 566,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 844,
+            "height": 566,
+            "bottom": 566,
+            "boxSizing": "content-box",
+            "cssHeight": "390px",
+            "paddingBottom": "176px",
+            "overflow": "clip",
+            "visibleHeight": 390
+          },
+          "composer": {
+            "x": 134,
+            "y": 490,
+            "width": 576,
+            "height": 52,
+            "bottom": 542,
+            "boxSizing": "content-box",
+            "cssHeight": "44px",
+            "paddingBottom": "4px",
+            "overflow": "visible",
+            "visibleHeight": 0
+          },
+          "input": {
+            "x": 144,
+            "y": 494,
+            "width": 494,
+            "height": 44,
+            "bottom": 538,
+            "boxSizing": "border-box",
+            "cssHeight": "44px",
+            "paddingBottom": "10px",
+            "overflow": "auto hidden",
+            "visibleHeight": 0
+          },
+          "viewportHeight": "390px",
+          "legacyReserve": "calc(176px + 0px)",
+          "readingOpen": false,
+          "focus": {
+            "tag": "BODY",
+            "id": ""
+          },
+          "stageCamera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "after-blank-touch-swipe",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 844,
+          "height": 390,
+          "scrollY": 0,
+          "bodyOverflow": "hidden",
+          "bodyScrollHeight": 566,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 844,
+            "height": 566,
+            "bottom": 566,
+            "boxSizing": "content-box",
+            "cssHeight": "390px",
+            "paddingBottom": "176px",
+            "overflow": "clip",
+            "visibleHeight": 390
+          },
+          "composer": {
+            "x": 134,
+            "y": 490,
+            "width": 576,
+            "height": 52,
+            "bottom": 542,
+            "boxSizing": "content-box",
+            "cssHeight": "44px",
+            "paddingBottom": "4px",
+            "overflow": "visible",
+            "visibleHeight": 0
+          },
+          "input": {
+            "x": 144,
+            "y": 494,
+            "width": 494,
+            "height": 44,
+            "bottom": 538,
+            "boxSizing": "border-box",
+            "cssHeight": "44px",
+            "paddingBottom": "10px",
+            "overflow": "auto hidden",
+            "visibleHeight": 0
+          },
+          "viewportHeight": "390px",
+          "legacyReserve": "calc(176px + 0px)",
+          "readingOpen": false,
+          "focus": {
+            "tag": "BODY",
+            "id": ""
+          },
+          "stageCamera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "-96",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "temporary-padding-zero-diagnostic",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 844,
+          "height": 390,
+          "scrollY": 0,
+          "bodyOverflow": "hidden",
+          "bodyScrollHeight": 390,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 844,
+            "height": 390,
+            "bottom": 390,
+            "boxSizing": "content-box",
+            "cssHeight": "390px",
+            "paddingBottom": "0px",
+            "overflow": "clip",
+            "visibleHeight": 390
+          },
+          "composer": {
+            "x": 134,
+            "y": 314,
+            "width": 576,
+            "height": 52,
+            "bottom": 366,
+            "boxSizing": "content-box",
+            "cssHeight": "44px",
+            "paddingBottom": "4px",
+            "overflow": "visible",
+            "visibleHeight": 52
+          },
+          "input": {
+            "x": 144,
+            "y": 318,
+            "width": 494,
+            "height": 44,
+            "bottom": 362,
+            "boxSizing": "border-box",
+            "cssHeight": "44px",
+            "paddingBottom": "10px",
+            "overflow": "auto hidden",
+            "visibleHeight": 44
+          },
+          "viewportHeight": "390px",
+          "legacyReserve": "calc(176px + 0px)",
+          "readingOpen": false,
+          "focus": {
+            "tag": "BODY",
+            "id": ""
+          },
+          "stageCamera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "-96",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        }
+      ],
+      "completed": true
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+[
+  {
+    "requested": "https://aitoshuu.me/Anicca",
+    "url": "https://aitoshuu.me/Anicca",
+    "status": 200,
+    "candidateBuild": true
+  },
+  {
+    "requested": "https://aitoshuu.me/Anicca/dialogue",
+    "url": "https://aitoshuu.me/Anicca/dialogue",
+    "status": 200,
+    "candidateBuild": true
+  },
+  {
+    "requested": "https://tongye.me/Anicca",
+    "url": "https://tongye.me/Anicca",
+    "status": 200,
+    "candidateBuild": true
+  },
+  {
+    "requested": "https://tongye.me/Anicca/dialogue",
+    "url": "https://tongye.me/Anicca/dialogue",
+    "status": 200,
+    "candidateBuild": true
+  }
+]

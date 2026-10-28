@@ -1,0 +1,14 @@
+{
+  "root": "/opt/anicca/build-20261028-app-experience",
+  "sourceFiles": 253,
+  "mismatches": [],
+  "release": {
+    "application": "Anicca",
+    "basePath": "/Anicca",
+    "platform": "linux",
+    "arch": "x64",
+    "nextVersion": "15.5.28",
+    "buildId": "G0tgHltanXgUhENX7R9J8",
+    "builtAt": "2026-10-28T09:28:28.725Z"
+  }
+}

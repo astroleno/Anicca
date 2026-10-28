@@ -1,0 +1,168 @@
+{
+  "createdAt": "2026-10-28T08:56:28.200Z",
+  "revision": "8995c52917ebcb2aee7a345eb0883da928f95c33",
+  "method": "Synthetic same-origin UTF-8 history fixture; browser history only, not native system gesture",
+  "history": {
+    "spec": {
+      "name": "history-utf8-recheck",
+      "width": 390,
+      "height": 844,
+      "touch": true
+    },
+    "states": [
+      {
+        "name": "before-browser-back",
+        "url": "https://tongye.me/Anicca",
+        "width": 390,
+        "height": 844,
+        "scrollY": 0,
+        "bodyOverflow": "hidden",
+        "bodyScrollHeight": 844,
+        "shell": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "bottom": 844,
+          "boxSizing": "content-box",
+          "cssHeight": "844px",
+          "paddingBottom": "0px",
+          "overflow": "clip",
+          "visibleHeight": 844
+        },
+        "composer": {
+          "x": 8,
+          "y": 768,
+          "width": 374,
+          "height": 52,
+          "bottom": 820,
+          "boxSizing": "content-box",
+          "cssHeight": "44px",
+          "paddingBottom": "4px",
+          "overflow": "visible",
+          "visibleHeight": 52
+        },
+        "input": {
+          "x": 18,
+          "y": 772,
+          "width": 292,
+          "height": 44,
+          "bottom": 816,
+          "boxSizing": "border-box",
+          "cssHeight": "44px",
+          "paddingBottom": "10px",
+          "overflow": "auto hidden",
+          "visibleHeight": 44
+        },
+        "viewportHeight": "844px",
+        "legacyReserve": "0px",
+        "readingOpen": true,
+        "readerScrollTop": 650,
+        "focus": {
+          "tag": "H2",
+          "id": "conversation-panel-heading"
+        },
+        "stageCamera": {
+          "atmosphere": "false",
+          "theme": "light",
+          "space": "3d",
+          "spaceYaw": "0",
+          "spacePitch": "0",
+          "spaceZoom": "1",
+          "spacePanX": "0",
+          "spacePanY": "0",
+          "labelInsetTop": "0",
+          "labelInsetBottom": "0",
+          "testid": "dialogue-stage-track",
+          "metaballRenderer": "ready"
+        }
+      },
+      {
+        "name": "after-browser-back",
+        "url": "https://tongye.me/Anicca?review-source=1",
+        "width": 390,
+        "height": 844,
+        "scrollY": 0,
+        "bodyOverflow": "visible",
+        "bodyScrollHeight": 22,
+        "shell": null,
+        "composer": null,
+        "input": null,
+        "readingOpen": false,
+        "focus": {
+          "tag": "BODY",
+          "id": ""
+        },
+        "stageCamera": {}
+      },
+      {
+        "name": "after-browser-forward",
+        "url": "https://tongye.me/Anicca",
+        "width": 390,
+        "height": 844,
+        "scrollY": 0,
+        "bodyOverflow": "hidden",
+        "bodyScrollHeight": 844,
+        "shell": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "bottom": 844,
+          "boxSizing": "content-box",
+          "cssHeight": "844px",
+          "paddingBottom": "0px",
+          "overflow": "clip",
+          "visibleHeight": 844
+        },
+        "composer": {
+          "x": 8,
+          "y": 768,
+          "width": 374,
+          "height": 52,
+          "bottom": 820,
+          "boxSizing": "content-box",
+          "cssHeight": "44px",
+          "paddingBottom": "4px",
+          "overflow": "visible",
+          "visibleHeight": 52
+        },
+        "input": {
+          "x": 18,
+          "y": 772,
+          "width": 292,
+          "height": 44,
+          "bottom": 816,
+          "boxSizing": "border-box",
+          "cssHeight": "44px",
+          "paddingBottom": "10px",
+          "overflow": "auto hidden",
+          "visibleHeight": 44
+        },
+        "viewportHeight": "844px",
+        "legacyReserve": "0px",
+        "readingOpen": true,
+        "readerScrollTop": 650,
+        "focus": {
+          "tag": "H2",
+          "id": "conversation-panel-heading"
+        },
+        "stageCamera": {
+          "atmosphere": "false",
+          "theme": "light",
+          "space": "3d",
+          "spaceYaw": "0",
+          "spacePitch": "0",
+          "spaceZoom": "1",
+          "spacePanX": "0",
+          "spacePanY": "0",
+          "labelInsetTop": "0",
+          "labelInsetBottom": "0",
+          "testid": "dialogue-stage-track",
+          "metaballRenderer": "ready"
+        }
+      }
+    ],
+    "completed": true
+  }
+}

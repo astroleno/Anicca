@@ -860,7 +860,11 @@ export function DialogueShell() {
 
   useEffect(() => {
     if ((!readingOpen && !lineageOpen) || roundtableArtifact || evolutionOpen) return;
-    const close = (event: KeyboardEvent) => { if (event.key === "Escape" && !document.querySelector("dialog[open]")) { event.preventDefault(); if (lineageOpen) closeLineagePanel(); else closeSeedPanel(); } };
+    const close = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.key !== "Escape" || document.querySelector("dialog[open]")) return;
+      event.preventDefault();
+      if (lineageOpen) closeLineagePanel(); else closeSeedPanel();
+    };
     window.addEventListener("keydown", close);
     return () => window.removeEventListener("keydown", close);
   }, [readingOpen, lineageOpen, roundtableArtifact, evolutionOpen, closeSeedPanel, closeLineagePanel]);

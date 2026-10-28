@@ -1,0 +1,1493 @@
+{
+  "baseUrl": "https://aitoshuu.me/Anicca",
+  "results": [
+    {
+      "name": "input-boundaries",
+      "passed": true,
+      "states": [
+        {
+          "name": "empty-768-1024",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 768,
+          "height": 1024,
+          "scrollY": 0,
+          "scrollWidth": 768,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 768,
+            "height": 1024,
+            "bottom": 1024,
+            "visibleHeight": 1024,
+            "hittable": true
+          },
+          "input": {
+            "x": 106,
+            "y": 952,
+            "width": 494,
+            "height": 44,
+            "bottom": 996,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 28,
+            "y": 24,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 53.265625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区换个角度写下一个想法，让它生出正与反×舞台当前结构在下方输入一个想法，看它分裂为正与反收起谱系输入生成(self.__next_f=self.__next_f||[]).push([0])self.__next_f.push([1,\"1:\\\"$Sreact.fragment\\\"\\n2:I[9766,[],\\\"\\\"]\\n3:I[8924,[],\\\"\\\"]\\n4:I[6982,[\\\"533\\\",\\\"static/chunks/533-d576521e3e85288d.js\\\",\\\"974\\\",\\\"static/chunks/app/page-66b22e52f8370a9e.js\\\"],\\\"DialogueShell\\\"]\\n5:I[4431,[],\\\"OutletBoundary\\\"]\\n7:I[5278,[],\\\"AsyncMetadataOutlet\\\"]\\n9:I[4431,[],\\\"ViewportBoundary\\\"]\\nb:I[4431,[],\\\"MetadataBoundary\\\"]\\nc:\\\"$Sreact.suspense\\\"\\ne:I[7150,[],\\\"\\\"]\\n:HL[\\\"/Anicca/_next/static/css/3b6c05e94c3cf803.css\\\",\\\"style\\\"]\\n:HL[\\\"/Anicca/_next/static/css/a15edc4286471aad.css\\\",\\\"style\\\"]\\n:HL[\\\"/Anicca/_next/static/css/d770cf5c6548f5c3.css\\\",\\\"style\\\"]\\n\"])self.__next_f.push([1,\"0:{\\\"P\\\":null,\\\"b\\\":\\\"G0tgHltanXgUhENX7R9J8\\\",\\\"p\\\":\\\"/Anicca\\\",\\\"c\\\":[\\\"\\\",\\\"\\\"],\\\"i\\\":false,\\\"f\\\":[[[\\\"\\\",{\\\"children\\\":[\\\"__PAGE__\\\",{}]},\\\"$undefined\\\",\\\"$undefined\\\",true],[\\\"\\\",[\\\"$\\\",\\\"$1\\\",\\\"c\\\",{\\\"children\\\":[[[\\\"$\\\",\\\"link\\\",\\\"0\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/3b6c05e94c3cf803.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}]],[\\\"$\\\",\\\"html\\\",null,{\\\"lang\\\":\\\"zh-CN\\\",\\\"children\\\":[\\\"$\\\",\\\"body\\\",null,{\\\"style\\\":{\\\"margin\\\":0,\\\"padding\\\":0,\\\"overflow\\\":\\\"hidden\\\"},\\\"children\\\":[\\\"$\\\",\\\"$L2\\\",null,{\\\"parallelRouterKey\\\":\\\"children\\\",\\\"error\\\":\\\"$undefined\\\",\\\"errorStyles\\\":\\\"$undefined\\\",\\\"errorScripts\\\":\\\"$undefined\\\",\\\"template\\\":[\\\"$\\\",\\\"$L3\\\",null,{}],\\\"templateStyles\\\":\\\"$undefined\\\",\\\"templateScripts\\\":\\\"$undefined\\\",\\\"notFound\\\":[[[\\\"$\\\",\\\"title\\\",null,{\\\"children\\\":\\\"404: This page could not be found.\\\"}],[\\\"$\\\",\\\"div\\\",null,{\\\"style\\\":{\\\"fontFamily\\\":\\\"system-ui,\\\\\\\"Segoe UI\\\\\\\",Roboto,Helvetica,Arial,sans-serif,\\\\\\\"Apple Color Emoji\\\\\\\",\\\\\\\"Segoe UI Emoji\\\\\\\"\\\",\\\"height\\\":\\\"100vh\\\",\\\"textAlign\\\":\\\"center\\\",\\\"display\\\":\\\"flex\\\",\\\"flexDirection\\\":\\\"column\\\",\\\"alignItems\\\":\\\"center\\\",\\\"justifyContent\\\":\\\"center\\\"},\\\"children\\\":[\\\"$\\\",\\\"div\\\",null,{\\\"children\\\":[[\\\"$\\\",\\\"style\\\",null,{\\\"dangerouslySetInnerHTML\\\":{\\\"__html\\\":\\\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\\\"}}],[\\\"$\\\",\\\"h1\\\",null,{\\\"className\\\":\\\"next-error-h1\\\",\\\"style\\\":{\\\"display\\\":\\\"inline-block\\\",\\\"margin\\\":\\\"0 20px 0 0\\\",\\\"padding\\\":\\\"0 23px 0 0\\\",\\\"fontSize\\\":24,\\\"fontWeight\\\":500,\\\"verticalAlign\\\":\\\"top\\\",\\\"lineHeight\\\":\\\"49px\\\"},\\\"children\\\":404}],[\\\"$\\\",\\\"div\\\",null,{\\\"style\\\":{\\\"display\\\":\\\"inline-block\\\"},\\\"children\\\":[\\\"$\\\",\\\"h2\\\",null,{\\\"style\\\":{\\\"fontSize\\\":14,\\\"fontWeight\\\":400,\\\"lineHeight\\\":\\\"49px\\\",\\\"margin\\\":0},\\\"children\\\":\\\"This page could not be found.\\\"}]}]]}]}]],[]],\\\"forbidden\\\":\\\"$undefined\\\",\\\"unauthorized\\\":\\\"$undefined\\\"}]}]}]]}],{\\\"children\\\":[\\\"__PAGE__\\\",[\\\"$\\\",\\\"$1\\\",\\\"c\\\",{\\\"children\\\":[[\\\"$\\\",\\\"$L4\\\",null,{}],[[\\\"$\\\",\\\"link\\\",\\\"0\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/a15edc4286471aad.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}],[\\\"$\\\",\\\"link\\\",\\\"1\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/d770cf5c6548f5c3.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}]],[\\\"$\\\",\\\"$L5\\\",null,{\\\"children\\\":[\\\"$L6\\\",[\\\"$\\\",\\\"$L7\\\",null,{\\\"promise\\\":\\\"$@8\\\"}]]}]]}],{},null,false]},null,false],[\\\"$\\\",\\\"$1\\\",\\\"h\\\",{\\\"children\\\":[null,[[\\\"$\\\",\\\"$L9\\\",null,{\\\"children\\\":\\\"$La\\\"}],null],[\\\"$\\\",\\\"$Lb\\\",null,{\\\"children\\\":[\\\"$\\\",\\\"div\\\",null,{\\\"hidden\\\":true,\\\"children\\\":[\\\"$\\\",\\\"$c\\\",null,{\\\"fallback\\\":null,\\\"children\\\":\\\"$Ld\\\"}]}]}]]}],false]],\\\"m\\\":\\\"$undefined\\\",\\\"G\\\":[\\\"$e\\\",[]],\\\"s\\\":false,\\\"S\\\":true}\\n\"])self.__next_f.push([1,\"a:[[\\\"$\\\",\\\"meta\\\",\\\"0\\\",{\\\"charSet\\\":\\\"utf-8\\\"}],[\\\"$\\\",\\\"meta\\\",\\\"1\\\",{\\\"name\\\":\\\"viewport\\\",\\\"content\\\":\\\"width=device-width, initial-scale=1\\\"}]]\\n6:null\\n\"])self.__next_f.push([1,\"f:I[622,[],\\\"IconMark\\\"]\\n8:{\\\"metadata\\\":[[\\\"$\\\",\\\"title\\\",\\\"0\\\",{\\\"children\\\":\\\"Anicca\\\"}],[\\\"$\\\",\\\"meta\\\",\\\"1\\\",{\\\"name\\\":\\\"description\\\",\\\"content\\\":\\\"A conversation that dissolves\\\"}],[\\\"$\\\",\\\"link\\\",\\\"2\\\",{\\\"rel\\\":\\\"icon\\\",\\\"href\\\":\\\"/Anicca/icon.svg?07e7ddff468c0379\\\",\\\"type\\\":\\\"image/svg+xml\\\",\\\"sizes\\\":\\\"any\\\"}],[\\\"$\\\",\\\"$Lf\\\",\\\"3\\\",{}]],\\\"error\\\":null,\\\"digest\\\":\\\"$undefined\\\"}\\n\"])self.__next_f.push([1,\"d:\\\"$8:metadata\\\"\\n\"])"
+        },
+        {
+          "name": "empty-680-700",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 680,
+          "height": 700,
+          "scrollY": 0,
+          "scrollWidth": 680,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 680,
+            "height": 700,
+            "bottom": 700,
+            "visibleHeight": 700,
+            "hittable": true
+          },
+          "input": {
+            "x": 62,
+            "y": 628,
+            "width": 494,
+            "height": 44,
+            "bottom": 672,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 22,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 48.828125,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区换个角度写下一个想法，让它生出正与反×舞台当前结构在下方输入一个想法，看它分裂为正与反收起谱系输入生成(self.__next_f=self.__next_f||[]).push([0])self.__next_f.push([1,\"1:\\\"$Sreact.fragment\\\"\\n2:I[9766,[],\\\"\\\"]\\n3:I[8924,[],\\\"\\\"]\\n4:I[6982,[\\\"533\\\",\\\"static/chunks/533-d576521e3e85288d.js\\\",\\\"974\\\",\\\"static/chunks/app/page-66b22e52f8370a9e.js\\\"],\\\"DialogueShell\\\"]\\n5:I[4431,[],\\\"OutletBoundary\\\"]\\n7:I[5278,[],\\\"AsyncMetadataOutlet\\\"]\\n9:I[4431,[],\\\"ViewportBoundary\\\"]\\nb:I[4431,[],\\\"MetadataBoundary\\\"]\\nc:\\\"$Sreact.suspense\\\"\\ne:I[7150,[],\\\"\\\"]\\n:HL[\\\"/Anicca/_next/static/css/3b6c05e94c3cf803.css\\\",\\\"style\\\"]\\n:HL[\\\"/Anicca/_next/static/css/a15edc4286471aad.css\\\",\\\"style\\\"]\\n:HL[\\\"/Anicca/_next/static/css/d770cf5c6548f5c3.css\\\",\\\"style\\\"]\\n\"])self.__next_f.push([1,\"0:{\\\"P\\\":null,\\\"b\\\":\\\"G0tgHltanXgUhENX7R9J8\\\",\\\"p\\\":\\\"/Anicca\\\",\\\"c\\\":[\\\"\\\",\\\"\\\"],\\\"i\\\":false,\\\"f\\\":[[[\\\"\\\",{\\\"children\\\":[\\\"__PAGE__\\\",{}]},\\\"$undefined\\\",\\\"$undefined\\\",true],[\\\"\\\",[\\\"$\\\",\\\"$1\\\",\\\"c\\\",{\\\"children\\\":[[[\\\"$\\\",\\\"link\\\",\\\"0\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/3b6c05e94c3cf803.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}]],[\\\"$\\\",\\\"html\\\",null,{\\\"lang\\\":\\\"zh-CN\\\",\\\"children\\\":[\\\"$\\\",\\\"body\\\",null,{\\\"style\\\":{\\\"margin\\\":0,\\\"padding\\\":0,\\\"overflow\\\":\\\"hidden\\\"},\\\"children\\\":[\\\"$\\\",\\\"$L2\\\",null,{\\\"parallelRouterKey\\\":\\\"children\\\",\\\"error\\\":\\\"$undefined\\\",\\\"errorStyles\\\":\\\"$undefined\\\",\\\"errorScripts\\\":\\\"$undefined\\\",\\\"template\\\":[\\\"$\\\",\\\"$L3\\\",null,{}],\\\"templateStyles\\\":\\\"$undefined\\\",\\\"templateScripts\\\":\\\"$undefined\\\",\\\"notFound\\\":[[[\\\"$\\\",\\\"title\\\",null,{\\\"children\\\":\\\"404: This page could not be found.\\\"}],[\\\"$\\\",\\\"div\\\",null,{\\\"style\\\":{\\\"fontFamily\\\":\\\"system-ui,\\\\\\\"Segoe UI\\\\\\\",Roboto,Helvetica,Arial,sans-serif,\\\\\\\"Apple Color Emoji\\\\\\\",\\\\\\\"Segoe UI Emoji\\\\\\\"\\\",\\\"height\\\":\\\"100vh\\\",\\\"textAlign\\\":\\\"center\\\",\\\"display\\\":\\\"flex\\\",\\\"flexDirection\\\":\\\"column\\\",\\\"alignItems\\\":\\\"center\\\",\\\"justifyContent\\\":\\\"center\\\"},\\\"children\\\":[\\\"$\\\",\\\"div\\\",null,{\\\"children\\\":[[\\\"$\\\",\\\"style\\\",null,{\\\"dangerouslySetInnerHTML\\\":{\\\"__html\\\":\\\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\\\"}}],[\\\"$\\\",\\\"h1\\\",null,{\\\"className\\\":\\\"next-error-h1\\\",\\\"style\\\":{\\\"display\\\":\\\"inline-block\\\",\\\"margin\\\":\\\"0 20px 0 0\\\",\\\"padding\\\":\\\"0 23px 0 0\\\",\\\"fontSize\\\":24,\\\"fontWeight\\\":500,\\\"verticalAlign\\\":\\\"top\\\",\\\"lineHeight\\\":\\\"49px\\\"},\\\"children\\\":404}],[\\\"$\\\",\\\"div\\\",null,{\\\"style\\\":{\\\"display\\\":\\\"inline-block\\\"},\\\"children\\\":[\\\"$\\\",\\\"h2\\\",null,{\\\"style\\\":{\\\"fontSize\\\":14,\\\"fontWeight\\\":400,\\\"lineHeight\\\":\\\"49px\\\",\\\"margin\\\":0},\\\"children\\\":\\\"This page could not be found.\\\"}]}]]}]}]],[]],\\\"forbidden\\\":\\\"$undefined\\\",\\\"unauthorized\\\":\\\"$undefined\\\"}]}]}]]}],{\\\"children\\\":[\\\"__PAGE__\\\",[\\\"$\\\",\\\"$1\\\",\\\"c\\\",{\\\"children\\\":[[\\\"$\\\",\\\"$L4\\\",null,{}],[[\\\"$\\\",\\\"link\\\",\\\"0\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/a15edc4286471aad.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}],[\\\"$\\\",\\\"link\\\",\\\"1\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/d770cf5c6548f5c3.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}]],[\\\"$\\\",\\\"$L5\\\",null,{\\\"children\\\":[\\\"$L6\\\",[\\\"$\\\",\\\"$L7\\\",null,{\\\"promise\\\":\\\"$@8\\\"}]]}]]}],{},null,false]},null,false],[\\\"$\\\",\\\"$1\\\",\\\"h\\\",{\\\"children\\\":[null,[[\\\"$\\\",\\\"$L9\\\",null,{\\\"children\\\":\\\"$La\\\"}],null],[\\\"$\\\",\\\"$Lb\\\",null,{\\\"children\\\":[\\\"$\\\",\\\"div\\\",null,{\\\"hidden\\\":true,\\\"children\\\":[\\\"$\\\",\\\"$c\\\",null,{\\\"fallback\\\":null,\\\"children\\\":\\\"$Ld\\\"}]}]}]]}],false]],\\\"m\\\":\\\"$undefined\\\",\\\"G\\\":[\\\"$e\\\",[]],\\\"s\\\":false,\\\"S\\\":true}\\n\"])self.__next_f.push([1,\"a:[[\\\"$\\\",\\\"meta\\\",\\\"0\\\",{\\\"charSet\\\":\\\"utf-8\\\"}],[\\\"$\\\",\\\"meta\\\",\\\"1\\\",{\\\"name\\\":\\\"viewport\\\",\\\"content\\\":\\\"width=device-width, initial-scale=1\\\"}]]\\n6:null\\n\"])self.__next_f.push([1,\"f:I[622,[],\\\"IconMark\\\"]\\n8:{\\\"metadata\\\":[[\\\"$\\\",\\\"title\\\",\\\"0\\\",{\\\"children\\\":\\\"Anicca\\\"}],[\\\"$\\\",\\\"meta\\\",\\\"1\\\",{\\\"name\\\":\\\"description\\\",\\\"content\\\":\\\"A conversation that dissolves\\\"}],[\\\"$\\\",\\\"link\\\",\\\"2\\\",{\\\"rel\\\":\\\"icon\\\",\\\"href\\\":\\\"/Anicca/icon.svg?07e7ddff468c0379\\\",\\\"type\\\":\\\"image/svg+xml\\\",\\\"sizes\\\":\\\"any\\\"}],[\\\"$\\\",\\\"$Lf\\\",\\\"3\\\",{}]],\\\"error\\\":null,\\\"digest\\\":\\\"$undefined\\\"}\\n\"])self.__next_f.push([1,\"d:\\\"$8:metadata\\\"\\n\"])"
+        },
+        {
+          "name": "empty-681-700",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 681,
+          "height": 700,
+          "scrollY": 0,
+          "scrollWidth": 681,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 681,
+            "height": 700,
+            "bottom": 700,
+            "visibleHeight": 700,
+            "hittable": true
+          },
+          "input": {
+            "x": 62.5,
+            "y": 628,
+            "width": 494,
+            "height": 44,
+            "bottom": 672,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 20,
+            "y": 22,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 48.828125,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区换个角度写下一个想法，让它生出正与反×舞台当前结构在下方输入一个想法，看它分裂为正与反收起谱系输入生成(self.__next_f=self.__next_f||[]).push([0])self.__next_f.push([1,\"1:\\\"$Sreact.fragment\\\"\\n2:I[9766,[],\\\"\\\"]\\n3:I[8924,[],\\\"\\\"]\\n4:I[6982,[\\\"533\\\",\\\"static/chunks/533-d576521e3e85288d.js\\\",\\\"974\\\",\\\"static/chunks/app/page-66b22e52f8370a9e.js\\\"],\\\"DialogueShell\\\"]\\n5:I[4431,[],\\\"OutletBoundary\\\"]\\n7:I[5278,[],\\\"AsyncMetadataOutlet\\\"]\\n9:I[4431,[],\\\"ViewportBoundary\\\"]\\nb:I[4431,[],\\\"MetadataBoundary\\\"]\\nc:\\\"$Sreact.suspense\\\"\\ne:I[7150,[],\\\"\\\"]\\n:HL[\\\"/Anicca/_next/static/css/3b6c05e94c3cf803.css\\\",\\\"style\\\"]\\n:HL[\\\"/Anicca/_next/static/css/a15edc4286471aad.css\\\",\\\"style\\\"]\\n:HL[\\\"/Anicca/_next/static/css/d770cf5c6548f5c3.css\\\",\\\"style\\\"]\\n\"])self.__next_f.push([1,\"0:{\\\"P\\\":null,\\\"b\\\":\\\"G0tgHltanXgUhENX7R9J8\\\",\\\"p\\\":\\\"/Anicca\\\",\\\"c\\\":[\\\"\\\",\\\"\\\"],\\\"i\\\":false,\\\"f\\\":[[[\\\"\\\",{\\\"children\\\":[\\\"__PAGE__\\\",{}]},\\\"$undefined\\\",\\\"$undefined\\\",true],[\\\"\\\",[\\\"$\\\",\\\"$1\\\",\\\"c\\\",{\\\"children\\\":[[[\\\"$\\\",\\\"link\\\",\\\"0\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/3b6c05e94c3cf803.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}]],[\\\"$\\\",\\\"html\\\",null,{\\\"lang\\\":\\\"zh-CN\\\",\\\"children\\\":[\\\"$\\\",\\\"body\\\",null,{\\\"style\\\":{\\\"margin\\\":0,\\\"padding\\\":0,\\\"overflow\\\":\\\"hidden\\\"},\\\"children\\\":[\\\"$\\\",\\\"$L2\\\",null,{\\\"parallelRouterKey\\\":\\\"children\\\",\\\"error\\\":\\\"$undefined\\\",\\\"errorStyles\\\":\\\"$undefined\\\",\\\"errorScripts\\\":\\\"$undefined\\\",\\\"template\\\":[\\\"$\\\",\\\"$L3\\\",null,{}],\\\"templateStyles\\\":\\\"$undefined\\\",\\\"templateScripts\\\":\\\"$undefined\\\",\\\"notFound\\\":[[[\\\"$\\\",\\\"title\\\",null,{\\\"children\\\":\\\"404: This page could not be found.\\\"}],[\\\"$\\\",\\\"div\\\",null,{\\\"style\\\":{\\\"fontFamily\\\":\\\"system-ui,\\\\\\\"Segoe UI\\\\\\\",Roboto,Helvetica,Arial,sans-serif,\\\\\\\"Apple Color Emoji\\\\\\\",\\\\\\\"Segoe UI Emoji\\\\\\\"\\\",\\\"height\\\":\\\"100vh\\\",\\\"textAlign\\\":\\\"center\\\",\\\"display\\\":\\\"flex\\\",\\\"flexDirection\\\":\\\"column\\\",\\\"alignItems\\\":\\\"center\\\",\\\"justifyContent\\\":\\\"center\\\"},\\\"children\\\":[\\\"$\\\",\\\"div\\\",null,{\\\"children\\\":[[\\\"$\\\",\\\"style\\\",null,{\\\"dangerouslySetInnerHTML\\\":{\\\"__html\\\":\\\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\\\"}}],[\\\"$\\\",\\\"h1\\\",null,{\\\"className\\\":\\\"next-error-h1\\\",\\\"style\\\":{\\\"display\\\":\\\"inline-block\\\",\\\"margin\\\":\\\"0 20px 0 0\\\",\\\"padding\\\":\\\"0 23px 0 0\\\",\\\"fontSize\\\":24,\\\"fontWeight\\\":500,\\\"verticalAlign\\\":\\\"top\\\",\\\"lineHeight\\\":\\\"49px\\\"},\\\"children\\\":404}],[\\\"$\\\",\\\"div\\\",null,{\\\"style\\\":{\\\"display\\\":\\\"inline-block\\\"},\\\"children\\\":[\\\"$\\\",\\\"h2\\\",null,{\\\"style\\\":{\\\"fontSize\\\":14,\\\"fontWeight\\\":400,\\\"lineHeight\\\":\\\"49px\\\",\\\"margin\\\":0},\\\"children\\\":\\\"This page could not be found.\\\"}]}]]}]}]],[]],\\\"forbidden\\\":\\\"$undefined\\\",\\\"unauthorized\\\":\\\"$undefined\\\"}]}]}]]}],{\\\"children\\\":[\\\"__PAGE__\\\",[\\\"$\\\",\\\"$1\\\",\\\"c\\\",{\\\"children\\\":[[\\\"$\\\",\\\"$L4\\\",null,{}],[[\\\"$\\\",\\\"link\\\",\\\"0\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/a15edc4286471aad.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}],[\\\"$\\\",\\\"link\\\",\\\"1\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/d770cf5c6548f5c3.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}]],[\\\"$\\\",\\\"$L5\\\",null,{\\\"children\\\":[\\\"$L6\\\",[\\\"$\\\",\\\"$L7\\\",null,{\\\"promise\\\":\\\"$@8\\\"}]]}]]}],{},null,false]},null,false],[\\\"$\\\",\\\"$1\\\",\\\"h\\\",{\\\"children\\\":[null,[[\\\"$\\\",\\\"$L9\\\",null,{\\\"children\\\":\\\"$La\\\"}],null],[\\\"$\\\",\\\"$Lb\\\",null,{\\\"children\\\":[\\\"$\\\",\\\"div\\\",null,{\\\"hidden\\\":true,\\\"children\\\":[\\\"$\\\",\\\"$c\\\",null,{\\\"fallback\\\":null,\\\"children\\\":\\\"$Ld\\\"}]}]}]]}],false]],\\\"m\\\":\\\"$undefined\\\",\\\"G\\\":[\\\"$e\\\",[]],\\\"s\\\":false,\\\"S\\\":true}\\n\"])self.__next_f.push([1,\"a:[[\\\"$\\\",\\\"meta\\\",\\\"0\\\",{\\\"charSet\\\":\\\"utf-8\\\"}],[\\\"$\\\",\\\"meta\\\",\\\"1\\\",{\\\"name\\\":\\\"viewport\\\",\\\"content\\\":\\\"width=device-width, initial-scale=1\\\"}]]\\n6:null\\n\"])self.__next_f.push([1,\"f:I[622,[],\\\"IconMark\\\"]\\n8:{\\\"metadata\\\":[[\\\"$\\\",\\\"title\\\",\\\"0\\\",{\\\"children\\\":\\\"Anicca\\\"}],[\\\"$\\\",\\\"meta\\\",\\\"1\\\",{\\\"name\\\":\\\"description\\\",\\\"content\\\":\\\"A conversation that dissolves\\\"}],[\\\"$\\\",\\\"link\\\",\\\"2\\\",{\\\"rel\\\":\\\"icon\\\",\\\"href\\\":\\\"/Anicca/icon.svg?07e7ddff468c0379\\\",\\\"type\\\":\\\"image/svg+xml\\\",\\\"sizes\\\":\\\"any\\\"}],[\\\"$\\\",\\\"$Lf\\\",\\\"3\\\",{}]],\\\"error\\\":null,\\\"digest\\\":\\\"$undefined\\\"}\\n\"])self.__next_f.push([1,\"d:\\\"$8:metadata\\\"\\n\"])"
+        },
+        {
+          "name": "empty-980-700",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 980,
+          "height": 700,
+          "scrollY": 0,
+          "scrollWidth": 980,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 980,
+            "height": 700,
+            "bottom": 700,
+            "visibleHeight": 700,
+            "hittable": true
+          },
+          "input": {
+            "x": 212,
+            "y": 628,
+            "width": 494,
+            "height": 44,
+            "bottom": 672,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 28,
+            "y": 24,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 53.265625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区换个角度写下一个想法，让它生出正与反×舞台当前结构在下方输入一个想法，看它分裂为正与反收起谱系输入生成(self.__next_f=self.__next_f||[]).push([0])self.__next_f.push([1,\"1:\\\"$Sreact.fragment\\\"\\n2:I[9766,[],\\\"\\\"]\\n3:I[8924,[],\\\"\\\"]\\n4:I[6982,[\\\"533\\\",\\\"static/chunks/533-d576521e3e85288d.js\\\",\\\"974\\\",\\\"static/chunks/app/page-66b22e52f8370a9e.js\\\"],\\\"DialogueShell\\\"]\\n5:I[4431,[],\\\"OutletBoundary\\\"]\\n7:I[5278,[],\\\"AsyncMetadataOutlet\\\"]\\n9:I[4431,[],\\\"ViewportBoundary\\\"]\\nb:I[4431,[],\\\"MetadataBoundary\\\"]\\nc:\\\"$Sreact.suspense\\\"\\ne:I[7150,[],\\\"\\\"]\\n:HL[\\\"/Anicca/_next/static/css/3b6c05e94c3cf803.css\\\",\\\"style\\\"]\\n:HL[\\\"/Anicca/_next/static/css/a15edc4286471aad.css\\\",\\\"style\\\"]\\n:HL[\\\"/Anicca/_next/static/css/d770cf5c6548f5c3.css\\\",\\\"style\\\"]\\n\"])self.__next_f.push([1,\"0:{\\\"P\\\":null,\\\"b\\\":\\\"G0tgHltanXgUhENX7R9J8\\\",\\\"p\\\":\\\"/Anicca\\\",\\\"c\\\":[\\\"\\\",\\\"\\\"],\\\"i\\\":false,\\\"f\\\":[[[\\\"\\\",{\\\"children\\\":[\\\"__PAGE__\\\",{}]},\\\"$undefined\\\",\\\"$undefined\\\",true],[\\\"\\\",[\\\"$\\\",\\\"$1\\\",\\\"c\\\",{\\\"children\\\":[[[\\\"$\\\",\\\"link\\\",\\\"0\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/3b6c05e94c3cf803.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}]],[\\\"$\\\",\\\"html\\\",null,{\\\"lang\\\":\\\"zh-CN\\\",\\\"children\\\":[\\\"$\\\",\\\"body\\\",null,{\\\"style\\\":{\\\"margin\\\":0,\\\"padding\\\":0,\\\"overflow\\\":\\\"hidden\\\"},\\\"children\\\":[\\\"$\\\",\\\"$L2\\\",null,{\\\"parallelRouterKey\\\":\\\"children\\\",\\\"error\\\":\\\"$undefined\\\",\\\"errorStyles\\\":\\\"$undefined\\\",\\\"errorScripts\\\":\\\"$undefined\\\",\\\"template\\\":[\\\"$\\\",\\\"$L3\\\",null,{}],\\\"templateStyles\\\":\\\"$undefined\\\",\\\"templateScripts\\\":\\\"$undefined\\\",\\\"notFound\\\":[[[\\\"$\\\",\\\"title\\\",null,{\\\"children\\\":\\\"404: This page could not be found.\\\"}],[\\\"$\\\",\\\"div\\\",null,{\\\"style\\\":{\\\"fontFamily\\\":\\\"system-ui,\\\\\\\"Segoe UI\\\\\\\",Roboto,Helvetica,Arial,sans-serif,\\\\\\\"Apple Color Emoji\\\\\\\",\\\\\\\"Segoe UI Emoji\\\\\\\"\\\",\\\"height\\\":\\\"100vh\\\",\\\"textAlign\\\":\\\"center\\\",\\\"display\\\":\\\"flex\\\",\\\"flexDirection\\\":\\\"column\\\",\\\"alignItems\\\":\\\"center\\\",\\\"justifyContent\\\":\\\"center\\\"},\\\"children\\\":[\\\"$\\\",\\\"div\\\",null,{\\\"children\\\":[[\\\"$\\\",\\\"style\\\",null,{\\\"dangerouslySetInnerHTML\\\":{\\\"__html\\\":\\\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\\\"}}],[\\\"$\\\",\\\"h1\\\",null,{\\\"className\\\":\\\"next-error-h1\\\",\\\"style\\\":{\\\"display\\\":\\\"inline-block\\\",\\\"margin\\\":\\\"0 20px 0 0\\\",\\\"padding\\\":\\\"0 23px 0 0\\\",\\\"fontSize\\\":24,\\\"fontWeight\\\":500,\\\"verticalAlign\\\":\\\"top\\\",\\\"lineHeight\\\":\\\"49px\\\"},\\\"children\\\":404}],[\\\"$\\\",\\\"div\\\",null,{\\\"style\\\":{\\\"display\\\":\\\"inline-block\\\"},\\\"children\\\":[\\\"$\\\",\\\"h2\\\",null,{\\\"style\\\":{\\\"fontSize\\\":14,\\\"fontWeight\\\":400,\\\"lineHeight\\\":\\\"49px\\\",\\\"margin\\\":0},\\\"children\\\":\\\"This page could not be found.\\\"}]}]]}]}]],[]],\\\"forbidden\\\":\\\"$undefined\\\",\\\"unauthorized\\\":\\\"$undefined\\\"}]}]}]]}],{\\\"children\\\":[\\\"__PAGE__\\\",[\\\"$\\\",\\\"$1\\\",\\\"c\\\",{\\\"children\\\":[[\\\"$\\\",\\\"$L4\\\",null,{}],[[\\\"$\\\",\\\"link\\\",\\\"0\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/a15edc4286471aad.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}],[\\\"$\\\",\\\"link\\\",\\\"1\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/d770cf5c6548f5c3.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}]],[\\\"$\\\",\\\"$L5\\\",null,{\\\"children\\\":[\\\"$L6\\\",[\\\"$\\\",\\\"$L7\\\",null,{\\\"promise\\\":\\\"$@8\\\"}]]}]]}],{},null,false]},null,false],[\\\"$\\\",\\\"$1\\\",\\\"h\\\",{\\\"children\\\":[null,[[\\\"$\\\",\\\"$L9\\\",null,{\\\"children\\\":\\\"$La\\\"}],null],[\\\"$\\\",\\\"$Lb\\\",null,{\\\"children\\\":[\\\"$\\\",\\\"div\\\",null,{\\\"hidden\\\":true,\\\"children\\\":[\\\"$\\\",\\\"$c\\\",null,{\\\"fallback\\\":null,\\\"children\\\":\\\"$Ld\\\"}]}]}]]}],false]],\\\"m\\\":\\\"$undefined\\\",\\\"G\\\":[\\\"$e\\\",[]],\\\"s\\\":false,\\\"S\\\":true}\\n\"])self.__next_f.push([1,\"a:[[\\\"$\\\",\\\"meta\\\",\\\"0\\\",{\\\"charSet\\\":\\\"utf-8\\\"}],[\\\"$\\\",\\\"meta\\\",\\\"1\\\",{\\\"name\\\":\\\"viewport\\\",\\\"content\\\":\\\"width=device-width, initial-scale=1\\\"}]]\\n6:null\\n\"])self.__next_f.push([1,\"f:I[622,[],\\\"IconMark\\\"]\\n8:{\\\"metadata\\\":[[\\\"$\\\",\\\"title\\\",\\\"0\\\",{\\\"children\\\":\\\"Anicca\\\"}],[\\\"$\\\",\\\"meta\\\",\\\"1\\\",{\\\"name\\\":\\\"description\\\",\\\"content\\\":\\\"A conversation that dissolves\\\"}],[\\\"$\\\",\\\"link\\\",\\\"2\\\",{\\\"rel\\\":\\\"icon\\\",\\\"href\\\":\\\"/Anicca/icon.svg?07e7ddff468c0379\\\",\\\"type\\\":\\\"image/svg+xml\\\",\\\"sizes\\\":\\\"any\\\"}],[\\\"$\\\",\\\"$Lf\\\",\\\"3\\\",{}]],\\\"error\\\":null,\\\"digest\\\":\\\"$undefined\\\"}\\n\"])self.__next_f.push([1,\"d:\\\"$8:metadata\\\"\\n\"])"
+        },
+        {
+          "name": "empty-981-700",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 981,
+          "height": 700,
+          "scrollY": 0,
+          "scrollWidth": 981,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 981,
+            "height": 700,
+            "bottom": 700,
+            "visibleHeight": 700,
+            "hittable": true
+          },
+          "input": {
+            "x": 212.5,
+            "y": 628,
+            "width": 494,
+            "height": 44,
+            "bottom": 672,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 28,
+            "y": 24,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 53.265625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区换个角度写下一个想法，让它生出正与反×舞台当前结构在下方输入一个想法，看它分裂为正与反收起谱系输入生成(self.__next_f=self.__next_f||[]).push([0])self.__next_f.push([1,\"1:\\\"$Sreact.fragment\\\"\\n2:I[9766,[],\\\"\\\"]\\n3:I[8924,[],\\\"\\\"]\\n4:I[6982,[\\\"533\\\",\\\"static/chunks/533-d576521e3e85288d.js\\\",\\\"974\\\",\\\"static/chunks/app/page-66b22e52f8370a9e.js\\\"],\\\"DialogueShell\\\"]\\n5:I[4431,[],\\\"OutletBoundary\\\"]\\n7:I[5278,[],\\\"AsyncMetadataOutlet\\\"]\\n9:I[4431,[],\\\"ViewportBoundary\\\"]\\nb:I[4431,[],\\\"MetadataBoundary\\\"]\\nc:\\\"$Sreact.suspense\\\"\\ne:I[7150,[],\\\"\\\"]\\n:HL[\\\"/Anicca/_next/static/css/3b6c05e94c3cf803.css\\\",\\\"style\\\"]\\n:HL[\\\"/Anicca/_next/static/css/a15edc4286471aad.css\\\",\\\"style\\\"]\\n:HL[\\\"/Anicca/_next/static/css/d770cf5c6548f5c3.css\\\",\\\"style\\\"]\\n\"])self.__next_f.push([1,\"0:{\\\"P\\\":null,\\\"b\\\":\\\"G0tgHltanXgUhENX7R9J8\\\",\\\"p\\\":\\\"/Anicca\\\",\\\"c\\\":[\\\"\\\",\\\"\\\"],\\\"i\\\":false,\\\"f\\\":[[[\\\"\\\",{\\\"children\\\":[\\\"__PAGE__\\\",{}]},\\\"$undefined\\\",\\\"$undefined\\\",true],[\\\"\\\",[\\\"$\\\",\\\"$1\\\",\\\"c\\\",{\\\"children\\\":[[[\\\"$\\\",\\\"link\\\",\\\"0\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/3b6c05e94c3cf803.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}]],[\\\"$\\\",\\\"html\\\",null,{\\\"lang\\\":\\\"zh-CN\\\",\\\"children\\\":[\\\"$\\\",\\\"body\\\",null,{\\\"style\\\":{\\\"margin\\\":0,\\\"padding\\\":0,\\\"overflow\\\":\\\"hidden\\\"},\\\"children\\\":[\\\"$\\\",\\\"$L2\\\",null,{\\\"parallelRouterKey\\\":\\\"children\\\",\\\"error\\\":\\\"$undefined\\\",\\\"errorStyles\\\":\\\"$undefined\\\",\\\"errorScripts\\\":\\\"$undefined\\\",\\\"template\\\":[\\\"$\\\",\\\"$L3\\\",null,{}],\\\"templateStyles\\\":\\\"$undefined\\\",\\\"templateScripts\\\":\\\"$undefined\\\",\\\"notFound\\\":[[[\\\"$\\\",\\\"title\\\",null,{\\\"children\\\":\\\"404: This page could not be found.\\\"}],[\\\"$\\\",\\\"div\\\",null,{\\\"style\\\":{\\\"fontFamily\\\":\\\"system-ui,\\\\\\\"Segoe UI\\\\\\\",Roboto,Helvetica,Arial,sans-serif,\\\\\\\"Apple Color Emoji\\\\\\\",\\\\\\\"Segoe UI Emoji\\\\\\\"\\\",\\\"height\\\":\\\"100vh\\\",\\\"textAlign\\\":\\\"center\\\",\\\"display\\\":\\\"flex\\\",\\\"flexDirection\\\":\\\"column\\\",\\\"alignItems\\\":\\\"center\\\",\\\"justifyContent\\\":\\\"center\\\"},\\\"children\\\":[\\\"$\\\",\\\"div\\\",null,{\\\"children\\\":[[\\\"$\\\",\\\"style\\\",null,{\\\"dangerouslySetInnerHTML\\\":{\\\"__html\\\":\\\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\\\"}}],[\\\"$\\\",\\\"h1\\\",null,{\\\"className\\\":\\\"next-error-h1\\\",\\\"style\\\":{\\\"display\\\":\\\"inline-block\\\",\\\"margin\\\":\\\"0 20px 0 0\\\",\\\"padding\\\":\\\"0 23px 0 0\\\",\\\"fontSize\\\":24,\\\"fontWeight\\\":500,\\\"verticalAlign\\\":\\\"top\\\",\\\"lineHeight\\\":\\\"49px\\\"},\\\"children\\\":404}],[\\\"$\\\",\\\"div\\\",null,{\\\"style\\\":{\\\"display\\\":\\\"inline-block\\\"},\\\"children\\\":[\\\"$\\\",\\\"h2\\\",null,{\\\"style\\\":{\\\"fontSize\\\":14,\\\"fontWeight\\\":400,\\\"lineHeight\\\":\\\"49px\\\",\\\"margin\\\":0},\\\"children\\\":\\\"This page could not be found.\\\"}]}]]}]}]],[]],\\\"forbidden\\\":\\\"$undefined\\\",\\\"unauthorized\\\":\\\"$undefined\\\"}]}]}]]}],{\\\"children\\\":[\\\"__PAGE__\\\",[\\\"$\\\",\\\"$1\\\",\\\"c\\\",{\\\"children\\\":[[\\\"$\\\",\\\"$L4\\\",null,{}],[[\\\"$\\\",\\\"link\\\",\\\"0\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/a15edc4286471aad.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}],[\\\"$\\\",\\\"link\\\",\\\"1\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/d770cf5c6548f5c3.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}]],[\\\"$\\\",\\\"$L5\\\",null,{\\\"children\\\":[\\\"$L6\\\",[\\\"$\\\",\\\"$L7\\\",null,{\\\"promise\\\":\\\"$@8\\\"}]]}]]}],{},null,false]},null,false],[\\\"$\\\",\\\"$1\\\",\\\"h\\\",{\\\"children\\\":[null,[[\\\"$\\\",\\\"$L9\\\",null,{\\\"children\\\":\\\"$La\\\"}],null],[\\\"$\\\",\\\"$Lb\\\",null,{\\\"children\\\":[\\\"$\\\",\\\"div\\\",null,{\\\"hidden\\\":true,\\\"children\\\":[\\\"$\\\",\\\"$c\\\",null,{\\\"fallback\\\":null,\\\"children\\\":\\\"$Ld\\\"}]}]}]]}],false]],\\\"m\\\":\\\"$undefined\\\",\\\"G\\\":[\\\"$e\\\",[]],\\\"s\\\":false,\\\"S\\\":true}\\n\"])self.__next_f.push([1,\"a:[[\\\"$\\\",\\\"meta\\\",\\\"0\\\",{\\\"charSet\\\":\\\"utf-8\\\"}],[\\\"$\\\",\\\"meta\\\",\\\"1\\\",{\\\"name\\\":\\\"viewport\\\",\\\"content\\\":\\\"width=device-width, initial-scale=1\\\"}]]\\n6:null\\n\"])self.__next_f.push([1,\"f:I[622,[],\\\"IconMark\\\"]\\n8:{\\\"metadata\\\":[[\\\"$\\\",\\\"title\\\",\\\"0\\\",{\\\"children\\\":\\\"Anicca\\\"}],[\\\"$\\\",\\\"meta\\\",\\\"1\\\",{\\\"name\\\":\\\"description\\\",\\\"content\\\":\\\"A conversation that dissolves\\\"}],[\\\"$\\\",\\\"link\\\",\\\"2\\\",{\\\"rel\\\":\\\"icon\\\",\\\"href\\\":\\\"/Anicca/icon.svg?07e7ddff468c0379\\\",\\\"type\\\":\\\"image/svg+xml\\\",\\\"sizes\\\":\\\"any\\\"}],[\\\"$\\\",\\\"$Lf\\\",\\\"3\\\",{}]],\\\"error\\\":null,\\\"digest\\\":\\\"$undefined\\\"}\\n\"])self.__next_f.push([1,\"d:\\\"$8:metadata\\\"\\n\"])"
+        },
+        {
+          "name": "empty-844-390",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 844,
+          "height": 390,
+          "scrollY": 0,
+          "scrollWidth": 844,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 844,
+            "height": 390,
+            "bottom": 390,
+            "visibleHeight": 390,
+            "hittable": true
+          },
+          "input": {
+            "x": 144,
+            "y": 318,
+            "width": 494,
+            "height": 44,
+            "bottom": 362,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 28,
+            "y": 24,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 53.265625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区换个角度写下一个想法，让它生出正与反×舞台当前结构在下方输入一个想法，看它分裂为正与反收起谱系输入生成(self.__next_f=self.__next_f||[]).push([0])self.__next_f.push([1,\"1:\\\"$Sreact.fragment\\\"\\n2:I[9766,[],\\\"\\\"]\\n3:I[8924,[],\\\"\\\"]\\n4:I[6982,[\\\"533\\\",\\\"static/chunks/533-d576521e3e85288d.js\\\",\\\"974\\\",\\\"static/chunks/app/page-66b22e52f8370a9e.js\\\"],\\\"DialogueShell\\\"]\\n5:I[4431,[],\\\"OutletBoundary\\\"]\\n7:I[5278,[],\\\"AsyncMetadataOutlet\\\"]\\n9:I[4431,[],\\\"ViewportBoundary\\\"]\\nb:I[4431,[],\\\"MetadataBoundary\\\"]\\nc:\\\"$Sreact.suspense\\\"\\ne:I[7150,[],\\\"\\\"]\\n:HL[\\\"/Anicca/_next/static/css/3b6c05e94c3cf803.css\\\",\\\"style\\\"]\\n:HL[\\\"/Anicca/_next/static/css/a15edc4286471aad.css\\\",\\\"style\\\"]\\n:HL[\\\"/Anicca/_next/static/css/d770cf5c6548f5c3.css\\\",\\\"style\\\"]\\n\"])self.__next_f.push([1,\"0:{\\\"P\\\":null,\\\"b\\\":\\\"G0tgHltanXgUhENX7R9J8\\\",\\\"p\\\":\\\"/Anicca\\\",\\\"c\\\":[\\\"\\\",\\\"\\\"],\\\"i\\\":false,\\\"f\\\":[[[\\\"\\\",{\\\"children\\\":[\\\"__PAGE__\\\",{}]},\\\"$undefined\\\",\\\"$undefined\\\",true],[\\\"\\\",[\\\"$\\\",\\\"$1\\\",\\\"c\\\",{\\\"children\\\":[[[\\\"$\\\",\\\"link\\\",\\\"0\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/3b6c05e94c3cf803.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}]],[\\\"$\\\",\\\"html\\\",null,{\\\"lang\\\":\\\"zh-CN\\\",\\\"children\\\":[\\\"$\\\",\\\"body\\\",null,{\\\"style\\\":{\\\"margin\\\":0,\\\"padding\\\":0,\\\"overflow\\\":\\\"hidden\\\"},\\\"children\\\":[\\\"$\\\",\\\"$L2\\\",null,{\\\"parallelRouterKey\\\":\\\"children\\\",\\\"error\\\":\\\"$undefined\\\",\\\"errorStyles\\\":\\\"$undefined\\\",\\\"errorScripts\\\":\\\"$undefined\\\",\\\"template\\\":[\\\"$\\\",\\\"$L3\\\",null,{}],\\\"templateStyles\\\":\\\"$undefined\\\",\\\"templateScripts\\\":\\\"$undefined\\\",\\\"notFound\\\":[[[\\\"$\\\",\\\"title\\\",null,{\\\"children\\\":\\\"404: This page could not be found.\\\"}],[\\\"$\\\",\\\"div\\\",null,{\\\"style\\\":{\\\"fontFamily\\\":\\\"system-ui,\\\\\\\"Segoe UI\\\\\\\",Roboto,Helvetica,Arial,sans-serif,\\\\\\\"Apple Color Emoji\\\\\\\",\\\\\\\"Segoe UI Emoji\\\\\\\"\\\",\\\"height\\\":\\\"100vh\\\",\\\"textAlign\\\":\\\"center\\\",\\\"display\\\":\\\"flex\\\",\\\"flexDirection\\\":\\\"column\\\",\\\"alignItems\\\":\\\"center\\\",\\\"justifyContent\\\":\\\"center\\\"},\\\"children\\\":[\\\"$\\\",\\\"div\\\",null,{\\\"children\\\":[[\\\"$\\\",\\\"style\\\",null,{\\\"dangerouslySetInnerHTML\\\":{\\\"__html\\\":\\\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\\\"}}],[\\\"$\\\",\\\"h1\\\",null,{\\\"className\\\":\\\"next-error-h1\\\",\\\"style\\\":{\\\"display\\\":\\\"inline-block\\\",\\\"margin\\\":\\\"0 20px 0 0\\\",\\\"padding\\\":\\\"0 23px 0 0\\\",\\\"fontSize\\\":24,\\\"fontWeight\\\":500,\\\"verticalAlign\\\":\\\"top\\\",\\\"lineHeight\\\":\\\"49px\\\"},\\\"children\\\":404}],[\\\"$\\\",\\\"div\\\",null,{\\\"style\\\":{\\\"display\\\":\\\"inline-block\\\"},\\\"children\\\":[\\\"$\\\",\\\"h2\\\",null,{\\\"style\\\":{\\\"fontSize\\\":14,\\\"fontWeight\\\":400,\\\"lineHeight\\\":\\\"49px\\\",\\\"margin\\\":0},\\\"children\\\":\\\"This page could not be found.\\\"}]}]]}]}]],[]],\\\"forbidden\\\":\\\"$undefined\\\",\\\"unauthorized\\\":\\\"$undefined\\\"}]}]}]]}],{\\\"children\\\":[\\\"__PAGE__\\\",[\\\"$\\\",\\\"$1\\\",\\\"c\\\",{\\\"children\\\":[[\\\"$\\\",\\\"$L4\\\",null,{}],[[\\\"$\\\",\\\"link\\\",\\\"0\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/a15edc4286471aad.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}],[\\\"$\\\",\\\"link\\\",\\\"1\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/d770cf5c6548f5c3.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}]],[\\\"$\\\",\\\"$L5\\\",null,{\\\"children\\\":[\\\"$L6\\\",[\\\"$\\\",\\\"$L7\\\",null,{\\\"promise\\\":\\\"$@8\\\"}]]}]]}],{},null,false]},null,false],[\\\"$\\\",\\\"$1\\\",\\\"h\\\",{\\\"children\\\":[null,[[\\\"$\\\",\\\"$L9\\\",null,{\\\"children\\\":\\\"$La\\\"}],null],[\\\"$\\\",\\\"$Lb\\\",null,{\\\"children\\\":[\\\"$\\\",\\\"div\\\",null,{\\\"hidden\\\":true,\\\"children\\\":[\\\"$\\\",\\\"$c\\\",null,{\\\"fallback\\\":null,\\\"children\\\":\\\"$Ld\\\"}]}]}]]}],false]],\\\"m\\\":\\\"$undefined\\\",\\\"G\\\":[\\\"$e\\\",[]],\\\"s\\\":false,\\\"S\\\":true}\\n\"])self.__next_f.push([1,\"a:[[\\\"$\\\",\\\"meta\\\",\\\"0\\\",{\\\"charSet\\\":\\\"utf-8\\\"}],[\\\"$\\\",\\\"meta\\\",\\\"1\\\",{\\\"name\\\":\\\"viewport\\\",\\\"content\\\":\\\"width=device-width, initial-scale=1\\\"}]]\\n6:null\\n\"])self.__next_f.push([1,\"f:I[622,[],\\\"IconMark\\\"]\\n8:{\\\"metadata\\\":[[\\\"$\\\",\\\"title\\\",\\\"0\\\",{\\\"children\\\":\\\"Anicca\\\"}],[\\\"$\\\",\\\"meta\\\",\\\"1\\\",{\\\"name\\\":\\\"description\\\",\\\"content\\\":\\\"A conversation that dissolves\\\"}],[\\\"$\\\",\\\"link\\\",\\\"2\\\",{\\\"rel\\\":\\\"icon\\\",\\\"href\\\":\\\"/Anicca/icon.svg?07e7ddff468c0379\\\",\\\"type\\\":\\\"image/svg+xml\\\",\\\"sizes\\\":\\\"any\\\"}],[\\\"$\\\",\\\"$Lf\\\",\\\"3\\\",{}]],\\\"error\\\":null,\\\"digest\\\":\\\"$undefined\\\"}\\n\"])self.__next_f.push([1,\"d:\\\"$8:metadata\\\"\\n\"])"
+        },
+        {
+          "name": "empty-844-700",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 844,
+          "height": 700,
+          "scrollY": 0,
+          "scrollWidth": 844,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 844,
+            "height": 700,
+            "bottom": 700,
+            "visibleHeight": 700,
+            "hittable": true
+          },
+          "input": {
+            "x": 144,
+            "y": 628,
+            "width": 494,
+            "height": 44,
+            "bottom": 672,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 28,
+            "y": 24,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 53.265625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区换个角度写下一个想法，让它生出正与反×舞台当前结构在下方输入一个想法，看它分裂为正与反收起谱系输入生成(self.__next_f=self.__next_f||[]).push([0])self.__next_f.push([1,\"1:\\\"$Sreact.fragment\\\"\\n2:I[9766,[],\\\"\\\"]\\n3:I[8924,[],\\\"\\\"]\\n4:I[6982,[\\\"533\\\",\\\"static/chunks/533-d576521e3e85288d.js\\\",\\\"974\\\",\\\"static/chunks/app/page-66b22e52f8370a9e.js\\\"],\\\"DialogueShell\\\"]\\n5:I[4431,[],\\\"OutletBoundary\\\"]\\n7:I[5278,[],\\\"AsyncMetadataOutlet\\\"]\\n9:I[4431,[],\\\"ViewportBoundary\\\"]\\nb:I[4431,[],\\\"MetadataBoundary\\\"]\\nc:\\\"$Sreact.suspense\\\"\\ne:I[7150,[],\\\"\\\"]\\n:HL[\\\"/Anicca/_next/static/css/3b6c05e94c3cf803.css\\\",\\\"style\\\"]\\n:HL[\\\"/Anicca/_next/static/css/a15edc4286471aad.css\\\",\\\"style\\\"]\\n:HL[\\\"/Anicca/_next/static/css/d770cf5c6548f5c3.css\\\",\\\"style\\\"]\\n\"])self.__next_f.push([1,\"0:{\\\"P\\\":null,\\\"b\\\":\\\"G0tgHltanXgUhENX7R9J8\\\",\\\"p\\\":\\\"/Anicca\\\",\\\"c\\\":[\\\"\\\",\\\"\\\"],\\\"i\\\":false,\\\"f\\\":[[[\\\"\\\",{\\\"children\\\":[\\\"__PAGE__\\\",{}]},\\\"$undefined\\\",\\\"$undefined\\\",true],[\\\"\\\",[\\\"$\\\",\\\"$1\\\",\\\"c\\\",{\\\"children\\\":[[[\\\"$\\\",\\\"link\\\",\\\"0\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/3b6c05e94c3cf803.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}]],[\\\"$\\\",\\\"html\\\",null,{\\\"lang\\\":\\\"zh-CN\\\",\\\"children\\\":[\\\"$\\\",\\\"body\\\",null,{\\\"style\\\":{\\\"margin\\\":0,\\\"padding\\\":0,\\\"overflow\\\":\\\"hidden\\\"},\\\"children\\\":[\\\"$\\\",\\\"$L2\\\",null,{\\\"parallelRouterKey\\\":\\\"children\\\",\\\"error\\\":\\\"$undefined\\\",\\\"errorStyles\\\":\\\"$undefined\\\",\\\"errorScripts\\\":\\\"$undefined\\\",\\\"template\\\":[\\\"$\\\",\\\"$L3\\\",null,{}],\\\"templateStyles\\\":\\\"$undefined\\\",\\\"templateScripts\\\":\\\"$undefined\\\",\\\"notFound\\\":[[[\\\"$\\\",\\\"title\\\",null,{\\\"children\\\":\\\"404: This page could not be found.\\\"}],[\\\"$\\\",\\\"div\\\",null,{\\\"style\\\":{\\\"fontFamily\\\":\\\"system-ui,\\\\\\\"Segoe UI\\\\\\\",Roboto,Helvetica,Arial,sans-serif,\\\\\\\"Apple Color Emoji\\\\\\\",\\\\\\\"Segoe UI Emoji\\\\\\\"\\\",\\\"height\\\":\\\"100vh\\\",\\\"textAlign\\\":\\\"center\\\",\\\"display\\\":\\\"flex\\\",\\\"flexDirection\\\":\\\"column\\\",\\\"alignItems\\\":\\\"center\\\",\\\"justifyContent\\\":\\\"center\\\"},\\\"children\\\":[\\\"$\\\",\\\"div\\\",null,{\\\"children\\\":[[\\\"$\\\",\\\"style\\\",null,{\\\"dangerouslySetInnerHTML\\\":{\\\"__html\\\":\\\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\\\"}}],[\\\"$\\\",\\\"h1\\\",null,{\\\"className\\\":\\\"next-error-h1\\\",\\\"style\\\":{\\\"display\\\":\\\"inline-block\\\",\\\"margin\\\":\\\"0 20px 0 0\\\",\\\"padding\\\":\\\"0 23px 0 0\\\",\\\"fontSize\\\":24,\\\"fontWeight\\\":500,\\\"verticalAlign\\\":\\\"top\\\",\\\"lineHeight\\\":\\\"49px\\\"},\\\"children\\\":404}],[\\\"$\\\",\\\"div\\\",null,{\\\"style\\\":{\\\"display\\\":\\\"inline-block\\\"},\\\"children\\\":[\\\"$\\\",\\\"h2\\\",null,{\\\"style\\\":{\\\"fontSize\\\":14,\\\"fontWeight\\\":400,\\\"lineHeight\\\":\\\"49px\\\",\\\"margin\\\":0},\\\"children\\\":\\\"This page could not be found.\\\"}]}]]}]}]],[]],\\\"forbidden\\\":\\\"$undefined\\\",\\\"unauthorized\\\":\\\"$undefined\\\"}]}]}]]}],{\\\"children\\\":[\\\"__PAGE__\\\",[\\\"$\\\",\\\"$1\\\",\\\"c\\\",{\\\"children\\\":[[\\\"$\\\",\\\"$L4\\\",null,{}],[[\\\"$\\\",\\\"link\\\",\\\"0\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/a15edc4286471aad.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}],[\\\"$\\\",\\\"link\\\",\\\"1\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/d770cf5c6548f5c3.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}]],[\\\"$\\\",\\\"$L5\\\",null,{\\\"children\\\":[\\\"$L6\\\",[\\\"$\\\",\\\"$L7\\\",null,{\\\"promise\\\":\\\"$@8\\\"}]]}]]}],{},null,false]},null,false],[\\\"$\\\",\\\"$1\\\",\\\"h\\\",{\\\"children\\\":[null,[[\\\"$\\\",\\\"$L9\\\",null,{\\\"children\\\":\\\"$La\\\"}],null],[\\\"$\\\",\\\"$Lb\\\",null,{\\\"children\\\":[\\\"$\\\",\\\"div\\\",null,{\\\"hidden\\\":true,\\\"children\\\":[\\\"$\\\",\\\"$c\\\",null,{\\\"fallback\\\":null,\\\"children\\\":\\\"$Ld\\\"}]}]}]]}],false]],\\\"m\\\":\\\"$undefined\\\",\\\"G\\\":[\\\"$e\\\",[]],\\\"s\\\":false,\\\"S\\\":true}\\n\"])self.__next_f.push([1,\"a:[[\\\"$\\\",\\\"meta\\\",\\\"0\\\",{\\\"charSet\\\":\\\"utf-8\\\"}],[\\\"$\\\",\\\"meta\\\",\\\"1\\\",{\\\"name\\\":\\\"viewport\\\",\\\"content\\\":\\\"width=device-width, initial-scale=1\\\"}]]\\n6:null\\n\"])self.__next_f.push([1,\"f:I[622,[],\\\"IconMark\\\"]\\n8:{\\\"metadata\\\":[[\\\"$\\\",\\\"title\\\",\\\"0\\\",{\\\"children\\\":\\\"Anicca\\\"}],[\\\"$\\\",\\\"meta\\\",\\\"1\\\",{\\\"name\\\":\\\"description\\\",\\\"content\\\":\\\"A conversation that dissolves\\\"}],[\\\"$\\\",\\\"link\\\",\\\"2\\\",{\\\"rel\\\":\\\"icon\\\",\\\"href\\\":\\\"/Anicca/icon.svg?07e7ddff468c0379\\\",\\\"type\\\":\\\"image/svg+xml\\\",\\\"sizes\\\":\\\"any\\\"}],[\\\"$\\\",\\\"$Lf\\\",\\\"3\\\",{}]],\\\"error\\\":null,\\\"digest\\\":\\\"$undefined\\\"}\\n\"])self.__next_f.push([1,\"d:\\\"$8:metadata\\\"\\n\"])"
+        },
+        {
+          "name": "empty-320-568",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 320,
+          "height": 568,
+          "scrollY": 0,
+          "scrollWidth": 320,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 320,
+            "height": 568,
+            "bottom": 568,
+            "visibleHeight": 568,
+            "hittable": true
+          },
+          "input": {
+            "x": 18,
+            "y": 496,
+            "width": 222,
+            "height": 44,
+            "bottom": 540,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 22,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 48.828125,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区换个角度写下一个想法，让它生出正与反×舞台当前结构在下方输入一个想法，看它分裂为正与反收起谱系输入生成(self.__next_f=self.__next_f||[]).push([0])self.__next_f.push([1,\"1:\\\"$Sreact.fragment\\\"\\n2:I[9766,[],\\\"\\\"]\\n3:I[8924,[],\\\"\\\"]\\n4:I[6982,[\\\"533\\\",\\\"static/chunks/533-d576521e3e85288d.js\\\",\\\"974\\\",\\\"static/chunks/app/page-66b22e52f8370a9e.js\\\"],\\\"DialogueShell\\\"]\\n5:I[4431,[],\\\"OutletBoundary\\\"]\\n7:I[5278,[],\\\"AsyncMetadataOutlet\\\"]\\n9:I[4431,[],\\\"ViewportBoundary\\\"]\\nb:I[4431,[],\\\"MetadataBoundary\\\"]\\nc:\\\"$Sreact.suspense\\\"\\ne:I[7150,[],\\\"\\\"]\\n:HL[\\\"/Anicca/_next/static/css/3b6c05e94c3cf803.css\\\",\\\"style\\\"]\\n:HL[\\\"/Anicca/_next/static/css/a15edc4286471aad.css\\\",\\\"style\\\"]\\n:HL[\\\"/Anicca/_next/static/css/d770cf5c6548f5c3.css\\\",\\\"style\\\"]\\n\"])self.__next_f.push([1,\"0:{\\\"P\\\":null,\\\"b\\\":\\\"G0tgHltanXgUhENX7R9J8\\\",\\\"p\\\":\\\"/Anicca\\\",\\\"c\\\":[\\\"\\\",\\\"\\\"],\\\"i\\\":false,\\\"f\\\":[[[\\\"\\\",{\\\"children\\\":[\\\"__PAGE__\\\",{}]},\\\"$undefined\\\",\\\"$undefined\\\",true],[\\\"\\\",[\\\"$\\\",\\\"$1\\\",\\\"c\\\",{\\\"children\\\":[[[\\\"$\\\",\\\"link\\\",\\\"0\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/3b6c05e94c3cf803.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}]],[\\\"$\\\",\\\"html\\\",null,{\\\"lang\\\":\\\"zh-CN\\\",\\\"children\\\":[\\\"$\\\",\\\"body\\\",null,{\\\"style\\\":{\\\"margin\\\":0,\\\"padding\\\":0,\\\"overflow\\\":\\\"hidden\\\"},\\\"children\\\":[\\\"$\\\",\\\"$L2\\\",null,{\\\"parallelRouterKey\\\":\\\"children\\\",\\\"error\\\":\\\"$undefined\\\",\\\"errorStyles\\\":\\\"$undefined\\\",\\\"errorScripts\\\":\\\"$undefined\\\",\\\"template\\\":[\\\"$\\\",\\\"$L3\\\",null,{}],\\\"templateStyles\\\":\\\"$undefined\\\",\\\"templateScripts\\\":\\\"$undefined\\\",\\\"notFound\\\":[[[\\\"$\\\",\\\"title\\\",null,{\\\"children\\\":\\\"404: This page could not be found.\\\"}],[\\\"$\\\",\\\"div\\\",null,{\\\"style\\\":{\\\"fontFamily\\\":\\\"system-ui,\\\\\\\"Segoe UI\\\\\\\",Roboto,Helvetica,Arial,sans-serif,\\\\\\\"Apple Color Emoji\\\\\\\",\\\\\\\"Segoe UI Emoji\\\\\\\"\\\",\\\"height\\\":\\\"100vh\\\",\\\"textAlign\\\":\\\"center\\\",\\\"display\\\":\\\"flex\\\",\\\"flexDirection\\\":\\\"column\\\",\\\"alignItems\\\":\\\"center\\\",\\\"justifyContent\\\":\\\"center\\\"},\\\"children\\\":[\\\"$\\\",\\\"div\\\",null,{\\\"children\\\":[[\\\"$\\\",\\\"style\\\",null,{\\\"dangerouslySetInnerHTML\\\":{\\\"__html\\\":\\\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\\\"}}],[\\\"$\\\",\\\"h1\\\",null,{\\\"className\\\":\\\"next-error-h1\\\",\\\"style\\\":{\\\"display\\\":\\\"inline-block\\\",\\\"margin\\\":\\\"0 20px 0 0\\\",\\\"padding\\\":\\\"0 23px 0 0\\\",\\\"fontSize\\\":24,\\\"fontWeight\\\":500,\\\"verticalAlign\\\":\\\"top\\\",\\\"lineHeight\\\":\\\"49px\\\"},\\\"children\\\":404}],[\\\"$\\\",\\\"div\\\",null,{\\\"style\\\":{\\\"display\\\":\\\"inline-block\\\"},\\\"children\\\":[\\\"$\\\",\\\"h2\\\",null,{\\\"style\\\":{\\\"fontSize\\\":14,\\\"fontWeight\\\":400,\\\"lineHeight\\\":\\\"49px\\\",\\\"margin\\\":0},\\\"children\\\":\\\"This page could not be found.\\\"}]}]]}]}]],[]],\\\"forbidden\\\":\\\"$undefined\\\",\\\"unauthorized\\\":\\\"$undefined\\\"}]}]}]]}],{\\\"children\\\":[\\\"__PAGE__\\\",[\\\"$\\\",\\\"$1\\\",\\\"c\\\",{\\\"children\\\":[[\\\"$\\\",\\\"$L4\\\",null,{}],[[\\\"$\\\",\\\"link\\\",\\\"0\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/a15edc4286471aad.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}],[\\\"$\\\",\\\"link\\\",\\\"1\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/d770cf5c6548f5c3.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}]],[\\\"$\\\",\\\"$L5\\\",null,{\\\"children\\\":[\\\"$L6\\\",[\\\"$\\\",\\\"$L7\\\",null,{\\\"promise\\\":\\\"$@8\\\"}]]}]]}],{},null,false]},null,false],[\\\"$\\\",\\\"$1\\\",\\\"h\\\",{\\\"children\\\":[null,[[\\\"$\\\",\\\"$L9\\\",null,{\\\"children\\\":\\\"$La\\\"}],null],[\\\"$\\\",\\\"$Lb\\\",null,{\\\"children\\\":[\\\"$\\\",\\\"div\\\",null,{\\\"hidden\\\":true,\\\"children\\\":[\\\"$\\\",\\\"$c\\\",null,{\\\"fallback\\\":null,\\\"children\\\":\\\"$Ld\\\"}]}]}]]}],false]],\\\"m\\\":\\\"$undefined\\\",\\\"G\\\":[\\\"$e\\\",[]],\\\"s\\\":false,\\\"S\\\":true}\\n\"])self.__next_f.push([1,\"a:[[\\\"$\\\",\\\"meta\\\",\\\"0\\\",{\\\"charSet\\\":\\\"utf-8\\\"}],[\\\"$\\\",\\\"meta\\\",\\\"1\\\",{\\\"name\\\":\\\"viewport\\\",\\\"content\\\":\\\"width=device-width, initial-scale=1\\\"}]]\\n6:null\\n\"])self.__next_f.push([1,\"f:I[622,[],\\\"IconMark\\\"]\\n8:{\\\"metadata\\\":[[\\\"$\\\",\\\"title\\\",\\\"0\\\",{\\\"children\\\":\\\"Anicca\\\"}],[\\\"$\\\",\\\"meta\\\",\\\"1\\\",{\\\"name\\\":\\\"description\\\",\\\"content\\\":\\\"A conversation that dissolves\\\"}],[\\\"$\\\",\\\"link\\\",\\\"2\\\",{\\\"rel\\\":\\\"icon\\\",\\\"href\\\":\\\"/Anicca/icon.svg?07e7ddff468c0379\\\",\\\"type\\\":\\\"image/svg+xml\\\",\\\"sizes\\\":\\\"any\\\"}],[\\\"$\\\",\\\"$Lf\\\",\\\"3\\\",{}]],\\\"error\\\":null,\\\"digest\\\":\\\"$undefined\\\"}\\n\"])self.__next_f.push([1,\"d:\\\"$8:metadata\\\"\\n\"])"
+        },
+        {
+          "name": "typing",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 320,
+          "height": 568,
+          "scrollY": 0,
+          "scrollWidth": 320,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 320,
+            "height": 568,
+            "bottom": 568,
+            "visibleHeight": 568,
+            "hittable": true
+          },
+          "input": {
+            "x": 18,
+            "y": 472,
+            "width": 156.390625,
+            "height": 68,
+            "bottom": 540,
+            "visibleHeight": 68,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 22,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 48.828125,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "dialogue-input",
+          "focusText": "保留尚未完成的想法"
+        },
+        {
+          "name": "blurred",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 320,
+          "height": 568,
+          "scrollY": 0,
+          "scrollWidth": 320,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 320,
+            "height": 568,
+            "bottom": 568,
+            "visibleHeight": 568,
+            "hittable": true
+          },
+          "input": {
+            "x": 18,
+            "y": 472,
+            "width": 156.390625,
+            "height": 68,
+            "bottom": 540,
+            "visibleHeight": 68,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 22,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 48.828125,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区换个角度写下一个想法，让它生出正与反×舞台当前结构在下方输入一个想法，看它分裂为正与反收起谱系输入保留尚未完成的想法先记下生成(self.__next_f=self.__next_f||[]).push([0])self.__next_f.push([1,\"1:\\\"$Sreact.fragment\\\"\\n2:I[9766,[],\\\"\\\"]\\n3:I[8924,[],\\\"\\\"]\\n4:I[6982,[\\\"533\\\",\\\"static/chunks/533-d576521e3e85288d.js\\\",\\\"974\\\",\\\"static/chunks/app/page-66b22e52f8370a9e.js\\\"],\\\"DialogueShell\\\"]\\n5:I[4431,[],\\\"OutletBoundary\\\"]\\n7:I[5278,[],\\\"AsyncMetadataOutlet\\\"]\\n9:I[4431,[],\\\"ViewportBoundary\\\"]\\nb:I[4431,[],\\\"MetadataBoundary\\\"]\\nc:\\\"$Sreact.suspense\\\"\\ne:I[7150,[],\\\"\\\"]\\n:HL[\\\"/Anicca/_next/static/css/3b6c05e94c3cf803.css\\\",\\\"style\\\"]\\n:HL[\\\"/Anicca/_next/static/css/a15edc4286471aad.css\\\",\\\"style\\\"]\\n:HL[\\\"/Anicca/_next/static/css/d770cf5c6548f5c3.css\\\",\\\"style\\\"]\\n\"])self.__next_f.push([1,\"0:{\\\"P\\\":null,\\\"b\\\":\\\"G0tgHltanXgUhENX7R9J8\\\",\\\"p\\\":\\\"/Anicca\\\",\\\"c\\\":[\\\"\\\",\\\"\\\"],\\\"i\\\":false,\\\"f\\\":[[[\\\"\\\",{\\\"children\\\":[\\\"__PAGE__\\\",{}]},\\\"$undefined\\\",\\\"$undefined\\\",true],[\\\"\\\",[\\\"$\\\",\\\"$1\\\",\\\"c\\\",{\\\"children\\\":[[[\\\"$\\\",\\\"link\\\",\\\"0\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/3b6c05e94c3cf803.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}]],[\\\"$\\\",\\\"html\\\",null,{\\\"lang\\\":\\\"zh-CN\\\",\\\"children\\\":[\\\"$\\\",\\\"body\\\",null,{\\\"style\\\":{\\\"margin\\\":0,\\\"padding\\\":0,\\\"overflow\\\":\\\"hidden\\\"},\\\"children\\\":[\\\"$\\\",\\\"$L2\\\",null,{\\\"parallelRouterKey\\\":\\\"children\\\",\\\"error\\\":\\\"$undefined\\\",\\\"errorStyles\\\":\\\"$undefined\\\",\\\"errorScripts\\\":\\\"$undefined\\\",\\\"template\\\":[\\\"$\\\",\\\"$L3\\\",null,{}],\\\"templateStyles\\\":\\\"$undefined\\\",\\\"templateScripts\\\":\\\"$undefined\\\",\\\"notFound\\\":[[[\\\"$\\\",\\\"title\\\",null,{\\\"children\\\":\\\"404: This page could not be found.\\\"}],[\\\"$\\\",\\\"div\\\",null,{\\\"style\\\":{\\\"fontFamily\\\":\\\"system-ui,\\\\\\\"Segoe UI\\\\\\\",Roboto,Helvetica,Arial,sans-serif,\\\\\\\"Apple Color Emoji\\\\\\\",\\\\\\\"Segoe UI Emoji\\\\\\\"\\\",\\\"height\\\":\\\"100vh\\\",\\\"textAlign\\\":\\\"center\\\",\\\"display\\\":\\\"flex\\\",\\\"flexDirection\\\":\\\"column\\\",\\\"alignItems\\\":\\\"center\\\",\\\"justifyContent\\\":\\\"center\\\"},\\\"children\\\":[\\\"$\\\",\\\"div\\\",null,{\\\"children\\\":[[\\\"$\\\",\\\"style\\\",null,{\\\"dangerouslySetInnerHTML\\\":{\\\"__html\\\":\\\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\\\"}}],[\\\"$\\\",\\\"h1\\\",null,{\\\"className\\\":\\\"next-error-h1\\\",\\\"style\\\":{\\\"display\\\":\\\"inline-block\\\",\\\"margin\\\":\\\"0 20px 0 0\\\",\\\"padding\\\":\\\"0 23px 0 0\\\",\\\"fontSize\\\":24,\\\"fontWeight\\\":500,\\\"verticalAlign\\\":\\\"top\\\",\\\"lineHeight\\\":\\\"49px\\\"},\\\"children\\\":404}],[\\\"$\\\",\\\"div\\\",null,{\\\"style\\\":{\\\"display\\\":\\\"inline-block\\\"},\\\"children\\\":[\\\"$\\\",\\\"h2\\\",null,{\\\"style\\\":{\\\"fontSize\\\":14,\\\"fontWeight\\\":400,\\\"lineHeight\\\":\\\"49px\\\",\\\"margin\\\":0},\\\"children\\\":\\\"This page could not be found.\\\"}]}]]}]}]],[]],\\\"forbidden\\\":\\\"$undefined\\\",\\\"unauthorized\\\":\\\"$undefined\\\"}]}]}]]}],{\\\"children\\\":[\\\"__PAGE__\\\",[\\\"$\\\",\\\"$1\\\",\\\"c\\\",{\\\"children\\\":[[\\\"$\\\",\\\"$L4\\\",null,{}],[[\\\"$\\\",\\\"link\\\",\\\"0\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/a15edc4286471aad.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}],[\\\"$\\\",\\\"link\\\",\\\"1\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/d770cf5c6548f5c3.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}]],[\\\"$\\\",\\\"$L5\\\",null,{\\\"children\\\":[\\\"$L6\\\",[\\\"$\\\",\\\"$L7\\\",null,{\\\"promise\\\":\\\"$@8\\\"}]]}]]}],{},null,false]},null,false],[\\\"$\\\",\\\"$1\\\",\\\"h\\\",{\\\"children\\\":[null,[[\\\"$\\\",\\\"$L9\\\",null,{\\\"children\\\":\\\"$La\\\"}],null],[\\\"$\\\",\\\"$Lb\\\",null,{\\\"children\\\":[\\\"$\\\",\\\"div\\\",null,{\\\"hidden\\\":true,\\\"children\\\":[\\\"$\\\",\\\"$c\\\",null,{\\\"fallback\\\":null,\\\"children\\\":\\\"$Ld\\\"}]}]}]]}],false]],\\\"m\\\":\\\"$undefined\\\",\\\"G\\\":[\\\"$e\\\",[]],\\\"s\\\":false,\\\"S\\\":true}\\n\"])self.__next_f.push([1,\"a:[[\\\"$\\\",\\\"meta\\\",\\\"0\\\",{\\\"charSet\\\":\\\"utf-8\\\"}],[\\\"$\\\",\\\"meta\\\",\\\"1\\\",{\\\"name\\\":\\\"viewport\\\",\\\"content\\\":\\\"width=device-width, initial-scale=1\\\"}]]\\n6:null\\n\"])self.__next_f.push([1,\"f:I[622,[],\\\"IconMark\\\"]\\n8:{\\\"metadata\\\":[[\\\"$\\\",\\\"title\\\",\\\"0\\\",{\\\"children\\\":\\\"Anicca\\\"}],[\\\"$\\\",\\\"meta\\\",\\\"1\\\",{\\\"name\\\":\\\"description\\\",\\\"content\\\":\\\"A conversation that dissolves\\\"}],[\\\"$\\\",\\\"link\\\",\\\"2\\\",{\\\"rel\\\":\\\"icon\\\",\\\"href\\\":\\\"/Anicca/icon.svg?07e7ddff468c0379\\\",\\\"type\\\":\\\"image/svg+xml\\\",\\\"sizes\\\":\\\"any\\\"}],[\\\"$\\\",\\\"$Lf\\\",\\\"3\\\",{}]],\\\"error\\\":null,\\\"digest\\\":\\\"$undefined\\\"}\\n\"])self.__next_f.push([1,\"d:\\\"$8:metadata\\\"\\n\"])"
+        },
+        {
+          "name": "draft-refresh",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 768,
+          "height": 1024,
+          "scrollY": 0,
+          "scrollWidth": 768,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 768,
+            "height": 1024,
+            "bottom": 1024,
+            "visibleHeight": 1024,
+            "hittable": true
+          },
+          "input": {
+            "x": 106,
+            "y": 952,
+            "width": 422,
+            "height": 44,
+            "bottom": 996,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 28,
+            "y": 24,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 53.265625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区换个角度写下一个想法，让它生出正与反×舞台当前结构在下方输入一个想法，看它分裂为正与反收起谱系输入保留尚未完成的想法先记下生成(self.__next_f=self.__next_f||[]).push([0])self.__next_f.push([1,\"1:\\\"$Sreact.fragment\\\"\\n2:I[9766,[],\\\"\\\"]\\n3:I[8924,[],\\\"\\\"]\\n4:I[6982,[\\\"533\\\",\\\"static/chunks/533-d576521e3e85288d.js\\\",\\\"974\\\",\\\"static/chunks/app/page-66b22e52f8370a9e.js\\\"],\\\"DialogueShell\\\"]\\n5:I[4431,[],\\\"OutletBoundary\\\"]\\n7:I[5278,[],\\\"AsyncMetadataOutlet\\\"]\\n9:I[4431,[],\\\"ViewportBoundary\\\"]\\nb:I[4431,[],\\\"MetadataBoundary\\\"]\\nc:\\\"$Sreact.suspense\\\"\\ne:I[7150,[],\\\"\\\"]\\n:HL[\\\"/Anicca/_next/static/css/3b6c05e94c3cf803.css\\\",\\\"style\\\"]\\n:HL[\\\"/Anicca/_next/static/css/a15edc4286471aad.css\\\",\\\"style\\\"]\\n:HL[\\\"/Anicca/_next/static/css/d770cf5c6548f5c3.css\\\",\\\"style\\\"]\\n\"])self.__next_f.push([1,\"0:{\\\"P\\\":null,\\\"b\\\":\\\"G0tgHltanXgUhENX7R9J8\\\",\\\"p\\\":\\\"/Anicca\\\",\\\"c\\\":[\\\"\\\",\\\"\\\"],\\\"i\\\":false,\\\"f\\\":[[[\\\"\\\",{\\\"children\\\":[\\\"__PAGE__\\\",{}]},\\\"$undefined\\\",\\\"$undefined\\\",true],[\\\"\\\",[\\\"$\\\",\\\"$1\\\",\\\"c\\\",{\\\"children\\\":[[[\\\"$\\\",\\\"link\\\",\\\"0\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/3b6c05e94c3cf803.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}]],[\\\"$\\\",\\\"html\\\",null,{\\\"lang\\\":\\\"zh-CN\\\",\\\"children\\\":[\\\"$\\\",\\\"body\\\",null,{\\\"style\\\":{\\\"margin\\\":0,\\\"padding\\\":0,\\\"overflow\\\":\\\"hidden\\\"},\\\"children\\\":[\\\"$\\\",\\\"$L2\\\",null,{\\\"parallelRouterKey\\\":\\\"children\\\",\\\"error\\\":\\\"$undefined\\\",\\\"errorStyles\\\":\\\"$undefined\\\",\\\"errorScripts\\\":\\\"$undefined\\\",\\\"template\\\":[\\\"$\\\",\\\"$L3\\\",null,{}],\\\"templateStyles\\\":\\\"$undefined\\\",\\\"templateScripts\\\":\\\"$undefined\\\",\\\"notFound\\\":[[[\\\"$\\\",\\\"title\\\",null,{\\\"children\\\":\\\"404: This page could not be found.\\\"}],[\\\"$\\\",\\\"div\\\",null,{\\\"style\\\":{\\\"fontFamily\\\":\\\"system-ui,\\\\\\\"Segoe UI\\\\\\\",Roboto,Helvetica,Arial,sans-serif,\\\\\\\"Apple Color Emoji\\\\\\\",\\\\\\\"Segoe UI Emoji\\\\\\\"\\\",\\\"height\\\":\\\"100vh\\\",\\\"textAlign\\\":\\\"center\\\",\\\"display\\\":\\\"flex\\\",\\\"flexDirection\\\":\\\"column\\\",\\\"alignItems\\\":\\\"center\\\",\\\"justifyContent\\\":\\\"center\\\"},\\\"children\\\":[\\\"$\\\",\\\"div\\\",null,{\\\"children\\\":[[\\\"$\\\",\\\"style\\\",null,{\\\"dangerouslySetInnerHTML\\\":{\\\"__html\\\":\\\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\\\"}}],[\\\"$\\\",\\\"h1\\\",null,{\\\"className\\\":\\\"next-error-h1\\\",\\\"style\\\":{\\\"display\\\":\\\"inline-block\\\",\\\"margin\\\":\\\"0 20px 0 0\\\",\\\"padding\\\":\\\"0 23px 0 0\\\",\\\"fontSize\\\":24,\\\"fontWeight\\\":500,\\\"verticalAlign\\\":\\\"top\\\",\\\"lineHeight\\\":\\\"49px\\\"},\\\"children\\\":404}],[\\\"$\\\",\\\"div\\\",null,{\\\"style\\\":{\\\"display\\\":\\\"inline-block\\\"},\\\"children\\\":[\\\"$\\\",\\\"h2\\\",null,{\\\"style\\\":{\\\"fontSize\\\":14,\\\"fontWeight\\\":400,\\\"lineHeight\\\":\\\"49px\\\",\\\"margin\\\":0},\\\"children\\\":\\\"This page could not be found.\\\"}]}]]}]}]],[]],\\\"forbidden\\\":\\\"$undefined\\\",\\\"unauthorized\\\":\\\"$undefined\\\"}]}]}]]}],{\\\"children\\\":[\\\"__PAGE__\\\",[\\\"$\\\",\\\"$1\\\",\\\"c\\\",{\\\"children\\\":[[\\\"$\\\",\\\"$L4\\\",null,{}],[[\\\"$\\\",\\\"link\\\",\\\"0\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/a15edc4286471aad.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}],[\\\"$\\\",\\\"link\\\",\\\"1\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/d770cf5c6548f5c3.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}]],[\\\"$\\\",\\\"$L5\\\",null,{\\\"children\\\":[\\\"$L6\\\",[\\\"$\\\",\\\"$L7\\\",null,{\\\"promise\\\":\\\"$@8\\\"}]]}]]}],{},null,false]},null,false],[\\\"$\\\",\\\"$1\\\",\\\"h\\\",{\\\"children\\\":[null,[[\\\"$\\\",\\\"$L9\\\",null,{\\\"children\\\":\\\"$La\\\"}],null],[\\\"$\\\",\\\"$Lb\\\",null,{\\\"children\\\":[\\\"$\\\",\\\"div\\\",null,{\\\"hidden\\\":true,\\\"children\\\":[\\\"$\\\",\\\"$c\\\",null,{\\\"fallback\\\":null,\\\"children\\\":\\\"$Ld\\\"}]}]}]]}],false]],\\\"m\\\":\\\"$undefined\\\",\\\"G\\\":[\\\"$e\\\",[]],\\\"s\\\":false,\\\"S\\\":true}\\n\"])self.__next_f.push([1,\"a:[[\\\"$\\\",\\\"meta\\\",\\\"0\\\",{\\\"charSet\\\":\\\"utf-8\\\"}],[\\\"$\\\",\\\"meta\\\",\\\"1\\\",{\\\"name\\\":\\\"viewport\\\",\\\"content\\\":\\\"width=device-width, initial-scale=1\\\"}]]\\n6:null\\n\"])self.__next_f.push([1,\"f:I[622,[],\\\"IconMark\\\"]\\n8:{\\\"metadata\\\":[[\\\"$\\\",\\\"title\\\",\\\"0\\\",{\\\"children\\\":\\\"Anicca\\\"}],[\\\"$\\\",\\\"meta\\\",\\\"1\\\",{\\\"name\\\":\\\"description\\\",\\\"content\\\":\\\"A conversation that dissolves\\\"}],[\\\"$\\\",\\\"link\\\",\\\"2\\\",{\\\"rel\\\":\\\"icon\\\",\\\"href\\\":\\\"/Anicca/icon.svg?07e7ddff468c0379\\\",\\\"type\\\":\\\"image/svg+xml\\\",\\\"sizes\\\":\\\"any\\\"}],[\\\"$\\\",\\\"$Lf\\\",\\\"3\\\",{}]],\\\"error\\\":null,\\\"digest\\\":\\\"$undefined\\\"}\\n\"])self.__next_f.push([1,\"d:\\\"$8:metadata\\\"\\n\"])"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "escape-desktop",
+      "passed": true,
+      "states": [
+        {
+          "name": "menu-only-closed",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 1440,
+          "height": 900,
+          "scrollY": 0,
+          "scrollWidth": 1440,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "visibleHeight": 900,
+            "hittable": true
+          },
+          "input": {
+            "x": 442,
+            "y": 828,
+            "width": 494,
+            "height": 44,
+            "bottom": 872,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 28,
+            "y": 24,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 53.265625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": true,
+          "mode": "read",
+          "scrollTop": 650,
+          "menu": false,
+          "focusId": "",
+          "focusText": "更多"
+        },
+        {
+          "name": "polarity-heading-closed",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 1440,
+          "height": 900,
+          "scrollY": 0,
+          "scrollWidth": 1440,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "visibleHeight": 900,
+            "hittable": true
+          },
+          "input": {
+            "x": 442,
+            "y": 828,
+            "width": 494,
+            "height": 44,
+            "bottom": 872,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 28,
+            "y": 24,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 53.265625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": true,
+          "mode": "read",
+          "scrollTop": 650,
+          "menu": false,
+          "focusId": "",
+          "focusText": "看极性两端换观察位置，看见两端"
+        },
+        {
+          "name": "reading-after-heading-closed",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 1440,
+          "height": 900,
+          "scrollY": 0,
+          "scrollWidth": 1440,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "visibleHeight": 900,
+            "hittable": true
+          },
+          "input": {
+            "x": 442,
+            "y": 828,
+            "width": 494,
+            "height": 44,
+            "bottom": 872,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 28,
+            "y": 24,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 53.265625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n社区花园是否应该保留不预设用…"
+        },
+        {
+          "name": "polarity-return-closed",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 1440,
+          "height": 900,
+          "scrollY": 0,
+          "scrollWidth": 1440,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "visibleHeight": 900,
+            "hittable": true
+          },
+          "input": {
+            "x": 442,
+            "y": 828,
+            "width": 494,
+            "height": 44,
+            "bottom": 872,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 28,
+            "y": 24,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 53.265625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": true,
+          "mode": "read",
+          "scrollTop": 650,
+          "menu": false,
+          "focusId": "",
+          "focusText": "看极性两端换观察位置，看见两端"
+        },
+        {
+          "name": "reading-after-return-closed",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 1440,
+          "height": 900,
+          "scrollY": 0,
+          "scrollWidth": 1440,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "visibleHeight": 900,
+            "hittable": true
+          },
+          "input": {
+            "x": 442,
+            "y": 828,
+            "width": 494,
+            "height": 44,
+            "bottom": 872,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 28,
+            "y": 24,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 53.265625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n社区花园是否应该保留不预设用…"
+        },
+        {
+          "name": "polarity-radio-closed",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 1440,
+          "height": 900,
+          "scrollY": 0,
+          "scrollWidth": 1440,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "visibleHeight": 900,
+            "hittable": true
+          },
+          "input": {
+            "x": 442,
+            "y": 828,
+            "width": 494,
+            "height": 44,
+            "bottom": 872,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 28,
+            "y": 24,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 53.265625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": true,
+          "mode": "read",
+          "scrollTop": 650,
+          "menu": false,
+          "focusId": "",
+          "focusText": "看极性两端换观察位置，看见两端"
+        },
+        {
+          "name": "reading-after-radio-closed",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 1440,
+          "height": 900,
+          "scrollY": 0,
+          "scrollWidth": 1440,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "visibleHeight": 900,
+            "hittable": true
+          },
+          "input": {
+            "x": 442,
+            "y": 828,
+            "width": 494,
+            "height": 44,
+            "bottom": 872,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 28,
+            "y": 24,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 53.265625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n社区花园是否应该保留不预设用…"
+        },
+        {
+          "name": "换个角度-closed",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 1440,
+          "height": 900,
+          "scrollY": 0,
+          "scrollWidth": 1440,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "visibleHeight": 900,
+            "hittable": true
+          },
+          "input": {
+            "x": 442,
+            "y": 828,
+            "width": 494,
+            "height": 44,
+            "bottom": 872,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 28,
+            "y": 24,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 53.265625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": true,
+          "mode": "read",
+          "scrollTop": 650,
+          "menu": false,
+          "focusId": "",
+          "focusText": "换个角度"
+        },
+        {
+          "name": "演化全景-closed",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 1440,
+          "height": 900,
+          "scrollY": 0,
+          "scrollWidth": 1440,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "visibleHeight": 900,
+            "hittable": true
+          },
+          "input": {
+            "x": 442,
+            "y": 828,
+            "width": 494,
+            "height": 44,
+            "bottom": 872,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 28,
+            "y": 24,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 53.265625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": true,
+          "mode": "read",
+          "scrollTop": 650,
+          "menu": false,
+          "focusId": "",
+          "focusText": "演化全景全景"
+        },
+        {
+          "name": "existing-window-680-700",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 680,
+          "height": 700,
+          "scrollY": 0,
+          "scrollWidth": 680,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 680,
+            "height": 700,
+            "bottom": 700,
+            "visibleHeight": 700,
+            "hittable": true
+          },
+          "input": {
+            "x": 62,
+            "y": 628,
+            "width": 494,
+            "height": 44,
+            "bottom": 672,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 22,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 48.828125,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n社区花园是否应该保留不预设用…"
+        },
+        {
+          "name": "existing-window-681-700",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 681,
+          "height": 700,
+          "scrollY": 0,
+          "scrollWidth": 681,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 681,
+            "height": 700,
+            "bottom": 700,
+            "visibleHeight": 700,
+            "hittable": true
+          },
+          "input": {
+            "x": 62.5,
+            "y": 628,
+            "width": 494,
+            "height": 44,
+            "bottom": 672,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 20,
+            "y": 22,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 48.828125,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n社区花园是否应该保留不预设用…"
+        },
+        {
+          "name": "existing-window-768-1024",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 768,
+          "height": 1024,
+          "scrollY": 0,
+          "scrollWidth": 768,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 768,
+            "height": 1024,
+            "bottom": 1024,
+            "visibleHeight": 1024,
+            "hittable": true
+          },
+          "input": {
+            "x": 106,
+            "y": 952,
+            "width": 494,
+            "height": 44,
+            "bottom": 996,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 28,
+            "y": 24,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 53.265625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n社区花园是否应该保留不预设用…"
+        },
+        {
+          "name": "existing-window-844-700",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 844,
+          "height": 700,
+          "scrollY": 0,
+          "scrollWidth": 844,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 844,
+            "height": 700,
+            "bottom": 700,
+            "visibleHeight": 700,
+            "hittable": true
+          },
+          "input": {
+            "x": 144,
+            "y": 628,
+            "width": 494,
+            "height": 44,
+            "bottom": 672,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 28,
+            "y": 24,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 53.265625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n社区花园是否应该保留不预设用…"
+        },
+        {
+          "name": "existing-window-980-700",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 980,
+          "height": 700,
+          "scrollY": 0,
+          "scrollWidth": 980,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 980,
+            "height": 700,
+            "bottom": 700,
+            "visibleHeight": 700,
+            "hittable": true
+          },
+          "input": {
+            "x": 212,
+            "y": 628,
+            "width": 494,
+            "height": 44,
+            "bottom": 672,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 28,
+            "y": 24,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 53.265625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n社区花园是否应该保留不预设用…"
+        },
+        {
+          "name": "existing-window-981-700",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 981,
+          "height": 700,
+          "scrollY": 0,
+          "scrollWidth": 981,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 981,
+            "height": 700,
+            "bottom": 700,
+            "visibleHeight": 700,
+            "hittable": true
+          },
+          "input": {
+            "x": 212.5,
+            "y": 628,
+            "width": 494,
+            "height": 44,
+            "bottom": 672,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 28,
+            "y": 24,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 53.265625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n社区花园是否应该保留不预设用…"
+        },
+        {
+          "name": "existing-window-844-390",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 844,
+          "height": 390,
+          "scrollY": 0,
+          "scrollWidth": 844,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 844,
+            "height": 390,
+            "bottom": 390,
+            "visibleHeight": 390,
+            "hittable": true
+          },
+          "input": {
+            "x": 144,
+            "y": 318,
+            "width": 494,
+            "height": 44,
+            "bottom": 362,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 28,
+            "y": 24,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 53.265625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n社区花园是否应该保留不预设用…"
+        },
+        {
+          "name": "existing-refresh-844",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 844,
+          "height": 700,
+          "scrollY": 0,
+          "scrollWidth": 844,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 844,
+            "height": 700,
+            "bottom": 700,
+            "visibleHeight": 700,
+            "hittable": true
+          },
+          "input": {
+            "x": 144,
+            "y": 628,
+            "width": 494,
+            "height": 44,
+            "bottom": 672,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 28,
+            "y": 24,
+            "width": 57.46875,
+            "height": 29.265625,
+            "bottom": 53.265625,
+            "visibleHeight": 29.265625,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。演化全景全景更多已就绪。最近工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。换个角度舞台当前结构社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n社区花园是否应该保留不预设用…收起谱系社区花园是否应该保留不预…社区花园是否应该保留不预…社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。 例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。 例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。 例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。 例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。 例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。 例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。 例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。 例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。 例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。 例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。 例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。 例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。基于「社区花园是否应该保留不预…」写新想法输入生成拖动空白，转动视角复位视角(self.__next_f=self.__next_f||[]).push([0])self.__next_f.push([1,\"1:\\\"$Sreact.fragment\\\"\\n2:I[9766,[],\\\"\\\"]\\n3:I[8924,[],\\\"\\\"]\\n4:I[6982,[\\\"533\\\",\\\"static/chunks/533-d576521e3e85288d.js\\\",\\\"974\\\",\\\"static/chunks/app/page-66b22e52f8370a9e.js\\\"],\\\"DialogueShell\\\"]\\n5:I[4431,[],\\\"OutletBoundary\\\"]\\n7:I[5278,[],\\\"AsyncMetadataOutlet\\\"]\\n9:I[4431,[],\\\"ViewportBoundary\\\"]\\nb:I[4431,[],\\\"MetadataBoundary\\\"]\\nc:\\\"$Sreact.suspense\\\"\\ne:I[7150,[],\\\"\\\"]\\n:HL[\\\"/Anicca/_next/static/css/3b6c05e94c3cf803.css\\\",\\\"style\\\"]\\n:HL[\\\"/Anicca/_next/static/css/a15edc4286471aad.css\\\",\\\"style\\\"]\\n:HL[\\\"/Anicca/_next/static/css/d770cf5c6548f5c3.css\\\",\\\"style\\\"]\\n\"])self.__next_f.push([1,\"0:{\\\"P\\\":null,\\\"b\\\":\\\"G0tgHltanXgUhENX7R9J8\\\",\\\"p\\\":\\\"/Anicca\\\",\\\"c\\\":[\\\"\\\",\\\"\\\"],\\\"i\\\":false,\\\"f\\\":[[[\\\"\\\",{\\\"children\\\":[\\\"__PAGE__\\\",{}]},\\\"$undefined\\\",\\\"$undefined\\\",true],[\\\"\\\",[\\\"$\\\",\\\"$1\\\",\\\"c\\\",{\\\"children\\\":[[[\\\"$\\\",\\\"link\\\",\\\"0\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/3b6c05e94c3cf803.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}]],[\\\"$\\\",\\\"html\\\",null,{\\\"lang\\\":\\\"zh-CN\\\",\\\"children\\\":[\\\"$\\\",\\\"body\\\",null,{\\\"style\\\":{\\\"margin\\\":0,\\\"padding\\\":0,\\\"overflow\\\":\\\"hidden\\\"},\\\"children\\\":[\\\"$\\\",\\\"$L2\\\",null,{\\\"parallelRouterKey\\\":\\\"children\\\",\\\"error\\\":\\\"$undefined\\\",\\\"errorStyles\\\":\\\"$undefined\\\",\\\"errorScripts\\\":\\\"$undefined\\\",\\\"template\\\":[\\\"$\\\",\\\"$L3\\\",null,{}],\\\"templateStyles\\\":\\\"$undefined\\\",\\\"templateScripts\\\":\\\"$undefined\\\",\\\"notFound\\\":[[[\\\"$\\\",\\\"title\\\",null,{\\\"children\\\":\\\"404: This page could not be found.\\\"}],[\\\"$\\\",\\\"div\\\",null,{\\\"style\\\":{\\\"fontFamily\\\":\\\"system-ui,\\\\\\\"Segoe UI\\\\\\\",Roboto,Helvetica,Arial,sans-serif,\\\\\\\"Apple Color Emoji\\\\\\\",\\\\\\\"Segoe UI Emoji\\\\\\\"\\\",\\\"height\\\":\\\"100vh\\\",\\\"textAlign\\\":\\\"center\\\",\\\"display\\\":\\\"flex\\\",\\\"flexDirection\\\":\\\"column\\\",\\\"alignItems\\\":\\\"center\\\",\\\"justifyContent\\\":\\\"center\\\"},\\\"children\\\":[\\\"$\\\",\\\"div\\\",null,{\\\"children\\\":[[\\\"$\\\",\\\"style\\\",null,{\\\"dangerouslySetInnerHTML\\\":{\\\"__html\\\":\\\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\\\"}}],[\\\"$\\\",\\\"h1\\\",null,{\\\"className\\\":\\\"next-error-h1\\\",\\\"style\\\":{\\\"display\\\":\\\"inline-block\\\",\\\"margin\\\":\\\"0 20px 0 0\\\",\\\"padding\\\":\\\"0 23px 0 0\\\",\\\"fontSize\\\":24,\\\"fontWeight\\\":500,\\\"verticalAlign\\\":\\\"top\\\",\\\"lineHeight\\\":\\\"49px\\\"},\\\"children\\\":404}],[\\\"$\\\",\\\"div\\\",null,{\\\"style\\\":{\\\"display\\\":\\\"inline-block\\\"},\\\"children\\\":[\\\"$\\\",\\\"h2\\\",null,{\\\"style\\\":{\\\"fontSize\\\":14,\\\"fontWeight\\\":400,\\\"lineHeight\\\":\\\"49px\\\",\\\"margin\\\":0},\\\"children\\\":\\\"This page could not be found.\\\"}]}]]}]}]],[]],\\\"forbidden\\\":\\\"$undefined\\\",\\\"unauthorized\\\":\\\"$undefined\\\"}]}]}]]}],{\\\"children\\\":[\\\"__PAGE__\\\",[\\\"$\\\",\\\"$1\\\",\\\"c\\\",{\\\"children\\\":[[\\\"$\\\",\\\"$L4\\\",null,{}],[[\\\"$\\\",\\\"link\\\",\\\"0\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/a15edc4286471aad.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}],[\\\"$\\\",\\\"link\\\",\\\"1\\\",{\\\"rel\\\":\\\"stylesheet\\\",\\\"href\\\":\\\"/Anicca/_next/static/css/d770cf5c6548f5c3.css\\\",\\\"precedence\\\":\\\"next\\\",\\\"crossOrigin\\\":\\\"$undefined\\\",\\\"nonce\\\":\\\"$undefined\\\"}]],[\\\"$\\\",\\\"$L5\\\",null,{\\\"children\\\":[\\\"$L6\\\",[\\\"$\\\",\\\"$L7\\\",null,{\\\"promise\\\":\\\"$@8\\\"}]]}]]}],{},null,false]},null,false],[\\\"$\\\",\\\"$1\\\",\\\"h\\\",{\\\"children\\\":[null,[[\\\"$\\\",\\\"$L9\\\",null,{\\\"children\\\":\\\"$La\\\"}],null],[\\\"$\\\",\\\"$Lb\\\",null,{\\\"children\\\":[\\\"$\\\",\\\"div\\\",null,{\\\"hidden\\\":true,\\\"children\\\":[\\\"$\\\",\\\"$c\\\",null,{\\\"fallback\\\":null,\\\"children\\\":\\\"$Ld\\\"}]}]}]]}],false]],\\\"m\\\":\\\"$undefined\\\",\\\"G\\\":[\\\"$e\\\",[]],\\\"s\\\":false,\\\"S\\\":true}\\n\"])self.__next_f.push([1,\"a:[[\\\"$\\\",\\\"meta\\\",\\\"0\\\",{\\\"charSet\\\":\\\"utf-8\\\"}],[\\\"$\\\",\\\"meta\\\",\\\"1\\\",{\\\"name\\\":\\\"viewport\\\",\\\"content\\\":\\\"width=device-width, initial-scale=1\\\"}]]\\n6:null\\n\"])self.__next_f.push([1,\"f:I[622,[],\\\"IconMark\\\"]\\n8:{\\\"metadata\\\":[[\\\"$\\\",\\\"title\\\",\\\"0\\\",{\\\"children\\\":\\\"Anicca\\\"}],[\\\"$\\\",\\\"meta\\\",\\\"1\\\",{\\\"name\\\":\\\"description\\\",\\\"content\\\":\\\"A conversation that dissolves\\\"}],[\\\"$\\\",\\\"link\\\",\\\"2\\\",{\\\"rel\\\":\\\"icon\\\",\\\"href\\\":\\\"/Anicca/icon.svg?07e7ddff468c0379\\\",\\\"type\\\":\\\"image/svg+xml\\\",\\\"sizes\\\":\\\"any\\\"}],[\\\"$\\\",\\\"$Lf\\\",\\\"3\\\",{}]],\\\"error\\\":null,\\\"digest\\\":\\\"$undefined\\\"}\\n\"])self.__next_f.push([1,\"d:\\\"$8:metadata\\\"\\n\"])"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "escape-mobile",
+      "passed": true,
+      "states": [
+        {
+          "name": "menu-only-closed",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 390,
+          "height": 844,
+          "scrollY": 0,
+          "scrollWidth": 390,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "visibleHeight": 844,
+            "hittable": true
+          },
+          "input": {
+            "x": 18,
+            "y": 772,
+            "width": 292,
+            "height": 44,
+            "bottom": 816,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 22,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 48.828125,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": true,
+          "mode": "read",
+          "scrollTop": 650,
+          "menu": false,
+          "focusId": "",
+          "focusText": "更多"
+        },
+        {
+          "name": "polarity-heading-closed",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 390,
+          "height": 844,
+          "scrollY": 0,
+          "scrollWidth": 390,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "visibleHeight": 844,
+            "hittable": true
+          },
+          "input": {
+            "x": 18,
+            "y": 772,
+            "width": 292,
+            "height": 44,
+            "bottom": 816,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 22,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 48.828125,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": true,
+          "mode": "read",
+          "scrollTop": 650,
+          "menu": false,
+          "focusId": "",
+          "focusText": "看极性两端换观察位置，看见两端"
+        },
+        {
+          "name": "reading-after-heading-closed",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 390,
+          "height": 844,
+          "scrollY": 0,
+          "scrollWidth": 390,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "visibleHeight": 844,
+            "hittable": true
+          },
+          "input": {
+            "x": 18,
+            "y": 772,
+            "width": 292,
+            "height": 44,
+            "bottom": 816,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 22,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 48.828125,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n社区花园是否应该保留不预设用…"
+        },
+        {
+          "name": "polarity-return-closed",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 390,
+          "height": 844,
+          "scrollY": 0,
+          "scrollWidth": 390,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "visibleHeight": 844,
+            "hittable": true
+          },
+          "input": {
+            "x": 18,
+            "y": 772,
+            "width": 292,
+            "height": 44,
+            "bottom": 816,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 22,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 48.828125,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": true,
+          "mode": "read",
+          "scrollTop": 650,
+          "menu": false,
+          "focusId": "",
+          "focusText": "看极性两端换观察位置，看见两端"
+        },
+        {
+          "name": "reading-after-return-closed",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 390,
+          "height": 844,
+          "scrollY": 0,
+          "scrollWidth": 390,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "visibleHeight": 844,
+            "hittable": true
+          },
+          "input": {
+            "x": 18,
+            "y": 772,
+            "width": 292,
+            "height": 44,
+            "bottom": 816,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 22,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 48.828125,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n社区花园是否应该保留不预设用…"
+        },
+        {
+          "name": "polarity-radio-closed",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 390,
+          "height": 844,
+          "scrollY": 0,
+          "scrollWidth": 390,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "visibleHeight": 844,
+            "hittable": true
+          },
+          "input": {
+            "x": 18,
+            "y": 772,
+            "width": 292,
+            "height": 44,
+            "bottom": 816,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 22,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 48.828125,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": true,
+          "mode": "read",
+          "scrollTop": 650,
+          "menu": false,
+          "focusId": "",
+          "focusText": "看极性两端换观察位置，看见两端"
+        },
+        {
+          "name": "reading-after-radio-closed",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 390,
+          "height": 844,
+          "scrollY": 0,
+          "scrollWidth": 390,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "visibleHeight": 844,
+            "hittable": true
+          },
+          "input": {
+            "x": 18,
+            "y": 772,
+            "width": 292,
+            "height": 44,
+            "bottom": 816,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 22,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 48.828125,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": false,
+          "menu": false,
+          "focusId": "",
+          "focusText": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n社区花园是否应该保留不预设用…"
+        },
+        {
+          "name": "换个角度-closed",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 390,
+          "height": 844,
+          "scrollY": 0,
+          "scrollWidth": 390,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "visibleHeight": 844,
+            "hittable": true
+          },
+          "input": {
+            "x": 18,
+            "y": 772,
+            "width": 292,
+            "height": 44,
+            "bottom": 816,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 22,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 48.828125,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": true,
+          "mode": "read",
+          "scrollTop": 650,
+          "menu": false,
+          "focusId": "",
+          "focusText": "换个角度"
+        },
+        {
+          "name": "演化全景-closed",
+          "url": "https://aitoshuu.me/Anicca",
+          "width": 390,
+          "height": 844,
+          "scrollY": 0,
+          "scrollWidth": 390,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "visibleHeight": 844,
+            "hittable": true
+          },
+          "input": {
+            "x": 18,
+            "y": 772,
+            "width": 292,
+            "height": 44,
+            "bottom": 816,
+            "visibleHeight": 44,
+            "hittable": true
+          },
+          "header": {
+            "x": 24,
+            "y": 22,
+            "width": 52.671875,
+            "height": 26.828125,
+            "bottom": 48.828125,
+            "visibleHeight": 26.828125,
+            "hittable": true
+          },
+          "reading": true,
+          "mode": "read",
+          "scrollTop": 650,
+          "menu": false,
+          "focusId": "",
+          "focusText": "演化全景全景"
+        }
+      ],
+      "errors": []
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+import {mkdir,writeFile,copyFile} from 'node:fs/promises';
+import path from 'node:path';
+import {chromium} from '/Users/aitoshuu/Documents/GitHub/Anicca/node_modules/playwright/index.mjs';
+import {thoughtFlowFixture} from '/Users/aitoshuu/Documents/GitHub/Anicca/scripts/visual-smoke/thought-flow.mjs';
+import {waitForSeedLayout} from '/Users/aitoshuu/Documents/GitHub/Anicca/scripts/visual-smoke/seeds.mjs';
+
+const output='/Users/aitoshuu/Documents/GitHub/Anicca/docs/reviews/2026-10-28-app-experience/evidence';
+await mkdir(output,{recursive:true});
+const browser=await chromium.launch({headless:true,args:['--use-angle=metal']});
+const results=[];
+const frame=page=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+async function measure(page){return page.evaluate(()=>{
+ const box=selector=>{const el=document.querySelector(selector);if(!el)return null;const r=el.getBoundingClientRect(),s=getComputedStyle(el);return {x:r.x,y:r.y,width:r.width,height:r.height,bottom:r.bottom,boxSizing:s.boxSizing,cssHeight:s.height,paddingBottom:s.paddingBottom,overflow:s.overflow,visibleHeight:Math.max(0,Math.min(r.bottom,innerHeight)-Math.max(r.y,0))};};
+ const shell=document.querySelector('[data-testid="dialogue-shell"]'),ss=shell?getComputedStyle(shell):null;
+ return {url:location.href,width:innerWidth,height:innerHeight,scrollY,bodyOverflow:getComputedStyle(document.body).overflow,bodyScrollHeight:document.body.scrollHeight,shell:box('[data-testid="dialogue-shell"]'),composer:box('[data-testid="dialogue-composer"]'),input:box('#dialogue-input'),viewportHeight:ss?.getPropertyValue('--dialogue-viewport-height'),legacyReserve:ss?.getPropertyValue('--mobile-composer-reserve'),readingOpen:document.querySelector('#dialogue-reading-drawer')?.dataset.open==='true',readerScrollTop:document.querySelector('[data-testid="dialogue-panel"]')?.scrollTop,focus:{tag:document.activeElement?.tagName,id:document.activeElement?.id},stageCamera:{...document.querySelector('[data-testid="dialogue-stage-track"]')?.dataset}};
+ });}
+async function makeContext(spec){const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},isMobile:spec.touch,hasTouch:spec.touch});await context.addInitScript(fixture=>{if(!localStorage.getItem('anicca_workspace_active_v1'))localStorage.setItem('anicca_workspace_v2',JSON.stringify(fixture));localStorage.setItem('anicca.dialogue.appearance.v1','light');},thoughtFlowFixture);return context;}
+try{
+ for(const spec of [{name:'boundary-680',width:680,height:700,touch:true},{name:'boundary-681',width:681,height:700,touch:true},{name:'tablet-768',width:768,height:1024,touch:true},{name:'window-844',width:844,height:700,touch:false},{name:'boundary-980',width:980,height:700,touch:true},{name:'boundary-981',width:981,height:700,touch:true},{name:'landscape-844',width:844,height:390,touch:true}]){
+  const context=await makeContext(spec),page=await context.newPage();page.setDefaultTimeout(15000);
+  const item={spec,errors:[],states:[]};results.push(item);page.on('pageerror',e=>item.errors.push(e.message));
+  try{
+   await page.goto('https://aitoshuu.me/Anicca',{waitUntil:'networkidle'});await page.waitForFunction(()=>document.querySelector('[data-testid="dialogue-stage-track"]')?.dataset.metaballRenderer==='ready');await page.evaluate(()=>document.fonts.ready.then(()=>undefined));
+   const guide=page.getByRole('button',{name:'关闭提示',exact:true});if(await guide.isVisible())await guide.click();await frame(page);
+   item.states.push({name:'initial',...await measure(page)});
+   if(['boundary-680','tablet-768','boundary-981','landscape-844'].includes(spec.name))await page.screenshot({path:path.join(output,`${spec.name}-initial.png`)});
+   if(spec.name==='landscape-844'){
+    const client=await context.newCDPSession(page);await client.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:24,y:180}]});
+    for(let step=1;step<=8;step++)await client.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:24,y:180-step*12}]});
+    await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await frame(page);item.states.push({name:'after-blank-touch-swipe',...await measure(page)});
+    await page.locator('[data-testid="dialogue-shell"]').evaluate(el=>{el.style.paddingBottom='0px';});await frame(page);item.states.push({name:'temporary-padding-zero-diagnostic',...await measure(page)});await page.screenshot({path:path.join(output,'landscape-844-temporary-padding-zero.png')});
+   }
+   item.completed=true;
+  }catch(error){item.failure=String(error);}finally{await context.close();console.log(JSON.stringify({name:spec.name,completed:item.completed,failure:item.failure,states:item.states.map(s=>({name:s.name,shellHeight:s.shell?.height,paddingBottom:s.shell?.paddingBottom,inputY:s.input?.y,inputVisibleHeight:s.input?.visibleHeight,scrollY:s.scrollY}))}));}
+ }
+ const spec={name:'history-utf8-recheck',width:390,height:844,touch:true},context=await makeContext(spec),page=await context.newPage(),history={spec,states:[]};
+ try{
+  const source='https://tongye.me/Anicca?review-source=1';await page.route(source,route=>route.fulfill({contentType:'text/html; charset=utf-8',body:'<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>本轮合成来源页</title></head><body><p>本轮合成来源页，仅用于浏览器返回验证。</p></body></html>'}));
+  await page.goto(source);await page.goto('https://tongye.me/Anicca',{waitUntil:'networkidle'});const guide=page.getByRole('button',{name:'关闭提示',exact:true});if(await guide.isVisible())await guide.click();await waitForSeedLayout(page);await page.getByTestId('dialogue-stage-node-root').locator('[data-seed-caption]').click();await page.locator('#dialogue-reading-drawer[data-open="true"]').waitFor();await page.getByTestId('dialogue-panel').evaluate(el=>{el.scrollTop=650;el.dispatchEvent(new Event('scroll'));});history.states.push({name:'before-browser-back',...await measure(page)});
+  await page.goBack({waitUntil:'domcontentloaded'});history.states.push({name:'after-browser-back',...await measure(page)});await page.screenshot({path:path.join(output,'history-after-browser-back.png')});await page.goForward({waitUntil:'networkidle'});history.states.push({name:'after-browser-forward',...await measure(page)});history.completed=true;
+ }catch(error){history.failure=String(error);}finally{await context.close();await writeFile(path.join(output,'history-recheck.json'),JSON.stringify({createdAt:new Date().toISOString(),revision:'8995c52917ebcb2aee7a345eb0883da928f95c33',method:'Synthetic same-origin UTF-8 history fixture; browser history only, not native system gesture',history},null,2));}
+}finally{
+ await browser.close();await writeFile(path.join(output,'responsive-boundary.json'),JSON.stringify({createdAt:new Date().toISOString(),revision:'8995c52917ebcb2aee7a345eb0883da928f95c33',method:'Isolated public-site Chromium contexts with synthetic root; screenshot/layout review. Temporary padding-zero style only in one context is a diagnostic, not a product change. CDP touch swipe is emulation, not physical hardware.',results},null,2));await copyFile('/tmp/anicca-app-review-supplement-20261028.mjs',path.join(output,'capture-supplement.mjs.txt'));
+}

@@ -1,0 +1,5293 @@
+{
+  "createdAt": "2026-10-28T08:47:29.211Z",
+  "revision": "8995c52917ebcb2aee7a345eb0883da928f95c33",
+  "method": "Existing project Playwright, isolated Chromium public-site contexts, synthetic garden; controlled 502 POSTs; history source is an intercepted same-origin synthetic page, not a native browser-back gesture",
+  "results": [
+    {
+      "spec": {
+        "name": "desktop",
+        "width": 1440,
+        "height": 900,
+        "touch": false
+      },
+      "states": [
+        {
+          "name": "entry",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 1440,
+          "height": 900,
+          "visualViewport": {
+            "width": 1440,
+            "height": 900,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 1440,
+          "bodyScrollHeight": 900,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 432,
+            "y": 824,
+            "width": 576,
+            "height": 52,
+            "bottom": 876,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 442,
+            "y": 828,
+            "width": 494,
+            "height": 44,
+            "bottom": 872,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": null,
+          "readingOpen": false,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "BODY",
+            "id": "",
+            "label": null,
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "reading-middle",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 1440,
+          "height": 900,
+          "visualViewport": {
+            "width": 1440,
+            "height": 900,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 1440,
+          "bodyScrollHeight": 900,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 432,
+            "y": 824,
+            "width": 576,
+            "height": 52,
+            "bottom": 876,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 442,
+            "y": 828,
+            "width": 494,
+            "height": 44,
+            "bottom": 872,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 460,
+            "y": 112,
+            "width": 520,
+            "height": 640,
+            "bottom": 752,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "label": null,
+            "text": "花园的开放与维护"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "reading-more",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 1440,
+          "height": 900,
+          "visualViewport": {
+            "width": 1440,
+            "height": 900,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 1440,
+          "bodyScrollHeight": 900,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 432,
+            "y": 824,
+            "width": 576,
+            "height": 52,
+            "bottom": 876,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 442,
+            "y": 828,
+            "width": 494,
+            "height": 44,
+            "bottom": 872,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 460,
+            "y": 112,
+            "width": 520,
+            "height": 640,
+            "bottom": 752,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": true,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": null,
+            "text": "重命名工作区"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "after-more-escape",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 1440,
+          "height": 900,
+          "visualViewport": {
+            "width": 1440,
+            "height": 900,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 1440,
+          "bodyScrollHeight": 900,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 432,
+            "y": 824,
+            "width": 576,
+            "height": 52,
+            "bottom": 876,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 442,
+            "y": 828,
+            "width": 494,
+            "height": 44,
+            "bottom": 872,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": null,
+          "readingOpen": false,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": "花园的开放与维护，当前焦点",
+            "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "polarity-title-focus",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 1440,
+          "height": 900,
+          "visualViewport": {
+            "width": 1440,
+            "height": 900,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 1440,
+          "bodyScrollHeight": 900,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 432,
+            "y": 824,
+            "width": 576,
+            "height": 52,
+            "bottom": 876,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 442,
+            "y": 828,
+            "width": 494,
+            "height": 44,
+            "bottom": 872,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 460,
+            "y": 197.96875,
+            "width": 520,
+            "height": 468.0625,
+            "bottom": 666.03125,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "polarity",
+          "scrollTop": 0,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "label": null,
+            "text": "沿极性展开"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "after-polarity-title-escape",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 1440,
+          "height": 900,
+          "visualViewport": {
+            "width": 1440,
+            "height": 900,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 1440,
+          "bodyScrollHeight": 900,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 432,
+            "y": 824,
+            "width": 576,
+            "height": 52,
+            "bottom": 876,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 442,
+            "y": 828,
+            "width": 494,
+            "height": 44,
+            "bottom": 872,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": null,
+          "readingOpen": false,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": "花园的开放与维护，当前焦点",
+            "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "perspective",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 1440,
+          "height": 900,
+          "visualViewport": {
+            "width": 1440,
+            "height": 900,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 1440,
+          "bodyScrollHeight": 900,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 432,
+            "y": 824,
+            "width": 576,
+            "height": 52,
+            "bottom": 876,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 442,
+            "y": 828,
+            "width": 494,
+            "height": 44,
+            "bottom": 872,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 460,
+            "y": 112,
+            "width": 520,
+            "height": 640,
+            "bottom": 752,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [
+            {
+              "x": 495,
+              "y": 60,
+              "width": 450,
+              "height": 780,
+              "bottom": 840,
+              "display": "block",
+              "visibility": "visible",
+              "position": "fixed",
+              "overflow": "auto",
+              "minHeight": "0px"
+            }
+          ],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": "关闭思考空间",
+            "text": "×"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "after-perspective-escape",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 1440,
+          "height": 900,
+          "visualViewport": {
+            "width": 1440,
+            "height": 900,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 1440,
+          "bodyScrollHeight": 900,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 432,
+            "y": 824,
+            "width": 576,
+            "height": 52,
+            "bottom": 876,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 442,
+            "y": 828,
+            "width": 494,
+            "height": 44,
+            "bottom": 872,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 460,
+            "y": 112,
+            "width": 520,
+            "height": 640,
+            "bottom": 752,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": "换个角度",
+            "text": "换个角度"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "panorama",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 1440,
+          "height": 900,
+          "visualViewport": {
+            "width": 1440,
+            "height": 900,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 1440,
+          "bodyScrollHeight": 900,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 432,
+            "y": 824,
+            "width": 576,
+            "height": 52,
+            "bottom": 876,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 442,
+            "y": 828,
+            "width": 494,
+            "height": 44,
+            "bottom": 872,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 460,
+            "y": 112,
+            "width": 520,
+            "height": 640,
+            "bottom": 752,
+            "display": "flex",
+            "visibility": "hidden",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": true,
+          "dialogs": [],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": null,
+            "text": "返回种子"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready",
+            "spacePaused": "true"
+          }
+        },
+        {
+          "name": "after-panorama-escape",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 1440,
+          "height": 900,
+          "visualViewport": {
+            "width": 1440,
+            "height": 900,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 1440,
+          "bodyScrollHeight": 900,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 432,
+            "y": 824,
+            "width": 576,
+            "height": 52,
+            "bottom": 876,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 442,
+            "y": 828,
+            "width": 494,
+            "height": 44,
+            "bottom": 872,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 460,
+            "y": 112,
+            "width": 520,
+            "height": 640,
+            "bottom": 752,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": "演化全景",
+            "text": "演化全景全景"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "rename",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 1440,
+          "height": 900,
+          "visualViewport": {
+            "width": 1440,
+            "height": 900,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 1440,
+          "bodyScrollHeight": 900,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 432,
+            "y": 824,
+            "width": 576,
+            "height": 52,
+            "bottom": 876,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 442,
+            "y": 828,
+            "width": 494,
+            "height": 44,
+            "bottom": 872,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 460,
+            "y": 112,
+            "width": 520,
+            "height": 640,
+            "bottom": 752,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "INPUT",
+            "id": "",
+            "label": "工作区名称",
+            "text": ""
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "after-enter-pending",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 1440,
+          "height": 900,
+          "visualViewport": {
+            "width": 1440,
+            "height": 900,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 1440,
+          "bodyScrollHeight": 900,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 432,
+            "y": 739,
+            "width": 576,
+            "height": 137,
+            "bottom": 876,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 442,
+            "y": 768,
+            "width": 472.671875,
+            "height": 44,
+            "bottom": 812,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": null,
+          "readingOpen": false,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "TEXTAREA",
+            "id": "dialogue-input",
+            "label": "输入",
+            "text": "第一行想法，需要给下一行留出空间。"
+          },
+          "inputValue": "第一行想法，需要给下一行留出空间。",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "error-recovery",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 1440,
+          "height": 900,
+          "visualViewport": {
+            "width": 1440,
+            "height": 900,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 1440,
+          "bodyScrollHeight": 900,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900,
+            "bottom": 900,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 432,
+            "y": 625,
+            "width": 576,
+            "height": 251,
+            "bottom": 876,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 442,
+            "y": 654,
+            "width": 480,
+            "height": 44,
+            "bottom": 698,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": null,
+          "readingOpen": false,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "TEXTAREA",
+            "id": "dialogue-input",
+            "label": "输入",
+            "text": "第一行想法，需要给下一行留出空间。"
+          },
+          "inputValue": "第一行想法，需要给下一行留出空间。",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        }
+      ],
+      "errors": [],
+      "postRequests": [
+        {
+          "endpoint": "/Anicca/api/branches",
+          "body": {
+            "requestId": "req_a7b3833d-04d0-4905-bc43-bce833539105",
+            "userText": "第一行想法，需要给下一行留出空间。",
+            "perspective": {
+              "version": 1,
+              "axes": [
+                {
+                  "id": "scale",
+                  "label": "尺度",
+                  "negative": "细节",
+                  "positive": "整体",
+                  "placement": "x",
+                  "evidence": "content"
+                },
+                {
+                  "id": "concern",
+                  "label": "关切",
+                  "negative": "个体",
+                  "positive": "群体",
+                  "placement": "y",
+                  "evidence": "content"
+                },
+                {
+                  "id": "horizon",
+                  "label": "时间",
+                  "negative": "当下",
+                  "positive": "长远",
+                  "placement": "z",
+                  "evidence": "content"
+                }
+              ],
+              "focus": {}
+            },
+            "contextMessages": [
+              {
+                "role": "user",
+                "content": "[想法 · 花园的开放与维护 · id=root · 来源=无] 社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n"
+              }
+            ],
+            "comparisonSeeds": [
+              {
+                "id": "positive",
+                "label": "共享试验的空间",
+                "text": "保留共同发现的余地，让临时尝试可以被修改。"
+              },
+              {
+                "id": "negative",
+                "label": "维护责任的分配",
+                "text": "谁能决定用途，谁承担没有参与的维护代价？"
+              }
+            ],
+            "meaningVersion": 1
+          }
+        }
+      ],
+      "screens": [
+        "desktop-entry.png",
+        "desktop-reading-middle.png",
+        "desktop-reading-more.png",
+        "desktop-after-more-escape.png",
+        "desktop-polarity-title-focus.png",
+        "desktop-after-polarity-title-escape.png",
+        "desktop-perspective.png",
+        "desktop-after-perspective-escape.png",
+        "desktop-panorama.png",
+        "desktop-after-panorama-escape.png",
+        "desktop-rename.png",
+        "desktop-after-enter-pending.png",
+        "desktop-error-recovery.png"
+      ],
+      "panoramaTabs": [
+        {
+          "id": "",
+          "label": "搜索想法或极性",
+          "tag": "INPUT",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": "筛选演化关系",
+          "tag": "SELECT",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": "演化关系图：拖动平移，滚轮或双指缩放；左右键逐个查看想法，Enter 阅读，Home 查看全景",
+          "tag": "CANVAS",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": "缩小全景",
+          "tag": "BUTTON",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": null,
+          "tag": "BUTTON",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": "放大全景",
+          "tag": "BUTTON",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": null,
+          "tag": "P",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": null,
+          "tag": "BUTTON",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": null,
+          "tag": "BUTTON",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": null,
+          "tag": "BUTTON",
+          "inside": true
+        }
+      ],
+      "completed": true
+    },
+    {
+      "spec": {
+        "name": "mobile-390",
+        "width": 390,
+        "height": 844,
+        "touch": true
+      },
+      "states": [
+        {
+          "name": "entry",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 390,
+          "height": 844,
+          "visualViewport": {
+            "width": 390,
+            "height": 844,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 390,
+          "bodyScrollHeight": 844,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 768,
+            "width": 374,
+            "height": 52,
+            "bottom": 820,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 772,
+            "width": 292,
+            "height": 44,
+            "bottom": 816,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": null,
+          "readingOpen": false,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "BODY",
+            "id": "",
+            "label": null,
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "reading-middle",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 390,
+          "height": 844,
+          "visualViewport": {
+            "width": 390,
+            "height": 844,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 390,
+          "bodyScrollHeight": 844,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 768,
+            "width": 374,
+            "height": 52,
+            "bottom": 820,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 772,
+            "width": 292,
+            "height": 44,
+            "bottom": 816,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 24,
+            "y": 112,
+            "width": 342,
+            "height": 584,
+            "bottom": 696,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "label": null,
+            "text": "花园的开放与维护"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "reading-more",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 390,
+          "height": 844,
+          "visualViewport": {
+            "width": 390,
+            "height": 844,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 390,
+          "bodyScrollHeight": 844,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 768,
+            "width": 374,
+            "height": 52,
+            "bottom": 820,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 772,
+            "width": 292,
+            "height": 44,
+            "bottom": 816,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 24,
+            "y": 112,
+            "width": 342,
+            "height": 584,
+            "bottom": 696,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": true,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": null,
+            "text": "重命名工作区"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "after-more-escape",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 390,
+          "height": 844,
+          "visualViewport": {
+            "width": 390,
+            "height": 844,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 390,
+          "bodyScrollHeight": 844,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 768,
+            "width": 374,
+            "height": 52,
+            "bottom": 820,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 772,
+            "width": 292,
+            "height": 44,
+            "bottom": 816,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": null,
+          "readingOpen": false,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": "花园的开放与维护，当前焦点",
+            "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "polarity-title-focus",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 390,
+          "height": 844,
+          "visualViewport": {
+            "width": 390,
+            "height": 844,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 390,
+          "bodyScrollHeight": 844,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 768,
+            "width": 374,
+            "height": 52,
+            "bottom": 820,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 772,
+            "width": 292,
+            "height": 44,
+            "bottom": 816,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 24,
+            "y": 175.765625,
+            "width": 342,
+            "height": 456.46875,
+            "bottom": 632.234375,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "polarity",
+          "scrollTop": 0,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "label": null,
+            "text": "沿极性展开"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "after-polarity-title-escape",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 390,
+          "height": 844,
+          "visualViewport": {
+            "width": 390,
+            "height": 844,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 390,
+          "bodyScrollHeight": 844,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 768,
+            "width": 374,
+            "height": 52,
+            "bottom": 820,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 772,
+            "width": 292,
+            "height": 44,
+            "bottom": 816,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": null,
+          "readingOpen": false,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": "花园的开放与维护，当前焦点",
+            "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "perspective",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 390,
+          "height": 844,
+          "visualViewport": {
+            "width": 390,
+            "height": 844,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 390,
+          "bodyScrollHeight": 844,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 768,
+            "width": 374,
+            "height": 52,
+            "bottom": 820,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 772,
+            "width": 292,
+            "height": 44,
+            "bottom": 816,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 24,
+            "y": 112,
+            "width": 342,
+            "height": 584,
+            "bottom": 696,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [
+            {
+              "x": 16,
+              "y": 32,
+              "width": 358,
+              "height": 780,
+              "bottom": 812,
+              "display": "block",
+              "visibility": "visible",
+              "position": "fixed",
+              "overflow": "auto",
+              "minHeight": "0px"
+            }
+          ],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": "关闭思考空间",
+            "text": "×"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "after-perspective-escape",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 390,
+          "height": 844,
+          "visualViewport": {
+            "width": 390,
+            "height": 844,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 390,
+          "bodyScrollHeight": 844,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 768,
+            "width": 374,
+            "height": 52,
+            "bottom": 820,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 772,
+            "width": 292,
+            "height": 44,
+            "bottom": 816,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 24,
+            "y": 112,
+            "width": 342,
+            "height": 584,
+            "bottom": 696,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": "换个角度",
+            "text": "换个角度"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "panorama",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 390,
+          "height": 844,
+          "visualViewport": {
+            "width": 390,
+            "height": 844,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 390,
+          "bodyScrollHeight": 844,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 768,
+            "width": 374,
+            "height": 52,
+            "bottom": 820,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 772,
+            "width": 292,
+            "height": 44,
+            "bottom": 816,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 24,
+            "y": 112,
+            "width": 342,
+            "height": 584,
+            "bottom": 696,
+            "display": "flex",
+            "visibility": "hidden",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": true,
+          "dialogs": [],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": null,
+            "text": "返回种子"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready",
+            "spacePaused": "true"
+          }
+        },
+        {
+          "name": "after-panorama-escape",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 390,
+          "height": 844,
+          "visualViewport": {
+            "width": 390,
+            "height": 844,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 390,
+          "bodyScrollHeight": 844,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 768,
+            "width": 374,
+            "height": 52,
+            "bottom": 820,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 772,
+            "width": 292,
+            "height": 44,
+            "bottom": 816,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 24,
+            "y": 112,
+            "width": 342,
+            "height": 584,
+            "bottom": 696,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": "演化全景",
+            "text": "演化全景全景"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "rename",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 390,
+          "height": 844,
+          "visualViewport": {
+            "width": 390,
+            "height": 844,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 390,
+          "bodyScrollHeight": 844,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 768,
+            "width": 374,
+            "height": 52,
+            "bottom": 820,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 772,
+            "width": 292,
+            "height": 44,
+            "bottom": 816,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 24,
+            "y": 112,
+            "width": 342,
+            "height": 584,
+            "bottom": 696,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "INPUT",
+            "id": "",
+            "label": "工作区名称",
+            "text": ""
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "after-enter-pending",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 390,
+          "height": 844,
+          "visualViewport": {
+            "width": 390,
+            "height": 844,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 390,
+          "bodyScrollHeight": 844,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 709,
+            "width": 374,
+            "height": 111,
+            "bottom": 820,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 713,
+            "width": 219.671875,
+            "height": 68,
+            "bottom": 781,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": null,
+          "readingOpen": false,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "TEXTAREA",
+            "id": "dialogue-input",
+            "label": "输入",
+            "text": "第一行想法，需要给下一行留出空间。"
+          },
+          "inputValue": "第一行想法，需要给下一行留出空间。",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "error-recovery",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 390,
+          "height": 844,
+          "visualViewport": {
+            "width": 390,
+            "height": 844,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 390,
+          "bodyScrollHeight": 844,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 573,
+            "width": 374,
+            "height": 247,
+            "bottom": 820,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 577,
+            "width": 226.390625,
+            "height": 68,
+            "bottom": 645,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": null,
+          "readingOpen": false,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "TEXTAREA",
+            "id": "dialogue-input",
+            "label": "输入",
+            "text": "第一行想法，需要给下一行留出空间。"
+          },
+          "inputValue": "第一行想法，需要给下一行留出空间。",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        }
+      ],
+      "errors": [],
+      "postRequests": [
+        {
+          "endpoint": "/Anicca/api/branches",
+          "body": {
+            "requestId": "req_8216e1d6-5504-444f-8781-f5252adacea1",
+            "userText": "第一行想法，需要给下一行留出空间。",
+            "perspective": {
+              "version": 1,
+              "axes": [
+                {
+                  "id": "scale",
+                  "label": "尺度",
+                  "negative": "细节",
+                  "positive": "整体",
+                  "placement": "x",
+                  "evidence": "content"
+                },
+                {
+                  "id": "concern",
+                  "label": "关切",
+                  "negative": "个体",
+                  "positive": "群体",
+                  "placement": "y",
+                  "evidence": "content"
+                },
+                {
+                  "id": "horizon",
+                  "label": "时间",
+                  "negative": "当下",
+                  "positive": "长远",
+                  "placement": "z",
+                  "evidence": "content"
+                }
+              ],
+              "focus": {}
+            },
+            "contextMessages": [
+              {
+                "role": "user",
+                "content": "[想法 · 花园的开放与维护 · id=root · 来源=无] 社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n"
+              }
+            ],
+            "comparisonSeeds": [
+              {
+                "id": "positive",
+                "label": "共享试验的空间",
+                "text": "保留共同发现的余地，让临时尝试可以被修改。"
+              },
+              {
+                "id": "negative",
+                "label": "维护责任的分配",
+                "text": "谁能决定用途，谁承担没有参与的维护代价？"
+              }
+            ],
+            "meaningVersion": 1
+          }
+        }
+      ],
+      "screens": [
+        "mobile-390-entry.png",
+        "mobile-390-reading-middle.png",
+        "mobile-390-reading-more.png",
+        "mobile-390-after-more-escape.png",
+        "mobile-390-polarity-title-focus.png",
+        "mobile-390-after-polarity-title-escape.png",
+        "mobile-390-perspective.png",
+        "mobile-390-after-perspective-escape.png",
+        "mobile-390-panorama.png",
+        "mobile-390-after-panorama-escape.png",
+        "mobile-390-rename.png",
+        "mobile-390-after-enter-pending.png",
+        "mobile-390-error-recovery.png"
+      ],
+      "panoramaTabs": [
+        {
+          "id": "",
+          "label": "搜索想法或极性",
+          "tag": "INPUT",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": "筛选演化关系",
+          "tag": "SELECT",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": "演化关系图：拖动平移，滚轮或双指缩放；左右键逐个查看想法，Enter 阅读，Home 查看全景",
+          "tag": "CANVAS",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": "缩小全景",
+          "tag": "BUTTON",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": null,
+          "tag": "BUTTON",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": "放大全景",
+          "tag": "BUTTON",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": null,
+          "tag": "P",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": null,
+          "tag": "BUTTON",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": null,
+          "tag": "BUTTON",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": null,
+          "tag": "BUTTON",
+          "inside": true
+        }
+      ],
+      "completed": true
+    },
+    {
+      "spec": {
+        "name": "mobile-landscape",
+        "width": 844,
+        "height": 390,
+        "touch": true
+      },
+      "states": [
+        {
+          "name": "entry",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 844,
+          "height": 390,
+          "visualViewport": {
+            "width": 844,
+            "height": 390,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 844,
+          "bodyScrollHeight": 566,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 844,
+            "height": 566,
+            "bottom": 566,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 134,
+            "y": 490,
+            "width": 576,
+            "height": 52,
+            "bottom": 542,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 144,
+            "y": 494,
+            "width": 494,
+            "height": 44,
+            "bottom": 538,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": null,
+          "readingOpen": false,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "BODY",
+            "id": "",
+            "label": null,
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "reading-middle",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 844,
+          "height": 390,
+          "visualViewport": {
+            "width": 844,
+            "height": 390,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 844,
+          "bodyScrollHeight": 566,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 844,
+            "height": 566,
+            "bottom": 566,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 134,
+            "y": 490,
+            "width": 576,
+            "height": 52,
+            "bottom": 542,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 144,
+            "y": 494,
+            "width": 494,
+            "height": 44,
+            "bottom": 538,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 162,
+            "y": 96,
+            "width": 520,
+            "height": 322,
+            "bottom": 418,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "label": null,
+            "text": "花园的开放与维护"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "reading-more",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 844,
+          "height": 390,
+          "visualViewport": {
+            "width": 844,
+            "height": 390,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 844,
+          "bodyScrollHeight": 566,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 844,
+            "height": 566,
+            "bottom": 566,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 134,
+            "y": 490,
+            "width": 576,
+            "height": 52,
+            "bottom": 542,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 144,
+            "y": 494,
+            "width": 494,
+            "height": 44,
+            "bottom": 538,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 162,
+            "y": 96,
+            "width": 520,
+            "height": 322,
+            "bottom": 418,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": true,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": null,
+            "text": "重命名工作区"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "after-more-escape",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 844,
+          "height": 390,
+          "visualViewport": {
+            "width": 844,
+            "height": 390,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 844,
+          "bodyScrollHeight": 566,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 844,
+            "height": 566,
+            "bottom": 566,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 134,
+            "y": 490,
+            "width": 576,
+            "height": 52,
+            "bottom": 542,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 144,
+            "y": 494,
+            "width": 494,
+            "height": 44,
+            "bottom": 538,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": null,
+          "readingOpen": false,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": "花园的开放与维护，当前焦点",
+            "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "polarity-title-focus",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 844,
+          "height": 390,
+          "visualViewport": {
+            "width": 844,
+            "height": 390,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 844,
+          "bodyScrollHeight": 566,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 844,
+            "height": 566,
+            "bottom": 566,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 134,
+            "y": 490,
+            "width": 576,
+            "height": 52,
+            "bottom": 542,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 144,
+            "y": 494,
+            "width": 494,
+            "height": 44,
+            "bottom": 538,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 162,
+            "y": 96,
+            "width": 520,
+            "height": 322,
+            "bottom": 418,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "polarity",
+          "scrollTop": 0,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "label": null,
+            "text": "沿极性展开"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "after-polarity-title-escape",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 844,
+          "height": 390,
+          "visualViewport": {
+            "width": 844,
+            "height": 390,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 844,
+          "bodyScrollHeight": 566,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 844,
+            "height": 566,
+            "bottom": 566,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 134,
+            "y": 490,
+            "width": 576,
+            "height": 52,
+            "bottom": 542,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 144,
+            "y": 494,
+            "width": 494,
+            "height": 44,
+            "bottom": 538,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": null,
+          "readingOpen": false,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": "花园的开放与维护，当前焦点",
+            "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "perspective",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 844,
+          "height": 390,
+          "visualViewport": {
+            "width": 844,
+            "height": 390,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 844,
+          "bodyScrollHeight": 566,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 844,
+            "height": 566,
+            "bottom": 566,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 134,
+            "y": 490,
+            "width": 576,
+            "height": 52,
+            "bottom": 542,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 144,
+            "y": 494,
+            "width": 494,
+            "height": 44,
+            "bottom": 538,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 162,
+            "y": 96,
+            "width": 520,
+            "height": 322,
+            "bottom": 418,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [
+            {
+              "x": 197,
+              "y": 24,
+              "width": 450,
+              "height": 342,
+              "bottom": 366,
+              "display": "block",
+              "visibility": "visible",
+              "position": "fixed",
+              "overflow": "auto",
+              "minHeight": "0px"
+            }
+          ],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": "关闭思考空间",
+            "text": "×"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "after-perspective-escape",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 844,
+          "height": 390,
+          "visualViewport": {
+            "width": 844,
+            "height": 390,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 844,
+          "bodyScrollHeight": 566,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 844,
+            "height": 566,
+            "bottom": 566,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 134,
+            "y": 490,
+            "width": 576,
+            "height": 52,
+            "bottom": 542,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 144,
+            "y": 494,
+            "width": 494,
+            "height": 44,
+            "bottom": 538,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 162,
+            "y": 96,
+            "width": 520,
+            "height": 322,
+            "bottom": 418,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": "换个角度",
+            "text": "换个角度"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "panorama",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 844,
+          "height": 390,
+          "visualViewport": {
+            "width": 844,
+            "height": 390,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 844,
+          "bodyScrollHeight": 566,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 844,
+            "height": 566,
+            "bottom": 566,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 134,
+            "y": 490,
+            "width": 576,
+            "height": 52,
+            "bottom": 542,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 144,
+            "y": 494,
+            "width": 494,
+            "height": 44,
+            "bottom": 538,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 162,
+            "y": 96,
+            "width": 520,
+            "height": 322,
+            "bottom": 418,
+            "display": "flex",
+            "visibility": "hidden",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": true,
+          "dialogs": [],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": null,
+            "text": "返回种子"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready",
+            "spacePaused": "true"
+          }
+        },
+        {
+          "name": "after-panorama-escape",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 844,
+          "height": 390,
+          "visualViewport": {
+            "width": 844,
+            "height": 390,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 844,
+          "bodyScrollHeight": 566,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 844,
+            "height": 566,
+            "bottom": 566,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 134,
+            "y": 490,
+            "width": 576,
+            "height": 52,
+            "bottom": 542,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 144,
+            "y": 494,
+            "width": 494,
+            "height": 44,
+            "bottom": 538,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 162,
+            "y": 96,
+            "width": 520,
+            "height": 322,
+            "bottom": 418,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": "演化全景",
+            "text": "演化全景全景"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "rename",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 844,
+          "height": 390,
+          "visualViewport": {
+            "width": 844,
+            "height": 390,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 844,
+          "bodyScrollHeight": 566,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 844,
+            "height": 566,
+            "bottom": 566,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 134,
+            "y": 490,
+            "width": 576,
+            "height": 52,
+            "bottom": 542,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 144,
+            "y": 494,
+            "width": 494,
+            "height": 44,
+            "bottom": 538,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 162,
+            "y": 96,
+            "width": 520,
+            "height": 322,
+            "bottom": 418,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "INPUT",
+            "id": "",
+            "label": "工作区名称",
+            "text": ""
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "after-enter-pending",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 844,
+          "height": 390,
+          "visualViewport": {
+            "width": 844,
+            "height": 390,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 844,
+          "bodyScrollHeight": 566,
+          "shell": {
+            "x": 0,
+            "y": -176,
+            "width": 844,
+            "height": 566,
+            "bottom": 390,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 134,
+            "y": 279,
+            "width": 576,
+            "height": 87,
+            "bottom": 366,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 144,
+            "y": 283,
+            "width": 414,
+            "height": 44,
+            "bottom": 327,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": null,
+          "readingOpen": false,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "TEXTAREA",
+            "id": "dialogue-input",
+            "label": "输入",
+            "text": "第一行想法，需要给下一行留出空间。"
+          },
+          "inputValue": "第一行想法，需要给下一行留出空间。",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "error-recovery",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 844,
+          "height": 390,
+          "visualViewport": {
+            "width": 844,
+            "height": 390,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 844,
+          "bodyScrollHeight": 566,
+          "shell": {
+            "x": 0,
+            "y": -176,
+            "width": 844,
+            "height": 566,
+            "bottom": 390,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 134,
+            "y": 165,
+            "width": 576,
+            "height": 201,
+            "bottom": 366,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 144,
+            "y": 169,
+            "width": 422,
+            "height": 44,
+            "bottom": 213,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": null,
+          "readingOpen": false,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "TEXTAREA",
+            "id": "dialogue-input",
+            "label": "输入",
+            "text": "第一行想法，需要给下一行留出空间。"
+          },
+          "inputValue": "第一行想法，需要给下一行留出空间。",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        }
+      ],
+      "errors": [],
+      "postRequests": [
+        {
+          "endpoint": "/Anicca/api/branches",
+          "body": {
+            "requestId": "req_6426757a-9c28-4b0c-ba51-f339d860399c",
+            "userText": "第一行想法，需要给下一行留出空间。",
+            "perspective": {
+              "version": 1,
+              "axes": [
+                {
+                  "id": "scale",
+                  "label": "尺度",
+                  "negative": "细节",
+                  "positive": "整体",
+                  "placement": "x",
+                  "evidence": "content"
+                },
+                {
+                  "id": "concern",
+                  "label": "关切",
+                  "negative": "个体",
+                  "positive": "群体",
+                  "placement": "y",
+                  "evidence": "content"
+                },
+                {
+                  "id": "horizon",
+                  "label": "时间",
+                  "negative": "当下",
+                  "positive": "长远",
+                  "placement": "z",
+                  "evidence": "content"
+                }
+              ],
+              "focus": {}
+            },
+            "contextMessages": [
+              {
+                "role": "user",
+                "content": "[想法 · 花园的开放与维护 · id=root · 来源=无] 社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n"
+              }
+            ],
+            "comparisonSeeds": [
+              {
+                "id": "positive",
+                "label": "共享试验的空间",
+                "text": "保留共同发现的余地，让临时尝试可以被修改。"
+              },
+              {
+                "id": "negative",
+                "label": "维护责任的分配",
+                "text": "谁能决定用途，谁承担没有参与的维护代价？"
+              }
+            ],
+            "meaningVersion": 1
+          }
+        }
+      ],
+      "screens": [
+        "mobile-landscape-entry.png",
+        "mobile-landscape-reading-middle.png",
+        "mobile-landscape-reading-more.png",
+        "mobile-landscape-after-more-escape.png",
+        "mobile-landscape-polarity-title-focus.png",
+        "mobile-landscape-after-polarity-title-escape.png",
+        "mobile-landscape-perspective.png",
+        "mobile-landscape-after-perspective-escape.png",
+        "mobile-landscape-panorama.png",
+        "mobile-landscape-after-panorama-escape.png",
+        "mobile-landscape-rename.png",
+        "mobile-landscape-after-enter-pending.png",
+        "mobile-landscape-error-recovery.png"
+      ],
+      "panoramaTabs": [
+        {
+          "id": "",
+          "label": "搜索想法或极性",
+          "tag": "INPUT",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": "筛选演化关系",
+          "tag": "SELECT",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": "演化关系图：拖动平移，滚轮或双指缩放；左右键逐个查看想法，Enter 阅读，Home 查看全景",
+          "tag": "CANVAS",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": "缩小全景",
+          "tag": "BUTTON",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": null,
+          "tag": "BUTTON",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": "放大全景",
+          "tag": "BUTTON",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": null,
+          "tag": "P",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": null,
+          "tag": "BUTTON",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": null,
+          "tag": "BUTTON",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": null,
+          "tag": "BUTTON",
+          "inside": true
+        }
+      ],
+      "completed": true
+    },
+    {
+      "spec": {
+        "name": "mobile-dark",
+        "width": 360,
+        "height": 780,
+        "touch": true,
+        "theme": "dark"
+      },
+      "states": [
+        {
+          "name": "entry",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 360,
+          "height": 780,
+          "visualViewport": {
+            "width": 360,
+            "height": 780,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 360,
+          "bodyScrollHeight": 780,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 360,
+            "height": 780,
+            "bottom": 780,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 704,
+            "width": 344,
+            "height": 52,
+            "bottom": 756,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 708,
+            "width": 262,
+            "height": 44,
+            "bottom": 752,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": null,
+          "readingOpen": false,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "BODY",
+            "id": "",
+            "label": null,
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "dark",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "reading-middle",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 360,
+          "height": 780,
+          "visualViewport": {
+            "width": 360,
+            "height": 780,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 360,
+          "bodyScrollHeight": 780,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 360,
+            "height": 780,
+            "bottom": 780,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 704,
+            "width": 344,
+            "height": 52,
+            "bottom": 756,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 708,
+            "width": 262,
+            "height": 44,
+            "bottom": 752,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 24,
+            "y": 112,
+            "width": 312,
+            "height": 520,
+            "bottom": 632,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "label": null,
+            "text": "花园的开放与维护"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "dark",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "reading-more",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 360,
+          "height": 780,
+          "visualViewport": {
+            "width": 360,
+            "height": 780,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 360,
+          "bodyScrollHeight": 780,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 360,
+            "height": 780,
+            "bottom": 780,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 704,
+            "width": 344,
+            "height": 52,
+            "bottom": 756,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 708,
+            "width": 262,
+            "height": 44,
+            "bottom": 752,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 24,
+            "y": 112,
+            "width": 312,
+            "height": 520,
+            "bottom": 632,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": true,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": null,
+            "text": "重命名工作区"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "dark",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "after-more-escape",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 360,
+          "height": 780,
+          "visualViewport": {
+            "width": 360,
+            "height": 780,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 360,
+          "bodyScrollHeight": 780,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 360,
+            "height": 780,
+            "bottom": 780,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 704,
+            "width": 344,
+            "height": 52,
+            "bottom": 756,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 708,
+            "width": 262,
+            "height": 44,
+            "bottom": 752,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": null,
+          "readingOpen": false,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": "花园的开放与维护，当前焦点",
+            "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "dark",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "polarity-title-focus",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 360,
+          "height": 780,
+          "visualViewport": {
+            "width": 360,
+            "height": 780,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 360,
+          "bodyScrollHeight": 780,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 360,
+            "height": 780,
+            "bottom": 780,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 704,
+            "width": 344,
+            "height": 52,
+            "bottom": 756,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 708,
+            "width": 262,
+            "height": 44,
+            "bottom": 752,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 24,
+            "y": 123.96875,
+            "width": 312,
+            "height": 496.0625,
+            "bottom": 620.03125,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "polarity",
+          "scrollTop": 0,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "label": null,
+            "text": "沿极性展开"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "dark",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "after-polarity-title-escape",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 360,
+          "height": 780,
+          "visualViewport": {
+            "width": 360,
+            "height": 780,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 360,
+          "bodyScrollHeight": 780,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 360,
+            "height": 780,
+            "bottom": 780,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 704,
+            "width": 344,
+            "height": 52,
+            "bottom": 756,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 708,
+            "width": 262,
+            "height": 44,
+            "bottom": 752,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": null,
+          "readingOpen": false,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": "花园的开放与维护，当前焦点",
+            "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "dark",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "perspective",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 360,
+          "height": 780,
+          "visualViewport": {
+            "width": 360,
+            "height": 780,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 360,
+          "bodyScrollHeight": 780,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 360,
+            "height": 780,
+            "bottom": 780,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 704,
+            "width": 344,
+            "height": 52,
+            "bottom": 756,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 708,
+            "width": 262,
+            "height": 44,
+            "bottom": 752,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 24,
+            "y": 112,
+            "width": 312,
+            "height": 520,
+            "bottom": 632,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [
+            {
+              "x": 16,
+              "y": 24,
+              "width": 328,
+              "height": 732,
+              "bottom": 756,
+              "display": "block",
+              "visibility": "visible",
+              "position": "fixed",
+              "overflow": "auto",
+              "minHeight": "0px"
+            }
+          ],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": "关闭思考空间",
+            "text": "×"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "dark",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "after-perspective-escape",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 360,
+          "height": 780,
+          "visualViewport": {
+            "width": 360,
+            "height": 780,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 360,
+          "bodyScrollHeight": 780,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 360,
+            "height": 780,
+            "bottom": 780,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 704,
+            "width": 344,
+            "height": 52,
+            "bottom": 756,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 708,
+            "width": 262,
+            "height": 44,
+            "bottom": 752,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 24,
+            "y": 112,
+            "width": 312,
+            "height": 520,
+            "bottom": 632,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": "换个角度",
+            "text": "换个角度"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "dark",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "panorama",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 360,
+          "height": 780,
+          "visualViewport": {
+            "width": 360,
+            "height": 780,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 360,
+          "bodyScrollHeight": 780,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 360,
+            "height": 780,
+            "bottom": 780,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 704,
+            "width": 344,
+            "height": 52,
+            "bottom": 756,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 708,
+            "width": 262,
+            "height": 44,
+            "bottom": 752,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 24,
+            "y": 112,
+            "width": 312,
+            "height": 520,
+            "bottom": 632,
+            "display": "flex",
+            "visibility": "hidden",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": true,
+          "dialogs": [],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": null,
+            "text": "返回种子"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "dark",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready",
+            "spacePaused": "true"
+          }
+        },
+        {
+          "name": "after-panorama-escape",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 360,
+          "height": 780,
+          "visualViewport": {
+            "width": 360,
+            "height": 780,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 360,
+          "bodyScrollHeight": 780,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 360,
+            "height": 780,
+            "bottom": 780,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 704,
+            "width": 344,
+            "height": 52,
+            "bottom": 756,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 708,
+            "width": 262,
+            "height": 44,
+            "bottom": 752,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 24,
+            "y": 112,
+            "width": 312,
+            "height": 520,
+            "bottom": 632,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": "演化全景",
+            "text": "演化全景全景"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "dark",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "rename",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 360,
+          "height": 780,
+          "visualViewport": {
+            "width": 360,
+            "height": 780,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 360,
+          "bodyScrollHeight": 780,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 360,
+            "height": 780,
+            "bottom": 780,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 704,
+            "width": 344,
+            "height": 52,
+            "bottom": 756,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 708,
+            "width": 262,
+            "height": 44,
+            "bottom": 752,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 24,
+            "y": 112,
+            "width": 312,
+            "height": 520,
+            "bottom": 632,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 650,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "INPUT",
+            "id": "",
+            "label": "工作区名称",
+            "text": ""
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "dark",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "after-enter-pending",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 360,
+          "height": 780,
+          "visualViewport": {
+            "width": 360,
+            "height": 780,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 360,
+          "bodyScrollHeight": 780,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 360,
+            "height": 780,
+            "bottom": 780,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 645,
+            "width": 344,
+            "height": 111,
+            "bottom": 756,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 649,
+            "width": 189.671875,
+            "height": 68,
+            "bottom": 717,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": null,
+          "readingOpen": false,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "TEXTAREA",
+            "id": "dialogue-input",
+            "label": "输入",
+            "text": "第一行想法，需要给下一行留出空间。"
+          },
+          "inputValue": "第一行想法，需要给下一行留出空间。",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "dark",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "error-recovery",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 360,
+          "height": 780,
+          "visualViewport": {
+            "width": 360,
+            "height": 780,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 360,
+          "bodyScrollHeight": 780,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 360,
+            "height": 780,
+            "bottom": 780,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 509,
+            "width": 344,
+            "height": 247,
+            "bottom": 756,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 513,
+            "width": 196.390625,
+            "height": 68,
+            "bottom": 581,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": null,
+          "readingOpen": false,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "TEXTAREA",
+            "id": "dialogue-input",
+            "label": "输入",
+            "text": "第一行想法，需要给下一行留出空间。"
+          },
+          "inputValue": "第一行想法，需要给下一行留出空间。",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "dark",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        }
+      ],
+      "errors": [],
+      "postRequests": [
+        {
+          "endpoint": "/Anicca/api/branches",
+          "body": {
+            "requestId": "req_e3af1820-c645-4af3-925c-af0bf9a23559",
+            "userText": "第一行想法，需要给下一行留出空间。",
+            "perspective": {
+              "version": 1,
+              "axes": [
+                {
+                  "id": "scale",
+                  "label": "尺度",
+                  "negative": "细节",
+                  "positive": "整体",
+                  "placement": "x",
+                  "evidence": "content"
+                },
+                {
+                  "id": "concern",
+                  "label": "关切",
+                  "negative": "个体",
+                  "positive": "群体",
+                  "placement": "y",
+                  "evidence": "content"
+                },
+                {
+                  "id": "horizon",
+                  "label": "时间",
+                  "negative": "当下",
+                  "positive": "长远",
+                  "placement": "z",
+                  "evidence": "content"
+                }
+              ],
+              "focus": {}
+            },
+            "contextMessages": [
+              {
+                "role": "user",
+                "content": "[想法 · 花园的开放与维护 · id=root · 来源=无] 社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n"
+              }
+            ],
+            "comparisonSeeds": [
+              {
+                "id": "positive",
+                "label": "共享试验的空间",
+                "text": "保留共同发现的余地，让临时尝试可以被修改。"
+              },
+              {
+                "id": "negative",
+                "label": "维护责任的分配",
+                "text": "谁能决定用途，谁承担没有参与的维护代价？"
+              }
+            ],
+            "meaningVersion": 1
+          }
+        }
+      ],
+      "screens": [
+        "mobile-dark-entry.png",
+        "mobile-dark-reading-middle.png",
+        "mobile-dark-reading-more.png",
+        "mobile-dark-after-more-escape.png",
+        "mobile-dark-polarity-title-focus.png",
+        "mobile-dark-after-polarity-title-escape.png",
+        "mobile-dark-perspective.png",
+        "mobile-dark-after-perspective-escape.png",
+        "mobile-dark-panorama.png",
+        "mobile-dark-after-panorama-escape.png",
+        "mobile-dark-rename.png",
+        "mobile-dark-after-enter-pending.png",
+        "mobile-dark-error-recovery.png"
+      ],
+      "panoramaTabs": [
+        {
+          "id": "",
+          "label": "搜索想法或极性",
+          "tag": "INPUT",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": "筛选演化关系",
+          "tag": "SELECT",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": "演化关系图：拖动平移，滚轮或双指缩放；左右键逐个查看想法，Enter 阅读，Home 查看全景",
+          "tag": "CANVAS",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": "缩小全景",
+          "tag": "BUTTON",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": null,
+          "tag": "BUTTON",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": "放大全景",
+          "tag": "BUTTON",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": null,
+          "tag": "P",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": null,
+          "tag": "BUTTON",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": null,
+          "tag": "BUTTON",
+          "inside": true
+        },
+        {
+          "id": "",
+          "label": null,
+          "tag": "BUTTON",
+          "inside": true
+        }
+      ],
+      "completed": true
+    },
+    {
+      "spec": {
+        "name": "history",
+        "width": 390,
+        "height": 844,
+        "touch": true
+      },
+      "states": [
+        {
+          "name": "before-browser-back",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "width": 390,
+          "height": 844,
+          "visualViewport": {
+            "width": 390,
+            "height": 844,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 390,
+          "bodyScrollHeight": 844,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 768,
+            "width": 374,
+            "height": 52,
+            "bottom": 820,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 772,
+            "width": 292,
+            "height": 44,
+            "bottom": 816,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 6.837493896484375,
+            "y": 72,
+            "width": 342,
+            "height": 584,
+            "bottom": 656,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 0,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "label": null,
+            "text": "花园的开放与维护"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        },
+        {
+          "name": "after-browser-back",
+          "url": "https://tongye.me/Anicca?review-source=1",
+          "title": "æœ¬è½®åˆæˆæ¥æºé¡µ",
+          "width": 980,
+          "height": 2121,
+          "visualViewport": {
+            "width": 980,
+            "height": 2120.820556640625,
+            "offsetTop": 0,
+            "scale": 0.3979591727256775
+          },
+          "htmlScrollWidth": 980,
+          "bodyScrollHeight": 22,
+          "shell": null,
+          "composer": null,
+          "input": null,
+          "reader": null,
+          "readingOpen": false,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "BODY",
+            "id": "",
+            "label": null,
+            "text": "æœ¬è½®åˆæˆæ¥æºé¡µï¼Œä»…ç”¨äºŽæµè§ˆå™¨è¿”å›žéªŒè¯ã€‚"
+          },
+          "camera": {}
+        },
+        {
+          "name": "after-browser-forward",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "width": 390,
+          "height": 844,
+          "visualViewport": {
+            "width": 390,
+            "height": 844,
+            "offsetTop": 0,
+            "scale": 1
+          },
+          "htmlScrollWidth": 390,
+          "bodyScrollHeight": 844,
+          "shell": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844,
+            "bottom": 844,
+            "display": "block",
+            "visibility": "visible",
+            "position": "relative",
+            "overflow": "clip",
+            "minHeight": "0px"
+          },
+          "composer": {
+            "x": 8,
+            "y": 768,
+            "width": 374,
+            "height": 52,
+            "bottom": 820,
+            "display": "grid",
+            "visibility": "visible",
+            "position": "absolute",
+            "overflow": "visible",
+            "minHeight": "0px"
+          },
+          "input": {
+            "x": 18,
+            "y": 772,
+            "width": 292,
+            "height": 44,
+            "bottom": 816,
+            "display": "block",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto hidden",
+            "minHeight": "44px"
+          },
+          "reader": {
+            "x": 24,
+            "y": 112,
+            "width": 342,
+            "height": 584,
+            "bottom": 696,
+            "display": "flex",
+            "visibility": "visible",
+            "position": "static",
+            "overflow": "auto",
+            "minHeight": "0px"
+          },
+          "readerMode": "read",
+          "scrollTop": 0,
+          "readingOpen": true,
+          "menuOpen": false,
+          "overviewOpen": false,
+          "dialogs": [],
+          "focused": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "label": null,
+            "text": "花园的开放与维护"
+          },
+          "inputValue": "",
+          "camera": {
+            "atmosphere": "false",
+            "theme": "light",
+            "space": "3d",
+            "spaceYaw": "0",
+            "spacePitch": "0",
+            "spaceZoom": "1",
+            "spacePanX": "0",
+            "spacePanY": "0",
+            "labelInsetTop": "0",
+            "labelInsetBottom": "0",
+            "testid": "dialogue-stage-track",
+            "metaballRenderer": "ready"
+          }
+        }
+      ],
+      "completed": true
+    }
+  ]
+}

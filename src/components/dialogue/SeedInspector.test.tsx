@@ -92,15 +92,21 @@ it("keeps identical unconstrained observation frames quiet", () => {
   expect(screen.getByRole("button", { name: "看极性两端" })).toBeEnabled();
 });
 
-it("closes the inline axis choice with Escape without dismissing the reading parent", () => {
+it.each(["heading", "return", "radio"])("closes the inline axis choice from %s with Escape without dismissing the reading parent", target => {
   const store = new BranchGraphStore(), root = store.createUserNode("问题"), escape = vi.fn();
   window.addEventListener("keydown", escape);
   const view = render(<SeedInspector graph={store.getGraph()} nodeId={root} combining={false} busy={false}
     onClose={vi.fn()} onWrite={vi.fn()} onCombine={vi.fn()} onPick={vi.fn()} onSplit={vi.fn()} onExpandPolarity={vi.fn()} />);
   try {
     fireEvent.click(screen.getByRole("button", { name: "看极性两端" }));
-    fireEvent.keyDown(screen.getByRole("radio", { name: /尺度/ }), { key: "Escape" });
+    const control = target === "heading" ? screen.getByRole("heading", { name: "沿极性展开" })
+      : target === "return" ? screen.getByRole("button", { name: "返回种子阅读" })
+      : screen.getByRole("radio", { name: /尺度/ });
+    control.focus();
+    fireEvent.keyDown(control, { key: "Escape" });
     expect(screen.queryByRole("group", { name: "沿哪条维度展开" })).not.toBeInTheDocument();
+    expect(screen.getByTestId("dialogue-panel")).toHaveAttribute("data-mode", "read");
+    expect(screen.getByRole("button", { name: "看极性两端" })).toHaveFocus();
     expect(escape).not.toHaveBeenCalled();
   } finally { view.unmount(); window.removeEventListener("keydown", escape); }
 });

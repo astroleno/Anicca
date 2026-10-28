@@ -1,0 +1,120 @@
+{
+  "createdAt": "2026-10-28T09:08:54.942Z",
+  "method": "Fresh empty workspace; only help-dismissed local setting; coordinate touchscreen tap on visible empty-stage prompt. Emulation, not real OS keyboard.",
+  "results": [
+    {
+      "host": "aitoshuu.me",
+      "errors": [],
+      "before": {
+        "url": "https://aitoshuu.me/Anicca",
+        "scrollY": 0,
+        "height": 1024,
+        "width": 768,
+        "input": {
+          "x": 106,
+          "y": 1128,
+          "width": 494,
+          "height": 44,
+          "bottom": 1172,
+          "visibleHeight": 0,
+          "centerHittable": false
+        },
+        "prompt": {
+          "x": 242.875,
+          "y": 441.75,
+          "width": 282.25,
+          "height": 44,
+          "bottom": 485.75,
+          "visibleHeight": 44,
+          "centerHittable": true
+        },
+        "focused": "",
+        "rootCount": 0
+      },
+      "after": {
+        "url": "https://aitoshuu.me/Anicca",
+        "scrollY": 0,
+        "height": 1024,
+        "width": 768,
+        "input": {
+          "x": 106,
+          "y": 1128,
+          "width": 494,
+          "height": 44,
+          "bottom": 1172,
+          "visibleHeight": 0,
+          "centerHittable": false
+        },
+        "prompt": {
+          "x": 242.875,
+          "y": 441.75,
+          "width": 282.25,
+          "height": 44,
+          "bottom": 485.75,
+          "visibleHeight": 44,
+          "centerHittable": true
+        },
+        "focused": "dialogue-input",
+        "rootCount": 0
+      },
+      "completed": true
+    },
+    {
+      "host": "tongye.me",
+      "errors": [],
+      "before": {
+        "url": "https://tongye.me/Anicca",
+        "scrollY": 0,
+        "height": 1024,
+        "width": 768,
+        "input": {
+          "x": 106,
+          "y": 1128,
+          "width": 494,
+          "height": 44,
+          "bottom": 1172,
+          "visibleHeight": 0,
+          "centerHittable": false
+        },
+        "prompt": {
+          "x": 242.875,
+          "y": 441.75,
+          "width": 282.25,
+          "height": 44,
+          "bottom": 485.75,
+          "visibleHeight": 44,
+          "centerHittable": true
+        },
+        "focused": "",
+        "rootCount": 0
+      },
+      "after": {
+        "url": "https://tongye.me/Anicca",
+        "scrollY": 0,
+        "height": 1024,
+        "width": 768,
+        "input": {
+          "x": 106,
+          "y": 1128,
+          "width": 494,
+          "height": 44,
+          "bottom": 1172,
+          "visibleHeight": 0,
+          "centerHittable": false
+        },
+        "prompt": {
+          "x": 242.875,
+          "y": 441.75,
+          "width": 282.25,
+          "height": 44,
+          "bottom": 485.75,
+          "visibleHeight": 44,
+          "centerHittable": true
+        },
+        "focused": "dialogue-input",
+        "rootCount": 0
+      },
+      "completed": true
+    }
+  ]
+}

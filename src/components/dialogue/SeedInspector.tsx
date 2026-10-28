@@ -120,8 +120,7 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
         {useCurrentAngle ? "用种子原来的角度" : "改用当前角度"}</button> : null}
     </p> : null}
     {!expansionFrame.axes.length ? <p className={styles.seedLensHint}>在「换个角度」中添加维度，就可以沿两端展开。</p> : null}
-    {polarityOpen && chosenAxis && onExpandPolarity ? <fieldset id="seed-polarity-picker" className={styles.polarityPicker}
-      onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); setPolarityOpen(false); } }}>
+    {polarityOpen && chosenAxis && onExpandPolarity ? <fieldset id="seed-polarity-picker" className={styles.polarityPicker}>
       <legend>沿哪条维度展开</legend>
       <div className={styles.polarityAxes}>{expansionFrame.axes.map(axis => <label key={axis.id}>
         <input type="radio" name="seed-polarity-axis" value={axis.id} checked={chosenAxis.id === axis.id}
@@ -140,6 +139,12 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
   return (
     <section ref={inspectorRef} className={styles.seedInspector} data-testid="dialogue-panel" aria-labelledby="conversation-panel-heading"
       data-mode={polarityOpen ? "polarity" : combining ? "combine" : "read"} data-selecting={selecting ? "true" : undefined}
+      onKeyDown={event => {
+        if (event.key !== "Escape" || !polarityOpen) return;
+        event.preventDefault();
+        event.stopPropagation();
+        setPolarityOpen(false);
+      }}
       onScroll={event => { if (!polarityOpen && !combining) { readingPositionRef.current = captureReadingPosition(event.currentTarget); onRememberPosition?.(nodeId, readingPositionRef.current); } }}>
       <header className={styles.seedInspectorHeader}>
         <span>{polarityOpen ? `从「${seedLabel(graph, nodeId)}」继续` : combining ? "组合" : activeEncounter ? "暂不融合" : inquiry ? inquiryLabel(inquiry.intent) : origin ? "极性视角" : node.branchType || "想法"}</span>

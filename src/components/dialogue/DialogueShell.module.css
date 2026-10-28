@@ -2998,6 +2998,8 @@
 .shell {
   height: var(--dialogue-viewport-height, 100dvh);
   min-height: 0;
+  padding-bottom: 0;
+  scroll-padding-bottom: 0;
   color: var(--text);
   font-family: var(--anicca-font-interface);
   --stage-ground: #f8f7f9;

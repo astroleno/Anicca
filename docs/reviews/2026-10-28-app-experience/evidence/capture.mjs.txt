@@ -1,0 +1,76 @@
+import {mkdir,writeFile} from 'node:fs/promises';
+import path from 'node:path';
+import {chromium} from '/Users/aitoshuu/Documents/GitHub/Anicca/node_modules/playwright/index.mjs';
+import {thoughtFlowFixture} from '/Users/aitoshuu/Documents/GitHub/Anicca/scripts/visual-smoke/thought-flow.mjs';
+import {waitForSeedLayout} from '/Users/aitoshuu/Documents/GitHub/Anicca/scripts/visual-smoke/seeds.mjs';
+
+const output='/tmp/anicca-app-review-20261028';await mkdir(output,{recursive:true});
+const fixture=structuredClone(thoughtFlowFixture);fixture.graph.nodes.root.meta={label:'花园的开放与维护'};fixture.graph.nodes.root.children=['positive','negative'];
+for(const [id,stance,label,text] of [['positive','正','共享试验的空间','保留共同发现的余地，让临时尝试可以被修改。'],['negative','反','维护责任的分配','谁能决定用途，谁承担没有参与的维护代价？']]){
+ fixture.graph.nodes[id]={id,kind:'assistant',branchType:stance,text,parents:['root'],children:['synthesis'],createdAt:'2026-10-28T00:00:00Z',meta:{label,fissionGroupId:'app-review-pair'}};
+ fixture.graph.edges[id]={id,from:'root',to:id};
+}
+fixture.graph.nodes.synthesis={id:'synthesis',kind:'assistant',branchType:'合',text:'把开放性理解为共同调整约定的能力，参与者与受到影响的人都可以提出保留或改变的理由。',parents:['positive','negative'],children:[],createdAt:'2026-10-28T00:00:00Z',meta:{label:'共同调整的约定'}};
+for(const id of ['positive','negative'])fixture.graph.edges[`${id}-synthesis`]={id:`${id}-synthesis`,from:id,to:'synthesis'};
+const browser=await chromium.launch({headless:true,args:['--use-angle=metal']});const results=[];
+const settle=page=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+async function state(page){return page.evaluate(()=>{
+ const rect=el=>{if(!el)return null;const r=el.getBoundingClientRect(),s=getComputedStyle(el);return {x:r.x,y:r.y,width:r.width,height:r.height,bottom:r.bottom,display:s.display,visibility:s.visibility,position:s.position,overflow:s.overflow,minHeight:s.minHeight};};
+ const focused=document.activeElement,reader=document.querySelector('[data-testid="dialogue-panel"]');
+ return {url:location.href,title:document.title,width:innerWidth,height:innerHeight,visualViewport:{width:visualViewport?.width,height:visualViewport?.height,offsetTop:visualViewport?.offsetTop,scale:visualViewport?.scale},
+  htmlScrollWidth:document.documentElement.scrollWidth,bodyScrollHeight:document.body.scrollHeight,
+  shell:rect(document.querySelector('[data-testid="dialogue-shell"]')),composer:rect(document.querySelector('[data-testid="dialogue-composer"]')),
+  input:rect(document.querySelector('#dialogue-input')),reader:rect(reader),readerMode:reader?.dataset.mode,scrollTop:reader?.scrollTop,
+  readingOpen:document.querySelector('#dialogue-reading-drawer')?.dataset.open==='true',menuOpen:document.querySelector('[data-testid="dialogue-more-button"]')?.getAttribute('aria-expanded')==='true',
+  overviewOpen:!!document.querySelector('[data-testid="evolution-overview"]'),dialogs:[...document.querySelectorAll('dialog[open]')].map(el=>rect(el)),
+  focused:{tag:focused?.tagName,id:focused?.id,label:focused?.getAttribute('aria-label'),text:focused?.textContent?.trim().slice(0,80)},
+  inputValue:document.querySelector('#dialogue-input')?.value,
+  camera:{...document.querySelector('[data-testid="dialogue-stage-track"]')?.dataset}};
+ });}
+async function contextFor(spec){const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},isMobile:spec.touch,hasTouch:spec.touch});
+ await context.addInitScript(({fixture,theme})=>{if(!localStorage.getItem('anicca_workspace_active_v1'))localStorage.setItem('anicca_workspace_v2',JSON.stringify(fixture));localStorage.setItem('anicca.dialogue.appearance.v1',theme);}, {fixture,theme:spec.theme||'light'});return context;}
+try{
+ for(const spec of [{name:'desktop',width:1440,height:900,touch:false},{name:'mobile-390',width:390,height:844,touch:true},
+  {name:'mobile-landscape',width:844,height:390,touch:true},{name:'mobile-dark',width:360,height:780,touch:true,theme:'dark'}]){
+ const context=await contextFor(spec),page=await context.newPage();page.setDefaultTimeout(20000);
+ const result={spec,states:[],errors:[],postRequests:[],screens:[]};results.push(result);
+ page.on('pageerror',e=>result.errors.push(e.message));
+ const note=async name=>{await settle(page);result.states.push({name,...await state(page)});await page.screenshot({path:path.join(output,`${spec.name}-${name}.png`)});result.screens.push(`${spec.name}-${name}.png`);};
+ const openRoot=async()=>{if(await page.locator('#dialogue-reading-drawer[data-open="true"]').count())return;await waitForSeedLayout(page);await page.getByTestId('dialogue-stage-node-root').locator('[data-seed-caption]').click();await page.locator('#dialogue-reading-drawer[data-open="true"]').waitFor();await page.waitForFunction(()=>getComputedStyle(document.querySelector('#dialogue-reading-drawer')).opacity==='1');};
+ try{
+  await page.goto('https://aitoshuu.me/Anicca',{waitUntil:'networkidle'});await page.waitForFunction(()=>document.querySelector('[data-testid="dialogue-stage-track"]')?.dataset.metaballRenderer==='ready');
+  await page.evaluate(()=>document.fonts.ready.then(()=>undefined));await note('entry');
+  const guide=page.getByRole('button',{name:'关闭提示',exact:true});if(await guide.isVisible())await guide.click();
+  await openRoot();await page.getByTestId('dialogue-panel').evaluate(el=>{el.scrollTop=650;el.dispatchEvent(new Event('scroll'));});await note('reading-middle');
+  await page.getByRole('button',{name:'更多',exact:true}).click();await note('reading-more');await page.keyboard.press('Escape');await note('after-more-escape');
+  await openRoot();await page.getByRole('button',{name:'看极性两端',exact:true}).click();
+  await page.waitForFunction(()=>document.activeElement?.id==='conversation-panel-heading');await note('polarity-title-focus');
+  await page.keyboard.press('Escape');await note('after-polarity-title-escape');
+  await openRoot();await page.getByTestId('dialogue-panel').evaluate(el=>{el.scrollTop=650;el.dispatchEvent(new Event('scroll'));});
+  await page.getByRole('button',{name:'换个角度',exact:true}).click();await page.getByRole('dialog').waitFor();await note('perspective');
+  await page.keyboard.press('Escape');await page.getByRole('dialog').waitFor({state:'hidden'});await note('after-perspective-escape');
+  await page.getByRole('button',{name:'演化全景',exact:true}).click();await page.getByTestId('evolution-overview').waitFor();await note('panorama');
+  const tab=[];for(let i=0;i<10;i++){await page.keyboard.press('Tab');tab.push(await page.evaluate(()=>({id:document.activeElement?.id,label:document.activeElement?.getAttribute('aria-label'),tag:document.activeElement?.tagName,inside:!!document.activeElement?.closest('[data-testid="evolution-overview"]')})));}result.panoramaTabs=tab;
+  await page.keyboard.press('Escape');await page.getByTestId('evolution-overview').waitFor({state:'hidden'});await note('after-panorama-escape');
+  await page.getByRole('button',{name:'更多',exact:true}).click();await page.getByRole('button',{name:'重命名工作区',exact:true}).click();await page.getByRole('textbox',{name:'工作区名称',exact:true}).waitFor();await note('rename');
+  await page.getByRole('button',{name:'取消',exact:true}).click();
+  const close=page.getByRole('button',{name:'返回种子，收起阅读',exact:true});if(await close.isVisible())await close.click();await page.locator('#dialogue-reading-drawer').waitFor({state:'hidden'});
+  let release;const gate=new Promise(resolve=>release=resolve);
+  await page.route('**/api/**',async route=>{if(route.request().method()!=='POST')return route.continue();result.postRequests.push({endpoint:new URL(route.request().url()).pathname,body:route.request().postDataJSON()});await gate;await route.fulfill({status:502,json:{error:'branches_failed',details:'provider_overloaded'}});});
+  const input=page.getByRole('textbox',{name:'输入',exact:true});await input.fill('第一行想法，需要给下一行留出空间。');await input.press('Enter');await note('after-enter-pending');
+  release();await page.getByRole('button',{name:'重试上次',exact:true}).waitFor();await note('error-recovery');
+  result.completed=true;
+ }catch(error){result.failure=String(error);await note('failure').catch(()=>{});}finally{await context.close();console.log(JSON.stringify({spec:spec.name,completed:result.completed,failure:result.failure,states:result.states.length}));}
+ }
+ const spec={name:'history',width:390,height:844,touch:true},context=await contextFor(spec),page=await context.newPage();
+ const result={spec,states:[]};results.push(result);
+ try{
+  const source='https://tongye.me/Anicca?review-source=1';
+  await page.route(source,route=>route.fulfill({contentType:'text/html',body:'<!doctype html><html lang="zh-CN"><title>本轮合成来源页</title><body><p>本轮合成来源页，仅用于浏览器返回验证。</p></body></html>'}));
+  await page.goto(source);await page.goto('https://tongye.me/Anicca',{waitUntil:'networkidle'});
+  const guide=page.getByRole('button',{name:'关闭提示',exact:true});if(await guide.isVisible())await guide.click();await waitForSeedLayout(page);
+  await page.getByTestId('dialogue-stage-node-root').locator('[data-seed-caption]').click();await page.locator('#dialogue-reading-drawer[data-open="true"]').waitFor();
+  result.states.push({name:'before-browser-back',...await state(page)});await page.goBack({waitUntil:'domcontentloaded'});result.states.push({name:'after-browser-back',...await state(page)});
+  await page.screenshot({path:path.join(output,'history-after-browser-back.png')});await page.goForward({waitUntil:'networkidle'});result.states.push({name:'after-browser-forward',...await state(page)});result.completed=true;
+ }catch(error){result.failure=String(error);}finally{await context.close();}
+}finally{await browser.close();await writeFile(path.join(output,'summary.json'),JSON.stringify({createdAt:new Date().toISOString(),revision:'8995c52917ebcb2aee7a345eb0883da928f95c33',method:'Existing project Playwright, isolated Chromium public-site contexts, synthetic garden; controlled 502 POSTs; history source is an intercepted same-origin synthetic page, not a native browser-back gesture',results},null,2));}
