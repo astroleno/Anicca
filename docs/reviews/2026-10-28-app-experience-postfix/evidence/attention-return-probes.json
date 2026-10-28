@@ -1,0 +1,1243 @@
+{
+  "createdAt": "2026-10-28T10:02:19.656Z",
+  "revision": "55a99f976807ecb2c7a72fb90a15e6b8395a4614",
+  "method": "Fresh isolated Chromium desktop/touch contexts on current public release; controlled inquiry responses deliberately held until wheel/touch swipe or draft edit completes. No live model calls, no product changes, no physical device or OS keyboard test. Browser plugin not available.",
+  "results": [
+    {
+      "name": "desktop-pending-idle",
+      "spec": {
+        "name": "desktop",
+        "url": "https://aitoshuu.me/Anicca",
+        "width": 1440,
+        "height": 900,
+        "touch": false
+      },
+      "states": [
+        {
+          "name": "request-held",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "reading": true,
+          "readingBox": {
+            "x": 460,
+            "y": 112,
+            "width": 520,
+            "height": 764,
+            "bottom": 876
+          },
+          "heading": "社区花园是否应该保留不预设用",
+          "mode": "read",
+          "scrollTop": 0,
+          "scrollHeight": 2185,
+          "clientHeight": 764,
+          "text": "想法\n返回种子\n社区花园是否应该保留不预设用\n换一句追问\n\n社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。\n\n这些角落可以让成员发现新的共同活动，但也可能增加维护负担。\n追问前提\n输入\n取消\n生成中…\n正在围绕这句话继续想\n0 秒\n\n我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表",
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "label": null,
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "busy": "true",
+          "savedFocusedNodeId": "root",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            }
+          ]
+        },
+        {
+          "name": "response-arrived",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "reading": true,
+          "readingBox": {
+            "x": 431.35357666015625,
+            "y": 88.59724426269531,
+            "width": 520,
+            "height": 640,
+            "bottom": 728.5972442626953
+          },
+          "heading": "协商的余地",
+          "mode": "read",
+          "scrollTop": 0,
+          "scrollHeight": 709,
+          "clientHeight": 640,
+          "text": "追问前提\n返回种子\n协商的余地\n原句 · 这些角落可以让成员发现新的共同活动，但也可能增加维护负担。\n这次追问澄清\n\n把用途的开放与维护责任分开，让重新协商成为共同条件。\n\n接着这次澄清\n\n推演正反\n推进判断，检验前提\n看极性两端\n换观察位置，看见两端\n选一句追问\n\n不预设用途并不等于不承担维护责任。这句话依赖的前提是：成员能重新商量用途，也能说出自己愿意承担哪些维护。\n\n例如，一次临时活动结束后，参与者可以共同决定保留什么、恢复什么；未参加的人也应有机会表达受到的影响。\n\n因此，值得保留的开放性包含重新协商的余地。接下来可以分别看个人的尝试空间与群体的维护关系，再判断两者怎样一起延续。\n\n组合\n分身\n继续写",
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "label": null,
+            "text": "协商的余地"
+          },
+          "draft": "",
+          "busy": "false",
+          "savedFocusedNodeId": "asst_mvry2z75_ge4e2x",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            },
+            {
+              "id": "user_mvry2z75_7qc5p7",
+              "kind": "user",
+              "label": "追问前提 · 这些角落可以让成员发现新…",
+              "parents": [
+                "root"
+              ],
+              "text": "这些开放的角落依赖什么共同条件？"
+            },
+            {
+              "id": "asst_mvry2z75_ge4e2x",
+              "kind": "assistant",
+              "label": "协商的余地",
+              "parents": [
+                "user_mvry2z75_7qc5p7"
+              ],
+              "text": "不预设用途并不等于不承担维护责任。这句话依赖的前提是：成员能重新商量用途，也能说出自己愿意承担哪些维护。\n\n例如，一次临时活动结束后，参与者可以共同决定保留什么、恢复什么；未参加的人也应有机会表达受到的影响。\n\n因此，值得保留的开放性包含重新协商的余地。接下来可以分别看个人的尝试空间与群体的维护关系"
+            }
+          ]
+        }
+      ],
+      "errors": [],
+      "warnings": [
+        "THREE.WARNING: Multiple instances of Three.js being imported."
+      ],
+      "calls": [
+        {
+          "endpoint": "/Anicca/api/inquiry",
+          "requestId": "inquiry_req_99b7e08d-a901-4602-b141-c448f8bf4a57",
+          "method": "controlled route response, held until scenario action completes"
+        }
+      ],
+      "identity": {
+        "status": 200,
+        "knownBuildTokenPresent": true
+      },
+      "completed": true
+    },
+    {
+      "name": "desktop-pending-scroll",
+      "spec": {
+        "name": "desktop",
+        "url": "https://aitoshuu.me/Anicca",
+        "width": 1440,
+        "height": 900,
+        "touch": false
+      },
+      "states": [
+        {
+          "name": "request-held",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "reading": true,
+          "readingBox": {
+            "x": 460,
+            "y": 112,
+            "width": 520,
+            "height": 764,
+            "bottom": 876
+          },
+          "heading": "社区花园是否应该保留不预设用",
+          "mode": "read",
+          "scrollTop": 0,
+          "scrollHeight": 2185,
+          "clientHeight": 764,
+          "text": "想法\n返回种子\n社区花园是否应该保留不预设用\n换一句追问\n\n社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。\n\n这些角落可以让成员发现新的共同活动，但也可能增加维护负担。\n追问前提\n输入\n取消\n生成中…\n正在围绕这句话继续想\n0 秒\n\n我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表",
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "label": null,
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "busy": "true",
+          "savedFocusedNodeId": "root",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            }
+          ]
+        },
+        {
+          "name": "reader-moved-while-pending",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "reading": true,
+          "readingBox": {
+            "x": 460,
+            "y": 112,
+            "width": 520,
+            "height": 764,
+            "bottom": 876
+          },
+          "heading": "社区花园是否应该保留不预设用",
+          "mode": "read",
+          "scrollTop": 650,
+          "scrollHeight": 2185,
+          "clientHeight": 764,
+          "text": "想法\n返回种子\n社区花园是否应该保留不预设用\n换一句追问\n\n社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。\n\n这些角落可以让成员发现新的共同活动，但也可能增加维护负担。\n追问前提\n输入\n取消\n生成中…\n正在围绕这句话继续想\n0 秒\n\n我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表",
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "label": null,
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "busy": "true",
+          "savedFocusedNodeId": "root",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            }
+          ]
+        },
+        {
+          "name": "response-arrived",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "reading": true,
+          "readingBox": {
+            "x": 431.1629333496094,
+            "y": 88.4415054321289,
+            "width": 520,
+            "height": 640,
+            "bottom": 728.4415054321289
+          },
+          "heading": "协商的余地",
+          "mode": "read",
+          "scrollTop": 0,
+          "scrollHeight": 709,
+          "clientHeight": 640,
+          "text": "追问前提\n返回种子\n协商的余地\n原句 · 这些角落可以让成员发现新的共同活动，但也可能增加维护负担。\n这次追问澄清\n\n把用途的开放与维护责任分开，让重新协商成为共同条件。\n\n接着这次澄清\n\n推演正反\n推进判断，检验前提\n看极性两端\n换观察位置，看见两端\n选一句追问\n\n不预设用途并不等于不承担维护责任。这句话依赖的前提是：成员能重新商量用途，也能说出自己愿意承担哪些维护。\n\n例如，一次临时活动结束后，参与者可以共同决定保留什么、恢复什么；未参加的人也应有机会表达受到的影响。\n\n因此，值得保留的开放性包含重新协商的余地。接下来可以分别看个人的尝试空间与群体的维护关系，再判断两者怎样一起延续。\n\n组合\n分身\n继续写",
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "label": null,
+            "text": "协商的余地"
+          },
+          "draft": "",
+          "busy": "false",
+          "savedFocusedNodeId": "asst_mvry34r8_a6qif7",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            },
+            {
+              "id": "user_mvry34r8_umb6w8",
+              "kind": "user",
+              "label": "追问前提 · 这些角落可以让成员发现新…",
+              "parents": [
+                "root"
+              ],
+              "text": "这些开放的角落依赖什么共同条件？"
+            },
+            {
+              "id": "asst_mvry34r8_a6qif7",
+              "kind": "assistant",
+              "label": "协商的余地",
+              "parents": [
+                "user_mvry34r8_umb6w8"
+              ],
+              "text": "不预设用途并不等于不承担维护责任。这句话依赖的前提是：成员能重新商量用途，也能说出自己愿意承担哪些维护。\n\n例如，一次临时活动结束后，参与者可以共同决定保留什么、恢复什么；未参加的人也应有机会表达受到的影响。\n\n因此，值得保留的开放性包含重新协商的余地。接下来可以分别看个人的尝试空间与群体的维护关系"
+            }
+          ]
+        }
+      ],
+      "errors": [],
+      "warnings": [
+        "THREE.WARNING: Multiple instances of Three.js being imported."
+      ],
+      "calls": [
+        {
+          "endpoint": "/Anicca/api/inquiry",
+          "requestId": "inquiry_req_dfc706b5-f356-476c-b63b-5bfc6dd11fe1",
+          "method": "controlled route response, held until scenario action completes"
+        }
+      ],
+      "identity": {
+        "status": 200,
+        "knownBuildTokenPresent": true
+      },
+      "completed": true
+    },
+    {
+      "name": "desktop-pending-edit",
+      "spec": {
+        "name": "desktop",
+        "url": "https://aitoshuu.me/Anicca",
+        "width": 1440,
+        "height": 900,
+        "touch": false
+      },
+      "states": [
+        {
+          "name": "request-held",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "reading": true,
+          "readingBox": {
+            "x": 460,
+            "y": 112,
+            "width": 520,
+            "height": 764,
+            "bottom": 876
+          },
+          "heading": "社区花园是否应该保留不预设用",
+          "mode": "read",
+          "scrollTop": 0,
+          "scrollHeight": 2185,
+          "clientHeight": 764,
+          "text": "想法\n返回种子\n社区花园是否应该保留不预设用\n换一句追问\n\n社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。\n\n这些角落可以让成员发现新的共同活动，但也可能增加维护负担。\n追问前提\n输入\n取消\n生成中…\n正在围绕这句话继续想\n0 秒\n\n我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表",
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "label": null,
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "busy": "true",
+          "savedFocusedNodeId": "root",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            }
+          ]
+        },
+        {
+          "name": "draft-edited-while-pending",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "reading": true,
+          "readingBox": {
+            "x": 460,
+            "y": 112,
+            "width": 520,
+            "height": 764,
+            "bottom": 876
+          },
+          "heading": "社区花园是否应该保留不预设用",
+          "mode": "read",
+          "scrollTop": 0,
+          "scrollHeight": 2185,
+          "clientHeight": 764,
+          "text": "想法\n返回种子\n社区花园是否应该保留不预设用\n换一句追问\n\n社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。\n\n这些角落可以让成员发现新的共同活动，但也可能增加维护负担。\n追问前提\n输入\n取消\n生成中…\n正在围绕这句话继续想\n0 秒\n\n我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表",
+          "focus": {
+            "tag": "TEXTAREA",
+            "id": "dialogue-input",
+            "label": "输入",
+            "text": "先保留另一项关于维护分工的问题"
+          },
+          "draft": "先保留另一项关于维护分工的问题",
+          "busy": "true",
+          "savedFocusedNodeId": "root",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            }
+          ]
+        },
+        {
+          "name": "response-arrived",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "reading": true,
+          "readingBox": {
+            "x": 460,
+            "y": 112,
+            "width": 520,
+            "height": 764,
+            "bottom": 876
+          },
+          "heading": "社区花园是否应该保留不预设用",
+          "mode": "read",
+          "scrollTop": 0,
+          "scrollHeight": 2096,
+          "clientHeight": 764,
+          "text": "想法\n返回种子\n社区花园是否应该保留不预设用\n换一句追问\n\n社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。\n\n这些角落可以让成员发现新的共同活动，但也可能增加维护负担。\n追问前提\n输入\n追问\n\n我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有",
+          "focus": {
+            "tag": "TEXTAREA",
+            "id": "dialogue-input",
+            "label": "输入",
+            "text": "先保留另一项关于维护分工的问题"
+          },
+          "draft": "先保留另一项关于维护分工的问题",
+          "busy": "false",
+          "savedFocusedNodeId": "root",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            },
+            {
+              "id": "user_mvry39uj_jdwhk7",
+              "kind": "user",
+              "label": "追问前提 · 这些角落可以让成员发现新…",
+              "parents": [
+                "root"
+              ],
+              "text": "这些开放的角落依赖什么共同条件？"
+            },
+            {
+              "id": "asst_mvry39uj_fza51d",
+              "kind": "assistant",
+              "label": "协商的余地",
+              "parents": [
+                "user_mvry39uj_jdwhk7"
+              ],
+              "text": "不预设用途并不等于不承担维护责任。这句话依赖的前提是：成员能重新商量用途，也能说出自己愿意承担哪些维护。\n\n例如，一次临时活动结束后，参与者可以共同决定保留什么、恢复什么；未参加的人也应有机会表达受到的影响。\n\n因此，值得保留的开放性包含重新协商的余地。接下来可以分别看个人的尝试空间与群体的维护关系"
+            }
+          ]
+        }
+      ],
+      "errors": [],
+      "warnings": [
+        "THREE.WARNING: Multiple instances of Three.js being imported."
+      ],
+      "calls": [
+        {
+          "endpoint": "/Anicca/api/inquiry",
+          "requestId": "inquiry_req_1e8c6e6f-dc87-41f3-8e60-e2ba9d2474e2",
+          "method": "controlled route response, held until scenario action completes"
+        }
+      ],
+      "identity": {
+        "status": 200,
+        "knownBuildTokenPresent": true
+      },
+      "completed": true
+    },
+    {
+      "name": "desktop-return-dark",
+      "spec": {
+        "name": "desktop",
+        "url": "https://aitoshuu.me/Anicca",
+        "width": 1440,
+        "height": 900,
+        "touch": false
+      },
+      "states": [
+        {
+          "name": "middle-before-dismiss",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "reading": true,
+          "readingBox": {
+            "x": 460,
+            "y": 112,
+            "width": 520,
+            "height": 640,
+            "bottom": 752
+          },
+          "heading": "社区花园是否应该保留不预设用",
+          "mode": "read",
+          "scrollTop": 650,
+          "scrollHeight": 2156,
+          "clientHeight": 640,
+          "text": "想法\n返回种子\n社区花园是否应该保留不预设用\n\n接着这个想法\n\n推演正反\n推进判断，检验前提\n看极性两端\n换观察位置，看见两端\n选一句追问\n\n社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动",
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "label": null,
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "draft": "",
+          "busy": "false",
+          "savedFocusedNodeId": "root",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            }
+          ]
+        },
+        {
+          "name": "after-outside-dismiss",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "reading": false,
+          "readingBox": null,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "label": null,
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "",
+          "busy": "false",
+          "savedFocusedNodeId": "root",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            }
+          ]
+        },
+        {
+          "name": "reopened-after-dismiss",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "reading": true,
+          "readingBox": {
+            "x": 460,
+            "y": 112,
+            "width": 520,
+            "height": 640,
+            "bottom": 752
+          },
+          "heading": "社区花园是否应该保留不预设用",
+          "mode": "read",
+          "scrollTop": 650,
+          "scrollHeight": 2156,
+          "clientHeight": 640,
+          "text": "想法\n返回种子\n社区花园是否应该保留不预设用\n\n接着这个想法\n\n推演正反\n推进判断，检验前提\n看极性两端\n换观察位置，看见两端\n选一句追问\n\n社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动",
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "label": null,
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "draft": "",
+          "busy": "false",
+          "savedFocusedNodeId": "root",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            }
+          ]
+        },
+        {
+          "name": "dark-reading",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "theme": "dark",
+          "reading": true,
+          "readingBox": {
+            "x": 460,
+            "y": 112,
+            "width": 520,
+            "height": 640,
+            "bottom": 752
+          },
+          "heading": "社区花园是否应该保留不预设用",
+          "mode": "read",
+          "scrollTop": 650,
+          "scrollHeight": 2156,
+          "clientHeight": 640,
+          "text": "想法\n返回种子\n社区花园是否应该保留不预设用\n\n接着这个想法\n\n推演正反\n推进判断，检验前提\n看极性两端\n换观察位置，看见两端\n选一句追问\n\n社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动",
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": null,
+            "text": "更多"
+          },
+          "draft": "",
+          "busy": "false",
+          "savedFocusedNodeId": "root",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            }
+          ]
+        },
+        {
+          "name": "dark-stage",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "theme": "dark",
+          "reading": false,
+          "readingBox": null,
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": "社区花园是否应该保留不预设用…，当前焦点",
+            "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以"
+          },
+          "draft": "",
+          "busy": "false",
+          "savedFocusedNodeId": "root",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            }
+          ]
+        }
+      ],
+      "errors": [],
+      "warnings": [
+        "THREE.WARNING: Multiple instances of Three.js being imported."
+      ],
+      "calls": [],
+      "identity": {
+        "status": 200,
+        "knownBuildTokenPresent": true
+      },
+      "dismissPoint": {
+        "x": 430,
+        "y": 400,
+        "method": "mouse.click"
+      },
+      "completed": true
+    },
+    {
+      "name": "mobile-pending-idle",
+      "spec": {
+        "name": "mobile",
+        "url": "https://tongye.me/Anicca",
+        "width": 390,
+        "height": 844,
+        "touch": true
+      },
+      "states": [
+        {
+          "name": "request-held",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "reading": true,
+          "readingBox": {
+            "x": 24,
+            "y": 112,
+            "width": 342,
+            "height": 708,
+            "bottom": 820
+          },
+          "heading": "社区花园是否应该保留不预设用",
+          "mode": "read",
+          "scrollTop": 0,
+          "scrollHeight": 2444,
+          "clientHeight": 708,
+          "text": "想法\n返回种子\n社区花园是否应该保留不预设用\n换一句追问\n\n社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。\n\n这些角落可以让成员发现新的共同活动，但也可能增加维护负担。\n追问前提\n输入\n取消\n生成中…\n正在围绕这句话继续想\n0 秒\n\n我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表",
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "label": null,
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "busy": "true",
+          "savedFocusedNodeId": "root",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            }
+          ]
+        },
+        {
+          "name": "response-arrived",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "reading": true,
+          "readingBox": {
+            "x": 19.662551879882812,
+            "y": 88.59390258789062,
+            "width": 342,
+            "height": 584,
+            "bottom": 672.5939025878906
+          },
+          "heading": "协商的余地",
+          "mode": "read",
+          "scrollTop": 0,
+          "scrollHeight": 785,
+          "clientHeight": 584,
+          "text": "追问前提\n返回种子\n协商的余地\n原句 · 这些角落可以让成员发现新的共同活动，但也可能增加维护负担。\n这次追问澄清\n\n把用途的开放与维护责任分开，让重新协商成为共同条件。\n\n接着这次澄清\n\n推演正反\n推进判断，检验前提\n看极性两端\n换观察位置，看见两端\n选一句追问\n\n不预设用途并不等于不承担维护责任。这句话依赖的前提是：成员能重新商量用途，也能说出自己愿意承担哪些维护。\n\n例如，一次临时活动结束后，参与者可以共同决定保留什么、恢复什么；未参加的人也应有机会表达受到的影响。\n\n因此，值得保留的开放性包含重新协商的余地。接下来可以分别看个人的尝试空间与群体的维护关系，再判断两者怎样一起延续。\n\n组合\n分身\n继续写",
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "label": null,
+            "text": "协商的余地"
+          },
+          "draft": "",
+          "busy": "false",
+          "savedFocusedNodeId": "asst_mvry3jsa_pcyqx5",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            },
+            {
+              "id": "user_mvry3jsa_gofowx",
+              "kind": "user",
+              "label": "追问前提 · 这些角落可以让成员发现新…",
+              "parents": [
+                "root"
+              ],
+              "text": "这些开放的角落依赖什么共同条件？"
+            },
+            {
+              "id": "asst_mvry3jsa_pcyqx5",
+              "kind": "assistant",
+              "label": "协商的余地",
+              "parents": [
+                "user_mvry3jsa_gofowx"
+              ],
+              "text": "不预设用途并不等于不承担维护责任。这句话依赖的前提是：成员能重新商量用途，也能说出自己愿意承担哪些维护。\n\n例如，一次临时活动结束后，参与者可以共同决定保留什么、恢复什么；未参加的人也应有机会表达受到的影响。\n\n因此，值得保留的开放性包含重新协商的余地。接下来可以分别看个人的尝试空间与群体的维护关系"
+            }
+          ]
+        }
+      ],
+      "errors": [],
+      "warnings": [],
+      "calls": [
+        {
+          "endpoint": "/Anicca/api/inquiry",
+          "requestId": "inquiry_req_2dda6caf-b2e5-4477-9a00-189c61268a4e",
+          "method": "controlled route response, held until scenario action completes"
+        }
+      ],
+      "identity": {
+        "status": 200,
+        "knownBuildTokenPresent": true
+      },
+      "completed": true
+    },
+    {
+      "name": "mobile-pending-scroll",
+      "spec": {
+        "name": "mobile",
+        "url": "https://tongye.me/Anicca",
+        "width": 390,
+        "height": 844,
+        "touch": true
+      },
+      "states": [
+        {
+          "name": "request-held",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "reading": true,
+          "readingBox": {
+            "x": 24,
+            "y": 112,
+            "width": 342,
+            "height": 708,
+            "bottom": 820
+          },
+          "heading": "社区花园是否应该保留不预设用",
+          "mode": "read",
+          "scrollTop": 0,
+          "scrollHeight": 2444,
+          "clientHeight": 708,
+          "text": "想法\n返回种子\n社区花园是否应该保留不预设用\n换一句追问\n\n社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。\n\n这些角落可以让成员发现新的共同活动，但也可能增加维护负担。\n追问前提\n输入\n取消\n生成中…\n正在围绕这句话继续想\n0 秒\n\n我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表",
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "label": null,
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "busy": "true",
+          "savedFocusedNodeId": "root",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            }
+          ]
+        },
+        {
+          "name": "reader-moved-while-pending",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "reading": true,
+          "readingBox": {
+            "x": 24,
+            "y": 112,
+            "width": 342,
+            "height": 708,
+            "bottom": 820
+          },
+          "heading": "社区花园是否应该保留不预设用",
+          "mode": "read",
+          "scrollTop": 307,
+          "scrollHeight": 2444,
+          "clientHeight": 708,
+          "text": "想法\n返回种子\n社区花园是否应该保留不预设用\n换一句追问\n\n社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。\n\n这些角落可以让成员发现新的共同活动，但也可能增加维护负担。\n追问前提\n输入\n取消\n生成中…\n正在围绕这句话继续想\n0 秒\n\n我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表",
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "label": null,
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "busy": "true",
+          "savedFocusedNodeId": "root",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            }
+          ]
+        },
+        {
+          "name": "response-arrived",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "reading": true,
+          "readingBox": {
+            "x": 19.725250244140625,
+            "y": 88.93218994140625,
+            "width": 342,
+            "height": 584,
+            "bottom": 672.9321899414062
+          },
+          "heading": "协商的余地",
+          "mode": "read",
+          "scrollTop": 0,
+          "scrollHeight": 785,
+          "clientHeight": 584,
+          "text": "追问前提\n返回种子\n协商的余地\n原句 · 这些角落可以让成员发现新的共同活动，但也可能增加维护负担。\n这次追问澄清\n\n把用途的开放与维护责任分开，让重新协商成为共同条件。\n\n接着这次澄清\n\n推演正反\n推进判断，检验前提\n看极性两端\n换观察位置，看见两端\n选一句追问\n\n不预设用途并不等于不承担维护责任。这句话依赖的前提是：成员能重新商量用途，也能说出自己愿意承担哪些维护。\n\n例如，一次临时活动结束后，参与者可以共同决定保留什么、恢复什么；未参加的人也应有机会表达受到的影响。\n\n因此，值得保留的开放性包含重新协商的余地。接下来可以分别看个人的尝试空间与群体的维护关系，再判断两者怎样一起延续。\n\n组合\n分身\n继续写",
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "label": null,
+            "text": "协商的余地"
+          },
+          "draft": "",
+          "busy": "false",
+          "savedFocusedNodeId": "asst_mvry3nnf_maowsq",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            },
+            {
+              "id": "user_mvry3nnf_75cudv",
+              "kind": "user",
+              "label": "追问前提 · 这些角落可以让成员发现新…",
+              "parents": [
+                "root"
+              ],
+              "text": "这些开放的角落依赖什么共同条件？"
+            },
+            {
+              "id": "asst_mvry3nnf_maowsq",
+              "kind": "assistant",
+              "label": "协商的余地",
+              "parents": [
+                "user_mvry3nnf_75cudv"
+              ],
+              "text": "不预设用途并不等于不承担维护责任。这句话依赖的前提是：成员能重新商量用途，也能说出自己愿意承担哪些维护。\n\n例如，一次临时活动结束后，参与者可以共同决定保留什么、恢复什么；未参加的人也应有机会表达受到的影响。\n\n因此，值得保留的开放性包含重新协商的余地。接下来可以分别看个人的尝试空间与群体的维护关系"
+            }
+          ]
+        }
+      ],
+      "errors": [],
+      "warnings": [],
+      "calls": [
+        {
+          "endpoint": "/Anicca/api/inquiry",
+          "requestId": "inquiry_req_65460ce0-8157-4d0d-9474-2a58f06f0464",
+          "method": "controlled route response, held until scenario action completes"
+        }
+      ],
+      "identity": {
+        "status": 200,
+        "knownBuildTokenPresent": true
+      },
+      "completed": true
+    },
+    {
+      "name": "mobile-pending-edit",
+      "spec": {
+        "name": "mobile",
+        "url": "https://tongye.me/Anicca",
+        "width": 390,
+        "height": 844,
+        "touch": true
+      },
+      "states": [
+        {
+          "name": "request-held",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "reading": true,
+          "readingBox": {
+            "x": 24,
+            "y": 112,
+            "width": 342,
+            "height": 708,
+            "bottom": 820
+          },
+          "heading": "社区花园是否应该保留不预设用",
+          "mode": "read",
+          "scrollTop": 0,
+          "scrollHeight": 2444,
+          "clientHeight": 708,
+          "text": "想法\n返回种子\n社区花园是否应该保留不预设用\n换一句追问\n\n社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。\n\n这些角落可以让成员发现新的共同活动，但也可能增加维护负担。\n追问前提\n输入\n取消\n生成中…\n正在围绕这句话继续想\n0 秒\n\n我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表",
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "label": null,
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "这些开放的角落依赖什么共同条件？",
+          "busy": "true",
+          "savedFocusedNodeId": "root",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            }
+          ]
+        },
+        {
+          "name": "draft-edited-while-pending",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "reading": true,
+          "readingBox": {
+            "x": 24,
+            "y": 112,
+            "width": 342,
+            "height": 708,
+            "bottom": 820
+          },
+          "heading": "社区花园是否应该保留不预设用",
+          "mode": "read",
+          "scrollTop": 0,
+          "scrollHeight": 2444,
+          "clientHeight": 708,
+          "text": "想法\n返回种子\n社区花园是否应该保留不预设用\n换一句追问\n\n社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。\n\n这些角落可以让成员发现新的共同活动，但也可能增加维护负担。\n追问前提\n输入\n取消\n生成中…\n正在围绕这句话继续想\n0 秒\n\n我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表",
+          "focus": {
+            "tag": "TEXTAREA",
+            "id": "dialogue-input",
+            "label": "输入",
+            "text": "先保留另一项关于维护分工的问题"
+          },
+          "draft": "先保留另一项关于维护分工的问题",
+          "busy": "true",
+          "savedFocusedNodeId": "root",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            }
+          ]
+        },
+        {
+          "name": "response-arrived",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "reading": true,
+          "readingBox": {
+            "x": 24,
+            "y": 112,
+            "width": 342,
+            "height": 708,
+            "bottom": 820
+          },
+          "heading": "社区花园是否应该保留不预设用",
+          "mode": "read",
+          "scrollTop": 0,
+          "scrollHeight": 2379,
+          "clientHeight": 708,
+          "text": "想法\n返回种子\n社区花园是否应该保留不预设用\n换一句追问\n\n社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。\n\n这些角落可以让成员发现新的共同活动，但也可能增加维护负担。\n追问前提\n输入\n追问\n\n我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有",
+          "focus": {
+            "tag": "TEXTAREA",
+            "id": "dialogue-input",
+            "label": "输入",
+            "text": "先保留另一项关于维护分工的问题"
+          },
+          "draft": "先保留另一项关于维护分工的问题",
+          "busy": "false",
+          "savedFocusedNodeId": "root",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            },
+            {
+              "id": "user_mvry3s4j_s134rs",
+              "kind": "user",
+              "label": "追问前提 · 这些角落可以让成员发现新…",
+              "parents": [
+                "root"
+              ],
+              "text": "这些开放的角落依赖什么共同条件？"
+            },
+            {
+              "id": "asst_mvry3s4j_9aj6wl",
+              "kind": "assistant",
+              "label": "协商的余地",
+              "parents": [
+                "user_mvry3s4j_s134rs"
+              ],
+              "text": "不预设用途并不等于不承担维护责任。这句话依赖的前提是：成员能重新商量用途，也能说出自己愿意承担哪些维护。\n\n例如，一次临时活动结束后，参与者可以共同决定保留什么、恢复什么；未参加的人也应有机会表达受到的影响。\n\n因此，值得保留的开放性包含重新协商的余地。接下来可以分别看个人的尝试空间与群体的维护关系"
+            }
+          ]
+        }
+      ],
+      "errors": [],
+      "warnings": [],
+      "calls": [
+        {
+          "endpoint": "/Anicca/api/inquiry",
+          "requestId": "inquiry_req_f936ec36-5331-4c0d-8be3-4ca3855a1417",
+          "method": "controlled route response, held until scenario action completes"
+        }
+      ],
+      "identity": {
+        "status": 200,
+        "knownBuildTokenPresent": true
+      },
+      "completed": true
+    },
+    {
+      "name": "mobile-return-dark",
+      "spec": {
+        "name": "mobile",
+        "url": "https://tongye.me/Anicca",
+        "width": 390,
+        "height": 844,
+        "touch": true
+      },
+      "states": [
+        {
+          "name": "middle-before-dismiss",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "reading": true,
+          "readingBox": {
+            "x": 24,
+            "y": 112,
+            "width": 342,
+            "height": 584,
+            "bottom": 696
+          },
+          "heading": "社区花园是否应该保留不预设用",
+          "mode": "read",
+          "scrollTop": 650,
+          "scrollHeight": 2408,
+          "clientHeight": 584,
+          "text": "想法\n返回种子\n社区花园是否应该保留不预设用\n\n接着这个想法\n\n推演正反\n推进判断，检验前提\n看极性两端\n换观察位置，看见两端\n选一句追问\n\n社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动",
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "label": null,
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "draft": "",
+          "busy": "false",
+          "savedFocusedNodeId": "root",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            }
+          ]
+        },
+        {
+          "name": "after-outside-dismiss",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "reading": false,
+          "readingBox": null,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "label": null,
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可"
+          },
+          "draft": "",
+          "busy": "false",
+          "savedFocusedNodeId": "root",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            }
+          ]
+        },
+        {
+          "name": "reopened-after-dismiss",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "reading": true,
+          "readingBox": {
+            "x": 24,
+            "y": 112,
+            "width": 342,
+            "height": 584,
+            "bottom": 696
+          },
+          "heading": "社区花园是否应该保留不预设用",
+          "mode": "read",
+          "scrollTop": 650,
+          "scrollHeight": 2408,
+          "clientHeight": 584,
+          "text": "想法\n返回种子\n社区花园是否应该保留不预设用\n\n接着这个想法\n\n推演正反\n推进判断，检验前提\n看极性两端\n换观察位置，看见两端\n选一句追问\n\n社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动",
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "label": null,
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "draft": "",
+          "busy": "false",
+          "savedFocusedNodeId": "root",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            }
+          ]
+        },
+        {
+          "name": "dark-reading",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "theme": "dark",
+          "reading": true,
+          "readingBox": {
+            "x": 24,
+            "y": 112,
+            "width": 342,
+            "height": 584,
+            "bottom": 696
+          },
+          "heading": "社区花园是否应该保留不预设用",
+          "mode": "read",
+          "scrollTop": 650,
+          "scrollHeight": 2408,
+          "clientHeight": 584,
+          "text": "想法\n返回种子\n社区花园是否应该保留不预设用\n\n接着这个想法\n\n推演正反\n推进判断，检验前提\n看极性两端\n换观察位置，看见两端\n选一句追问\n\n社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动的人也可以表达受到的影响，新的用途和维护方式因此仍有调整的余地。\n\n例如，成员可以先尝试一项临时活动，再讨论哪些地方需要恢复、哪些约定值得保留。未参与活动",
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": null,
+            "text": "更多"
+          },
+          "draft": "",
+          "busy": "false",
+          "savedFocusedNodeId": "root",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            }
+          ]
+        },
+        {
+          "name": "dark-stage",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "theme": "dark",
+          "reading": false,
+          "readingBox": null,
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "label": "社区花园是否应该保留不预设用…，当前焦点",
+            "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以"
+          },
+          "draft": "",
+          "busy": "false",
+          "savedFocusedNodeId": "root",
+          "nodes": [
+            {
+              "id": "root",
+              "kind": "user",
+              "parents": [],
+              "text": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。前一次讨论侧重用途，这一次我们想从维护关系继续追问。这些角落可以让成员发现新的共同活动，但也可能增加维护负担。我们想保留共同发现的机会，也希望维护方式可以持续商量。\n\n例如，成员可以先尝试一项临时活动，再"
+            }
+          ]
+        }
+      ],
+      "errors": [],
+      "warnings": [],
+      "calls": [],
+      "identity": {
+        "status": 200,
+        "knownBuildTokenPresent": true
+      },
+      "dismissPoint": {
+        "x": 3,
+        "y": 400,
+        "method": "Playwright touchscreen.tap, emulation"
+      },
+      "completed": true
+    }
+  ]
+}

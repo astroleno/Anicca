@@ -1,0 +1,71 @@
+import {mkdir,writeFile,copyFile} from 'node:fs/promises';
+import path from 'node:path';
+import {chromium} from '/Users/aitoshuu/Documents/GitHub/Anicca/node_modules/playwright/index.mjs';
+import {thoughtFlowFixture,thoughtFlowResponseFor} from '/Users/aitoshuu/Documents/GitHub/Anicca/scripts/visual-smoke/thought-flow.mjs';
+import {waitForSeedLayout} from '/Users/aitoshuu/Documents/GitHub/Anicca/scripts/visual-smoke/seeds.mjs';
+const output='/tmp/anicca-app-postfix-attention';await mkdir(output,{recursive:true});
+const browser=await chromium.launch({headless:true,args:['--use-angle=metal']});
+const results=[];const quote='这些角落可以让成员发现新的共同活动，但也可能增加维护负担。';
+const frame=page=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+async function state(page){return page.evaluate(()=>{
+ const panel=document.querySelector('[data-testid="dialogue-panel"]'),focus=document.activeElement;
+ const key=localStorage.getItem('anicca_workspace_active_v1'),saved=JSON.parse(localStorage.getItem(`anicca_workspace_snapshot_v1:${key}`)||'null');
+ const reading=document.getElementById('dialogue-reading-drawer'),r=reading?.getBoundingClientRect();
+ return {url:location.href,title:document.title,theme:document.querySelector('[data-testid="dialogue-shell"]')?.dataset.theme,
+  reading:reading?.dataset.open==='true',readingBox:r?{x:r.x,y:r.y,width:r.width,height:r.height,bottom:r.bottom}:null,
+  heading:document.getElementById('conversation-panel-heading')?.textContent,mode:panel?.dataset.mode,
+  scrollTop:panel?.scrollTop,scrollHeight:panel?.scrollHeight,clientHeight:panel?.clientHeight,text:panel?.innerText.slice(0,400),
+  focus:{tag:focus?.tagName,id:focus?.id,label:focus?.getAttribute('aria-label'),text:focus?.textContent?.trim().slice(0,80)},
+  draft:document.getElementById('dialogue-input')?.value,busy:document.querySelector('[data-testid="dialogue-composer"]')?.getAttribute('aria-busy'),
+  savedFocusedNodeId:saved?.focusedNodeId,nodes:saved?Object.values(saved.graph.nodes).map(n=>({id:n.id,kind:n.kind,label:n.meta?.label,parents:n.parents,text:n.text?.slice(0,150)})):[]};
+});}
+async function setup(spec,name){
+ const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},hasTouch:spec.touch,isMobile:spec.touch});
+ await context.addInitScript(fixture=>{if(!localStorage.getItem('anicca_workspace_active_v1'))localStorage.setItem('anicca_workspace_v2',JSON.stringify(fixture));localStorage.setItem('anicca:seed-guide:v1','done');},thoughtFlowFixture);
+ const page=await context.newPage();page.setDefaultTimeout(20000);const item={name,spec,states:[],errors:[],warnings:[],calls:[]};results.push(item);
+ page.on('pageerror',e=>item.errors.push(e.message));page.on('console',m=>{if(m.type()==='error')item.errors.push(m.text());else if(m.type()==='warning')item.warnings.push(m.text());});
+ const response=await page.goto(spec.url,{waitUntil:'networkidle'});item.identity={status:response.status(),knownBuildTokenPresent:(await response.text()).includes('G0tgHltanXgUhENX7R9J8')};
+ await page.getByTestId('dialogue-composer').waitFor();await page.evaluate(()=>document.fonts.ready.then(()=>undefined));await waitForSeedLayout(page);
+ const note=async(name,shot=false)=>{await frame(page);item.states.push({name,...await state(page)});if(shot)await page.screenshot({path:path.join(output,`${item.name}-${name}.png`)});};
+ const open=async()=>{await page.getByTestId('dialogue-stage-node-root').locator('[data-seed-caption]').click();await page.locator('#dialogue-reading-drawer[data-open="true"]').waitFor();await page.waitForFunction(()=>getComputedStyle(document.querySelector('#dialogue-reading-drawer')).opacity==='1');};
+ return {context,page,item,note,open};
+}
+const specs=[{name:'desktop',url:'https://aitoshuu.me/Anicca',width:1440,height:900,touch:false},{name:'mobile',url:'https://tongye.me/Anicca',width:390,height:844,touch:true}];
+try{
+ for(const spec of specs){
+  for(const action of ['idle','scroll','edit']){
+   const {context,page,item,note,open}=await setup(spec,`${spec.name}-pending-${action}`);
+   let release;const gate=new Promise(resolve=>{release=resolve;});let requestSeen;const seen=new Promise(resolve=>{requestSeen=resolve;});
+   await page.route('**/api/inquiry',async route=>{const body=route.request().postDataJSON();item.calls.push({endpoint:new URL(route.request().url()).pathname,requestId:body.requestId,method:'controlled route response, held until scenario action completes'});requestSeen();await gate;await route.fulfill({json:thoughtFlowResponseFor('/api/inquiry',body,1)});});
+   try{
+    await open();await page.getByRole('button',{name:'选一句追问',exact:true}).click();await page.getByLabel('选择要追问的原句').getByRole('button',{name:quote,exact:true}).nth(1).click();await page.getByRole('button',{name:'追问前提',exact:true}).click();await page.getByRole('textbox',{name:'输入',exact:true}).fill('这些开放的角落依赖什么共同条件？');await page.getByRole('button',{name:'追问',exact:true}).click();await seen;await note('request-held',true);
+    if(action==='scroll'){
+     const before=await page.getByTestId('dialogue-panel').evaluate(el=>el.scrollTop);
+     const box=await page.getByTestId('dialogue-panel').boundingBox();
+     if(spec.touch){
+      const client=await context.newCDPSession(page),x=200,startY=580;
+      await client.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y:startY}]});
+      for(let step=1;step<=10;step++)await client.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x,y:startY-step*30}]});
+      await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+     }else{await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.wheel(0,650);}
+     await page.waitForFunction(before=>document.querySelector('[data-testid="dialogue-panel"]').scrollTop>before+100,before);await note('reader-moved-while-pending',true);
+    }else if(action==='edit'){
+     await page.getByRole('textbox',{name:'输入',exact:true}).fill('先保留另一项关于维护分工的问题');await note('draft-edited-while-pending',true);
+    }
+    release();await page.waitForFunction(()=>document.querySelector('[data-testid="dialogue-composer"]')?.getAttribute('aria-busy')==='false');await note('response-arrived',true);item.completed=true;
+   }catch(error){item.failure=String(error);release();await note('probe-failure',true).catch(()=>{});}finally{await context.close();console.log(JSON.stringify({name:item.name,completed:item.completed,failure:item.failure,states:item.states.map(s=>({name:s.name,heading:s.heading,scrollTop:s.scrollTop,focus:s.focus,draft:s.draft,nodes:s.nodes.length}))}));}
+  }
+  const {context,page,item,note,open}=await setup(spec,`${spec.name}-return-dark`);
+  try{
+   await open();await page.getByTestId('dialogue-panel').evaluate(el=>{el.scrollTop=650;el.dispatchEvent(new Event('scroll'));});await note('middle-before-dismiss',true);
+   const box=await page.locator('#dialogue-reading-drawer').boundingBox();const x=spec.touch?3:Math.max(8,box.x-30),y=Math.min(spec.height-180,400);
+   item.dismissPoint={x,y,method:spec.touch?'Playwright touchscreen.tap, emulation':'mouse.click'};
+   if(spec.touch)await page.touchscreen.tap(x,y);else await page.mouse.click(x,y);
+   await page.locator('#dialogue-reading-drawer').waitFor({state:'hidden'});await note('after-outside-dismiss',true);await open();await note('reopened-after-dismiss',true);
+   await page.getByRole('button',{name:'更多',exact:true}).click();await page.getByRole('radio',{name:'深色',exact:true}).check();await page.keyboard.press('Escape');await page.waitForFunction(()=>document.querySelector('[data-testid="dialogue-shell"]')?.dataset.theme==='dark');await note('dark-reading',true);
+   await page.keyboard.press('Escape');await page.locator('#dialogue-reading-drawer').waitFor({state:'hidden'});await note('dark-stage',true);item.completed=true;
+  }catch(error){item.failure=String(error);await note('probe-failure',true).catch(()=>{});}finally{await context.close();console.log(JSON.stringify({name:item.name,completed:item.completed,failure:item.failure,states:item.states.map(s=>({name:s.name,reading:s.reading,scrollTop:s.scrollTop,theme:s.theme,heading:s.heading}))}));}
+ }
+}finally{
+ await browser.close();await writeFile(path.join(output,'attention-return-probes.json'),JSON.stringify({createdAt:new Date().toISOString(),revision:'55a99f976807ecb2c7a72fb90a15e6b8395a4614',method:'Fresh isolated Chromium desktop/touch contexts on current public release; controlled inquiry responses deliberately held until wheel/touch swipe or draft edit completes. No live model calls, no product changes, no physical device or OS keyboard test. Browser plugin not available.',results},null,2));await copyFile('/tmp/anicca-app-postfix-attention.mjs',path.join(output,'capture-attention.mjs.txt'));
+}

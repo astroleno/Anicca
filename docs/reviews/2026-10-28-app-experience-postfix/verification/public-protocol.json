@@ -1,0 +1,30 @@
+{
+  "checkedAt": "2026-10-28T11:19:18.904917+00:00",
+  "buildId": "cbzA0qf4uovQnU4Bm1bsF",
+  "routes": [
+    {
+      "requested": "https://aitoshuu.me/Anicca",
+      "url": "https://aitoshuu.me/Anicca",
+      "status": 200,
+      "currentBuild": true
+    },
+    {
+      "requested": "https://aitoshuu.me/Anicca/dialogue",
+      "url": "https://aitoshuu.me/Anicca/dialogue",
+      "status": 200,
+      "currentBuild": true
+    },
+    {
+      "requested": "https://tongye.me/Anicca",
+      "url": "https://tongye.me/Anicca",
+      "status": 200,
+      "currentBuild": true
+    },
+    {
+      "requested": "https://tongye.me/Anicca/dialogue",
+      "url": "https://tongye.me/Anicca/dialogue",
+      "status": 200,
+      "currentBuild": true
+    }
+  ]
+}

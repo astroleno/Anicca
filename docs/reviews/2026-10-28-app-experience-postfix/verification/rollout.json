@@ -1,0 +1,17 @@
+{
+  "checkedAt": "2026-10-28T11:18:07.919668+00:00",
+  "previous": "/opt/anicca/releases/20261028-app-experience",
+  "current": "/opt/anicca/releases/20261028-reading-continuity",
+  "release": {
+    "application": "Anicca",
+    "basePath": "/Anicca",
+    "platform": "linux",
+    "arch": "x64",
+    "nextVersion": "15.5.28",
+    "buildId": "cbzA0qf4uovQnU4Bm1bsF",
+    "builtAt": "2026-10-28T11:10:32.053Z"
+  },
+  "service": "NRestarts=0\nActiveState=active\nSubState=running\n",
+  "candidate": "ActiveState=inactive\n",
+  "rollbackRetained": true
+}

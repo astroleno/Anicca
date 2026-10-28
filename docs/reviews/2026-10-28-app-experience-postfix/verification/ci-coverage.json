@@ -1,0 +1,44 @@
+{
+  "groups": [
+    {
+      "group": "layouts",
+      "viewports": "",
+      "scenarios": "none"
+    },
+    {
+      "group": "rendering",
+      "viewports": "none",
+      "scenarios": "metaball-fusion-separation,metaball-reduced-motion,metaball-webgl-fallback,seed-recovery-and-touch,canvas-lifecycle"
+    },
+    {
+      "group": "app-experience",
+      "viewports": "none",
+      "scenarios": "app-experience"
+    },
+    {
+      "group": "reading-continuity",
+      "viewports": "none",
+      "scenarios": "reading-continuity"
+    },
+    {
+      "group": "thought-flow",
+      "viewports": "none",
+      "scenarios": "flow-continuity,thought-flow"
+    }
+  ],
+  "scenarios": [
+    "metaball-fusion-separation",
+    "metaball-reduced-motion",
+    "metaball-webgl-fallback",
+    "app-experience",
+    "reading-continuity",
+    "seed-recovery-and-touch",
+    "canvas-lifecycle",
+    "flow-continuity",
+    "thought-flow"
+  ],
+  "allAssignedExactlyOnce": true,
+  "allViewportsRetained": true,
+  "totalTimeoutUnchanged": 1800000,
+  "maxParallel": 2
+}

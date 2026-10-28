@@ -1,0 +1,57 @@
+{
+  "revision": "55a99f976807ecb2c7a72fb90a15e6b8395a4614",
+  "rows": [
+    {
+      "file": "review-probes.json",
+      "contexts": 2,
+      "states": 38,
+      "capturedControlledCalls": 0,
+      "unexpectedPostRequests": 0,
+      "allCompleted": true,
+      "allPageErrorsEmpty": true,
+      "createdAt": "2026-10-28T09:59:27.750Z"
+    },
+    {
+      "file": "attention-return-probes.json",
+      "contexts": 8,
+      "states": 26,
+      "capturedControlledCalls": 6,
+      "unexpectedPostRequests": 0,
+      "allCompleted": true,
+      "allPageErrorsEmpty": true,
+      "createdAt": "2026-10-28T10:02:19.656Z"
+    },
+    {
+      "file": "static-workspace-probes.json",
+      "contexts": 2,
+      "states": 16,
+      "capturedControlledCalls": 0,
+      "unexpectedPostRequests": 0,
+      "allCompleted": true,
+      "allPageErrorsEmpty": true,
+      "createdAt": "2026-10-28T10:03:46.110Z"
+    },
+    {
+      "file": "rename-dark-probes.json",
+      "contexts": 2,
+      "states": 10,
+      "capturedControlledCalls": 0,
+      "unexpectedPostRequests": 0,
+      "allCompleted": true,
+      "allPageErrorsEmpty": true,
+      "createdAt": "2026-10-28T10:05:23.473Z"
+    }
+  ],
+  "totalContexts": 14,
+  "totalStates": 90,
+  "controlledInquiryResponses": 6,
+  "realModelCalls": 0,
+  "screenshots": 76,
+  "browser": "Existing project Playwright Chromium (Browser plugin not available)",
+  "limitations": [
+    "No physical iPhone or Android test in this review",
+    "No real OS keyboard or IME test",
+    "Controlled latency does not measure provider performance",
+    "Screenshots and UI traces do not prove psychological flow"
+  ]
+}

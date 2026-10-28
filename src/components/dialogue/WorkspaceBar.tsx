@@ -31,7 +31,8 @@ export function WorkspaceBar({
   extraActions,
   onOpenEvolution
 }: WorkspaceBarProps) {
-  const [renaming, setRenaming] = useState(false);
+  const [renameOwner, setRenameOwner] = useState<string | null>(null);
+  const renaming = Boolean(currentWorkspaceId && renameOwner === currentWorkspaceId);
   const [actionsOpen, setActionsOpen] = useState(false);
   const [draftTitle, setDraftTitle] = useState(currentTitle);
   const overflowActionsId = useId();
@@ -40,6 +41,8 @@ export function WorkspaceBar({
   const firstOverflowItemRef = useRef<HTMLButtonElement | null>(null);
   const renameInputRef = useRef<HTMLInputElement | null>(null);
 
+  useEffect(() => { setRenameOwner(null); }, [currentWorkspaceId]);
+
   useEffect(() => {
     if (!renaming) {
       setDraftTitle(currentTitle);
@@ -47,7 +50,7 @@ export function WorkspaceBar({
   }, [currentTitle, renaming]);
 
   const closeRename = () => {
-    setRenaming(false);
+    setRenameOwner(null);
     window.requestAnimationFrame(() => {
       overflowButtonRef.current?.focus();
     });
@@ -55,6 +58,7 @@ export function WorkspaceBar({
 
   const handleSubmitRename = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!renaming) return;
     onRename(draftTitle);
     closeRename();
   };
@@ -169,7 +173,7 @@ export function WorkspaceBar({
                   ref={firstOverflowItemRef}
                   className={styles.workspaceOverflowItem}
                   onClick={() => {
-                    setRenaming((value) => !value);
+                    setRenameOwner(renaming ? null : currentWorkspaceId);
                     setActionsOpen(false);
                   }}
                 >

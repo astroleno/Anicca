@@ -1,0 +1,147 @@
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+ RUN  v4.1.5 /Users/aitoshuu/Documents/GitHub/Anicca
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+Browserslist: browsers data (caniuse-lite) is 13 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+stdout | src/components/dialogue/DialogueShell.test.tsx > DialogueShell > keeps separate workspace drafts and can quietly save a seed without generation
+using shader-park-core version: 0.2.8
+
+ ❯ src/components/dialogue/SeedInspector.test.tsx (12 tests | 1 failed) 41769ms
+   × closes the inline axis choice from radio with Escape without dismissing the reading parent 10420ms
+ ❯ src/components/dialogue/DialogueShell.test.tsx (85 tests | 8 failed) 312011ms
+     × keeps separate workspace drafts and can quietly save a seed without generation 14284ms
+     × dismisses the guide without dismissing the current reading 12791ms
+     × keeps a quoted question in the reading flow and preserves it when returning to the same seed 18925ms
+     × keeps the inline question in view when the mobile keyboard reduces the visible height 16397ms
+     × keeps the current reading when an inquiry completes after wheel reading, and opens it only on request 11288ms
+     × saves a late inquiry without reopening reading after explicit return dismissal 26158ms
+     × adds flagged retrieval context to the /api/synthesis request body 12597ms
+     × stores roundtable artifact durably across autosave and promotes against source lineage 11341ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/dialogue/DialogueShell.test.tsx > DialogueShell > keeps separate workspace drafts and can quietly save a seed without generation
+Error: Test timed out in 10000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/components/dialogue/DialogueShell.test.tsx:290:3
+    288|   });
+    289|
+    290|   it("keeps separate workspace drafts and can quietly save a seed with…
+       |   ^
+    291|     const { rootUserId } = seedPair(); useDialogueUiStore.setState({ f…
+    292|     seedActiveWorkspaceFromCurrentGraph(); const fetchMock = vi.fn(); …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+ FAIL  src/components/dialogue/DialogueShell.test.tsx > DialogueShell > dismisses the guide without dismissing the current reading
+Error: Test timed out in 10000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/components/dialogue/DialogueShell.test.tsx:307:3
+    305|   });
+    306|
+    307|   it("dismisses the guide without dismissing the current reading", asy…
+       |   ^
+    308|     const root = branchGraphStore.createUserNode("继续从这句话想下去。");
+    309|     useDialogueUiStore.setState({ focusedNodeId: root }); seedActiveWo…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯
+
+ FAIL  src/components/dialogue/DialogueShell.test.tsx > DialogueShell > keeps a quoted question in the reading flow and preserves it when returning to the same seed
+Error: Test timed out in 10000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/components/dialogue/DialogueShell.test.tsx:319:3
+    317|   });
+    318|
+    319|   it("keeps a quoted question in the reading flow and preserves it whe…
+       |   ^
+    320|     const root = branchGraphStore.createUserNode("先缩小投入。仍然保留值得验证的问题。");
+    321|     useDialogueUiStore.setState({ focusedNodeId: root }); seedActiveWo…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯
+
+ FAIL  src/components/dialogue/DialogueShell.test.tsx > DialogueShell > keeps the inline question in view when the mobile keyboard reduces the visible height
+Error: Test timed out in 10000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/components/dialogue/DialogueShell.test.tsx:342:3
+    340|   });
+    341|
+    342|   it("keeps the inline question in view when the mobile keyboard reduc…
+       |   ^
+    343|     const events = new EventTarget();
+    344|     const viewport = { width: 320, height: 568, offsetTop: 0, scale: 1,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯
+
+ FAIL  src/components/dialogue/DialogueShell.test.tsx > DialogueShell > keeps the current reading when an inquiry completes after wheel reading, and opens it only on request
+Error: Test timed out in 10000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/components/dialogue/DialogueShell.test.tsx:395:42
+    393|   });
+    394|
+    395|   it.each(["wheel", "touch", "keyboard"])("keeps the current reading w…
+       |                                          ^
+    396|     const root = branchGraphStore.createUserNode("自由探索可以持续。仍然保留值得验证的问题…
+    397|     useDialogueUiStore.setState({ focusedNodeId: root }); seedActiveWo…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯
+
+ FAIL  src/components/dialogue/DialogueShell.test.tsx > DialogueShell > saves a late inquiry without reopening reading after explicit return dismissal
+Error: Test timed out in 10000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/components/dialogue/DialogueShell.test.tsx:439:41
+    437|   });
+    438|
+    439|   it.each(["return", "escape", "blank"])("saves a late inquiry without…
+       |                                         ^
+    440|     const root = branchGraphStore.createUserNode("这条前提值得继续追问。");
+    441|     useDialogueUiStore.setState({ focusedNodeId: root }); seedActiveWo…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/9]⎯
+
+ FAIL  src/components/dialogue/DialogueShell.test.tsx > DialogueShell > adds flagged retrieval context to the /api/synthesis request body
+Error: Test timed out in 10000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/components/dialogue/DialogueShell.test.tsx:1105:3
+    1103|   });
+    1104|
+    1105|   it("adds flagged retrieval context to the /api/synthesis request bod…
+       |   ^
+    1106|     setDialogueWorkspaceRetrievalContextEnabledForTests(true);
+    1107|     const user = userEvent.setup();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯
+
+ FAIL  src/components/dialogue/DialogueShell.test.tsx > DialogueShell > stores roundtable artifact durably across autosave and promotes against source lineage
+Error: Test timed out in 10000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/components/dialogue/DialogueShell.test.tsx:1417:3
+    1415|   });
+    1416|
+    1417|   it("stores roundtable artifact durably across autosave and promotes …
+       |   ^
+    1418|     const user = userEvent.setup();
+    1419|     const { rootUserId, thesisId } = seedPair();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/9]⎯
+
+ FAIL  src/components/dialogue/SeedInspector.test.tsx > closes the inline axis choice from radio with Escape without dismissing the reading parent
+Error: Test timed out in 10000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/components/dialogue/SeedInspector.test.tsx:95:40
+     93| });
+     94|
+     95| it.each(["heading", "return", "radio"])("closes the inline axis choice…
+       |                                        ^
+     96|   const store = new BranchGraphStore(), root = store.createUserNode("问…
+     97|   window.addEventListener("keydown", escape);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/9]⎯
+
+
+ Test Files  2 failed | 1 passed (3)
+      Tests  9 failed | 95 passed (104)
+   Start at  18:57:46
+   Duration  330.69s (transform 8.02s, setup 1.33s, import 34.76s, tests 359.50s, environment 14.63s)

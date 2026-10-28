@@ -1,0 +1,493 @@
+{
+  "createdAt": "2026-10-28T10:05:23.473Z",
+  "revision": "55a99f976807ecb2c7a72fb90a15e6b8395a4614",
+  "method": "Isolated public-site Chromium desktop/touch contexts. Dark stage screenshot waits1100ms after reading closes. Rename draft deliberately left open across workspace creation and saved in local-only test context. No provider calls/product changes/physical device test. Browser plugin not available.",
+  "results": [
+    {
+      "spec": {
+        "name": "desktop",
+        "url": "https://aitoshuu.me/Anicca",
+        "width": 1440,
+        "height": 900,
+        "touch": false
+      },
+      "states": [
+        {
+          "name": "dark-stage-settled",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 1440,
+          "height": 900,
+          "theme": "dark",
+          "workspaceId": "workspace_2518b1b9-aaa4-4ef6-ae41-e44feaaec38d",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "registryRaw": null,
+          "shellBackground": "rgb(25, 22, 32)",
+          "label": {
+            "text": "社区花园是否应该保留不预设用…",
+            "color": "rgb(252, 251, 255)",
+            "opacity": "1",
+            "x": 642,
+            "y": 437.453125,
+            "width": 156,
+            "height": 23.796875,
+            "ancestors": [
+              {
+                "tag": "STRONG",
+                "class": "",
+                "opacity": "1",
+                "color": "rgb(252, 251, 255)"
+              },
+              {
+                "tag": "SPAN",
+                "class": "DialogueShell_stageNodeInner__yNJyt",
+                "opacity": "1",
+                "color": "rgb(252, 251, 255)"
+              },
+              {
+                "tag": "BUTTON",
+                "class": "DialogueShell_stageNode__Qwnzr      DialogueShell_stageNodeUser__UvyED DialogueShell_stageNodeFocused__HwqLT   ",
+                "opacity": "1",
+                "color": "rgb(234, 223, 244)"
+              },
+              {
+                "tag": "DIV",
+                "class": "DialogueShell_stageTrack__ndkAh DialogueShell_stageTrackInteractive__XB4wu ",
+                "opacity": "1",
+                "color": "rgb(234, 223, 244)"
+              },
+              {
+                "tag": "DIV",
+                "class": "DialogueShell_stageViewport__wJJ_6 ",
+                "opacity": "1",
+                "color": "rgb(234, 223, 244)"
+              },
+              {
+                "tag": "DIV",
+                "class": "DialogueShell_stageCanvas__H94DK",
+                "opacity": "1",
+                "color": "rgb(234, 223, 244)"
+              },
+              {
+                "tag": "SECTION",
+                "class": "DialogueShell_stagePanel__ztE_D",
+                "opacity": "1",
+                "color": "rgb(234, 223, 244)"
+              },
+              {
+                "tag": "DIV",
+                "class": "DialogueShell_workspace__YESIA",
+                "opacity": "1",
+                "color": "rgb(234, 223, 244)"
+              }
+            ]
+          },
+          "allStorageKeys": [
+            "anicca_workspace_legacy_migrated_v1",
+            "anicca_workspace_snapshot_v1:workspace_2518b1b9-aaa4-4ef6-ae41-e44feaaec38d",
+            "anicca_workspace_active_v1",
+            "anicca_workspace_registry_v1"
+          ],
+          "reading": false
+        },
+        {
+          "name": "rename-original-draft",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 1440,
+          "height": 900,
+          "theme": "dark",
+          "workspaceId": "workspace_2518b1b9-aaa4-4ef6-ae41-e44feaaec38d",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "rename": "尚未提交的原工作区标题",
+          "registryRaw": null,
+          "shellBackground": "rgb(25, 22, 32)",
+          "label": {
+            "text": "社区花园是否应该保留不预设用…",
+            "color": "rgb(252, 251, 255)",
+            "opacity": "1",
+            "x": 642,
+            "y": 437.453125,
+            "width": 156,
+            "height": 23.796875,
+            "ancestors": [
+              {
+                "tag": "STRONG",
+                "class": "",
+                "opacity": "1",
+                "color": "rgb(252, 251, 255)"
+              },
+              {
+                "tag": "SPAN",
+                "class": "DialogueShell_stageNodeInner__yNJyt",
+                "opacity": "1",
+                "color": "rgb(252, 251, 255)"
+              },
+              {
+                "tag": "BUTTON",
+                "class": "DialogueShell_stageNode__Qwnzr      DialogueShell_stageNodeUser__UvyED DialogueShell_stageNodeFocused__HwqLT   ",
+                "opacity": "1",
+                "color": "rgb(234, 223, 244)"
+              },
+              {
+                "tag": "DIV",
+                "class": "DialogueShell_stageTrack__ndkAh DialogueShell_stageTrackInteractive__XB4wu ",
+                "opacity": "1",
+                "color": "rgb(234, 223, 244)"
+              },
+              {
+                "tag": "DIV",
+                "class": "DialogueShell_stageViewport__wJJ_6 ",
+                "opacity": "1",
+                "color": "rgb(234, 223, 244)"
+              },
+              {
+                "tag": "DIV",
+                "class": "DialogueShell_stageCanvas__H94DK",
+                "opacity": "1",
+                "color": "rgb(234, 223, 244)"
+              },
+              {
+                "tag": "SECTION",
+                "class": "DialogueShell_stagePanel__ztE_D",
+                "opacity": "1",
+                "color": "rgb(234, 223, 244)"
+              },
+              {
+                "tag": "DIV",
+                "class": "DialogueShell_workspace__YESIA",
+                "opacity": "1",
+                "color": "rgb(234, 223, 244)"
+              }
+            ]
+          },
+          "allStorageKeys": [
+            "anicca_workspace_legacy_migrated_v1",
+            "anicca_workspace_snapshot_v1:workspace_2518b1b9-aaa4-4ef6-ae41-e44feaaec38d",
+            "anicca_workspace_active_v1",
+            "anicca_workspace_registry_v1"
+          ],
+          "reading": false
+        },
+        {
+          "name": "rename-new-workspace-still-open",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 1440,
+          "height": 900,
+          "theme": "dark",
+          "workspaceId": "workspace_56d5a37f-99d7-44f0-904e-41765bd7ea72",
+          "workspaceTitle": "未命名工作区",
+          "rename": "尚未提交的原工作区标题",
+          "registryRaw": null,
+          "shellBackground": "rgb(25, 22, 32)",
+          "label": null,
+          "allStorageKeys": [
+            "anicca_workspace_legacy_migrated_v1",
+            "anicca_workspace_snapshot_v1:workspace_2518b1b9-aaa4-4ef6-ae41-e44feaaec38d",
+            "anicca_workspace_active_v1",
+            "anicca_workspace_registry_v1",
+            "anicca_workspace_snapshot_v1:workspace_56d5a37f-99d7-44f0-904e-41765bd7ea72"
+          ],
+          "reading": false
+        },
+        {
+          "name": "rename-save-after-switch",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 1440,
+          "height": 900,
+          "theme": "dark",
+          "workspaceId": "workspace_56d5a37f-99d7-44f0-904e-41765bd7ea72",
+          "workspaceTitle": "尚未提交的原工作区标题",
+          "registryRaw": null,
+          "shellBackground": "rgb(25, 22, 32)",
+          "label": null,
+          "allStorageKeys": [
+            "anicca_workspace_legacy_migrated_v1",
+            "anicca_workspace_snapshot_v1:workspace_2518b1b9-aaa4-4ef6-ae41-e44feaaec38d",
+            "anicca_workspace_active_v1",
+            "anicca_workspace_registry_v1",
+            "anicca_workspace_snapshot_v1:workspace_56d5a37f-99d7-44f0-904e-41765bd7ea72"
+          ],
+          "reading": false
+        },
+        {
+          "name": "workspace-list-after-save",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "width": 1440,
+          "height": 900,
+          "theme": "dark",
+          "workspaceId": "workspace_56d5a37f-99d7-44f0-904e-41765bd7ea72",
+          "workspaceTitle": "尚未提交的原工作区标题",
+          "registryRaw": null,
+          "shellBackground": "rgb(25, 22, 32)",
+          "label": null,
+          "allStorageKeys": [
+            "anicca_workspace_legacy_migrated_v1",
+            "anicca_workspace_snapshot_v1:workspace_2518b1b9-aaa4-4ef6-ae41-e44feaaec38d",
+            "anicca_workspace_active_v1",
+            "anicca_workspace_registry_v1",
+            "anicca_workspace_snapshot_v1:workspace_56d5a37f-99d7-44f0-904e-41765bd7ea72"
+          ],
+          "reading": false
+        }
+      ],
+      "errors": [],
+      "postRequests": [],
+      "identity": {
+        "status": 200,
+        "knownBuildTokenPresent": true
+      },
+      "recentWorkspaceTitles": [
+        "尚未提交的原工作区标题",
+        "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。"
+      ],
+      "completed": true
+    },
+    {
+      "spec": {
+        "name": "mobile",
+        "url": "https://tongye.me/Anicca",
+        "width": 390,
+        "height": 844,
+        "touch": true
+      },
+      "states": [
+        {
+          "name": "dark-stage-settled",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "width": 390,
+          "height": 844,
+          "theme": "dark",
+          "workspaceId": "workspace_065ebbde-ae44-44df-a739-a15b7489f7e9",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "registryRaw": null,
+          "shellBackground": "rgb(25, 22, 32)",
+          "label": {
+            "text": "社区花园是否应该保留不预设用…",
+            "color": "rgb(252, 251, 255)",
+            "opacity": "1",
+            "x": 129,
+            "y": 385.09375,
+            "width": 132,
+            "height": 23.796875,
+            "ancestors": [
+              {
+                "tag": "STRONG",
+                "class": "",
+                "opacity": "1",
+                "color": "rgb(252, 251, 255)"
+              },
+              {
+                "tag": "SPAN",
+                "class": "DialogueShell_stageNodeInner__yNJyt",
+                "opacity": "1",
+                "color": "rgb(252, 251, 255)"
+              },
+              {
+                "tag": "BUTTON",
+                "class": "DialogueShell_stageNode__Qwnzr      DialogueShell_stageNodeUser__UvyED DialogueShell_stageNodeFocused__HwqLT   ",
+                "opacity": "1",
+                "color": "rgb(234, 223, 244)"
+              },
+              {
+                "tag": "DIV",
+                "class": "DialogueShell_stageTrack__ndkAh DialogueShell_stageTrackInteractive__XB4wu ",
+                "opacity": "1",
+                "color": "rgb(234, 223, 244)"
+              },
+              {
+                "tag": "DIV",
+                "class": "DialogueShell_stageViewport__wJJ_6 ",
+                "opacity": "1",
+                "color": "rgb(234, 223, 244)"
+              },
+              {
+                "tag": "DIV",
+                "class": "DialogueShell_stageCanvas__H94DK",
+                "opacity": "1",
+                "color": "rgb(234, 223, 244)"
+              },
+              {
+                "tag": "SECTION",
+                "class": "DialogueShell_stagePanel__ztE_D",
+                "opacity": "1",
+                "color": "rgb(234, 223, 244)"
+              },
+              {
+                "tag": "DIV",
+                "class": "DialogueShell_workspace__YESIA",
+                "opacity": "1",
+                "color": "rgb(234, 223, 244)"
+              }
+            ]
+          },
+          "allStorageKeys": [
+            "anicca_workspace_legacy_migrated_v1",
+            "anicca_workspace_snapshot_v1:workspace_065ebbde-ae44-44df-a739-a15b7489f7e9",
+            "anicca_workspace_active_v1",
+            "anicca_workspace_registry_v1"
+          ],
+          "reading": false
+        },
+        {
+          "name": "rename-original-draft",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "width": 390,
+          "height": 844,
+          "theme": "dark",
+          "workspaceId": "workspace_065ebbde-ae44-44df-a739-a15b7489f7e9",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "rename": "尚未提交的原工作区标题",
+          "registryRaw": null,
+          "shellBackground": "rgb(25, 22, 32)",
+          "label": {
+            "text": "社区花园是否应该保留不预设用…",
+            "color": "rgb(252, 251, 255)",
+            "opacity": "1",
+            "x": 129,
+            "y": 385.09375,
+            "width": 132,
+            "height": 23.796875,
+            "ancestors": [
+              {
+                "tag": "STRONG",
+                "class": "",
+                "opacity": "1",
+                "color": "rgb(252, 251, 255)"
+              },
+              {
+                "tag": "SPAN",
+                "class": "DialogueShell_stageNodeInner__yNJyt",
+                "opacity": "1",
+                "color": "rgb(252, 251, 255)"
+              },
+              {
+                "tag": "BUTTON",
+                "class": "DialogueShell_stageNode__Qwnzr      DialogueShell_stageNodeUser__UvyED DialogueShell_stageNodeFocused__HwqLT   ",
+                "opacity": "1",
+                "color": "rgb(234, 223, 244)"
+              },
+              {
+                "tag": "DIV",
+                "class": "DialogueShell_stageTrack__ndkAh DialogueShell_stageTrackInteractive__XB4wu ",
+                "opacity": "1",
+                "color": "rgb(234, 223, 244)"
+              },
+              {
+                "tag": "DIV",
+                "class": "DialogueShell_stageViewport__wJJ_6 ",
+                "opacity": "1",
+                "color": "rgb(234, 223, 244)"
+              },
+              {
+                "tag": "DIV",
+                "class": "DialogueShell_stageCanvas__H94DK",
+                "opacity": "1",
+                "color": "rgb(234, 223, 244)"
+              },
+              {
+                "tag": "SECTION",
+                "class": "DialogueShell_stagePanel__ztE_D",
+                "opacity": "1",
+                "color": "rgb(234, 223, 244)"
+              },
+              {
+                "tag": "DIV",
+                "class": "DialogueShell_workspace__YESIA",
+                "opacity": "1",
+                "color": "rgb(234, 223, 244)"
+              }
+            ]
+          },
+          "allStorageKeys": [
+            "anicca_workspace_legacy_migrated_v1",
+            "anicca_workspace_snapshot_v1:workspace_065ebbde-ae44-44df-a739-a15b7489f7e9",
+            "anicca_workspace_active_v1",
+            "anicca_workspace_registry_v1"
+          ],
+          "reading": false
+        },
+        {
+          "name": "rename-new-workspace-still-open",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "width": 390,
+          "height": 844,
+          "theme": "dark",
+          "workspaceId": "workspace_ce89c497-7e56-47c9-8eb2-783c337afb14",
+          "workspaceTitle": "未命名工作区",
+          "rename": "尚未提交的原工作区标题",
+          "registryRaw": null,
+          "shellBackground": "rgb(25, 22, 32)",
+          "label": null,
+          "allStorageKeys": [
+            "anicca_workspace_snapshot_v1:workspace_ce89c497-7e56-47c9-8eb2-783c337afb14",
+            "anicca_workspace_legacy_migrated_v1",
+            "anicca_workspace_snapshot_v1:workspace_065ebbde-ae44-44df-a739-a15b7489f7e9",
+            "anicca_workspace_active_v1",
+            "anicca_workspace_registry_v1"
+          ],
+          "reading": false
+        },
+        {
+          "name": "rename-save-after-switch",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "width": 390,
+          "height": 844,
+          "theme": "dark",
+          "workspaceId": "workspace_ce89c497-7e56-47c9-8eb2-783c337afb14",
+          "workspaceTitle": "尚未提交的原工作区标题",
+          "registryRaw": null,
+          "shellBackground": "rgb(25, 22, 32)",
+          "label": null,
+          "allStorageKeys": [
+            "anicca_workspace_snapshot_v1:workspace_ce89c497-7e56-47c9-8eb2-783c337afb14",
+            "anicca_workspace_legacy_migrated_v1",
+            "anicca_workspace_snapshot_v1:workspace_065ebbde-ae44-44df-a739-a15b7489f7e9",
+            "anicca_workspace_active_v1",
+            "anicca_workspace_registry_v1"
+          ],
+          "reading": false
+        },
+        {
+          "name": "workspace-list-after-save",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "width": 390,
+          "height": 844,
+          "theme": "dark",
+          "workspaceId": "workspace_ce89c497-7e56-47c9-8eb2-783c337afb14",
+          "workspaceTitle": "尚未提交的原工作区标题",
+          "registryRaw": null,
+          "shellBackground": "rgb(25, 22, 32)",
+          "label": null,
+          "allStorageKeys": [
+            "anicca_workspace_snapshot_v1:workspace_ce89c497-7e56-47c9-8eb2-783c337afb14",
+            "anicca_workspace_legacy_migrated_v1",
+            "anicca_workspace_snapshot_v1:workspace_065ebbde-ae44-44df-a739-a15b7489f7e9",
+            "anicca_workspace_active_v1",
+            "anicca_workspace_registry_v1"
+          ],
+          "reading": false
+        }
+      ],
+      "errors": [],
+      "postRequests": [],
+      "identity": {
+        "status": 200,
+        "knownBuildTokenPresent": true
+      },
+      "recentWorkspaceTitles": [
+        "尚未提交的原工作区标题",
+        "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。"
+      ],
+      "completed": true
+    }
+  ]
+}

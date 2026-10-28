@@ -1,0 +1,7 @@
+{
+  "checkedAt": "2026-10-28T11:32:06.907755+00:00",
+  "release": "/opt/anicca/releases/20261028-reading-continuity",
+  "buildId": "cbzA0qf4uovQnU4Bm1bsF",
+  "service": "NRestarts=0\nActiveState=active\nSubState=running\n",
+  "candidate": "ActiveState=inactive\n"
+}

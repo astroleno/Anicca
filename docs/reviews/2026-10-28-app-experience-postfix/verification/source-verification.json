@@ -1,0 +1,19 @@
+{
+  "archivedFiles": 270,
+  "allArchiveFilesMatch": true,
+  "release": {
+    "application": "Anicca",
+    "basePath": "/Anicca",
+    "platform": "linux",
+    "arch": "x64",
+    "nextVersion": "15.5.28",
+    "buildId": "cbzA0qf4uovQnU4Bm1bsF",
+    "builtAt": "2026-10-28T11:10:32.053Z"
+  },
+  "applicationAndBuildInputs": 253,
+  "currentRuntimeInputsMatchArchive": true,
+  "qaOnlyAfterBuild": [
+    "scripts/visual-smoke/reading-continuity.mjs"
+  ],
+  "ciConfigNotRuntime": true
+}

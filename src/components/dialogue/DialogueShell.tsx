@@ -540,6 +540,7 @@ export function DialogueShell() {
   const [roundtablePendingRequest, setRoundtablePendingRequest] = useState<RoundtablePendingRequest | null>(null);
   const [workspaceStatus, setWorkspaceStatus] = useState<string | null>(null);
   const [generationAnnouncement, setGenerationAnnouncement] = useState<string | null>(null);
+  const [inquiryResult, setInquiryResult] = useState<{ sourceId: string; responseId: string } | null>(null);
   const [synthesisRevealId, setSynthesisRevealId] = useState<string | null>(null);
   const [lineageOpen, setLineageOpen] = useState(false);
   const [evolutionOpen, setEvolutionOpen] = useState(false);
@@ -598,7 +599,7 @@ export function DialogueShell() {
   useLayoutEffect(() => {
     setAxisSuggestions([]); setCameraView(null); pendingPerspectiveRef.current = null;
     setActiveInstanceId(null); setExpandedResultId(null); setExpansionResult(null);
-    setEvolutionOpen(false);
+    setEvolutionOpen(false); setInquiryResult(null);
     setActiveDeferredId(null); setConnectionTargetId(null);
   }, [workspaceSessionId]);
   const pendingAction = useDialogueUiStore((state) => state.pendingAction);
@@ -620,6 +621,7 @@ export function DialogueShell() {
       setActiveInstanceId(instanceId); setFocusedNodeId(conceptId);
     }
   });
+  const noticeReadingIntent = useCallback(() => { attentionVersionRef.current += 1; }, []);
 
   useEffect(() => {
     const pointer = () => { readingMotionRef.current = "soft"; };
@@ -980,6 +982,7 @@ export function DialogueShell() {
     }
     const conceptId = seedConceptId(graphSnapshot.graph, seedInstances, nodeId);
     if (!conceptId) return;
+    if (inquiryResult?.responseId === conceptId) setInquiryResult(null);
     if (fromOverview) setCombineSourceId(null);
     if (expansionResult && ![expansionResult.sourceId, expansionResult.firstId, expansionResult.secondId].some(id =>
       seedConceptId(graphSnapshot.graph, seedInstances, id) === conceptId)) setExpansionResult(null);
@@ -1856,7 +1859,7 @@ export function DialogueShell() {
     const inheritedFrame = normalizePolarityOrigin(source.meta?.polarity)?.frame || source.meta?.fissionFrame;
     const frame = normalizeThinkingSpace(retry?.perspective || inheritedFrame || useDialogueUiStore.getState().thinkingSpace);
     pendingPerspectiveRef.current = frame; submittedTextRef.current = question;
-    setExpansionResult(null); setExpandedResultId(null);
+    setExpansionResult(null); setExpandedResultId(null); setInquiryResult(null);
     beginPending("branches", { requestId, workspaceSessionId, focusSnapshotId: view.focusSnapshotId,
       composerTargetId: target.sourceNodeId, inquiry: true });
     retryRef.current = { sessionId: workspaceSessionId, run: () => { void submitInquiry({ origin, draftVersion, perspective: frame }); } };
@@ -1867,11 +1870,14 @@ export function DialogueShell() {
       const active = useDialogueUiStore.getState().pending.branches;
       if (!ownsPendingResponse(active, response.requestId, useDialogueUiStore.getState().workspaceSessionId)) return;
       const { responseId } = branchGraphStore.createInquiry(origin, { ...response.inquiry, fissionFrame: frame });
+      const shouldAutoFocus = attentionVersion === attentionVersionRef.current && shouldAutoFocusPendingResult(active, branchGraphStore.getGraph());
       clearPending("branches"); retryRef.current = null; setErrorState(null);
-      if (draftVersion === draftVersionRef.current) { setDraft(""); setInquiryTarget(null); setComposerParentId(responseId); }
+      if (draftVersion === draftVersionRef.current) { setDraft(""); setInquiryTarget(null); setComposerParentId(shouldAutoFocus ? responseId : target.sourceNodeId); }
       setGenerationAnnouncement("这一句的回应已保存，可以接着想。");
-      if (attentionVersion === attentionVersionRef.current && shouldAutoFocusPendingResult(active, branchGraphStore.getGraph())) {
+      if (shouldAutoFocus) {
         setFocusedNodeId(responseId); setReadingOpen(true);
+      } else {
+        setInquiryResult({ sourceId: target.sourceNodeId, responseId });
       }
     } catch (error) {
       if (useDialogueUiStore.getState().pending.branches?.requestId !== requestId) return;
@@ -2280,6 +2286,9 @@ export function DialogueShell() {
               inquiryComposer={inlineInquiry ? composer : undefined}
               companionId={companionId}
               getReadingPosition={getReadingPosition} onRememberPosition={rememberReadingPosition}
+              onReadingIntent={noticeReadingIntent}
+              onReadNewResponse={!combineSourceId && inquiryResult?.sourceId === view.currentNode.id
+                ? () => handleSelectNode(inquiryResult.responseId) : undefined}
               onExpandPolarity={(axisId, frame) => void handlePolarityExpansion(view.currentNode!.id, axisId, frame)}
               onWrite={() => { setInquiryTarget(null); setConnectionTargetId(null); setComposerParentId(view.currentNode!.id); setReadingOpen(false); focusComposerSoon(); }}
               onCombine={() => { setCombineSourceId(focusedInstanceId || view.currentNode!.id); setSelectedPair(null); }}

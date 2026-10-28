@@ -1,0 +1,71 @@
+{
+  "realApiCalls": 24,
+  "allStatus200": true,
+  "completeJourneys": [
+    {
+      "baseUrl": "https://aitoshuu.me/Anicca",
+      "viewport": "desktop",
+      "requests": 6,
+      "statuses": [
+        200,
+        200,
+        200,
+        200,
+        200,
+        200
+      ],
+      "nodeCount": 12,
+      "defaultRenderer": "webgpu"
+    },
+    {
+      "baseUrl": "https://aitoshuu.me/Anicca",
+      "viewport": "mobile-390",
+      "requests": 6,
+      "statuses": [
+        200,
+        200,
+        200,
+        200,
+        200,
+        200
+      ],
+      "nodeCount": 12,
+      "defaultRenderer": "original"
+    },
+    {
+      "baseUrl": "https://tongye.me/Anicca",
+      "viewport": "desktop",
+      "requests": 6,
+      "statuses": [
+        200,
+        200,
+        200,
+        200,
+        200,
+        200
+      ],
+      "nodeCount": 12,
+      "defaultRenderer": "webgpu"
+    },
+    {
+      "baseUrl": "https://tongye.me/Anicca",
+      "viewport": "mobile-390",
+      "requests": 6,
+      "statuses": [
+        200,
+        200,
+        200,
+        200,
+        200,
+        200
+      ],
+      "nodeCount": 12,
+      "defaultRenderer": "original"
+    }
+  ],
+  "controlledCompleteJourneys": 4,
+  "controlledPointerContexts": 4,
+  "manualRendererContexts": 4,
+  "reviewRegressionStates": 96,
+  "physicalDeviceTest": false
+}

@@ -385,6 +385,55 @@ describe("DialogueShell", () => {
     await waitFor(() => expect(Object.keys(branchGraphStore.getGraph().nodes)).toHaveLength(3));
     expect(screen.getByRole("textbox", { name: "输入" })).toHaveValue("等待时想到的另一个问题");
     expect(Object.values(branchGraphStore.getGraph().nodes).filter(node => node.kind === "assistant")).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "阅读新回应" }));
+    expect(await screen.findByRole("heading", { name: "暂不收束" })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "输入" })).toHaveValue("等待时想到的另一个问题");
+    expect(useDialogueUiStore.getState().composerParentId).toBe(root);
+    expect(screen.getByLabelText("本次追问的原句")).toHaveTextContent("自由探索可以持续。");
+  });
+
+  it.each(["wheel", "touch", "keyboard"])("keeps the current reading when an inquiry completes after %s reading, and opens it only on request", async interaction => {
+    const root = branchGraphStore.createUserNode("自由探索可以持续。仍然保留值得验证的问题。");
+    useDialogueUiStore.setState({ focusedNodeId: root }); seedActiveWorkspaceFromCurrentGraph();
+    const pending = createDeferred<Response>(), fetchMock = vi.fn(() => pending.promise); vi.stubGlobal("fetch", fetchMock);
+    render(<DialogueShell />); fireEvent.click(screen.getByTestId(`dialogue-stage-node-${root}`));
+    fireEvent.click(await screen.findByRole("button", { name: "选一句追问" }));
+    fireEvent.click(screen.getByRole("button", { name: "自由探索可以持续。" }));
+    fireEvent.click(screen.getByRole("button", { name: "追问前提" }));
+    await waitFor(() => expect(screen.getByRole("textbox", { name: "输入" })).toHaveFocus());
+    fireEvent.click(screen.getByRole("button", { name: "追问" }));
+    const request = readFetchBody(fetchMock, 0), panel = screen.getByTestId("dialogue-panel");
+    const heading = panel.querySelector("h2")!; heading.focus();
+    if (interaction === "wheel") fireEvent.wheel(panel, { deltaY: 120 });
+    else if (interaction === "touch") fireEvent.pointerDown(panel, { pointerType: "touch", pointerId: 1 });
+    else fireEvent.keyDown(heading, { key: "PageDown" });
+    panel.scrollTop = 120; fireEvent.scroll(panel);
+    pending.resolve(new Response(JSON.stringify({ requestId: request.requestId, inquiry: { text: "探索需要保留重新协商的空间。", label: "已保存的新回应", summary: "核实条件" } })));
+    const openResponse = await screen.findByRole("button", { name: "阅读新回应" });
+    expect(useDialogueUiStore.getState().focusedNodeId).toBe(root);
+    expect(useDialogueUiStore.getState().composerParentId).toBe(root);
+    expect(screen.getByTestId("dialogue-panel")).toBe(panel);
+    expect(panel.scrollTop).toBe(120); expect(heading).toHaveFocus();
+    expect(Object.keys(branchGraphStore.getGraph().nodes)).toHaveLength(3);
+    fireEvent.click(openResponse);
+    expect(await screen.findByRole("heading", { name: "已保存的新回应" })).toHaveFocus();
+    expect(screen.queryByRole("button", { name: "阅读新回应" })).not.toBeInTheDocument();
+  });
+
+  it("does not treat a programmatic reading scroll as a decision to stop following an inquiry", async () => {
+    const root = branchGraphStore.createUserNode("继续检验这个前提。");
+    useDialogueUiStore.setState({ focusedNodeId: root }); seedActiveWorkspaceFromCurrentGraph();
+    const pending = createDeferred<Response>(), fetchMock = vi.fn(() => pending.promise); vi.stubGlobal("fetch", fetchMock);
+    render(<DialogueShell />); fireEvent.click(screen.getByTestId(`dialogue-stage-node-${root}`));
+    fireEvent.click(await screen.findByRole("button", { name: "选一句追问" }));
+    fireEvent.click(within(screen.getByLabelText("选择要追问的原句")).getByRole("button"));
+    fireEvent.click(screen.getByRole("button", { name: "追问前提" }));
+    await waitFor(() => expect(screen.getByRole("textbox", { name: "输入" })).toHaveFocus());
+    fireEvent.click(screen.getByRole("button", { name: "追问" }));
+    const panel = screen.getByTestId("dialogue-panel"); panel.scrollTop = 120; fireEvent.scroll(panel);
+    const request = readFetchBody(fetchMock, 0);
+    pending.resolve(new Response(JSON.stringify({ requestId: request.requestId, inquiry: { text: "前提可以继续讨论。", label: "继续澄清", summary: "核实条件" } })));
+    expect(await screen.findByRole("heading", { name: "继续澄清" })).toHaveFocus();
   });
 
   it.each(["return", "escape", "blank"])("saves a late inquiry without reopening reading after explicit %s dismissal", async dismissal => {
@@ -2143,6 +2192,35 @@ describe("DialogueShell", () => {
     });
 
     expect(screen.getAllByText("Renamed Workspace").length).toBeGreaterThan(0);
+  });
+
+  it.each(["create", "switch"])("ends an unfinished rename when workspace ownership changes via %s", async action => {
+    const user = userEvent.setup(), { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId }); seedActiveWorkspaceFromCurrentGraph();
+    saveWorkspaceRecord({ id: "workspace_other", title: "Existing B", snapshot: {
+      schemaVersion: ANICCA_WORKSPACE_SCHEMA_VERSION, workspaceId: "workspace_other",
+      graph: buildRegistryGraph("user_other", "另一个想法"), focusedNodeId: "user_other", composerParentId: null, stageLayouts: {}
+    } });
+    vi.stubGlobal("fetch", vi.fn()); render(<DialogueShell />);
+    await moreAction(user, "重命名工作区");
+    fireEvent.change(screen.getByRole("textbox", { name: "工作区名称" }), { target: { value: "A 尚未提交的名称" } });
+    if (action === "create") await moreAction(user, "新建工作区");
+    else await selectWorkspace(user, "Existing B");
+    const otherId = useDialogueUiStore.getState().workspaceId!;
+    expect(otherId).not.toBe("workspace_test");
+    expect(screen.queryByRole("textbox", { name: "工作区名称" })).not.toBeInTheDocument();
+    expect(loadWorkspaceRecord("workspace_test")?.entry.title).toBe("Workspace Test Boot");
+    const otherTitle = loadWorkspaceRecord(otherId)!.entry.title;
+    await moreAction(user, "重命名工作区");
+    expect(screen.getByRole("textbox", { name: "工作区名称" })).toHaveValue(otherTitle);
+    fireEvent.change(screen.getByRole("textbox", { name: "工作区名称" }), { target: { value: "B 独立的新名称" } });
+    await user.click(screen.getByRole("button", { name: "保存工作区名称" }));
+    expect(loadWorkspaceRecord(otherId)?.entry.title).toBe("B 独立的新名称");
+    expect(loadWorkspaceRecord("workspace_test")?.entry.title).toBe("Workspace Test Boot");
+    await selectWorkspace(user, "Workspace Test Boot");
+    expect(screen.queryByRole("textbox", { name: "工作区名称" })).not.toBeInTheDocument();
+    await moreAction(user, "重命名工作区");
+    expect(screen.getByRole("textbox", { name: "工作区名称" })).toHaveValue("Workspace Test Boot");
   });
 
   it("emits continuation_created only after branch generation succeeds and lands", async () => {

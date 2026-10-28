@@ -1,0 +1,67 @@
+import {mkdir,writeFile,copyFile} from 'node:fs/promises';
+import path from 'node:path';
+import {chromium} from '/Users/aitoshuu/Documents/GitHub/Anicca/node_modules/playwright/index.mjs';
+import {thoughtFlowFixture} from '/Users/aitoshuu/Documents/GitHub/Anicca/scripts/visual-smoke/thought-flow.mjs';
+import {waitForSeedLayout} from '/Users/aitoshuu/Documents/GitHub/Anicca/scripts/visual-smoke/seeds.mjs';
+
+const output='/tmp/anicca-app-postfix-review';
+await mkdir(output,{recursive:true});
+const browser=await chromium.launch({headless:true,args:['--use-angle=metal']});
+const results=[];
+const frame=page=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+async function state(page){return page.evaluate(()=>{
+  const rect=el=>{if(!el)return null;const r=el.getBoundingClientRect(),s=getComputedStyle(el),x=r.x+r.width/2,y=r.y+r.height/2;
+    const hit=x>=0&&x<innerWidth&&y>=0&&y<innerHeight?document.elementFromPoint(x,y):null;
+    return {x:r.x,y:r.y,width:r.width,height:r.height,bottom:r.bottom,visibleHeight:Math.max(0,Math.min(r.bottom,innerHeight)-Math.max(r.y,0)),hittable:!!hit&&(hit===el||el.contains(hit)),display:s.display};};
+  const panel=document.querySelector('[data-testid="dialogue-panel"]'),focus=document.activeElement,menu=document.querySelector('[aria-label="更多工作区操作"]');
+  return {url:location.href,title:document.title,width:innerWidth,height:innerHeight,scrollY,
+    workspaceId:localStorage.getItem('anicca_workspace_active_v1'),workspaceTitle:document.querySelector('[data-testid="dialogue-workspace-bar"] strong')?.textContent,
+    reading:document.querySelector('#dialogue-reading-drawer')?.dataset.open==='true',readerMode:panel?.dataset.mode,scrollTop:panel?.scrollTop,scrollHeight:panel?.scrollHeight,clientHeight:panel?.clientHeight,
+    input:{...rect(document.querySelector('#dialogue-input')),value:document.querySelector('#dialogue-input')?.value},rename:{...rect(document.querySelector('input[aria-label="工作区名称"]')),value:document.querySelector('input[aria-label="工作区名称"]')?.value},
+    menu:{...rect(menu),scrollTop:menu?.scrollTop,scrollHeight:menu?.scrollHeight,clientHeight:menu?.clientHeight},
+    focus:{tag:focus?.tagName,id:focus?.id,label:focus?.getAttribute('aria-label'),text:focus?.textContent?.trim().slice(0,80)},
+    visibleControls:Array.from(document.querySelectorAll('button,input,textarea,select,a')).filter(el=>{const r=el.getBoundingClientRect(),s=getComputedStyle(el);return r.width&&r.height&&s.visibility!=='hidden'&&s.display!=='none'&&r.bottom>0&&r.y<innerHeight;}).map(el=>({tag:el.tagName,label:el.getAttribute('aria-label')||el.textContent?.trim().slice(0,80),disabled:el.disabled,...rect(el)})),
+    frameworkOverlay:!!document.querySelector('nextjs-portal,[data-nextjs-dialog-overlay]')};
+});}
+async function ready(page){await page.getByTestId('dialogue-composer').waitFor();await page.evaluate(()=>document.fonts.ready.then(()=>undefined));await frame(page);}
+try{
+  for(const spec of [{name:'desktop',url:'https://aitoshuu.me/Anicca',width:1440,height:900,touch:false},{name:'mobile',url:'https://tongye.me/Anicca',width:390,height:844,touch:true}]){
+    const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},hasTouch:spec.touch,isMobile:spec.touch});
+    await context.addInitScript(fixture=>{if(!localStorage.getItem('anicca_workspace_active_v1'))localStorage.setItem('anicca_workspace_v2',JSON.stringify(fixture));localStorage.setItem('anicca:seed-guide:v1','done');},thoughtFlowFixture);
+    const page=await context.newPage();page.setDefaultTimeout(20000);
+    const item={spec,states:[],pageErrors:[],consoleErrors:[],warnings:[],postRequests:[]};results.push(item);
+    page.on('pageerror',e=>item.pageErrors.push(e.message));page.on('console',m=>{if(m.type()==='error')item.consoleErrors.push(m.text());else if(m.type()==='warning')item.warnings.push(m.text());});
+    await page.route('**/api/**',route=>{if(route.request().method()==='POST'){item.postRequests.push(new URL(route.request().url()).pathname);return route.abort();}return route.continue();});
+    const note=async(name,shot=false)=>{await frame(page);const value={name,...await state(page)};item.states.push(value);if(shot)await page.screenshot({path:path.join(output,`${spec.name}-${name}.png`)});return value;};
+    const more=async()=>{await page.getByRole('button',{name:'更多',exact:true}).click();await page.getByRole('button',{name:'重命名工作区',exact:true}).waitFor();await frame(page);};
+    const reading=async()=>{await waitForSeedLayout(page);await page.getByTestId('dialogue-stage-node-root').locator('[data-seed-caption]').click();await page.locator('#dialogue-reading-drawer[data-open="true"]').waitFor();await page.waitForFunction(()=>getComputedStyle(document.querySelector('#dialogue-reading-drawer')).opacity==='1');};
+    const scroll=async top=>{await page.getByTestId('dialogue-panel').evaluate((el,top)=>{el.scrollTop=top;el.dispatchEvent(new Event('scroll'));},top);await frame(page);};
+    try{
+      const response=await page.goto(spec.url,{waitUntil:'networkidle'}),html=await response.text();item.identity={status:response.status(),url:page.url(),knownBuildTokenPresent:html.includes('G0tgHltanXgUhENX7R9J8')};await ready(page);
+      await note('entry',true);
+      const draft='尚未完成的花园维护想法';await page.getByRole('textbox',{name:'输入',exact:true}).fill(draft);
+      await reading();await note('reading-top',true);await scroll(650);await note('reading-middle',true);
+      await page.getByRole('button',{name:'演化全景',exact:true}).click();await page.getByTestId('evolution-overview').waitFor();await note('overview-open',true);await page.keyboard.press('Escape');await page.getByTestId('evolution-overview').waitFor({state:'hidden'});await note('overview-return',true);
+      await page.getByRole('button',{name:'换个角度',exact:true}).click();await page.getByRole('dialog').waitFor();await note('perspective-open',true);await page.keyboard.press('Escape');await page.getByRole('dialog').waitFor({state:'hidden'});await note('perspective-return');
+      await page.getByRole('button',{name:'看极性两端',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-testid="dialogue-panel"]')?.dataset.mode==='polarity');await note('polarity-open',true);await page.keyboard.press('Escape');await note('polarity-return');
+      await scroll(100000);await note('reading-bottom',true);await scroll(650);
+      await more();await note('more-open',true);await page.keyboard.press('Escape');await note('more-return');
+      await more();await page.getByRole('button',{name:'重命名工作区',exact:true}).click();await page.getByRole('textbox',{name:'工作区名称',exact:true}).waitFor();await note('rename-open',true);
+      await page.getByRole('textbox',{name:'工作区名称',exact:true}).fill('花园｜共同维护与开放用途的长标题记录');await page.getByRole('button',{name:'保存工作区名称',exact:true}).click();await note('rename-saved',true);
+      await page.getByRole('button',{name:'返回种子，收起阅读',exact:true}).click();await page.locator('#dialogue-reading-drawer').waitFor({state:'hidden'});
+      await more();await page.getByRole('button',{name:'新建工作区',exact:true}).click();await ready(page);await note('new-workspace',true);
+      await page.getByRole('textbox',{name:'输入',exact:true}).fill('另一处尚未展开的想法');await more();await page.getByRole('button',{name:'花园｜共同维护与开放用途的长标题记录',exact:true}).click();await ready(page);await note('original-workspace-return',true);
+      await page.reload({waitUntil:'networkidle'});await ready(page);await note('original-workspace-refresh',true);
+      if(spec.touch){
+        await page.setViewportSize({width:320,height:568});await frame(page);await more();await note('more-320-top',true);
+        await page.locator('[aria-label="更多工作区操作"]').evaluate(el=>{el.scrollTop=el.scrollHeight;});await note('more-320-bottom',true);await page.keyboard.press('Escape');
+        await page.setViewportSize({width:844,height:390});await frame(page);await more();await note('more-landscape-top',true);
+        await page.locator('[aria-label="更多工作区操作"]').evaluate(el=>{el.scrollTop=el.scrollHeight;});await note('more-landscape-bottom',true);await page.keyboard.press('Escape');
+      }
+      item.completed=true;
+    }catch(error){item.failure=String(error);await note('probe-failure',true).catch(()=>{});}
+    finally{await context.close();console.log(JSON.stringify({spec:spec.name,completed:item.completed,failure:item.failure,states:item.states.length,pageErrors:item.pageErrors,postRequests:item.postRequests}));}
+  }
+}finally{
+  await browser.close();await writeFile(path.join(output,'review-probes.json'),JSON.stringify({createdAt:new Date().toISOString(),revision:'55a99f976807ecb2c7a72fb90a15e6b8395a4614',method:'Fresh isolated public-site Chromium contexts, synthetic root and user drafts; Browser plugin not available. Main-thread critical rendered visual review using existing project Playwright. No generation, product changes or real-device test.',flow:'public entry → long reading → overview/perspective/polarity/menu return → rename → new workspace → original draft restoration → refresh → small-screen menu scrolling',results},null,2));await copyFile('/tmp/anicca-app-postfix-review.mjs',path.join(output,'capture.mjs.txt'));
+}

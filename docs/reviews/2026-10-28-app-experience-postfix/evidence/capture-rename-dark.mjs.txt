@@ -1,0 +1,36 @@
+import {mkdir,writeFile,copyFile} from 'node:fs/promises';
+import path from 'node:path';
+import {chromium} from '/Users/aitoshuu/Documents/GitHub/Anicca/node_modules/playwright/index.mjs';
+import {thoughtFlowFixture} from '/Users/aitoshuu/Documents/GitHub/Anicca/scripts/visual-smoke/thought-flow.mjs';
+import {waitForSeedLayout} from '/Users/aitoshuu/Documents/GitHub/Anicca/scripts/visual-smoke/seeds.mjs';
+const output='/tmp/anicca-app-postfix-final-probe';await mkdir(output,{recursive:true});
+const browser=await chromium.launch({headless:true,args:['--use-angle=metal']});const results=[];
+const frame=page=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+async function state(page){return page.evaluate(()=>{
+ const el=document.querySelector('[data-testid="dialogue-stage-node-root"] [data-seed-caption] strong'),label=el?.closest('[data-seed-caption]'),shell=document.querySelector('[data-testid="dialogue-shell"]');
+ const style=el?getComputedStyle(el):null;const key=localStorage.getItem('anicca_workspace_active_v1'),r=el?.getBoundingClientRect();
+ const reg=JSON.parse(localStorage.getItem('anicca_workspaces_v1')||'null');
+ return {url:location.href,title:document.title,width:innerWidth,height:innerHeight,theme:shell?.dataset.theme,
+  workspaceId:key,workspaceTitle:document.querySelector('[data-testid="dialogue-workspace-bar"] strong')?.textContent,
+  rename:document.querySelector('input[aria-label="工作区名称"]')?.value,registryRaw:reg,
+  shellBackground:shell?getComputedStyle(shell).backgroundColor:null,label:el?{text:el.textContent,color:style.color,opacity:style.opacity,x:r.x,y:r.y,width:r.width,height:r.height,
+    ancestors:(()=>{const rows=[];let p=el;while(p&&p!==shell){rows.push({tag:p.tagName,class:p.className,opacity:getComputedStyle(p).opacity,color:getComputedStyle(p).color});p=p.parentElement;}return rows;})()}:null,
+  allStorageKeys:Object.keys(localStorage).filter(k=>k.startsWith('anicca_workspace')),reading:document.querySelector('#dialogue-reading-drawer')?.dataset.open==='true'};
+});}
+try{
+ for(const spec of [{name:'desktop',url:'https://aitoshuu.me/Anicca',width:1440,height:900,touch:false},{name:'mobile',url:'https://tongye.me/Anicca',width:390,height:844,touch:true}]){
+  const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},hasTouch:spec.touch,isMobile:spec.touch});await context.addInitScript(fixture=>{if(!localStorage.getItem('anicca_workspace_active_v1'))localStorage.setItem('anicca_workspace_v2',JSON.stringify(fixture));localStorage.setItem('anicca:seed-guide:v1','done');},thoughtFlowFixture);
+  const page=await context.newPage();page.setDefaultTimeout(20000);const item={spec,states:[],errors:[],postRequests:[]};results.push(item);page.on('pageerror',e=>item.errors.push(e.message));await page.route('**/api/**',route=>{if(route.request().method()==='POST'){item.postRequests.push(new URL(route.request().url()).pathname);return route.abort();}return route.continue();});
+  const note=async(name,shot=false)=>{await frame(page);item.states.push({name,...await state(page)});if(shot)await page.screenshot({path:path.join(output,`${spec.name}-${name}.png`)});};
+  const more=async()=>{await page.getByRole('button',{name:'更多',exact:true}).click();await page.getByRole('button',{name:'新建工作区',exact:true}).waitFor();};
+  try{
+   const response=await page.goto(spec.url,{waitUntil:'networkidle'});item.identity={status:response.status(),knownBuildTokenPresent:(await response.text()).includes('G0tgHltanXgUhENX7R9J8')};await page.getByTestId('dialogue-composer').waitFor();await page.evaluate(()=>document.fonts.ready.then(()=>undefined));await waitForSeedLayout(page);
+   await page.getByTestId('dialogue-stage-node-root').locator('[data-seed-caption]').click();await page.locator('#dialogue-reading-drawer[data-open="true"]').waitFor();await page.waitForFunction(()=>getComputedStyle(document.getElementById('dialogue-reading-drawer')).opacity==='1');
+   await more();await page.getByRole('radio',{name:'深色',exact:true}).check();await page.keyboard.press('Escape');await page.keyboard.press('Escape');await page.locator('#dialogue-reading-drawer').waitFor({state:'hidden'});await page.waitForTimeout(1100);await note('dark-stage-settled',true);
+   await more();await page.getByRole('button',{name:'重命名工作区',exact:true}).click();await page.getByRole('textbox',{name:'工作区名称',exact:true}).fill('尚未提交的原工作区标题');await note('rename-original-draft',true);
+   await more();await page.getByRole('button',{name:'新建工作区',exact:true}).click();await note('rename-new-workspace-still-open',true);
+   await page.getByRole('button',{name:'保存工作区名称',exact:true}).click();await note('rename-save-after-switch',true);
+   await more();item.recentWorkspaceTitles=await page.getByRole('group',{name:'最近工作区',exact:true}).getByRole('button').allTextContents();await note('workspace-list-after-save',true);item.completed=true;
+  }catch(error){item.failure=String(error);await note('probe-failure',true).catch(()=>{});}finally{await context.close();console.log(JSON.stringify({name:spec.name,completed:item.completed,failure:item.failure,recent:item.recentWorkspaceTitles,states:item.states.map(s=>({name:s.name,workspaceId:s.workspaceId,workspaceTitle:s.workspaceTitle,rename:s.rename,label:s.label,shellBackground:s.shellBackground}))}));}
+ }
+}finally{await browser.close();await writeFile(path.join(output,'rename-dark-probes.json'),JSON.stringify({createdAt:new Date().toISOString(),revision:'55a99f976807ecb2c7a72fb90a15e6b8395a4614',method:'Isolated public-site Chromium desktop/touch contexts. Dark stage screenshot waits1100ms after reading closes. Rename draft deliberately left open across workspace creation and saved in local-only test context. No provider calls/product changes/physical device test. Browser plugin not available.',results},null,2));await copyFile('/tmp/anicca-app-postfix-final-probe.mjs',path.join(output,'capture-rename-dark.mjs.txt'));}

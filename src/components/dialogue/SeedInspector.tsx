@@ -15,7 +15,7 @@ import { readNovelty } from "@/features/dialectic/novelty";
 import type { ReadingPosition } from "@/lib/persist/readingState";
 import { captureReadingPosition, restoreReadingPosition } from "./readingPosition";
 
-export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = {}, space = defaultThinkingSpace(), combining, busy, activeDeferredId, onContinueDeferred, onClose, onSplit, onExpandPolarity, onWrite, onCombine, onPick, onCreateInstance, onRemoveInstance, onExpandSources, onInquiry, inquiryTarget, inquiryComposer, companionId, getReadingPosition, onRememberPosition }: {
+export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = {}, space = defaultThinkingSpace(), combining, busy, activeDeferredId, onContinueDeferred, onClose, onSplit, onExpandPolarity, onWrite, onCombine, onPick, onCreateInstance, onRemoveInstance, onExpandSources, onInquiry, inquiryTarget, inquiryComposer, companionId, getReadingPosition, onRememberPosition, onReadingIntent, onReadNewResponse }: {
   graph: Graph; nodeId: string; combining: boolean; busy: boolean;
   instanceId?: string; instances?: SeedInstances;
   space?: ThinkingSpace;
@@ -26,6 +26,7 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
   onInquiry?(target: InquiryTarget): void;
   inquiryTarget?: InquiryTarget; inquiryComposer?: ReactNode; companionId?: string;
   getReadingPosition?(id: string): ReadingPosition | undefined; onRememberPosition?(id: string, position: ReadingPosition): void;
+  onReadingIntent?(): void; onReadNewResponse?(): void;
   onCreateInstance?(): void; onRemoveInstance?(): void; onExpandSources?(): void;
 }) {
   const [query, setQuery] = useState("");
@@ -39,6 +40,7 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
   const actionId = useId();
   const readingPositionRef = useRef<ReadingPosition>({ scrollTop: 0 });
   const wasChoosingRef = useRef(false);
+  const wasInlineRef = useRef(Boolean(inquiryComposer));
   useLayoutEffect(() => {
     const panel = inspectorRef.current;
     if (!panel) return;
@@ -73,6 +75,13 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
     }
     wasChoosingRef.current = polarityOpen;
   }, [polarityOpen]);
+  useLayoutEffect(() => {
+    if (wasInlineRef.current && !inquiryComposer && inspectorRef.current) {
+      // Removing the completed inline question must not move the line being read.
+      restoreReadingPosition(inspectorRef.current, readingPositionRef.current);
+    }
+    wasInlineRef.current = Boolean(inquiryComposer);
+  }, [inquiryComposer]);
   const node = graph.nodes[nodeId];
   if (!node) return null;
   const perspective = normalizeSeedPerspective(node.meta?.perspective);
@@ -137,19 +146,32 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
     </fieldset> : null}
   </div>;
   return (
-    <section ref={inspectorRef} className={styles.seedInspector} data-testid="dialogue-panel" aria-labelledby="conversation-panel-heading"
-      data-mode={polarityOpen ? "polarity" : combining ? "combine" : "read"} data-selecting={selecting ? "true" : undefined}
+    <div className={styles.seedInspectorFrame}
       onKeyDown={event => {
         if (event.key !== "Escape" || !polarityOpen) return;
         event.preventDefault();
         event.stopPropagation();
         setPolarityOpen(false);
+      }}>
+      <div className={styles.seedReadingToolbar}>
+        {onReadNewResponse ? <button type="button" className={styles.seedNewResponse} onClick={onReadNewResponse}
+          aria-label="阅读新回应">新回应已保存 · 阅读</button>
+          : <span>{polarityOpen ? `从「${seedLabel(graph, nodeId)}」继续` : combining ? "组合" : activeEncounter ? "暂不融合" : inquiry ? inquiryLabel(inquiry.intent) : origin ? "极性视角" : node.branchType || "想法"}</span>}
+        <button type="button" className={styles.seedReadingBack} aria-label={polarityOpen ? "返回种子阅读" : "返回种子，收起阅读"}
+          onClick={polarityOpen ? () => setPolarityOpen(false) : onClose}>{polarityOpen ? "返回阅读" : "返回种子"}</button>
+      </div>
+    <section ref={inspectorRef} className={styles.seedInspector} data-testid="dialogue-panel" aria-labelledby="conversation-panel-heading"
+      data-mode={polarityOpen ? "polarity" : combining ? "combine" : "read"} data-selecting={selecting ? "true" : undefined}
+      onWheel={event => { if (!(event.target instanceof Element) || !event.target.closest("input, textarea, select, [contenteditable='true']")) onReadingIntent?.(); }}
+      onPointerDown={event => {
+        if (event.target instanceof Element && !event.target.closest("button, a, input, textarea, select, label, summary, [contenteditable='true']")) onReadingIntent?.();
+      }}
+      onKeyDown={event => {
+        if (["ArrowDown", "ArrowUp", "PageDown", "PageUp", "Home", "End", " "].includes(event.key) &&
+          event.target instanceof Element && !event.target.closest("button, a, input, textarea, select, summary, [contenteditable='true']")) onReadingIntent?.();
       }}
       onScroll={event => { if (!polarityOpen && !combining) { readingPositionRef.current = captureReadingPosition(event.currentTarget); onRememberPosition?.(nodeId, readingPositionRef.current); } }}>
       <header className={styles.seedInspectorHeader}>
-        <span>{polarityOpen ? `从「${seedLabel(graph, nodeId)}」继续` : combining ? "组合" : activeEncounter ? "暂不融合" : inquiry ? inquiryLabel(inquiry.intent) : origin ? "极性视角" : node.branchType || "想法"}</span>
-        <button type="button" className={styles.seedReadingBack} aria-label={polarityOpen ? "返回种子阅读" : "返回种子，收起阅读"}
-          onClick={polarityOpen ? () => setPolarityOpen(false) : onClose}>{polarityOpen ? "返回阅读" : "返回种子"}</button>
         <h2 id="conversation-panel-heading" tabIndex={-1}>{polarityOpen ? "沿极性展开" : combining ? "让想法相遇" : seedLabel(graph, nodeId)}</h2>
       </header>
       {combining ? (
@@ -226,5 +248,6 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
         </>
       )}
     </section>
+    </div>
   );
 }

@@ -1,0 +1,11 @@
+{
+  "checkedAt": "2026-10-28T09:54:23.932262+00:00",
+  "release": "/opt/anicca/releases/20261028-app-experience",
+  "buildId": "G0tgHltanXgUhENX7R9J8",
+  "gitRevision": "55a99f976807ecb2c7a72fb90a15e6b8395a4614",
+  "service": {
+    "NRestarts": "0",
+    "ActiveState": "active",
+    "SubState": "running"
+  }
+}

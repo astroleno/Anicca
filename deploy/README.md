@@ -107,4 +107,17 @@ ANICCA_QA_URLS=https://aitoshuu.me/Anicca,https://tongye.me/Anicca node scripts/
 
 This scenario uses isolated synthetic workspaces and does not call model APIs.
 
+The reading-continuity scenario also checks user reading during delayed inquiry
+responses, idle and programmatic-scroll controls, explicit arrival opening,
+draft preservation, the persistent return action at small sizes, refresh, and
+rename ownership when creating or switching workspaces:
+
+```sh
+ANICCA_QA_URLS=https://aitoshuu.me/Anicca,https://tongye.me/Anicca node scripts/visual-smoke/reading-continuity.mjs
+```
+
+Visual CI partitions the existing viewport and interaction checks into five
+groups, with at most two running concurrently. Every viewport and scenario is
+retained, with the existing 30-minute smoke deadline and per-group evidence.
+
 Deployment evidence: [2026-10-28 verification](../docs/reviews/2026-10-28-public-deployment.md).

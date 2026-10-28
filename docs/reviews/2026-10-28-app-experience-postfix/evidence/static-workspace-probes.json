@@ -1,0 +1,519 @@
+{
+  "createdAt": "2026-10-28T10:03:46.110Z",
+  "revision": "55a99f976807ecb2c7a72fb90a15e6b8395a4614",
+  "method": "Isolated public-site Chromium desktop/touch contexts; overview screenshots wait 1100ms after visibility to exclude 180ms entry transition. Synthetic workspaces, no POST/provider calls, no product changes or physical device test. Browser plugin not available.",
+  "results": [
+    {
+      "spec": {
+        "name": "desktop",
+        "url": "https://aitoshuu.me/Anicca",
+        "width": 1440,
+        "height": 900,
+        "touch": false
+      },
+      "states": [
+        {
+          "name": "reading-before-switch",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "workspaceId": "workspace_bc8e3c25-235c-4af2-a9f1-c07a52938e0b",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "reading": true,
+          "scrollTop": 650,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "overview": null
+        },
+        {
+          "name": "new-without-manual-close",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "workspaceId": "workspace_e9caebcc-975f-4850-906e-6ed2b7d40a0d",
+          "workspaceTitle": "未命名工作区",
+          "reading": false,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区社区花园是否应该保留不"
+          },
+          "overview": null
+        },
+        {
+          "name": "return-to-original-workspace",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "workspaceId": "workspace_bc8e3c25-235c-4af2-a9f1-c07a52938e0b",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "reading": true,
+          "scrollTop": 650,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "overview": null
+        },
+        {
+          "name": "reopen-original-after-switch",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "workspaceId": "workspace_bc8e3c25-235c-4af2-a9f1-c07a52938e0b",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "reading": true,
+          "scrollTop": 650,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "overview": null
+        },
+        {
+          "name": "overview-light-settled",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "workspaceId": "workspace_bc8e3c25-235c-4af2-a9f1-c07a52938e0b",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "reading": true,
+          "scrollTop": 650,
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "text": "返回种子"
+          },
+          "overview": [
+            {
+              "tag": "DIV",
+              "class": "",
+              "opacity": "1",
+              "color": "rgb(52, 45, 70)"
+            },
+            {
+              "tag": "DIV",
+              "class": "EvolutionOverview_tools__OvBkI",
+              "opacity": "1",
+              "color": "rgb(52, 45, 70)"
+            },
+            {
+              "tag": "DIV",
+              "class": "EvolutionOverview_body__l6wNJ",
+              "opacity": "1",
+              "color": "rgb(52, 45, 70)"
+            },
+            {
+              "tag": "DIV",
+              "class": "EvolutionOverview_map__5Su_k",
+              "opacity": "1",
+              "color": "rgb(52, 45, 70)"
+            },
+            {
+              "tag": "CANVAS",
+              "class": "",
+              "opacity": "1",
+              "color": "rgb(52, 45, 70)"
+            },
+            {
+              "tag": "DIV",
+              "class": "EvolutionOverview_mapControls__AFtDZ",
+              "opacity": "1",
+              "color": "rgb(52, 45, 70)"
+            },
+            {
+              "tag": "ASIDE",
+              "class": "EvolutionOverview_detail__qmQ9c",
+              "opacity": "1",
+              "color": "rgb(52, 45, 70)"
+            },
+            {
+              "tag": "H3",
+              "class": "",
+              "opacity": "1",
+              "color": "rgb(52, 45, 70)"
+            },
+            {
+              "tag": "DIV",
+              "class": "EvolutionOverview_readActions__C7hsI",
+              "opacity": "1",
+              "color": "rgb(52, 45, 70)"
+            }
+          ]
+        },
+        {
+          "name": "overview-dark-settled",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "theme": "dark",
+          "workspaceId": "workspace_bc8e3c25-235c-4af2-a9f1-c07a52938e0b",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "reading": true,
+          "scrollTop": 650,
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "text": "返回种子"
+          },
+          "overview": [
+            {
+              "tag": "DIV",
+              "class": "",
+              "opacity": "1",
+              "color": "rgb(234, 223, 244)"
+            },
+            {
+              "tag": "DIV",
+              "class": "EvolutionOverview_tools__OvBkI",
+              "opacity": "1",
+              "color": "rgb(234, 223, 244)"
+            },
+            {
+              "tag": "DIV",
+              "class": "EvolutionOverview_body__l6wNJ",
+              "opacity": "1",
+              "color": "rgb(234, 223, 244)"
+            },
+            {
+              "tag": "DIV",
+              "class": "EvolutionOverview_map__5Su_k",
+              "opacity": "1",
+              "color": "rgb(234, 223, 244)"
+            },
+            {
+              "tag": "CANVAS",
+              "class": "",
+              "opacity": "1",
+              "color": "rgb(234, 223, 244)"
+            },
+            {
+              "tag": "DIV",
+              "class": "EvolutionOverview_mapControls__AFtDZ",
+              "opacity": "1",
+              "color": "rgb(234, 223, 244)"
+            },
+            {
+              "tag": "ASIDE",
+              "class": "EvolutionOverview_detail__qmQ9c",
+              "opacity": "1",
+              "color": "rgb(234, 223, 244)"
+            },
+            {
+              "tag": "H3",
+              "class": "",
+              "opacity": "1",
+              "color": "rgb(234, 223, 244)"
+            },
+            {
+              "tag": "DIV",
+              "class": "EvolutionOverview_readActions__C7hsI",
+              "opacity": "1",
+              "color": "rgb(234, 223, 244)"
+            }
+          ]
+        },
+        {
+          "name": "rename-draft-before-switch",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "theme": "dark",
+          "workspaceId": "workspace_bc8e3c25-235c-4af2-a9f1-c07a52938e0b",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "reading": true,
+          "scrollTop": 650,
+          "rename": "尚未提交的原工作区标题",
+          "focus": {
+            "tag": "INPUT",
+            "id": "",
+            "text": ""
+          },
+          "overview": null
+        },
+        {
+          "name": "rename-draft-after-new-workspace",
+          "url": "https://aitoshuu.me/Anicca",
+          "title": "Anicca",
+          "theme": "dark",
+          "workspaceId": "workspace_c05bde59-1ddc-4773-ab3c-22616ff5ebb6",
+          "workspaceTitle": "未命名工作区",
+          "reading": false,
+          "rename": "尚未提交的原工作区标题",
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。工作区名称保存工作区名称取消最近工作区未命名"
+          },
+          "overview": null
+        }
+      ],
+      "errors": [],
+      "postRequests": [],
+      "identity": {
+        "status": 200,
+        "knownBuildTokenPresent": true
+      },
+      "completed": true
+    },
+    {
+      "spec": {
+        "name": "mobile",
+        "url": "https://tongye.me/Anicca",
+        "width": 390,
+        "height": 844,
+        "touch": true
+      },
+      "states": [
+        {
+          "name": "reading-before-switch",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "workspaceId": "workspace_5ed5b170-9f2d-45f4-bbae-9430b85daf56",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "reading": true,
+          "scrollTop": 650,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "overview": null
+        },
+        {
+          "name": "new-without-manual-close",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "workspaceId": "workspace_51dc15d8-9aa2-47c2-bc84-68d7b677b864",
+          "workspaceTitle": "未命名工作区",
+          "reading": false,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。最近工作区未命名工作区社区花园是否应该保留不"
+          },
+          "overview": null
+        },
+        {
+          "name": "return-to-original-workspace",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "workspaceId": "workspace_5ed5b170-9f2d-45f4-bbae-9430b85daf56",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "reading": true,
+          "scrollTop": 650,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "overview": null
+        },
+        {
+          "name": "reopen-original-after-switch",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "workspaceId": "workspace_5ed5b170-9f2d-45f4-bbae-9430b85daf56",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "reading": true,
+          "scrollTop": 650,
+          "focus": {
+            "tag": "H2",
+            "id": "conversation-panel-heading",
+            "text": "社区花园是否应该保留不预设用"
+          },
+          "overview": null
+        },
+        {
+          "name": "overview-light-settled",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "theme": "light",
+          "workspaceId": "workspace_5ed5b170-9f2d-45f4-bbae-9430b85daf56",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "reading": true,
+          "scrollTop": 650,
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "text": "返回种子"
+          },
+          "overview": [
+            {
+              "tag": "DIV",
+              "class": "",
+              "opacity": "1",
+              "color": "rgb(52, 45, 70)"
+            },
+            {
+              "tag": "DIV",
+              "class": "EvolutionOverview_tools__OvBkI",
+              "opacity": "1",
+              "color": "rgb(52, 45, 70)"
+            },
+            {
+              "tag": "DIV",
+              "class": "EvolutionOverview_body__l6wNJ",
+              "opacity": "1",
+              "color": "rgb(52, 45, 70)"
+            },
+            {
+              "tag": "DIV",
+              "class": "EvolutionOverview_map__5Su_k",
+              "opacity": "1",
+              "color": "rgb(52, 45, 70)"
+            },
+            {
+              "tag": "CANVAS",
+              "class": "",
+              "opacity": "1",
+              "color": "rgb(52, 45, 70)"
+            },
+            {
+              "tag": "DIV",
+              "class": "EvolutionOverview_mapControls__AFtDZ",
+              "opacity": "1",
+              "color": "rgb(52, 45, 70)"
+            },
+            {
+              "tag": "ASIDE",
+              "class": "EvolutionOverview_detail__qmQ9c",
+              "opacity": "1",
+              "color": "rgb(52, 45, 70)"
+            },
+            {
+              "tag": "H3",
+              "class": "",
+              "opacity": "1",
+              "color": "rgb(52, 45, 70)"
+            },
+            {
+              "tag": "DIV",
+              "class": "EvolutionOverview_readActions__C7hsI",
+              "opacity": "1",
+              "color": "rgb(52, 45, 70)"
+            }
+          ]
+        },
+        {
+          "name": "overview-dark-settled",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "theme": "dark",
+          "workspaceId": "workspace_5ed5b170-9f2d-45f4-bbae-9430b85daf56",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "reading": true,
+          "scrollTop": 650,
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "text": "返回种子"
+          },
+          "overview": [
+            {
+              "tag": "DIV",
+              "class": "",
+              "opacity": "1",
+              "color": "rgb(234, 223, 244)"
+            },
+            {
+              "tag": "DIV",
+              "class": "EvolutionOverview_tools__OvBkI",
+              "opacity": "1",
+              "color": "rgb(234, 223, 244)"
+            },
+            {
+              "tag": "DIV",
+              "class": "EvolutionOverview_body__l6wNJ",
+              "opacity": "1",
+              "color": "rgb(234, 223, 244)"
+            },
+            {
+              "tag": "DIV",
+              "class": "EvolutionOverview_map__5Su_k",
+              "opacity": "1",
+              "color": "rgb(234, 223, 244)"
+            },
+            {
+              "tag": "CANVAS",
+              "class": "",
+              "opacity": "1",
+              "color": "rgb(234, 223, 244)"
+            },
+            {
+              "tag": "DIV",
+              "class": "EvolutionOverview_mapControls__AFtDZ",
+              "opacity": "1",
+              "color": "rgb(234, 223, 244)"
+            },
+            {
+              "tag": "ASIDE",
+              "class": "EvolutionOverview_detail__qmQ9c",
+              "opacity": "1",
+              "color": "rgb(234, 223, 244)"
+            },
+            {
+              "tag": "H3",
+              "class": "",
+              "opacity": "1",
+              "color": "rgb(234, 223, 244)"
+            },
+            {
+              "tag": "DIV",
+              "class": "EvolutionOverview_readActions__C7hsI",
+              "opacity": "1",
+              "color": "rgb(234, 223, 244)"
+            }
+          ]
+        },
+        {
+          "name": "rename-draft-before-switch",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "theme": "dark",
+          "workspaceId": "workspace_5ed5b170-9f2d-45f4-bbae-9430b85daf56",
+          "workspaceTitle": "社区花园是否应该保留不预设用途的角落？这些角落可以让成员发现新的共同活动，但也可能增加维护负担。",
+          "reading": true,
+          "scrollTop": 650,
+          "rename": "尚未提交的原工作区标题",
+          "focus": {
+            "tag": "INPUT",
+            "id": "",
+            "text": ""
+          },
+          "overview": null
+        },
+        {
+          "name": "rename-draft-after-new-workspace",
+          "url": "https://tongye.me/Anicca",
+          "title": "Anicca",
+          "theme": "dark",
+          "workspaceId": "workspace_0c714f01-d62f-4d98-a1a8-9f020846bd30",
+          "workspaceTitle": "未命名工作区",
+          "reading": false,
+          "rename": "尚未提交的原工作区标题",
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "text": "直接输入想法Aniccaanicca点选阅读，拖动预览，明确确认后才合成。工作区未命名工作区演化全景全景更多已就绪。工作区名称保存工作区名称取消最近工作区未命名"
+          },
+          "overview": null
+        }
+      ],
+      "errors": [],
+      "postRequests": [],
+      "identity": {
+        "status": 200,
+        "knownBuildTokenPresent": true
+      },
+      "completed": true
+    }
+  ]
+}

@@ -10,6 +10,7 @@ import { runCanvasLifecycle, runSeedRecoveryAndTouch } from "./soft-interactions
 import { runFlowContinuity } from "./continuity.mjs";
 import { runThoughtFlow } from "./thought-flow.mjs";
 import { runAppExperience } from "./app-experience.mjs";
+import { runReadingContinuity } from "./reading-continuity.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1170,7 +1171,7 @@ async function main() {
       for (const [name, scenario] of [["metaball-fusion-separation", ensureMetaballFusionAndSeparation], ["metaball-reduced-motion", ensureMetaballReducedMotion], ["metaball-webgl-fallback", ensureMetaballWebglFallback]]) {
         if (!scenarioNameFilter.size || scenarioNameFilter.has(name)) interactionScenarios.push(await runStep(`interaction:${name}`, () => scenario(browser)));
       }
-      for (const [name, scenario] of [["app-experience", runAppExperience], ["seed-recovery-and-touch", runSeedRecoveryAndTouch], ["canvas-lifecycle", runCanvasLifecycle], ["flow-continuity", runFlowContinuity], ["thought-flow", runThoughtFlow]]) {
+      for (const [name, scenario] of [["app-experience", runAppExperience], ["reading-continuity", runReadingContinuity], ["seed-recovery-and-touch", runSeedRecoveryAndTouch], ["canvas-lifecycle", runCanvasLifecycle], ["flow-continuity", runFlowContinuity], ["thought-flow", runThoughtFlow]]) {
         if (!scenarioNameFilter.size || scenarioNameFilter.has(name)) interactionScenarios.push(await runStep(`interaction:${name}`, () => scenario(browser, { baseUrl, outputDir, setActivePage })));
       }
 

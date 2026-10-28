@@ -43,12 +43,34 @@ jobs:
         run: npm run build
 
   visual-dialogue:
-    name: Production dialogue smoke
+    name: Production dialogue smoke (${{ matrix.group }})
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - group: layouts
+            viewports: ""
+            scenarios: none
+          - group: rendering
+            viewports: none
+            scenarios: metaball-fusion-separation,metaball-reduced-motion,metaball-webgl-fallback,seed-recovery-and-touch,canvas-lifecycle
+          - group: app-experience
+            viewports: none
+            scenarios: app-experience
+          - group: reading-continuity
+            viewports: none
+            scenarios: reading-continuity
+          - group: thought-flow
+            viewports: none
+            scenarios: flow-continuity,thought-flow
     env:
       NEXT_PUBLIC_BASE_PATH: /Anicca
       DIALOGUE_SMOKE_BASE_URL: http://127.0.0.1:3211/Anicca
+      DIALOGUE_SMOKE_VIEWPORT_FILTER: ${{ matrix.viewports }}
+      DIALOGUE_SMOKE_SCENARIO_FILTER: ${{ matrix.scenarios }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -76,7 +98,7 @@ jobs:
         if: steps.visual-smoke.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: dialogue-visual-smoke-${{ github.run_id }}-${{ github.run_attempt }}
+          name: dialogue-visual-smoke-${{ matrix.group }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: artifacts/visual-smoke/dialogue
           if-no-files-found: error
           retention-days: 14
@@ -85,7 +107,7 @@ jobs:
         if: failure() && steps.visual-smoke.outcome == 'failure'
         uses: actions/upload-artifact@v4
         with:
-          name: dialogue-visual-failure-${{ github.run_id }}-${{ github.run_attempt }}
+          name: dialogue-visual-failure-${{ matrix.group }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: artifacts/visual-smoke/dialogue-failure
           if-no-files-found: error
           retention-days: 14
