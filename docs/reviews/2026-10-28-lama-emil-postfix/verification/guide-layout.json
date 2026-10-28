@@ -1,0 +1,74 @@
+{
+  "url": "https://aitoshuu.me/Anicca",
+  "method": "Chromium fresh desktop/mobile touch viewports; synthetic garden; no generation requests",
+  "results": [
+    {
+      "spec": {
+        "name": "desktop",
+        "width": 1440,
+        "height": 900,
+        "touch": false,
+        "theme": "light"
+      },
+      "hint": "点一颗读读；拖动空白，转动视角\n\n×",
+      "guideBounds": {
+        "x": 28,
+        "y": 58,
+        "width": 231.203125,
+        "height": 44
+      },
+      "passed": true
+    },
+    {
+      "spec": {
+        "name": "mobile-320",
+        "width": 320,
+        "height": 568,
+        "touch": true,
+        "theme": "light"
+      },
+      "hint": "点一颗读读；拖空白平移 · 拖球合成 · 双指转动与缩放\n\n×",
+      "guideBounds": {
+        "x": 20,
+        "y": 58,
+        "width": 288,
+        "height": 44
+      },
+      "passed": true
+    },
+    {
+      "spec": {
+        "name": "mobile-dark",
+        "width": 360,
+        "height": 780,
+        "touch": true,
+        "theme": "dark"
+      },
+      "hint": "点一颗读读；拖空白平移 · 拖球合成 · 双指转动与缩放\n\n×",
+      "guideBounds": {
+        "x": 20,
+        "y": 58,
+        "width": 328,
+        "height": 44
+      },
+      "passed": true
+    },
+    {
+      "spec": {
+        "name": "mobile-landscape",
+        "width": 844,
+        "height": 390,
+        "touch": true,
+        "theme": "light"
+      },
+      "hint": "点一颗读读；拖空白平移 · 拖球合成 · 双指转动与缩放\n\n×",
+      "guideBounds": {
+        "x": 28,
+        "y": 58,
+        "width": 349.4375,
+        "height": 44
+      },
+      "passed": true
+    }
+  ]
+}

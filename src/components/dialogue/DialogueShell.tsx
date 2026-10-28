@@ -558,6 +558,7 @@ export function DialogueShell() {
   const [expandedResultId, setExpandedResultId] = useState<string | null>(null);
   const [expansionResult, setExpansionResult] = useState<SeedExpansionResult | null>(null);
   const dismissSeedReading = useCallback(() => {
+    attentionVersionRef.current += 1;
     setReadingOpen(false);
     setCombineSourceId(null);
     setActiveDeferredId(null);
@@ -829,16 +830,14 @@ export function DialogueShell() {
   }, [workspaceReady, inlineInquiry]);
 
   const closeSeedPanel = useCallback(() => {
-    setReadingOpen(false);
-    setActiveDeferredId(null);
+    dismissSeedReading();
     setLineageOpen(false);
-    setCombineSourceId(null);
     const id = focusedInstanceId;
     window.setTimeout(() => {
       const button = document.querySelector<HTMLElement>(`[data-testid="dialogue-stage-node-${id}"]`);
       (button || composerTextareaRef.current)?.focus();
     }, 0);
-  }, [focusedInstanceId]);
+  }, [dismissSeedReading, focusedInstanceId]);
 
   const closeLineagePanel = useCallback(() => {
     setLineageOpen(false);

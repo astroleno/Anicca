@@ -9,6 +9,8 @@ import { useDialogueUiStore } from "@/features/dialectic/store";
 import { findSynthesisGestureCandidate } from "@/features/dialectic/gestures";
 import { LIQUID_DWELL_MS } from "@/features/dialectic/liquidInteraction";
 import { useStageTouchNavigation } from "./useStageTouchNavigation";
+import { useCoarsePointer } from "./useCoarsePointer";
+import { stageGestureHint } from "@/features/dialectic/platform";
 import { placeSeeds } from "@/features/dialectic/seedPlacement";
 import { DialogueStageNode, DialogueSynthesisAction } from "@/features/dialectic/viewModel";
 import { StagePan, StagePoint } from "@/types/anicca";
@@ -191,7 +193,7 @@ export function BubbleStage({
   const setStageNodePosition = useDialogueUiStore((state) => state.setStageNodePosition);
   const ensurePositions = useDialogueUiStore(state => state.ensureStageNodePositions);
   const [gesture, setGesture] = useState<ActiveStageGesture | null>(null);
-  const [isCoarsePointer, setIsCoarsePointer] = useState(false);
+  const isCoarsePointer = useCoarsePointer();
   const [isNarrowViewport, setIsNarrowViewport] = useState(false);
   const [metaballRendererState, setMetaballRendererState] =
     useState<DialogueMetaballRendererState>("loading");
@@ -279,27 +281,6 @@ export function BubbleStage({
   useEffect(() => {
     if (suspended) stopOrbitAnimation();
   }, [suspended, stopOrbitAnimation]);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
-      return;
-    }
-
-    const mediaQuery = window.matchMedia("(pointer: coarse)");
-    const updatePointerMode = () => {
-      setIsCoarsePointer(mediaQuery.matches);
-    };
-
-    updatePointerMode();
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", updatePointerMode);
-      return () => mediaQuery.removeEventListener("change", updatePointerMode);
-    }
-
-    mediaQuery.addListener(updatePointerMode);
-    return () => mediaQuery.removeListener(updatePointerMode);
-  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
@@ -934,7 +915,7 @@ export function BubbleStage({
     : null;
   const spaceControls = nodes.length > 0 && metaballRendererState !== "fallback" ? (
     <div className={styles.spaceControls}>
-      <span>{isCoarsePointer ? "拖空白平移 · 拖球合成 · 双指转动与缩放" : "拖动空白，转动视角"}</span>
+      <span>{stageGestureHint(isCoarsePointer)}</span>
       <button type="button" onClick={resetView} disabled={!viewRotated} aria-label="复位三维视角">复位视角</button>
     </div>
   ) : null;

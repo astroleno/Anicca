@@ -1,0 +1,20 @@
+{
+  "deployedAt": "2026-10-28T08:22:41.212336+00:00",
+  "release": "/opt/anicca/releases/20261028-selection-intent",
+  "previousRelease": "/opt/anicca/releases/20261028-six-fixes-final",
+  "originStatus": 200,
+  "service": {
+    "NRestarts": "0",
+    "ActiveState": "active",
+    "SubState": "running"
+  },
+  "build": {
+    "application": "Anicca",
+    "basePath": "/Anicca",
+    "platform": "linux",
+    "arch": "x64",
+    "nextVersion": "15.5.28",
+    "buildId": "g1H9dsn-sTPdvQCvkB7Ww",
+    "builtAt": "2026-10-28T08:19:25.246Z"
+  }
+}

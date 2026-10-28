@@ -1,0 +1,95 @@
+import assert from 'node:assert/strict';
+import {mkdir, writeFile} from 'node:fs/promises';
+import path from 'node:path';
+import {chromium} from '/Users/aitoshuu/Documents/GitHub/Anicca/node_modules/playwright/index.mjs';
+import {thoughtFlowFixture} from '/Users/aitoshuu/Documents/GitHub/Anicca/scripts/visual-smoke/thought-flow.mjs';
+import {waitForSeedLayout} from '/Users/aitoshuu/Documents/GitHub/Anicca/scripts/visual-smoke/seeds.mjs';
+
+const output='/tmp/anicca-postfix-visual-v2-20261028';
+await mkdir(output,{recursive:true});
+const browser=await chromium.launch({headless:true,args:['--use-angle=metal']});
+const results=[];
+const specs=[
+ {name:'mobile-320-first',width:320,height:568,touch:true,theme:'light',fixture:false},
+ {name:'mobile-320-reading',width:320,height:568,touch:true,theme:'light',fixture:true},
+ {name:'mobile-360-dark',width:360,height:780,touch:true,theme:'dark',fixture:true},
+ {name:'desktop-dark',width:1440,height:900,touch:false,theme:'dark',fixture:true},
+ {name:'mobile-landscape',width:844,height:390,touch:true,theme:'light',fixture:true}
+];
+try{
+for(const baseUrl of ['https://aitoshuu.me/Anicca','https://tongye.me/Anicca'])for(const spec of specs){
+ const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},isMobile:spec.touch,hasTouch:spec.touch,deviceScaleFactor:1});
+ await context.addInitScript(({theme,fixture})=>{
+   localStorage.setItem('anicca.dialogue.appearance.v1',theme);
+   if(fixture&&!localStorage.getItem('anicca_workspace_active_v1'))localStorage.setItem('anicca_workspace_v2',JSON.stringify(fixture));
+ },{theme:spec.theme,fixture:spec.fixture?thoughtFlowFixture:null});
+ const page=await context.newPage();page.setDefaultTimeout(20000);
+ const result={baseUrl,spec,errors:[],consoleErrors:[],assetsFailed:[],screens:[],states:[]};results.push(result);
+ page.on('pageerror',err=>result.errors.push(err.message));
+ page.on('console',msg=>{if(msg.type()==='error')result.consoleErrors.push(msg.text());});
+ page.on('response',res=>{if(res.status()>=400&&res.url().includes('/_next/'))result.assetsFailed.push({url:res.url(),status:res.status()});});
+ await context.route('**/api/**',route=>route.request().method()==='POST'?route.fulfill({status:503,json:{error:'review_no_generation'}}):route.continue());
+ const folder=path.join(output,new URL(baseUrl).hostname);await mkdir(folder,{recursive:true});
+ const state=async(name)=>{
+  const data=await page.evaluate(()=>({url:location.href,theme:document.querySelector('[data-testid="dialogue-shell"]')?.dataset.theme,
+   ready:document.querySelector('[data-testid="dialogue-stage-track"]')?.dataset.metaballRenderer,
+   renderer:document.querySelector('[data-testid="dialogue-metaball-canvas"]')?.dataset.rendererBackend,
+   width:innerWidth,height:innerHeight,scrollWidth:document.documentElement.scrollWidth,
+   dialogs:[...document.querySelectorAll('dialog[open]')].map(e=>({name:e.getAttribute('aria-label'),height:e.getBoundingClientRect().height,scrollHeight:e.scrollHeight})),
+   controls:[...document.querySelectorAll('button,input,textarea,select')].filter(e=>e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden').map(e=>{
+    const r=e.getBoundingClientRect();return {name:e.getAttribute('aria-label')||e.textContent?.trim().slice(0,75)||e.id,x:r.x,y:r.y,width:r.width,height:r.height};})
+  }));
+  result.states.push({name,...data});
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  await page.screenshot({path:path.join(folder,`${spec.name}-${name}.png`)});
+  result.screens.push(`${new URL(baseUrl).hostname}/${spec.name}-${name}.png`);
+ };
+ try{
+  await page.goto(baseUrl,{waitUntil:'networkidle'});
+  await page.waitForFunction(()=>document.querySelector('[data-testid="dialogue-stage-track"]')?.dataset.metaballRenderer==='ready');
+  await page.evaluate(()=>document.fonts.ready.then(()=>undefined));
+  assert.equal(new URL(page.url()).origin,new URL(baseUrl).origin);
+  assert.equal(new URL(page.url()).pathname,'/Anicca');
+  await state('entry');
+  const guide=page.getByRole('button',{name:'关闭提示',exact:true});if(await guide.isVisible())await guide.click();
+  if(spec.fixture){
+    await waitForSeedLayout(page);
+    await page.getByTestId('dialogue-stage-node-root').locator('[data-seed-caption]').click();
+    await page.locator('#dialogue-reading-drawer[data-open="true"]').waitFor();
+    await page.waitForFunction(()=>getComputedStyle(document.querySelector('#dialogue-reading-drawer')).opacity==='1');
+    await state('reading');
+    await page.getByRole('button',{name:'选一句追问',exact:true}).click();
+    await page.getByLabel('选择要追问的原句').getByRole('button').first().click();
+    await page.getByLabel('围绕选句继续').waitFor();
+    await state('selected-quote');
+    await page.getByRole('button',{name:'返回种子，收起阅读',exact:true}).click();
+    await page.locator('#dialogue-reading-drawer[data-open="true"]').waitFor({state:'hidden'});
+    await page.getByTestId('dialogue-stage-node-root').locator('[data-seed-caption]').click();
+    await page.locator('#dialogue-reading-drawer[data-open="true"]').waitFor();
+    await page.getByRole('button',{name:'看极性两端',exact:true}).click();
+    await page.getByRole('group',{name:'沿哪条维度展开',exact:true}).waitFor();
+    await state('polarity-picker');
+    await page.getByRole('button',{name:'返回种子阅读',exact:true}).click();
+    await page.getByTestId('dialogue-panel').evaluate(el=>{el.scrollTop=650;el.dispatchEvent(new Event('scroll'));});
+    await state('reading-middle');
+    await page.getByRole('button',{name:'返回种子，收起阅读',exact:true}).click();
+    await page.locator('#dialogue-reading-drawer[data-open="true"]').waitFor({state:'hidden'});
+  }
+  await page.getByRole('button',{name:'换个角度',exact:true}).click();
+  await page.getByRole('dialog').waitFor();
+  await state('perspectives');
+  await page.getByRole('button',{name:'编辑维度',exact:true}).click();
+  await page.getByRole('dialog').getByLabel('名称',{exact:true}).first().waitFor();
+  await state('edit-dimensions');
+  await page.getByRole('button',{name:'关闭思考空间',exact:true}).click();
+  await page.getByRole('button',{name:'更多',exact:true}).click();
+  await page.getByRole('group',{name:'工作区操作',exact:true}).waitFor();
+  await state('workspace-menu');
+  assert.deepEqual(result.errors,[]);assert.deepEqual(result.assetsFailed,[]);
+  assert(result.states.every(s=>s.scrollWidth<=s.width+1),'No document horizontal overflow');
+  result.passed=true;
+ }catch(error){result.passed=false;result.failure=String(error);await state('failure').catch(()=>{});}
+ finally{await context.close();console.log(JSON.stringify({url:baseUrl,spec:spec.name,passed:result.passed,failure:result.failure,screens:result.screens.length}));}
+}
+}finally{await browser.close();await writeFile(path.join(output,'summary.json'),JSON.stringify({createdAt:new Date().toISOString(),revision:'ebd4d402df6f294323c23e9b0f47d0b2db66e0a1',method:'Existing project Playwright / isolated Chromium contexts, viewport emulation, read-only public GET, synthetic garden, model requests blocked',results},null,2));}
+assert(results.every(r=>r.passed),'One or more review captures failed; inspect summary');

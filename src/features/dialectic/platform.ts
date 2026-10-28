@@ -5,6 +5,10 @@ export type DialogueViewportMetrics = {
   keyboardInset: number;
 };
 
+export function stageGestureHint(coarsePointer: boolean) {
+  return coarsePointer ? "拖空白平移 · 拖球合成 · 双指转动与缩放" : "拖动空白，转动视角";
+}
+
 type ViewportWindow = Pick<Window, "innerWidth" | "innerHeight" | "visualViewport">;
 
 export function readDialogueViewport(win: ViewportWindow): DialogueViewportMetrics {

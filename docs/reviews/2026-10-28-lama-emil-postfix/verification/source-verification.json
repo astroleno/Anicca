@@ -1,0 +1,15 @@
+{
+  "sourceFiles": 253,
+  "mismatches": [],
+  "release": {
+    "application": "Anicca",
+    "basePath": "/Anicca",
+    "platform": "linux",
+    "arch": "x64",
+    "nextVersion": "15.5.28",
+    "buildId": "g1H9dsn-sTPdvQCvkB7Ww",
+    "builtAt": "2026-10-28T08:19:25.246Z"
+  },
+  "dotenvFiles": [],
+  "runtimePromptsPresent": true
+}

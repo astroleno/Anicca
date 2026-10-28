@@ -20,15 +20,22 @@ export function SeedPassage({ nodeId, text, className, busy, onInquiry, inquiryT
 }) {
   const passage = useRef<HTMLDivElement>(null);
   const action = useRef<HTMLButtonElement>(null);
+  const gesture = useRef({ pointers: new Set<number>(), keyboard: false, cancelled: false });
   const [choosing, setChoosing] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<{ quote: string; quoteStart: number } | null>(null);
   const activeSelection = inquiryTarget || selectedQuote;
   const activeQuote = activeSelection?.quote || "";
   const quoteOffset = activeSelection ? inquiryQuoteStart(text, activeSelection) : -1;
+  const nativeSelectionEnabled = Boolean(onInquiry) && !inquiryTarget;
   useEffect(() => { onSelectionChange?.(choosing || quoteOffset >= 0); }, [choosing, quoteOffset, onSelectionChange]);
   useEffect(() => {
-    if (!onInquiry || inquiryTarget) return;
+    if (!nativeSelectionEnabled) return;
+    const interaction = gesture.current;
+    let frame = 0;
     const selected = () => {
+      // A live native range owns its text nodes until the gesture is complete.
+      // Splitting the paragraph earlier moves both the range and its targets.
+      if (interaction.pointers.size || interaction.keyboard || interaction.cancelled) return;
       const selection = window.getSelection();
       if (!selection || selection.isCollapsed || !selection.rangeCount || !passage.current) return;
       const range = selection.getRangeAt(0);
@@ -42,9 +49,46 @@ export function SeedPassage({ nodeId, text, className, busy, onInquiry, inquiryT
         setChoosing(false);
       }
     };
+    const cancelFrame = () => { window.cancelAnimationFrame(frame); frame = 0; };
+    const finish = () => { cancelFrame(); frame = window.requestAnimationFrame(selected); };
+    const pointerDown = (event: PointerEvent) => {
+      if (!(event.target instanceof Element) || !passage.current?.contains(event.target) ||
+        event.target.closest("button, input, textarea, select")) return;
+      cancelFrame();
+      interaction.cancelled = false;
+      interaction.pointers.add(event.pointerId);
+    };
+    const pointerUp = (event: PointerEvent) => {
+      if (interaction.pointers.delete(event.pointerId) && !interaction.pointers.size) finish();
+    };
+    const pointerCancel = (event: PointerEvent) => {
+      if (interaction.pointers.delete(event.pointerId)) { interaction.cancelled = true; cancelFrame(); }
+    };
+    const blur = () => { interaction.pointers.clear(); interaction.keyboard = false; interaction.cancelled = true; cancelFrame(); };
+    const keyDown = (event: KeyboardEvent) => {
+      if (event.key === "Shift" || event.shiftKey) { interaction.keyboard = true; interaction.cancelled = false; cancelFrame(); }
+    };
+    const keyUp = (event: KeyboardEvent) => {
+      if (interaction.keyboard && (event.key === "Shift" || !event.shiftKey)) { interaction.keyboard = false; finish(); }
+    };
     document.addEventListener("selectionchange", selected);
-    return () => document.removeEventListener("selectionchange", selected);
-  }, [text, onInquiry, inquiryTarget]);
+    document.addEventListener("pointerdown", pointerDown, true);
+    document.addEventListener("pointerup", pointerUp, true);
+    document.addEventListener("pointercancel", pointerCancel, true);
+    document.addEventListener("keydown", keyDown, true);
+    document.addEventListener("keyup", keyUp, true);
+    window.addEventListener("blur", blur);
+    return () => {
+      cancelFrame();
+      document.removeEventListener("selectionchange", selected);
+      document.removeEventListener("pointerdown", pointerDown, true);
+      document.removeEventListener("pointerup", pointerUp, true);
+      document.removeEventListener("pointercancel", pointerCancel, true);
+      document.removeEventListener("keydown", keyDown, true);
+      document.removeEventListener("keyup", keyUp, true);
+      window.removeEventListener("blur", blur);
+    };
+  }, [text, nativeSelectionEnabled]);
   const chooseSentence = (sentence: { quote: string; quoteStart: number }) => {
     setSelectedQuote(sentence); setChoosing(false);
     if (inquiryTarget) onInquiry?.({ ...inquiryTarget, ...sentence });

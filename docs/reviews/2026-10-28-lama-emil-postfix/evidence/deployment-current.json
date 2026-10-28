@@ -1,0 +1,27 @@
+{
+  "checkedAt": "2026-10-28T07:35:33.299277+00:00",
+  "source": "Tencent 122.51.59.89 read-only service metadata and HTTP GET",
+  "release": "/opt/anicca/releases/20261028-six-fixes-final",
+  "buildId": "gYvsXfhsH4WQe87NjnYgQ",
+  "service": {
+    "NRestarts": "0",
+    "ActiveState": "active",
+    "SubState": "running"
+  },
+  "origin": {
+    "status": 200,
+    "url": "http://127.0.0.1:3250/Anicca"
+  },
+  "public": [
+    {
+      "requested": "https://aitoshuu.me/Anicca",
+      "finalUrl": "https://aitoshuu.me/Anicca",
+      "status": 200
+    },
+    {
+      "requested": "https://tongye.me/Anicca",
+      "finalUrl": "https://tongye.me/Anicca",
+      "status": 200
+    }
+  ]
+}

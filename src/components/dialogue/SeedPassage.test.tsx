@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { SeedPassage } from "./SeedPassage";
 
 const text = "自由探索可以持续。每条伏线都需要认领吗？";
@@ -85,4 +85,62 @@ it("keeps a replacement quote's new position in an existing inquiry", () => {
   fireEvent.click(screen.getByRole("button", { name: "换一句追问" }));
   fireEvent.click(screen.getAllByRole("button", { name: quote })[1]);
   expect(onInquiry).toHaveBeenCalledExactlyOnceWith({ sourceNodeId: "seed", quote, quoteStart: text.lastIndexOf(quote), intent: "premise" });
+});
+
+it("keeps the live pointer range stable through forward and reverse selection, including rerenders", async () => {
+  const onInquiry = vi.fn(), selectionChanged = vi.fn();
+  const view = render(<SeedPassage nodeId="seed" text={text} className="body" busy={false} onInquiry={onInquiry} onSelectionChange={selectionChanged} />);
+  const paragraph = view.container.querySelector('[data-seed-passage] p')!, node = paragraph.firstChild!;
+  const selection = window.getSelection()!;
+  const select = (end: number) => {
+    const range = document.createRange(); range.setStart(node, 1); range.setEnd(node, end);
+    selection.removeAllRanges(); selection.addRange(range); fireEvent(document, new Event("selectionchange"));
+  };
+  try {
+    fireEvent.pointerDown(paragraph, { pointerId: 1 });
+    for (const end of [3, 9, 15, 8]) {
+      select(end);
+      expect(paragraph.firstChild).toBe(node); expect(node.textContent).toBe(text);
+      expect(screen.queryByLabelText("围绕选句继续")).not.toBeInTheDocument();
+      expect(selectionChanged).toHaveBeenLastCalledWith(false);
+    }
+    view.rerender(<SeedPassage nodeId="seed" text={text} className="body" busy={false} onInquiry={target => onInquiry(target)} onSelectionChange={selectionChanged} />);
+    select(12);
+    expect(node.textContent).toBe(text);
+    // The release may be outside the text element.
+    fireEvent.pointerUp(document.body, { pointerId: 1 });
+    await screen.findByRole("button", { name: "追问前提" });
+    fireEvent.click(screen.getByRole("button", { name: "追问前提" }));
+    expect(onInquiry).toHaveBeenCalledExactlyOnceWith({ sourceNodeId: "seed", quote: text.slice(1, 12), quoteStart: 1, intent: "premise" });
+  } finally { selection.removeAllRanges(); }
+});
+
+it("does not commit a cancelled pointer selection and allows a subsequent gesture", async () => {
+  const view = render(<SeedPassage nodeId="seed" text={text} className="body" busy={false} onInquiry={vi.fn()} />);
+  const paragraph = view.container.querySelector('[data-seed-passage] p')!, selection = window.getSelection()!;
+  const range = document.createRange(); range.setStart(paragraph.firstChild!, 0); range.setEnd(paragraph.firstChild!, 5);
+  try {
+    fireEvent.pointerDown(paragraph, { pointerId: 2 }); selection.removeAllRanges(); selection.addRange(range);
+    fireEvent(document, new Event("selectionchange")); fireEvent.pointerCancel(document, { pointerId: 2 });
+    fireEvent(document, new Event("selectionchange")); fireEvent.pointerUp(document, { pointerId: 2 });
+    expect(screen.queryByLabelText("围绕选句继续")).not.toBeInTheDocument();
+    fireEvent.pointerDown(paragraph, { pointerId: 3 }); fireEvent.pointerUp(paragraph, { pointerId: 3 });
+    await screen.findByLabelText("围绕选句继续");
+  } finally { selection.removeAllRanges(); }
+});
+
+it("waits for Shift release before converting a keyboard-extended range", async () => {
+  const view = render(<SeedPassage nodeId="seed" text={text} className="body" busy={false} onInquiry={vi.fn()} />);
+  const paragraph = view.container.querySelector('[data-seed-passage] p')!, selection = window.getSelection()!;
+  try {
+    fireEvent.keyDown(document, { key: "Shift", shiftKey: true });
+    for (const end of [3, 8]) {
+      const range = document.createRange(); range.setStart(paragraph.firstChild!, 0); range.setEnd(paragraph.firstChild!, end);
+      selection.removeAllRanges(); selection.addRange(range); fireEvent(document, new Event("selectionchange"));
+      fireEvent.keyUp(document, { key: "ArrowRight", shiftKey: true });
+      expect(paragraph.textContent).toBe(text); expect(screen.queryByLabelText("围绕选句继续")).not.toBeInTheDocument();
+    }
+    fireEvent.keyUp(document, { key: "Shift", shiftKey: false });
+    await waitFor(() => expect(screen.getByLabelText("围绕选句继续").querySelector("blockquote")).toHaveTextContent(text.slice(0, 8)));
+  } finally { selection.removeAllRanges(); }
 });

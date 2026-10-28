@@ -1,0 +1,157 @@
+{
+  "createdAt": "2026-10-28T07:47:04.873Z",
+  "revision": "ebd4d402df6f294323c23e9b0f47d0b2db66e0a1",
+  "method": "Isolated Chromium public-site interaction probes, controlled inquiry reply; viewport touch emulation, mouse selection uses real mouse down/move/up",
+  "results": [
+    {
+      "test": "slow-inquiry-dismiss",
+      "baseUrl": "https://aitoshuu.me/Anicca",
+      "mobile": false,
+      "request": {
+        "sourceNodeId": "root",
+        "question": "保留开放角落需要哪些共同条件？"
+      },
+      "closedBeforeReply": true,
+      "fullyExitedBeforeReply": true,
+      "afterReply": {
+        "readingReopened": true,
+        "heading": "协商的余地",
+        "activeElement": "conversation-panel-heading",
+        "count": 3
+      }
+    },
+    {
+      "test": "slow-inquiry-dismiss",
+      "baseUrl": "https://aitoshuu.me/Anicca",
+      "mobile": true,
+      "request": {
+        "sourceNodeId": "root",
+        "question": "保留开放角落需要哪些共同条件？"
+      },
+      "closedBeforeReply": true,
+      "fullyExitedBeforeReply": true,
+      "afterReply": {
+        "readingReopened": true,
+        "heading": "协商的余地",
+        "activeElement": "conversation-panel-heading",
+        "count": 3
+      }
+    },
+    {
+      "test": "slow-inquiry-dismiss",
+      "baseUrl": "https://tongye.me/Anicca",
+      "mobile": false,
+      "request": {
+        "sourceNodeId": "root",
+        "question": "保留开放角落需要哪些共同条件？"
+      },
+      "closedBeforeReply": true,
+      "fullyExitedBeforeReply": true,
+      "afterReply": {
+        "readingReopened": true,
+        "heading": "协商的余地",
+        "activeElement": "conversation-panel-heading",
+        "count": 3
+      }
+    },
+    {
+      "test": "slow-inquiry-dismiss",
+      "baseUrl": "https://tongye.me/Anicca",
+      "mobile": true,
+      "request": {
+        "sourceNodeId": "root",
+        "question": "保留开放角落需要哪些共同条件？"
+      },
+      "closedBeforeReply": true,
+      "fullyExitedBeforeReply": true,
+      "afterReply": {
+        "readingReopened": true,
+        "heading": "协商的余地",
+        "activeElement": "conversation-panel-heading",
+        "count": 3
+      }
+    },
+    {
+      "test": "native-drag-selection",
+      "baseUrl": "https://aitoshuu.me/Anicca",
+      "mobile": false,
+      "steps": [
+        {
+          "targetOffset": 3,
+          "pointerStillDown": true,
+          "nativeSelection": "社\n\n区花\n追问前提",
+          "originalTextUnchanged": false,
+          "quote": "区花",
+          "splitVisible": false,
+          "selectionAnchorNode": "P"
+        },
+        {
+          "targetOffset": 8,
+          "pointerStillDown": true,
+          "nativeSelection": "社\n\n区花\n追问前提\n找反例",
+          "originalTextUnchanged": false,
+          "quote": "区花",
+          "splitVisible": false,
+          "selectionAnchorNode": "P"
+        },
+        {
+          "targetOffset": 15,
+          "pointerStillDown": true,
+          "nativeSelection": "社\n\n区花\n追问前提\n找反例\n收起",
+          "originalTextUnchanged": false,
+          "quote": "区花",
+          "splitVisible": false,
+          "selectionAnchorNode": "P"
+        },
+        {
+          "targetOffset": 21,
+          "pointerStillDown": true,
+          "nativeSelection": "社\n\n区花\n追问前提\n找反例\n收起",
+          "originalTextUnchanged": false,
+          "quote": "区花",
+          "splitVisible": false,
+          "selectionAnchorNode": "P"
+        },
+        {
+          "targetOffset": 15,
+          "pointerStillDown": true,
+          "nativeSelection": "社\n\n区花\n追问前提\n找反例\n收起",
+          "originalTextUnchanged": false,
+          "quote": "区花",
+          "splitVisible": false,
+          "selectionAnchorNode": "P"
+        },
+        {
+          "targetOffset": 8,
+          "pointerStillDown": true,
+          "nativeSelection": "社\n\n区花\n追问前提\n找反例",
+          "originalTextUnchanged": false,
+          "quote": "区花",
+          "splitVisible": false,
+          "selectionAnchorNode": "P"
+        }
+      ],
+      "afterRelease": {
+        "nativeSelection": "社\n\n区花\n追问前提\n找反例",
+        "quote": "区花"
+      }
+    },
+    {
+      "test": "middle-reading-exit",
+      "baseUrl": "https://aitoshuu.me/Anicca",
+      "mobile": true,
+      "before": {
+        "button": {
+          "top": -538,
+          "bottom": -494
+        },
+        "reader": {
+          "top": 112,
+          "bottom": 696
+        },
+        "visibleInsideReader": false
+      },
+      "blankTapDismisses": true
+    }
+  ]
+}

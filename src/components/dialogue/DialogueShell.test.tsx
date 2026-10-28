@@ -387,6 +387,46 @@ describe("DialogueShell", () => {
     expect(Object.values(branchGraphStore.getGraph().nodes).filter(node => node.kind === "assistant")).toHaveLength(1);
   });
 
+  it.each(["return", "escape", "blank"])("saves a late inquiry without reopening reading after explicit %s dismissal", async dismissal => {
+    const root = branchGraphStore.createUserNode("这条前提值得继续追问。");
+    useDialogueUiStore.setState({ focusedNodeId: root }); seedActiveWorkspaceFromCurrentGraph();
+    const pending = createDeferred<Response>(), fetchMock = vi.fn(() => pending.promise); vi.stubGlobal("fetch", fetchMock);
+    const view = render(<DialogueShell />); fireEvent.click(screen.getByTestId(`dialogue-stage-node-${root}`));
+    fireEvent.click(await screen.findByRole("button", { name: "选一句追问" }));
+    fireEvent.click(within(screen.getByLabelText("选择要追问的原句")).getByRole("button"));
+    fireEvent.click(screen.getByRole("button", { name: "追问前提" }));
+    fireEvent.click(screen.getByRole("button", { name: "追问" }));
+    const request = readFetchBody(fetchMock, 0);
+    if (dismissal === "return") fireEvent.click(screen.getByRole("button", { name: "返回种子，收起阅读" }));
+    else if (dismissal === "escape") fireEvent.keyDown(document, { key: "Escape" });
+    else fireEvent.pointerDown(screen.getByTestId("dialogue-shell"));
+    await waitFor(() => expect(screen.queryByTestId("dialogue-panel")).not.toBeInTheDocument());
+    pending.resolve(new Response(JSON.stringify({ requestId: request.requestId, inquiry: { text: "回应仍被保存。", label: "已保存回应", summary: "澄清前提" } }), { status: 200 }));
+    await waitFor(() => expect(Object.keys(branchGraphStore.getGraph().nodes)).toHaveLength(3));
+    expect(screen.queryByTestId("dialogue-panel")).not.toBeInTheDocument();
+    expect(document.activeElement?.id).not.toBe("conversation-panel-heading");
+    expect(useDialogueUiStore.getState().focusedNodeId).toBe(root);
+    const response = Object.values(branchGraphStore.getGraph().nodes).find(node => node.kind === "assistant")!;
+    view.unmount(); render(<DialogueShell />);
+    await waitFor(() => expect(screen.queryByTestId("dialogue-panel")).not.toBeInTheDocument());
+    fireEvent.click(screen.getByTestId(`dialogue-stage-node-${response.id}`));
+    expect(await screen.findByRole("heading", { name: "已保存回应" })).toBeInTheDocument();
+  });
+
+  it("opens a completed inquiry normally when the reader has not dismissed it", async () => {
+    const root = branchGraphStore.createUserNode("继续检验这个前提。");
+    useDialogueUiStore.setState({ focusedNodeId: root }); seedActiveWorkspaceFromCurrentGraph();
+    const pending = createDeferred<Response>(), fetchMock = vi.fn(() => pending.promise); vi.stubGlobal("fetch", fetchMock);
+    render(<DialogueShell />); fireEvent.click(screen.getByTestId(`dialogue-stage-node-${root}`));
+    fireEvent.click(await screen.findByRole("button", { name: "选一句追问" }));
+    fireEvent.click(within(screen.getByLabelText("选择要追问的原句")).getByRole("button"));
+    fireEvent.click(screen.getByRole("button", { name: "追问前提" })); fireEvent.click(screen.getByRole("button", { name: "追问" }));
+    const request = readFetchBody(fetchMock, 0);
+    pending.resolve(new Response(JSON.stringify({ requestId: request.requestId, inquiry: { text: "前提可以继续讨论。", label: "继续澄清", summary: "核实条件" } }), { status: 200 }));
+    expect(await screen.findByRole("heading", { name: "继续澄清" })).toHaveFocus();
+    expect(Object.keys(branchGraphStore.getGraph().nodes)).toHaveLength(3);
+  });
+
   it("cancels a quoted inquiry without adding late results or losing its question", async () => {
     const root = branchGraphStore.createUserNode("这条前提值得继续追问。"); useDialogueUiStore.setState({ focusedNodeId: root }); seedActiveWorkspaceFromCurrentGraph();
     const pending = createDeferred<Response>(), fetchMock = vi.fn(() => pending.promise); vi.stubGlobal("fetch", fetchMock);

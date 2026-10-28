@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import { SeedGuide } from "./SeedGuide";
 
 const initial = { empty: true, requested: 0, pending: false, reading: false, combining: false, completed: false, onStart: vi.fn() };
@@ -11,7 +11,7 @@ it("follows actual exploration and hides while generating, without requiring a t
   view.rerender(<SeedGuide {...initial} pending />);
   expect(screen.queryByLabelText("探索提示")).not.toBeInTheDocument();
   view.rerender(<SeedGuide {...initial} empty={false} />);
-  expect(screen.getByText("点一颗读读；拖空白平移，双指转动与缩放")).toBeInTheDocument();
+  expect(screen.getByText("点一颗读读；拖动空白，转动视角")).toBeInTheDocument();
   view.rerender(<SeedGuide {...initial} empty={false} reading />);
   expect(screen.getByText("继续写、裂变或组合，从这里接着想")).toBeInTheDocument();
   view.rerender(<SeedGuide {...initial} empty={false} reading combining />);
@@ -21,6 +21,20 @@ it("follows actual exploration and hides while generating, without requiring a t
   expect(localStorage.getItem("anicca:seed-guide:v1")).toBe("done");
   view.rerender(<SeedGuide {...initial} empty={false} completed reading requested={1} />);
   expect(screen.getByText("继续写、裂变或组合，从这里接着想")).toBeInTheDocument();
+});
+
+it("matches the stage's primary input capability and updates when that capability changes", () => {
+  const listeners = new Set<() => void>();
+  const media = { matches: true, addEventListener: (_: string, listener: () => void) => listeners.add(listener),
+    removeEventListener: (_: string, listener: () => void) => listeners.delete(listener) };
+  vi.stubGlobal("matchMedia", vi.fn(() => media));
+  try {
+    const view = render(<SeedGuide {...initial} empty={false} />);
+    expect(screen.getByText("点一颗读读；拖空白平移 · 拖球合成 · 双指转动与缩放")).toBeInTheDocument();
+    act(() => { media.matches = false; listeners.forEach(listener => listener()); });
+    expect(screen.getByText("点一颗读读；拖动空白，转动视角")).toBeInTheDocument();
+    view.unmount(); expect(listeners.size).toBe(0);
+  } finally { vi.unstubAllGlobals(); }
 });
 
 it("preserves dismissal across remounts and reopens at the current action", () => {

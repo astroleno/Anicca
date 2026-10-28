@@ -1,0 +1,173 @@
+{
+  "method": "Existing project Playwright; synthetic text, controlled replies, desktop / mobile touch viewport",
+  "results": [
+    {
+      "test": "inquiry-dismissal",
+      "baseUrl": "https://aitoshuu.me/Anicca",
+      "mobile": false,
+      "coarse": false,
+      "hint": "点一颗读读；拖动空白，转动视角\n\n×",
+      "passed": true,
+      "fullyExitedBeforeReply": true,
+      "afterReply": {
+        "readingReopened": false,
+        "activeElement": ""
+      },
+      "savedResponseReadableAfterRefresh": true
+    },
+    {
+      "test": "inquiry-dismissal",
+      "baseUrl": "https://aitoshuu.me/Anicca",
+      "mobile": true,
+      "coarse": true,
+      "hint": "点一颗读读；拖空白平移 · 拖球合成 · 双指转动与缩放\n\n×",
+      "passed": true,
+      "fullyExitedBeforeReply": true,
+      "afterReply": {
+        "readingReopened": false,
+        "activeElement": ""
+      },
+      "savedResponseReadableAfterRefresh": true
+    },
+    {
+      "test": "inquiry-dismissal",
+      "baseUrl": "https://tongye.me/Anicca",
+      "mobile": false,
+      "coarse": false,
+      "hint": "点一颗读读；拖动空白，转动视角\n\n×",
+      "passed": true,
+      "fullyExitedBeforeReply": true,
+      "afterReply": {
+        "readingReopened": false,
+        "activeElement": ""
+      },
+      "savedResponseReadableAfterRefresh": true
+    },
+    {
+      "test": "inquiry-dismissal",
+      "baseUrl": "https://tongye.me/Anicca",
+      "mobile": true,
+      "coarse": true,
+      "hint": "点一颗读读；拖空白平移 · 拖球合成 · 双指转动与缩放\n\n×",
+      "passed": true,
+      "fullyExitedBeforeReply": true,
+      "afterReply": {
+        "readingReopened": false,
+        "activeElement": ""
+      },
+      "savedResponseReadableAfterRefresh": true
+    },
+    {
+      "test": "native-drag-selection",
+      "baseUrl": "https://aitoshuu.me/Anicca",
+      "steps": [
+        {
+          "offset": 3,
+          "pointerStillDown": true,
+          "selection": "区花",
+          "originalUnchanged": true,
+          "quote": null,
+          "splitVisible": true
+        },
+        {
+          "offset": 8,
+          "pointerStillDown": true,
+          "selection": "区花园是否应该",
+          "originalUnchanged": true,
+          "quote": null,
+          "splitVisible": true
+        },
+        {
+          "offset": 15,
+          "pointerStillDown": true,
+          "selection": "区花园是否应该保留不预设用途",
+          "originalUnchanged": true,
+          "quote": null,
+          "splitVisible": true
+        },
+        {
+          "offset": 21,
+          "pointerStillDown": true,
+          "selection": "区花园是否应该保留不预设用途的角落？这些",
+          "originalUnchanged": true,
+          "quote": null,
+          "splitVisible": true
+        },
+        {
+          "offset": 15,
+          "pointerStillDown": true,
+          "selection": "区花园是否应该保留不预设用途",
+          "originalUnchanged": true,
+          "quote": null,
+          "splitVisible": true
+        },
+        {
+          "offset": 8,
+          "pointerStillDown": true,
+          "selection": "区花园是否应该",
+          "originalUnchanged": true,
+          "quote": null,
+          "splitVisible": true
+        }
+      ],
+      "passed": true,
+      "finalQuote": "区花园是否应该"
+    },
+    {
+      "test": "native-drag-selection",
+      "baseUrl": "https://tongye.me/Anicca",
+      "steps": [
+        {
+          "offset": 3,
+          "pointerStillDown": true,
+          "selection": "区花",
+          "originalUnchanged": true,
+          "quote": null,
+          "splitVisible": true
+        },
+        {
+          "offset": 8,
+          "pointerStillDown": true,
+          "selection": "区花园是否应该",
+          "originalUnchanged": true,
+          "quote": null,
+          "splitVisible": true
+        },
+        {
+          "offset": 15,
+          "pointerStillDown": true,
+          "selection": "区花园是否应该保留不预设用途",
+          "originalUnchanged": true,
+          "quote": null,
+          "splitVisible": true
+        },
+        {
+          "offset": 21,
+          "pointerStillDown": true,
+          "selection": "区花园是否应该保留不预设用途的角落？这些",
+          "originalUnchanged": true,
+          "quote": null,
+          "splitVisible": true
+        },
+        {
+          "offset": 15,
+          "pointerStillDown": true,
+          "selection": "区花园是否应该保留不预设用途",
+          "originalUnchanged": true,
+          "quote": null,
+          "splitVisible": true
+        },
+        {
+          "offset": 8,
+          "pointerStillDown": true,
+          "selection": "区花园是否应该",
+          "originalUnchanged": true,
+          "quote": null,
+          "splitVisible": true
+        }
+      ],
+      "passed": true,
+      "finalQuote": "区花园是否应该"
+    }
+  ]
+}

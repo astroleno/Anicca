@@ -1,0 +1,45 @@
+{
+  "checkedAt": "2026-10-28T08:24:02.989638+00:00",
+  "results": [
+    {
+      "url": "https://aitoshuu.me/Anicca",
+      "finalUrl": "https://aitoshuu.me/Anicca",
+      "status": 200
+    },
+    {
+      "url": "https://aitoshuu.me/Anicca/dialogue",
+      "finalUrl": "https://aitoshuu.me/Anicca/dialogue",
+      "status": 200
+    },
+    {
+      "url": "https://aitoshuu.me/Anicca/.env",
+      "finalUrl": "https://aitoshuu.me/Anicca/.env",
+      "status": 404
+    },
+    {
+      "url": "https://aitoshuu.me/Anicca/.git/config",
+      "finalUrl": "https://aitoshuu.me/Anicca/.git/config",
+      "status": 404
+    },
+    {
+      "url": "https://tongye.me/Anicca",
+      "finalUrl": "https://tongye.me/Anicca",
+      "status": 200
+    },
+    {
+      "url": "https://tongye.me/Anicca/dialogue",
+      "finalUrl": "https://tongye.me/Anicca/dialogue",
+      "status": 200
+    },
+    {
+      "url": "https://tongye.me/Anicca/.env",
+      "finalUrl": "https://tongye.me/Anicca/.env",
+      "status": 404
+    },
+    {
+      "url": "https://tongye.me/Anicca/.git/config",
+      "finalUrl": "https://tongye.me/Anicca/.git/config",
+      "status": 404
+    }
+  ]
+}
