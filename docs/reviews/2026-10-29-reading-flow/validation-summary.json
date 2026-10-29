@@ -1,0 +1,540 @@
+{
+  "sourceCommit": "072d090c49807bf9eb6d84e00e1b43276f690301",
+  "productionBuildId": "lZ3raOpo9424O1p7n1Da2",
+  "runtimeFileCount": 163,
+  "candidateReading": [
+    {
+      "name": "desktop",
+      "passed": true
+    },
+    {
+      "name": "mobile",
+      "passed": true
+    },
+    {
+      "name": "ordinary-desktop",
+      "passed": true,
+      "geometry": {
+        "width": 1280,
+        "height": 720,
+        "visibleLines": 10.526315789473685,
+        "fontSize": 16,
+        "overflow": false
+      },
+      "maxStageShift": 0.001435380913100454
+    },
+    {
+      "name": "ordinary-mobile-390",
+      "passed": true,
+      "geometry": {
+        "width": 390,
+        "height": 844,
+        "visibleLines": 13.81578947368421,
+        "fontSize": 16,
+        "overflow": false
+      },
+      "maxStageShift": 0
+    },
+    {
+      "name": "ordinary-mobile-320",
+      "passed": true,
+      "geometry": {
+        "width": 320,
+        "height": 640,
+        "visibleLines": 6.315789473684211,
+        "fontSize": 16,
+        "overflow": false
+      },
+      "maxStageShift": 0.001007080078125
+    }
+  ],
+  "localQuality": {
+    "command": "npm run check",
+    "passedFiles": 95,
+    "passedTests": 715,
+    "lintErrors": 0,
+    "existingLintWarnings": 26,
+    "testDurationSeconds": 52.87,
+    "testTimeoutMs": 10000,
+    "maxWorkers": 2
+  },
+  "physicalDeviceValidation": false,
+  "publicControlled": [
+    {
+      "baseUrl": "https://aitoshuu.me/Anicca",
+      "passed": true,
+      "networkErrors": [],
+      "flows": [
+        {
+          "name": "desktop",
+          "passed": true,
+          "nodeCount": 12,
+          "requestCount": 6,
+          "renderer": {
+            "backend": "webgpu",
+            "secureContext": true
+          },
+          "layout": {
+            "width": 1440,
+            "scrollWidth": 1440
+          },
+          "errors": []
+        },
+        {
+          "name": "mobile-390",
+          "passed": true,
+          "nodeCount": 12,
+          "requestCount": 6,
+          "renderer": {
+            "backend": "original",
+            "secureContext": true
+          },
+          "layout": {
+            "width": 390,
+            "scrollWidth": 390
+          },
+          "errors": []
+        }
+      ],
+      "pointerFlows": 2,
+      "rendererChecks": [
+        {
+          "name": "desktop",
+          "selectedBackend": "webgpu",
+          "passed": true,
+          "checks": [
+            "manual-original",
+            "manual-tsl-webgl2",
+            "manual-tsl-auto",
+            "selection-persists-after-refresh",
+            "simulated-context-loss-falls-back-to-original",
+            "prefixed-labs-link"
+          ]
+        },
+        {
+          "name": "mobile",
+          "selectedBackend": "webgpu",
+          "passed": true,
+          "checks": [
+            "manual-original",
+            "manual-tsl-webgl2",
+            "manual-tsl-auto",
+            "selection-persists-after-refresh",
+            "simulated-context-loss-falls-back-to-original",
+            "prefixed-labs-link"
+          ]
+        }
+      ]
+    },
+    {
+      "baseUrl": "https://tongye.me/Anicca",
+      "passed": true,
+      "networkErrors": [],
+      "flows": [
+        {
+          "name": "desktop",
+          "passed": true,
+          "nodeCount": 12,
+          "requestCount": 6,
+          "renderer": {
+            "backend": "webgpu",
+            "secureContext": true
+          },
+          "layout": {
+            "width": 1440,
+            "scrollWidth": 1440
+          },
+          "errors": []
+        },
+        {
+          "name": "mobile-390",
+          "passed": true,
+          "nodeCount": 12,
+          "requestCount": 6,
+          "renderer": {
+            "backend": "original",
+            "secureContext": true
+          },
+          "layout": {
+            "width": 390,
+            "scrollWidth": 390
+          },
+          "errors": []
+        }
+      ],
+      "pointerFlows": 2,
+      "rendererChecks": [
+        {
+          "name": "desktop",
+          "selectedBackend": "webgpu",
+          "passed": true,
+          "checks": [
+            "manual-original",
+            "manual-tsl-webgl2",
+            "manual-tsl-auto",
+            "selection-persists-after-refresh",
+            "simulated-context-loss-falls-back-to-original",
+            "prefixed-labs-link"
+          ]
+        },
+        {
+          "name": "mobile",
+          "selectedBackend": "webgpu",
+          "passed": true,
+          "checks": [
+            "manual-original",
+            "manual-tsl-webgl2",
+            "manual-tsl-auto",
+            "selection-persists-after-refresh",
+            "simulated-context-loss-falls-back-to-original",
+            "prefixed-labs-link"
+          ]
+        }
+      ]
+    }
+  ],
+  "publicEntryChecks": {
+    "paths": [
+      "/Anicca",
+      "/Anicca/dialogue"
+    ],
+    "httpStatus": 200,
+    "sameHostnameAndPath": true,
+    "productionBuildIdInBothDomains": true
+  },
+  "publicLive": [
+    {
+      "baseUrl": "https://aitoshuu.me/Anicca",
+      "passed": true,
+      "networkErrors": [],
+      "flows": [
+        {
+          "name": "desktop",
+          "passed": true,
+          "nodeCount": 12,
+          "requestCount": 6,
+          "renderer": {
+            "backend": "webgpu",
+            "secureContext": true
+          },
+          "layout": {
+            "width": 1440,
+            "scrollWidth": 1440
+          },
+          "errors": [],
+          "calls": [
+            {
+              "endpoint": "/api/inquiry",
+              "status": 200,
+              "elapsedMs": 6369
+            },
+            {
+              "endpoint": "/api/polarities",
+              "status": 200,
+              "elapsedMs": 6544
+            },
+            {
+              "endpoint": "/api/branches",
+              "status": 200,
+              "elapsedMs": 7658
+            },
+            {
+              "endpoint": "/api/synthesis",
+              "status": 200,
+              "elapsedMs": 16018
+            },
+            {
+              "endpoint": "/api/branches",
+              "status": 200,
+              "elapsedMs": 7496
+            },
+            {
+              "endpoint": "/api/polarities",
+              "status": 200,
+              "elapsedMs": 7646
+            }
+          ]
+        },
+        {
+          "name": "mobile-390",
+          "passed": true,
+          "nodeCount": 12,
+          "requestCount": 6,
+          "renderer": {
+            "backend": "original",
+            "secureContext": true
+          },
+          "layout": {
+            "width": 390,
+            "scrollWidth": 390
+          },
+          "errors": [],
+          "calls": [
+            {
+              "endpoint": "/api/inquiry",
+              "status": 200,
+              "elapsedMs": 3375
+            },
+            {
+              "endpoint": "/api/polarities",
+              "status": 200,
+              "elapsedMs": 7604
+            },
+            {
+              "endpoint": "/api/branches",
+              "status": 200,
+              "elapsedMs": 7023
+            },
+            {
+              "endpoint": "/api/synthesis",
+              "status": 200,
+              "elapsedMs": 14296
+            },
+            {
+              "endpoint": "/api/branches",
+              "status": 200,
+              "elapsedMs": 9368
+            },
+            {
+              "endpoint": "/api/polarities",
+              "status": 200,
+              "elapsedMs": 7276
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "baseUrl": "https://tongye.me/Anicca",
+      "passed": true,
+      "networkErrors": [],
+      "flows": [
+        {
+          "name": "desktop",
+          "passed": true,
+          "nodeCount": 12,
+          "requestCount": 6,
+          "renderer": {
+            "backend": "webgpu",
+            "secureContext": true
+          },
+          "layout": {
+            "width": 1440,
+            "scrollWidth": 1440
+          },
+          "errors": [],
+          "calls": [
+            {
+              "endpoint": "/api/inquiry",
+              "status": 200,
+              "elapsedMs": 4636
+            },
+            {
+              "endpoint": "/api/polarities",
+              "status": 200,
+              "elapsedMs": 6647
+            },
+            {
+              "endpoint": "/api/branches",
+              "status": 200,
+              "elapsedMs": 11003
+            },
+            {
+              "endpoint": "/api/synthesis",
+              "status": 200,
+              "elapsedMs": 16437
+            },
+            {
+              "endpoint": "/api/branches",
+              "status": 200,
+              "elapsedMs": 7098
+            },
+            {
+              "endpoint": "/api/polarities",
+              "status": 200,
+              "elapsedMs": 8001
+            }
+          ]
+        },
+        {
+          "name": "mobile-390",
+          "passed": true,
+          "nodeCount": 12,
+          "requestCount": 6,
+          "renderer": {
+            "backend": "original",
+            "secureContext": true
+          },
+          "layout": {
+            "width": 390,
+            "scrollWidth": 390
+          },
+          "errors": [],
+          "calls": [
+            {
+              "endpoint": "/api/inquiry",
+              "status": 200,
+              "elapsedMs": 4889
+            },
+            {
+              "endpoint": "/api/polarities",
+              "status": 200,
+              "elapsedMs": 6255
+            },
+            {
+              "endpoint": "/api/branches",
+              "status": 200,
+              "elapsedMs": 7843
+            },
+            {
+              "endpoint": "/api/synthesis",
+              "status": 200,
+              "elapsedMs": 13770
+            },
+            {
+              "endpoint": "/api/branches",
+              "status": 200,
+              "elapsedMs": 7154
+            },
+            {
+              "endpoint": "/api/polarities",
+              "status": 200,
+              "elapsedMs": 6661
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "publicLiveRealApiCalls": 24,
+  "publicReading": [
+    {
+      "baseUrl": "https://aitoshuu.me/Anicca",
+      "results": [
+        {
+          "name": "desktop",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "name": "mobile",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "name": "ordinary-desktop",
+          "passed": true,
+          "geometry": {
+            "width": 1280,
+            "height": 720,
+            "visibleLines": 10.526315789473685,
+            "fontSize": 16,
+            "overflow": false
+          },
+          "maxStageShift": 0.001435380913100454,
+          "errors": []
+        },
+        {
+          "name": "ordinary-mobile-390",
+          "passed": true,
+          "geometry": {
+            "width": 390,
+            "height": 844,
+            "visibleLines": 13.81578947368421,
+            "fontSize": 16,
+            "overflow": false
+          },
+          "maxStageShift": 0,
+          "errors": []
+        },
+        {
+          "name": "ordinary-mobile-320",
+          "passed": true,
+          "geometry": {
+            "width": 320,
+            "height": 640,
+            "visibleLines": 6.315789473684211,
+            "fontSize": 16,
+            "overflow": false
+          },
+          "maxStageShift": 0.001007080078125,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "baseUrl": "https://tongye.me/Anicca",
+      "results": [
+        {
+          "name": "desktop",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "name": "mobile",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "name": "ordinary-desktop",
+          "passed": true,
+          "geometry": {
+            "width": 1280,
+            "height": 720,
+            "visibleLines": 10.526315789473685,
+            "fontSize": 16,
+            "overflow": false
+          },
+          "maxStageShift": 0.001435380913100454,
+          "errors": []
+        },
+        {
+          "name": "ordinary-mobile-390",
+          "passed": true,
+          "geometry": {
+            "width": 390,
+            "height": 844,
+            "visibleLines": 13.81578947368421,
+            "fontSize": 16,
+            "overflow": false
+          },
+          "maxStageShift": 0,
+          "errors": []
+        },
+        {
+          "name": "ordinary-mobile-320",
+          "passed": true,
+          "geometry": {
+            "width": 320,
+            "height": 640,
+            "visibleLines": 6.315789473684211,
+            "fontSize": 16,
+            "overflow": false
+          },
+          "maxStageShift": 0.001007080078125,
+          "errors": []
+        }
+      ]
+    }
+  ],
+  "sourceCommitCi": {
+    "url": "https://github.com/astroleno/Anicca/actions/runs/40906815815",
+    "sourceCommit": "072d090c49807bf9eb6d84e00e1b43276f690301",
+    "passedJobs": [
+      "Lint, types, tests, build",
+      "Production dialogue smoke (rendering)"
+    ],
+    "remainingVisualGroups": "not yet complete at documentation commit",
+    "fullRunPassed": false
+  },
+  "deployment": {
+    "release": "/opt/anicca/releases/20261029-reading-flow-final",
+    "rollback": "/opt/anicca/releases/20261028-surface-controls-complete",
+    "service": "anicca.service",
+    "active": true,
+    "automaticRestarts": 0,
+    "candidateStopped": true,
+    "sshTunnelClosed": true,
+    "homepagesHttp200": true
+  }
+}
