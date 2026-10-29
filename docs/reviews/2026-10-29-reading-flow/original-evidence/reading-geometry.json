@@ -1,0 +1,58 @@
+{
+  "ancestors": [
+    {
+      "className": "DialogueShell_seedInspector__MN8wT",
+      "overflowY": "auto",
+      "rect": {
+        "bottom": 451,
+        "clientHeight": 331,
+        "height": 331,
+        "scrollHeight": 800,
+        "top": 120
+      }
+    },
+    {
+      "className": "DialogueShell_seedInspectorFrame__TzPkx",
+      "overflowY": "visible",
+      "rect": {
+        "bottom": 451,
+        "clientHeight": 375,
+        "height": 375,
+        "scrollHeight": 375,
+        "top": 76
+      }
+    }
+  ],
+  "composer": {
+    "bottom": 616,
+    "clientHeight": 93,
+    "height": 93,
+    "scrollHeight": 93,
+    "top": 523
+  },
+  "heading": {
+    "bottom": 150,
+    "clientHeight": 30,
+    "height": 30,
+    "scrollHeight": 30,
+    "top": 120
+  },
+  "passage": {
+    "bottom": 782,
+    "clientHeight": 395,
+    "height": 395,
+    "scrollHeight": 395,
+    "top": 387
+  },
+  "reading": {
+    "bottom": 451,
+    "clientHeight": 375,
+    "height": 375,
+    "scrollHeight": 375,
+    "top": 76
+  },
+  "viewport": {
+    "height": 640,
+    "width": 320
+  }
+}

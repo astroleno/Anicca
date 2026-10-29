@@ -21,8 +21,8 @@ export function evolutionPhase(node: RetrievalNode) {
   if (node.inquiry) return `${inquiryLabel(node.inquiry.intent)} · ${node.kind === "user" ? "提出追问" : "聚焦回应"}`;
   if (node.polarity) return `沿「${polarityAxis(node.polarity).label}」展开 · ${polarityLabel(node.polarity)}`;
   if (node.branchType === "合" || node.kind === "merge") return "合流";
-  if (node.branchType === "正") return "正反裂变 · 正 · 深化主张";
-  if (node.branchType === "反") return "正反裂变 · 反 · 质疑前提";
+  if (node.branchType === "正") return "推演正反 · 正 · 深化主张";
+  if (node.branchType === "反") return "推演正反 · 反 · 质疑前提";
   if (node.growth) return "画作视角";
   return node.kind === "user" ? "提出问题" : "想法";
 }

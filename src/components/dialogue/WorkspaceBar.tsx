@@ -40,6 +40,9 @@ export function WorkspaceBar({
   const overflowRef = useRef<HTMLDivElement | null>(null);
   const firstOverflowItemRef = useRef<HTMLButtonElement | null>(null);
   const renameInputRef = useRef<HTMLInputElement | null>(null);
+  const recentButton = (item: WorkspaceRegistryEntry) => <button key={`overflow-${item.id}`} type="button"
+    className={styles.workspaceOverflowItem} aria-current={item.id === currentWorkspaceId ? "true" : undefined}
+    onClick={() => { onSelect(item.id); setActionsOpen(false); }}>{item.title}</button>;
 
   useEffect(() => { setRenameOwner(null); }, [currentWorkspaceId]);
 
@@ -200,26 +203,17 @@ export function WorkspaceBar({
                   导入工作区
                 </button>
                 </div>
-                {extraActions}
                 {items.length ? (
                   <div className={`${styles.workspaceOverflowRecent} ${styles.workspaceOverflowGroup}`} role="group" aria-label="最近工作区">
                     <h3>最近工作区</h3>
-                    {items.map((item) => (
-                      <button
-                        key={`overflow-${item.id}`}
-                        type="button"
-                        className={styles.workspaceOverflowItem}
-                        aria-current={item.id === currentWorkspaceId ? "true" : undefined}
-                        onClick={() => {
-                          onSelect(item.id);
-                          setActionsOpen(false);
-                        }}
-                      >
-                        {item.title}
-                      </button>
-                    ))}
+                    {items.slice(0, 2).map(recentButton)}
+                    {items.length > 2 ? <details className={styles.workspaceRecentMore}>
+                      <summary>更多工作区 · {items.length - 2}</summary>
+                      {items.slice(2).map(recentButton)}
+                    </details> : null}
                   </div>
                 ) : null}
+                {extraActions}
               </div>
             ) : null}
           </div>

@@ -14,7 +14,7 @@
 .header p { margin: 0 0 5px; font-size: 12px; color: var(--muted); letter-spacing: .06em; }
 .header h2 { margin: 0; font-size: 25px; font-weight: 450; letter-spacing: .08em; }
 .overview button, .overview select, .overview input { font: inherit; color: inherit; }
-.overview button { padding: 8px 11px; background: transparent; border: 0; border-radius: 16px; cursor: pointer; line-height: 1.5; transition: background 160ms; }
+.overview button { min-height: 44px; padding: 8px 11px; background: transparent; border: 0; border-radius: 16px; cursor: pointer; line-height: 1.5; transition: background 160ms; }
 .overview button:hover, .overview button[aria-pressed="true"] { background: var(--dialogue-hover, rgba(139,119,154,.09)); }
 .overview button:disabled { opacity: .42; cursor: default; }
 .overview :is(button, input, select, canvas):focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 4px; }
@@ -34,7 +34,7 @@
 .phase { color: var(--muted); font-size: 12px; line-height: 1.9; margin: 0; }
 .reading h3 { margin: 13px 0; font-size: 21px; line-height: 1.6; font-weight: 450; overflow-wrap: anywhere; }
 .lens { color: var(--muted); line-height: 1.9; margin: 12px 0; }
-.summary { line-height: 1.95; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 28vh; overflow: auto; padding-right: 6px; }
+.summary { line-height: 1.95; white-space: pre-wrap; overflow-wrap: anywhere; padding-right: 6px; }
 .sources { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 2px 6px; margin: 20px 0 12px; }
 .sources > span { width: 100%; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
 .sources button { text-align: left; padding: 5px 8px; max-width: 100%; overflow-wrap: anywhere; }
@@ -64,7 +64,7 @@
   .map { flex: 1; min-height: clamp(96px, calc(var(--dialogue-viewport-height, 100dvh) * .2), 180px); }
   .detail { flex: 0 1 34%; min-height: 110px; padding: 12px 3px; border-top: 1px solid var(--line); }
   .reading h3 { font-size: 18px; margin: 8px 0; }
-  .summary { max-height: 100px; margin: 8px 0; }
+  .summary { margin: 8px 0; }
   .sources { margin-top: 12px; }
   .readActions { margin-top: 10px; }
   .hint { font-size: 10px; }

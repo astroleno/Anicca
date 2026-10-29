@@ -57,7 +57,7 @@ export class LiquidMotion {
           const source = previous.find(item => item.node.id === id);
           return source ? [source] : [];
         });
-        const handoff = origins.find(origin => !ids.has(origin.node.id) && origin.node.id.startsWith("pending-"));
+        const handoff = origins.find(origin => !ids.has(origin.node.id) && (origin.node.id.startsWith("pending-") || origin.node.id === "empty-root"));
         const nearest = previous.reduce<Body | null>((nearest, item) => {
           const distance = (node: DialogueMetaballNode) => Math.hypot(node.center[0] - target.center[0], node.center[1] - target.center[1]);
           return !nearest || distance(item.node) < distance(nearest.node) ? item : nearest;

@@ -144,14 +144,14 @@ try {
           await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
         }
         const pan = await page.getByTestId("dialogue-stage-track").getAttribute("data-space-pan-x"); assert(Number(pan) > 500);
-        await openPerspective(); await page.getByRole("button", { name: "复位视角与缩放", exact: true }).click();
+        await openPerspective(); await page.getByRole("button", { name: "复位观察方向与缩放", exact: true }).click();
         await page.waitForFunction(() => document.querySelector('[data-testid="dialogue-stage-track"]').dataset.spacePanX === "0");
         const track = page.getByTestId("dialogue-stage-track"); assert.equal(await track.getAttribute("data-space-pan-y"), "0");
         assert.equal(await track.getAttribute("data-space-zoom"), "1"); assert.equal(await track.getAttribute("data-space-yaw"), "0");
         assert.deepEqual((await snapshot()).stageLayouts, beforeReset.stageLayouts); assert.deepEqual((await snapshot()).thinkingSpace, beforeReset.thinkingSpace);
         await shot("camera-reset"); await session.detach(); result.reset = { panBefore: Number(pan), restored: true, layoutUnchanged: true };
       } else {
-        await openPerspective(); await page.getByRole("button", { name: "复位视角与缩放", exact: true }).waitFor(); await closePerspective();
+        await openPerspective(); await page.getByRole("button", { name: "复位观察方向与缩放", exact: true }).waitFor(); await closePerspective();
       }
 
       const input = page.getByRole("textbox", { name: "输入", exact: true });

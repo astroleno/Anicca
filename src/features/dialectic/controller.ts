@@ -26,6 +26,7 @@ export type BranchCommitInput = {
   userText: string;
   response: BranchesResponse;
   perspective?: SeedPerspective;
+  frame?: ThinkingSpace;
 };
 
 export type BranchCommitResult = {
@@ -63,7 +64,8 @@ export function commitBranchesResult(
     : graphStore.createUserNode(input.userText, input.perspective);
   const { thesisId, antithesisId } = graphStore.createAssistantPair(userNodeId, {
     thesis: input.response.thesis,
-    antithesis: input.response.antithesis
+    antithesis: input.response.antithesis,
+    frame: input.frame
   });
 
   return { userNodeId, thesisId, antithesisId };

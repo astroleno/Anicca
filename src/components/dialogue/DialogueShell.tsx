@@ -33,6 +33,7 @@ import { DialogueComposer } from "@/components/dialogue/DialogueComposer";
 import { PerspectiveControls } from "@/components/dialogue/PerspectiveControls";
 import { annotatePerspective, normalizeThinkingSpace, perspectiveLabel, type AxisSuggestion, type ThinkingAxis, type ThinkingSpace } from "@/features/perspectives/model";
 import { normalizePolarityOrigin, polarityAxis } from "@/features/perspectives/polarity";
+import { resolveSeedExpansionFrame } from "@/features/perspectives/seedExpansionFrame";
 import { readSeedOrbit, readSpatialFrame, separateSpatialSeeds, type SeedViewDirection } from "./liquid/space";
 import { WorkspaceBar } from "@/components/dialogue/WorkspaceBar";
 import { createDialogueDemoWorkspace } from "@/features/dialectic/demoWorkspace";
@@ -547,6 +548,7 @@ export function DialogueShell() {
   const [evolutionOpen, setEvolutionOpen] = useState(false);
   const evolutionReturnFocusRef = useRef<HTMLElement | null>(null);
   const [readingOpen, setReadingOpen] = useState(false);
+  const [angleChoice, setAngleChoice] = useState<{ nodeId: string; current: boolean } | null>(null);
   const [polarityRequest, setPolarityRequest] = useState(0);
   const [stageSelectionPending, setStageSelectionPending] = useState(false);
   useLayoutEffect(() => {
@@ -565,6 +567,12 @@ export function DialogueShell() {
   const [activeInstanceId, setActiveInstanceId] = useState<string | null>(null);
   const [expandedResultId, setExpandedResultId] = useState<string | null>(null);
   const [expansionResult, setExpansionResult] = useState<SeedExpansionResult | null>(null);
+  const [seedArrivals, setSeedArrivals] = useState<{ sessionId: string; requestId: string; origins: Record<string, string[]> } | null>(null);
+  useEffect(() => {
+    if (!seedArrivals) return;
+    const timer = window.setTimeout(() => setSeedArrivals(null), 2600);
+    return () => window.clearTimeout(timer);
+  }, [seedArrivals]);
   const dismissSeedReading = useCallback(() => {
     attentionVersionRef.current += 1;
     setReadingOpen(false);
@@ -602,11 +610,12 @@ export function DialogueShell() {
   const stageLayouts = useDialogueUiStore((state) => state.stageLayouts);
   const seedInstances = useDialogueUiStore((state) => state.seedInstances);
   const thinkingSpace = useDialogueUiStore((state) => state.thinkingSpace);
+  useEffect(() => { setAngleChoice(null); }, [focusedNodeId, workspaceSessionId]);
   const setThinkingSpace = useDialogueUiStore((state) => state.setThinkingSpace);
   const arrangeStage = useDialogueUiStore((state) => state.arrangeStage);
   useLayoutEffect(() => {
     setAxisSuggestions([]); setCameraView(null); pendingPerspectiveRef.current = null;
-    setActiveInstanceId(null); setExpandedResultId(null); setExpansionResult(null);
+    setActiveInstanceId(null); setExpandedResultId(null); setExpansionResult(null); setSeedArrivals(null);
     setEvolutionOpen(false); setInquiryResult(null); setPolarityRequest(0); setStageSelectionPending(false);
     setActiveDeferredId(null); setConnectionTargetId(null);
   }, [workspaceSessionId]);
@@ -810,7 +819,11 @@ export function DialogueShell() {
   const hasPendingRequest = isBranchPending || isSynthesisPending;
   const composerPerspectiveLabel = pending.branches?.polarityAxis
     ? `${pending.branches.polarityAxis.negative} ↔ ${pending.branches.polarityAxis.positive}`
-    : perspectiveLabel(hasPendingRequest && pendingPerspectiveRef.current ? pendingPerspectiveRef.current : thinkingSpace);
+    : perspectiveLabel(hasPendingRequest && pendingPerspectiveRef.current ? pendingPerspectiveRef.current
+      : inquiryTarget ? resolveSeedExpansionFrame(graphSnapshot.graph.nodes[inquiryTarget.sourceNodeId], thinkingSpace).frame : thinkingSpace);
+  const useCurrentAngle = Boolean(angleChoice?.nodeId === view.currentNode?.id && angleChoice?.current);
+  const expansionIntent = resolveSeedExpansionFrame(graphSnapshot.graph.nodes[view.currentNode?.id || ""], thinkingSpace, useCurrentAngle);
+  const expansionLens = perspectiveLabel(expansionIntent.frame);
   const roundtablePending = roundtablePendingRequest !== null;
   const frozenComposerTarget = pending.branches
     ? getComposerTargetFromNodeId(graphSnapshot.graph, pending.branches.composerTargetId)
@@ -893,7 +906,7 @@ export function DialogueShell() {
   useEffect(() => {
     if ((!readingOpen && !lineageOpen) || roundtableArtifact || evolutionOpen) return;
     const close = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || event.key !== "Escape" || document.querySelector("dialog[open]")) return;
+      if (event.defaultPrevented || event.isComposing || event.key !== "Escape" || document.querySelector("dialog[open]")) return;
       event.preventDefault();
       if (lineageOpen) closeLineagePanel(); else closeSeedPanel();
     };
@@ -1303,11 +1316,11 @@ export function DialogueShell() {
     const draftVersion = retry?.draftVersion ?? draftVersionRef.current;
     const attentionVersion = attentionVersionRef.current;
     const source = splitSeedId ? graphSnapshot.graph.nodes[splitSeedId] : null;
-    const inheritedFrame = normalizePolarityOrigin(source?.meta?.polarity)?.frame || source?.meta?.fissionFrame;
-    const requestPerspective = normalizeThinkingSpace(retry?.perspective || frame || inheritedFrame || useDialogueUiStore.getState().thinkingSpace);
+    const requestPerspective = normalizeThinkingSpace(retry?.perspective || frame ||
+      resolveSeedExpansionFrame(source, useDialogueUiStore.getState().thinkingSpace, splitSeedId === view.currentNode?.id && useCurrentAngle).frame);
     pendingPerspectiveRef.current = requestPerspective;
     submittedTextRef.current = text;
-    setExpansionResult(null); setExpandedResultId(null);
+    setExpansionResult(null); setExpandedResultId(null); setSeedArrivals(null);
     useDialogueUiStore.getState().endStagePreview();
     retryRef.current = { sessionId: workspaceSessionId, run: () => { void handleSubmit(splitSeedId, { text, targetId, draftVersion, perspective: requestPerspective }); } };
     beginPending("branches", {
@@ -1349,11 +1362,19 @@ export function DialogueShell() {
         const pair = commitSeedSplitResult(branchGraphStore, splitSeedId, response, requestPerspective);
         nextExpansion = { sourceId: focusedInstanceId && seedConceptId(graphSnapshot.graph, seedInstances, focusedInstanceId) === splitSeedId
           ? focusedInstanceId : splitSeedId, firstId: pair.thesisId, secondId: pair.antithesisId, lens: perspectiveLabel(requestPerspective) };
+        setSeedArrivals({ sessionId: workspaceSessionId, requestId, origins: {
+          [pair.thesisId]: ["pending-thesis", nextExpansion.sourceId], [pair.antithesisId]: ["pending-antithesis", nextExpansion.sourceId]
+        } });
         resultFocusId = splitSeedId;
       } else {
-        resultFocusId = commitBranchesResult(branchGraphStore, {
-          targetAssistantId: targetId, userText: text, response, perspective: annotatePerspective(requestPerspective)
-        }).userNodeId;
+        const pair = commitBranchesResult(branchGraphStore, {
+          targetAssistantId: targetId, userText: text, response, perspective: annotatePerspective(requestPerspective), frame: requestPerspective
+        });
+        resultFocusId = pair.userNodeId;
+        setSeedArrivals({ sessionId: workspaceSessionId, requestId, origins: {
+          ...(isEmptyWorkspace ? { [pair.userNodeId]: ["empty-root"] } : {}),
+          [pair.thesisId]: ["pending-thesis", pair.userNodeId], [pair.antithesisId]: ["pending-antithesis", pair.userNodeId]
+        } });
       }
       const updatedGraph = branchGraphStore.getGraph();
       setAxisSuggestions(response.suggestedAxes || []);
@@ -1411,7 +1432,7 @@ export function DialogueShell() {
     retryRef.current = { sessionId: workspaceSessionId, run: () => {
       void handlePolarityExpansion(seedId, axisId, requestPerspective, { text, sourceInstanceId, contextMessages });
     } };
-    setReadingOpen(false); setCombineSourceId(null); setExpansionResult(null); setExpandedResultId(null);
+    setReadingOpen(false); setCombineSourceId(null); setExpansionResult(null); setExpandedResultId(null); setSeedArrivals(null);
     useDialogueUiStore.getState().endStagePreview();
     beginPending("branches", { requestId, workspaceSessionId, focusSnapshotId: view.focusSnapshotId,
       composerTargetId: seedId, polarityAxis: axis });
@@ -1421,11 +1442,14 @@ export function DialogueShell() {
       const activePending = useDialogueUiStore.getState().pending.branches;
       if (!ownsPendingResponse(activePending, response.requestId, useDialogueUiStore.getState().workspaceSessionId)) return;
       const pair = commitPolarityResult(branchGraphStore, seedId, requestPerspective, response);
+      setSeedArrivals({ sessionId: workspaceSessionId, requestId, origins: {
+        [pair.negativeId]: ["pending-thesis", sourceInstanceId], [pair.positiveId]: ["pending-antithesis", sourceInstanceId]
+      } });
       const shouldAutoFocus = attentionVersion === attentionVersionRef.current &&
         shouldAutoFocusPendingResult(activePending, branchGraphStore.getGraph());
       clearPending("branches");
       retryRef.current = null; setErrorState(null);
-      setGenerationAnnouncement(`已沿「${axis.label}」展开「${axis.negative}」与「${axis.positive}」，两端都可以继续正反裂变。`);
+      setGenerationAnnouncement(`已沿「${axis.label}」展开「${axis.negative}」与「${axis.positive}」，两端都可以继续推演正反。`);
       if (shouldAutoFocus) {
         setActiveInstanceId(sourceInstanceId);
         setExpansionResult({ sourceId: sourceInstanceId, firstId: pair.negativeId, secondId: pair.positiveId, axis,
@@ -1475,6 +1499,7 @@ export function DialogueShell() {
     }
 
     dialogueControllerRef.current?.cancel(activeSlot);
+    setSeedArrivals(null);
     clearPending(activeSlot);
     setSelectedPair(null);
     setCombineSourceId(null);
@@ -1729,6 +1754,7 @@ export function DialogueShell() {
     setActiveDeferredId(null);
 
     const requestId = createClientId("req");
+    setSeedArrivals(null);
     beginPending("synthesis", {
       requestId,
       workspaceSessionId,
@@ -1815,6 +1841,9 @@ export function DialogueShell() {
         response,
         connectionInput: connection?.text
       });
+      setSeedArrivals({ sessionId: workspaceSessionId, requestId, origins: {
+        [synthesisId]: ["pending-synthesis", ...(action.sourceInstanceIds || [action.thesisId, action.antithesisId])]
+      } });
       if (connection) {
         branchGraphStore.resolveDeferredSynthesis(connection.encounterId, synthesisId);
         if (connection.draftVersion === draftVersionRef.current) setDraft("");
@@ -1891,7 +1920,7 @@ export function DialogueShell() {
     const inheritedFrame = normalizePolarityOrigin(source.meta?.polarity)?.frame || source.meta?.fissionFrame;
     const frame = normalizeThinkingSpace(retry?.perspective || inheritedFrame || useDialogueUiStore.getState().thinkingSpace);
     pendingPerspectiveRef.current = frame; submittedTextRef.current = question;
-    setExpansionResult(null); setExpandedResultId(null); setInquiryResult(null);
+    setExpansionResult(null); setExpandedResultId(null); setInquiryResult(null); setSeedArrivals(null);
     beginPending("branches", { requestId, workspaceSessionId, focusSnapshotId: view.focusSnapshotId,
       composerTargetId: target.sourceNodeId, inquiry: true });
     retryRef.current = { sessionId: workspaceSessionId, run: () => { void submitInquiry({ origin, draftVersion, perspective: frame }); } };
@@ -2078,10 +2107,12 @@ export function DialogueShell() {
     rootRef={inlineInquiry ? undefined : composerRootRef}
     textareaRef={composerTextareaRef}
     onChange={handleDraftChange}
+    onFocus={noticeReadingIntent}
+    onEscape={readingOpen && !inlineInquiry ? () => document.querySelector<HTMLElement>('#dialogue-reading-drawer [data-reading-return]')?.focus({ preventScroll: true }) : undefined}
     onSubmit={submitComposer}
     onCancel={handleCancelPending}
     onRetry={errorState && retryRef.current?.error === errorState && retryRef.current?.sessionId === workspaceSessionId ? () => retryRef.current?.run() : undefined}
-    onResetTarget={() => { setInquiryTarget(null); setConnectionTargetId(null); setComposerParentId(null); dismissSeedReading(); focusComposerSoon(); }}
+    onResetTarget={() => { setInquiryTarget(null); setConnectionTargetId(null); setComposerParentId(null); focusComposerSoon(); }}
   />;
 
   if (!workspaceReady) {
@@ -2100,7 +2131,7 @@ export function DialogueShell() {
   }
 
   return (
-    <main ref={shellRef} className={styles.shell} data-theme={theme} data-testid="dialogue-shell" data-reading={readingOpen && view.currentNode ? "true" : undefined}
+    <main ref={shellRef} className={styles.shell} data-theme={theme} data-testid="dialogue-shell" data-reading={readingOpen && view.currentNode ? "true" : undefined} data-stage-seed={view.currentNode ? "true" : undefined}
       data-inline-inquiry={inlineInquiry ? "true" : undefined}
       data-composer-context={composerTarget.nodeId || pendingAction === "synthesis" || composerPerspectiveLabel ? "true" : undefined}>
       <a className={styles.skipToInput} href="#dialogue-input" onClick={(event) => {
@@ -2147,7 +2178,8 @@ export function DialogueShell() {
           <button type="button" className={styles.workspaceOverflowItem}
             onClick={() => { setLineageOpen(true); setReadingOpen(false); setCombineSourceId(null); }}>所有种子 · {view.sidebarItems.length}</button>
           <button type="button" className={styles.workspaceOverflowItem} disabled={!draft.trim() || hasPendingRequest}
-            onClick={handleGrowthSubmit}>画作视角</button>
+            aria-label="画作视角" aria-describedby="dialogue-artwork-description"
+            onClick={handleGrowthSubmit}>画作视角<small id="dialogue-artwork-description" className={styles.menuActionDescription}>将当前草稿展开为画作式的思考</small></button>
           <button type="button" ref={roundtableSummonButtonRef} className={styles.workspaceOverflowItem}
             aria-busy={roundtablePending}
             disabled={!view.currentNode || roundtablePending} onClick={handleSummonRoundtable}>
@@ -2228,6 +2260,7 @@ export function DialogueShell() {
           convergenceEventId={relevantSynthesisAction?.synthesisId || null}
           eventNodeId={synthesisRevealId}
           arrivals={expansionResult}
+          arrivalOrigins={seedArrivals?.sessionId === workspaceSessionId ? seedArrivals.origins : undefined}
           pendingPreview={stagePendingPreview}
           synthesisAction={relevantSynthesisAction}
           resolveSynthesisAction={resolveSeedPair}
@@ -2258,15 +2291,16 @@ export function DialogueShell() {
         />
         {view.currentNode && !readingOpen && !hasPendingRequest && !evolutionOpen && !stageSelectionPending ? <div className={styles.stagePrimaryActions}
           data-testid="dialogue-stage-primary-actions" data-stage-label-chrome="bottom">
-          <span title={seedLabel(graphSnapshot.graph, view.currentNode.id)}>{seedLabel(graphSnapshot.graph, view.currentNode.id)}</span>
+          <span title={seedLabel(graphSnapshot.graph, view.currentNode.id)}>对「{seedLabel(graphSnapshot.graph, view.currentNode.id)}」</span>
           <SeedPrimaryActions disabled={!view.currentNode.text?.trim()}
-            onSplit={() => {
-              const node = graphSnapshot.graph.nodes[view.currentNode!.id];
-              handleContinueFromCurrentNode(normalizePolarityOrigin(node?.meta?.polarity)?.frame ||
-                (node?.meta?.fissionFrame ? normalizeThinkingSpace(node.meta.fissionFrame) : thinkingSpace));
-            }}
+            onSplit={() => handleContinueFromCurrentNode(expansionIntent.frame)}
             onPolarity={() => { setCombineSourceId(null); setPolarityRequest(value => value + 1); setReadingOpen(true); }}
             onCombine={() => { setPolarityRequest(0); setCombineSourceId(focusedInstanceId || view.currentNode!.id); setSelectedPair(null); setReadingOpen(true); }} />
+          {expansionIntent.differs ? <p className={styles.seedLensHint}>
+            {expansionLens ? `从「${expansionLens}」继续` : expansionIntent.source === "seed" ? "沿用原入口，未限定极性" : "当前入口未限定极性"}
+            <button type="button" onClick={() => setAngleChoice({ nodeId: view.currentNode!.id, current: !useCurrentAngle })}>
+              {useCurrentAngle ? "用种子原来的角度" : "改用当前角度"}</button>
+          </p> : null}
         </div> : null}
         {expandedResultId && !readingOpen && !hasPendingRequest ? <div className={styles.sourceContextBar} aria-label="来源展开" data-testid="dialogue-source-context" data-stage-label-chrome="top">
           <span>来源 · {seedLabel(graphSnapshot.graph, seedConceptId(graphSnapshot.graph, seedInstances, expandedResultId) || "")}</span>
@@ -2275,7 +2309,7 @@ export function DialogueShell() {
         </div> : null}
         {!expandedResultId && !readingOpen && !hasPendingRequest && visibleExpansion ? <div className={styles.explorationContext}
           role="region" aria-label="本轮展开" data-testid="dialogue-expansion-context" data-stage-label-chrome="top">
-          <span>{visibleExpansion.axis ? `沿「${visibleExpansion.axis.label}」展开` : "正反裂变"}</span>
+          <span>{visibleExpansion.axis ? `沿「${visibleExpansion.axis.label}」展开` : "推演正反"}</span>
           <p>{visibleExpansion.axis ? `${visibleExpansion.axis.negative} ↔ ${visibleExpansion.axis.positive}` : "深化主张 ↔ 质疑前提"}
             {visibleExpansion.lens ? ` · ${visibleExpansion.lens}` : ""}</p>
           <div className={styles.seedResultReads} aria-label="阅读本轮两端">
@@ -2294,7 +2328,7 @@ export function DialogueShell() {
           className={styles.explorationContext} role="region" aria-label="本轮合流" data-testid="dialogue-synthesis-context" data-stage-label-chrome="top">
           <span>合流 · {seedLabel(graphSnapshot.graph, view.currentNode.id)}</span>
           <p className={styles.synthesisInsight}>{readUnderstandingChange(graphSnapshot.graph.nodes[view.currentNode.id]?.meta?.change) || view.currentNode.summary || graphSnapshot.graph.nodes[view.currentNode.id]?.meta?.summary}</p>
-          <button type="button" onClick={() => setReadingOpen(true)}>继续展开</button>
+          <button type="button" onClick={() => setReadingOpen(true)}>阅读合</button>
           <button type="button" onClick={handleExpandSources}>展开来源</button>
         </div> : null}
         <div
@@ -2325,6 +2359,8 @@ export function DialogueShell() {
           <SeedReadingContent open={readingOpen} suspended={evolutionOpen} motion={readingMotionRef.current} originNodeId={combineSourceId || focusedInstanceId || view.currentNode.id} onDismiss={dismissSeedReading}>
             <SeedInspector key={`${workspaceSessionId}:${combineSourceId || view.currentNode.id}`}
               space={thinkingSpace}
+              useCurrentAngle={useCurrentAngle}
+              onUseCurrentAngleChange={current => setAngleChoice({ nodeId: view.currentNode!.id, current })}
               polarityRequest={polarityRequest}
               graph={graphSnapshot.graph} nodeId={seedConceptId(graphSnapshot.graph, seedInstances, combineSourceId) || view.currentNode.id}
               instances={seedInstances} instanceId={focusedInstanceId || view.currentNode.id}
@@ -2341,7 +2377,7 @@ export function DialogueShell() {
               onReadNewResponse={!combineSourceId && inquiryResult?.sourceId === view.currentNode.id
                 ? () => handleSelectNode(inquiryResult.responseId) : undefined}
               onExpandPolarity={(axisId, frame) => void handlePolarityExpansion(view.currentNode!.id, axisId, frame)}
-              onWrite={() => { setInquiryTarget(null); setConnectionTargetId(null); setComposerParentId(view.currentNode!.id); setReadingOpen(false); focusComposerSoon(); }}
+              onWrite={() => { setInquiryTarget(null); setConnectionTargetId(null); setComposerParentId(view.currentNode!.id); focusComposerSoon(); }}
               onCombine={() => { setCombineSourceId(focusedInstanceId || view.currentNode!.id); setSelectedPair(null); }}
               onCreateInstance={handleCreateInstance}
               onRemoveInstance={handleRemoveInstance}

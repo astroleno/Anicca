@@ -3931,6 +3931,10 @@
 .stageNode { display: flex; align-items: center; justify-content: center; overflow: visible; }
 .seedHitArea { position: absolute; left: 50%; top: 50%; width: max(44px,100%); height: max(44px,100%); transform: translate(-50%,-50%); border-radius: 50%; }
 .seedSourceGlow { position: absolute; inset: -12%; border-radius: 50%; pointer-events: none; opacity: 0; background: radial-gradient(ellipse, color-mix(in srgb, var(--muted) 12%, transparent) 10%, transparent 70%); transition: opacity 260ms ease; }
+.seedLabelLeader { position: absolute; left: 50%; top: 50%; height: 1px; background: var(--muted); opacity: .4; transform-origin: 0 50%; pointer-events: none; }
+.seedLabelLeader[hidden], .shell[data-reading="true"] .seedLabelLeader, .stageNode[data-label-handoff="true"] .seedLabelLeader { display: none; }
+.stageNode:is(:hover, :focus-visible) .seedLabelLeader { opacity: .8; }
+.stageNode:focus-visible .seedSourceGlow { opacity: 1; }
 .stageNode[data-source-role="source"] .seedSourceGlow, .stageNode[data-source-role="result"] .seedSourceGlow { opacity: 1; }
 .stageNode[data-source-role="shared"] .seedSourceGlow { opacity: .5; }
 .stageNode[data-source-role="other"] .stageNodeInner { opacity: .78; }
@@ -3977,14 +3981,14 @@
 .composer, .composer[data-mode="compose"], .composer[data-empty-start="true"] {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas: "field actions" "error error";
+  grid-template-areas: "target target" "quote quote" "field actions" "error error";
   gap: 0; width: min(560px, calc(100vw - 32px));
   min-height: 0; padding: 0; bottom: calc(24px + var(--safe-bottom));
   border: 0; border-radius: 0; background: transparent;
   backdrop-filter: none; box-shadow: none;
 }
 .composerField { grid-area: field; min-width: 0; border-bottom: 1px solid var(--line); }
-.composer[data-inquiry="true"] { grid-template-areas: "quote quote" "field actions" "error error"; border-radius: 0; }
+.composer[data-inquiry="true"] { grid-template-areas: "target target" "quote quote" "field actions" "error error"; border-radius: 0; }
 .composerQuote { grid-area: quote; margin: 7px 12px 2px; }
 .composerLabel { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .composer textarea, .composer textarea:focus { height: 44px; min-height: 44px; max-height: 110px; padding: 10px 2px; border: 0; border-radius: 0; background: transparent; box-shadow: none; font: 400 var(--type-body)/24px var(--anicca-font-interface); }
@@ -3995,10 +3999,12 @@
 .composer .primaryButton:hover:not(:disabled) { background: rgba(255,255,255,.72); }
 .composer .primaryButton:disabled { opacity: .42; }
 .composer .errorPanel { grid-area: error; margin-top: 8px; }
-.seedComposerTarget { position: absolute; left: 18px; right: 10px; bottom: calc(100% + 4px); display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 0; font-size: 13px; line-height: 1.5; color: #51475f; }
-.composer[data-target="root"] .seedComposerTarget { width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.seedComposerTarget { grid-area: target; position: static; min-width: 0; min-height: 44px; display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 0; font-size: 13px; line-height: 1.5; color: #51475f; }
 .composer[data-target="root"][data-perspective="true"] .seedComposerTarget { width: auto; height: auto; overflow: visible; clip-path: none; white-space: normal; }
 .seedComposerTarget span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.menuActionDescription { display: block; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.workspaceRecentMore summary { min-height: 44px; padding: 8px 12px; cursor: pointer; font-size: var(--type-note); }
+.stagePrimaryActions > .seedLensHint { flex-basis: 100%; margin: 0; }
 .seedComposerTarget button { flex-shrink: 0; border: 0; background: none; color: #58496d; min-height: 44px; cursor: pointer; }
 
 .readingDrawer, .lineageDrawer { top: 80px; bottom: calc(var(--dialogue-composer-height) + 42px + var(--safe-bottom)); }
@@ -4018,6 +4024,9 @@
 .seedInspectorFrame { display: flex; flex-direction: column; min-height: 0; max-height: 100%; width: 100%; pointer-events: auto; }
 .seedReadingToolbar { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; color: var(--muted); font: 12px/1.8 var(--anicca-font-interface); }
 .seedReadingToolbar > span { min-width: 0; overflow-wrap: anywhere; }
+.seedSentenceTrigger { margin-left: auto; flex-shrink: 0; min-height: 44px; padding: 8px 0; border: 0; color: var(--muted); background: transparent; font: inherit; cursor: pointer; }
+.seedSentenceTrigger:hover { text-decoration: underline; text-underline-offset: 4px; }
+.seedSentenceTrigger:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
 .seedReadingContent[data-open="false"] .seedInspectorFrame { pointer-events: none; }
 .seedReadingContent .seedInspectorHeader { padding-right: 0; }
 .seedReadingContent .seedInspectorHeader h2 { margin: 0 0 16px; font: 400 20px/1.5 var(--anicca-font-interface); }
@@ -4156,7 +4165,7 @@
 }
 
 .shell[data-composer-context="true"] .stageViewport { bottom: calc(var(--dialogue-composer-height) + 76px); }
-.shell[data-composer-context="true"] .seedReadingContent { bottom: calc(var(--dialogue-composer-height) + 96px); }
+.shell[data-composer-context="true"] .seedReadingContent { bottom: calc(var(--dialogue-composer-height) + 40px + var(--safe-bottom)); }
 .shell[data-inline-inquiry="true"] .seedReadingContent { bottom: calc(24px + var(--safe-bottom)); }
 
 /* Both appearances share the reference material, spacing and type. */
@@ -4278,7 +4287,7 @@
 .stageViewport { top: calc(76px + var(--safe-top)); }
 .shell[data-keyboard-open="true"] .stageViewport { top: calc(76px + var(--safe-top)); }
 .seedGuide, .explorationContext, .sourceContextBar { top: calc(76px + var(--safe-top)); }
-.seedReadingContent { top: calc(var(--dialogue-chrome-bottom, 76px) + 16px); }
+.seedReadingContent { top: calc(var(--dialogue-chrome-bottom, 76px) + 8px); bottom: calc(var(--dialogue-composer-height) + 40px + var(--safe-bottom)); }
 
 .seedPrimaryActions { display: flex; align-items: center; gap: 24px; flex-shrink: 0; }
 .seedPrimaryActions button { min-height: 44px; min-width: 44px; padding: 8px 0; border: 0; border-radius: 0; background: transparent; color: var(--text); font: 400 var(--type-action)/1.6 var(--anicca-font-interface); cursor: pointer; }
@@ -4286,10 +4295,10 @@
 .seedPrimaryActions button:disabled { opacity: .5; cursor: default; }
 .seedPrimaryActions button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
 .seedPrimaryActions button:active:not(:disabled) { opacity: .65; }
-.stagePrimaryActions { position: absolute; left: 50%; bottom: calc(var(--dialogue-composer-height) + 80px + var(--safe-bottom)); transform: translateX(-50%); z-index: 22; width: min(560px, calc(100% - 40px)); display: flex; align-items: center; justify-content: space-between; gap: 24px; font: 400 var(--type-note)/1.6 var(--anicca-font-interface); color: var(--muted); }
+.stagePrimaryActions { position: absolute; left: 50%; bottom: calc(var(--dialogue-composer-height) + 40px + var(--safe-bottom)); transform: translateX(-50%); z-index: 22; width: min(560px, calc(100% - 40px)); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 24px; font: 400 var(--type-note)/1.6 var(--anicca-font-interface); color: var(--muted); }
 .stagePrimaryActions > span { min-width: 0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .stagePrimaryActions .seedPrimaryActions { flex-shrink: 0; }
-.shell:has(.stagePrimaryActions) .stageViewport { bottom: calc(var(--dialogue-composer-height) + 140px + var(--safe-bottom)); }
+.shell[data-stage-seed="true"] .stageViewport { bottom: calc(var(--dialogue-composer-height) + 140px + var(--safe-bottom)); }
 .seedInspector .seedContinuation { margin-bottom: 16px; }
 .seedReadingContent .seedInspector { padding-inline-end: 12px; scrollbar-width: thin; }
 .shell :is(.seedReadingToolbar, .seedReadingBack, .seedLensHint, .seedPerspective, .seedPolarityOrigin, .seedSources,
@@ -4306,8 +4315,8 @@
   .appNavigation { left: calc(20px + var(--safe-left)); right: calc(20px + var(--safe-right)); gap: 12px; }
   .appNavigation .hero h1 { font-size: 22px; }
   .appNavigation .workspaceBarActions { gap: 12px; }
-  .stagePrimaryActions > span { display: none; }
-  .stagePrimaryActions { justify-content: center; }
+  .stagePrimaryActions > span { display: block; max-width: 100%; flex-basis: 100%; }
+  .stagePrimaryActions { justify-content: flex-start; }
   .seedPrimaryActions { gap: 24px; }
 }
 @media (max-height: 560px) {

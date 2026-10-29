@@ -71,7 +71,8 @@ describe("evolution overview", () => {
     const external = screen.getByTestId("outside");
     const first = screen.getByRole("button", { name: "返回种子" });
     first.blur(); fireEvent.keyDown(window, { key: "Tab" }); expect(first).toHaveFocus();
-    fireEvent.keyDown(first, { key: "Tab", shiftKey: true }); expect(screen.getByRole("button", { name: "回放来路" })).toHaveFocus();
+    const last = within(screen.getByTestId("evolution-overview")).getAllByRole("button").filter(button => !(button as HTMLButtonElement).disabled).at(-1)!;
+    fireEvent.keyDown(first, { key: "Tab", shiftKey: true }); expect(last).toHaveFocus();
     external.focus(); expect(first).toHaveFocus();
     first.blur(); fireEvent.keyDown(window, { key: "Escape" }); expect(dismiss).toHaveBeenCalledOnce();
   });

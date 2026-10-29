@@ -5,22 +5,26 @@ const initial = { empty: true, requested: 0, pending: false, reading: false, com
 beforeEach(() => { localStorage.clear(); vi.clearAllMocks(); });
 it("follows actual exploration and hides while generating, without requiring a tour", () => {
   const view = render(<SeedGuide {...initial} />);
+  expect(screen.queryByLabelText("探索提示")).not.toBeInTheDocument();
+  view.rerender(<SeedGuide {...initial} requested={1} />);
   expect(screen.getByText("写下一个想法，让它生出正与反")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "写下想法" }));
   expect(initial.onStart).toHaveBeenCalledOnce();
   view.rerender(<SeedGuide {...initial} pending />);
   expect(screen.queryByLabelText("探索提示")).not.toBeInTheDocument();
   view.rerender(<SeedGuide {...initial} empty={false} />);
-  expect(screen.getByText("点一颗读读；拖动空白，转动视角")).toBeInTheDocument();
+  expect(screen.getByText("点一颗读读；双击推演正反")).toBeInTheDocument();
   view.rerender(<SeedGuide {...initial} empty={false} reading />);
-  expect(screen.getByText("继续写、裂变或组合，从这里接着想")).toBeInTheDocument();
-  view.rerender(<SeedGuide {...initial} empty={false} reading combining />);
+  expect(screen.queryByLabelText("探索提示")).not.toBeInTheDocument();
+  view.rerender(<SeedGuide {...initial} empty={false} reading requested={2} />);
+  expect(screen.getByText("继续写、推演正反或组合，从这里接着想")).toBeInTheDocument();
+  view.rerender(<SeedGuide {...initial} empty={false} reading combining requested={2} />);
   expect(screen.getByText("再选一颗种子，寻找新的联系")).toBeInTheDocument();
   view.rerender(<SeedGuide {...initial} empty={false} completed />);
   expect(screen.queryByLabelText("探索提示")).not.toBeInTheDocument();
   expect(localStorage.getItem("anicca:seed-guide:v1")).toBe("done");
   view.rerender(<SeedGuide {...initial} empty={false} completed reading requested={1} />);
-  expect(screen.getByText("继续写、裂变或组合，从这里接着想")).toBeInTheDocument();
+  expect(screen.getByText("继续写、推演正反或组合，从这里接着想")).toBeInTheDocument();
 });
 
 it("matches the stage's primary input capability and updates when that capability changes", () => {
@@ -30,28 +34,28 @@ it("matches the stage's primary input capability and updates when that capabilit
   vi.stubGlobal("matchMedia", vi.fn(() => media));
   try {
     const view = render(<SeedGuide {...initial} empty={false} />);
-    expect(screen.getByText("点一颗读读；拖空白平移 · 拖球合成 · 双指转动与缩放")).toBeInTheDocument();
+    expect(screen.getByText("点一颗读读；长按液滴后拖动合成")).toBeInTheDocument();
     act(() => { media.matches = false; listeners.forEach(listener => listener()); });
-    expect(screen.getByText("点一颗读读；拖动空白，转动视角")).toBeInTheDocument();
+    expect(screen.getByText("点一颗读读；双击推演正反")).toBeInTheDocument();
     view.unmount(); expect(listeners.size).toBe(0);
   } finally { vi.unstubAllGlobals(); }
 });
 
 it("preserves dismissal across remounts and reopens at the current action", () => {
-  const view = render(<SeedGuide {...initial} />);
+  const view = render(<SeedGuide {...initial} requested={1} />);
   fireEvent.click(screen.getByRole("button", { name: "关闭提示" }));
   view.unmount();
   const next = render(<SeedGuide {...initial} empty={false} reading />);
   expect(screen.queryByLabelText("探索提示")).not.toBeInTheDocument();
   next.rerender(<SeedGuide {...initial} empty={false} reading requested={1} />);
-  expect(screen.getByText("继续写、裂变或组合，从这里接着想")).toBeInTheDocument();
+  expect(screen.getByText("继续写、推演正反或组合，从这里接着想")).toBeInTheDocument();
 });
 
 it("remains dismissible when browser storage is unavailable", () => {
   const get = vi.spyOn(localStorage, "getItem").mockImplementation(() => { throw new Error("blocked"); });
   const set = vi.spyOn(localStorage, "setItem").mockImplementation(() => { throw new Error("blocked"); });
   try {
-    render(<SeedGuide {...initial} />);
+    render(<SeedGuide {...initial} requested={1} />);
     fireEvent.click(screen.getByRole("button", { name: "关闭提示" }));
     expect(screen.queryByLabelText("探索提示")).not.toBeInTheDocument();
   } finally { get.mockRestore(); set.mockRestore(); }

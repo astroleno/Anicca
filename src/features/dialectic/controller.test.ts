@@ -25,7 +25,9 @@ describe("DialogueController", () => {
   it("commits a complete branch pair and synthesis without deleting sources", () => {
     const store = new BranchGraphStore();
     store.setGraph(createEmptyGraph());
+    const frame = defaultThinkingSpace(); frame.focus.horizon = 1;
     const branch = commitBranchesResult(store, {
+      frame,
       targetAssistantId: null,
       userText: "是否继续",
       response: {
@@ -46,6 +48,8 @@ describe("DialogueController", () => {
     const graph = store.getGraph();
     expect(graph.nodes[branch.thesisId]).toBeDefined();
     expect(graph.nodes[branch.antithesisId]).toBeDefined();
+    expect(graph.nodes[branch.thesisId].meta?.fissionFrame).toEqual(frame);
+    expect(graph.nodes[branch.antithesisId].meta?.fissionFrame).toEqual(frame);
     expect(graph.nodes[synthesisId].meta?.sourceNodeIds).toEqual([
       branch.thesisId,
       branch.antithesisId

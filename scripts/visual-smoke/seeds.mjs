@@ -23,6 +23,15 @@ export async function runSeedViewport(browser, viewport, { baseUrl, outputDir, s
   const basePath = new URL(baseUrl).pathname.replace(/\/+$/, "");
   const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height },
     deviceScaleFactor: 1, hasTouch: Boolean(viewport.hasTouch), isMobile: Boolean(viewport.isMobile) });
+  await context.addInitScript(() => {
+    window.__seedShaderSources = [];
+    if (typeof GPUDevice === "undefined") return;
+    const create = GPUDevice.prototype.createShaderModule;
+    GPUDevice.prototype.createShaderModule = function (descriptor) {
+      window.__seedShaderSources.push(descriptor.code);
+      return create.call(this, descriptor);
+    };
+  });
   if (viewport.visualViewportHeight) await context.addInitScript(({ width, height }) => {
     const events = new EventTarget();
     Object.defineProperty(window, "visualViewport", { configurable: true, value: {
@@ -130,7 +139,12 @@ export async function runSeedViewport(browser, viewport, { baseUrl, outputDir, s
     await page.screenshot({ path: path.join(outputDir, `${viewport.name}.png`) });
     const performance = viewport.name === "desktop" ? await measureIdle(page) : null;
     const uniformNames = await page.evaluate(() => {
-      const gl = document.querySelector('[data-testid="dialogue-metaball-canvas"]').getContext("webgl2");
+      const canvas = document.querySelector('[data-testid="dialogue-metaball-canvas"]');
+      if (canvas.dataset.rendererBackend === "webgpu") {
+        if (!window.__seedShaderSources?.length) throw new Error("No WebGPU shader modules were observed");
+        return [...new Set(window.__seedShaderSources.flatMap(source => source.match(/\b(?:mx|my)\b/g) || []))];
+      }
+      const gl = canvas.getContext("webgl2");
       const program = gl.getParameter(gl.CURRENT_PROGRAM);
       return Array.from({ length: gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS) }, (_, index) => gl.getActiveUniform(program, index).name);
     });
@@ -187,15 +201,18 @@ export async function runSeedViewport(browser, viewport, { baseUrl, outputDir, s
 
 export async function measureIdle(page) {
   return page.evaluate(async () => {
-    const gl = document.querySelector('[data-testid="dialogue-metaball-canvas"]').getContext("webgl2");
-    const draw = gl.drawArrays, rect = Element.prototype.getBoundingClientRect;
+    const canvas = document.querySelector('[data-testid="dialogue-metaball-canvas"]'), backend = canvas.dataset.rendererBackend;
+    const gl = backend === "webgpu" ? null : canvas.getContext("webgl2");
+    const target = gl || globalThis.GPUQueue?.prototype, method = gl ? "drawArrays" : "submit";
+    if (!target) throw new Error(`Cannot measure the active ${backend} renderer`);
+    const draw = target[method], rect = Element.prototype.getBoundingClientRect;
     let draws = 0, rectReads = 0;
-    gl.drawArrays = function (...args) { draws++; return draw.apply(this, args); };
+    target[method] = function (...args) { draws++; return draw.apply(this, args); };
     Element.prototype.getBoundingClientRect = function (...args) { rectReads++; return rect.apply(this, args); };
     const times = [], start = performance.now();
     try { await new Promise(resolve => { const tick = now => { times.push(now); if (now - start >= 4000) resolve(); else requestAnimationFrame(tick); }; requestAnimationFrame(tick); }); }
-    finally { gl.drawArrays = draw; Element.prototype.getBoundingClientRect = rect; }
+    finally { target[method] = draw; Element.prototype.getBoundingClientRect = rect; }
     const intervals = times.slice(1).map((time, i) => time - times[i]).sort((a, b) => a - b);
-    return { durationMs: performance.now() - start, draws, rectReads, rafFrames: times.length, p95FrameMs: intervals[Math.floor(intervals.length * .95)] };
+    return { backend, drawMetric: gl ? "draw-calls" : "gpu-submissions", durationMs: performance.now() - start, draws, rectReads, rafFrames: times.length, p95FrameMs: intervals[Math.floor(intervals.length * .95)] };
   });
 }

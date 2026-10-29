@@ -207,13 +207,97 @@ export async function runReadingContinuity(browser, { baseUrl, outputDir, setAct
         result.failure = String(error); await page.screenshot({ path: path.join(outputDir, `reading-${spec.name}-failure.png`) }).catch(() => {}); throw error;
       } finally { release?.(); await context.close(); setActivePage(null); }
     }
+    results.push(...await runOrdinaryReading(browser, { baseUrl, outputDir, setActivePage }));
     return { name: "reading-continuity", results };
   } finally { await writeFile(path.join(outputDir, "reading-continuity.json"), `${JSON.stringify({ baseUrl, results }, null, 2)}\n`); }
 }
 
+async function runOrdinaryReading(browser, { baseUrl, outputDir, setActivePage }) {
+  const results = [];
+  for (const spec of [{ name: "desktop", width: 1280, height: 720 }, { name: "mobile-390", width: 390, height: 844 }, { name: "mobile-320", width: 320, height: 640 }]) {
+    const context = await browser.newContext({ viewport: { width: spec.width, height: spec.height }, deviceScaleFactor: 1,
+      hasTouch: spec.width < 500, isMobile: spec.width < 500 });
+    const fixture = structuredClone(thoughtFlowFixture), graph = fixture.graph;
+    const long = graph.nodes.root.text;
+    fixture.focusedNodeId = fixture.composerParentId = "positive";
+    graph.nodes.root = { ...graph.nodes.root, text: "把想法变成可以检验的一步", meta: { label: "起点" }, children: ["positive", "negative"] };
+    for (const [id, branchType, label] of [["positive", "正", "写作来源"], ["negative", "反", "阅读参考"]]) graph.nodes[id] = {
+      id, kind: "assistant", branchType, text: long, parents: ["root"], children: ["synthesis"], createdAt: "2026-10-29T00:00:01Z",
+      meta: { label, fissionGroupId: "pair", summary: "让下一步可以被重新检验。", change: "让下一步可以被重新检验。" }
+    };
+    graph.nodes.synthesis = { id: "synthesis", kind: "assistant", branchType: "合", text: long, parents: ["positive", "negative"], children: [],
+      createdAt: "2026-10-29T00:00:02Z", meta: { label: "共同检验", sourceNodeIds: ["positive", "negative"], summary: "让行动留下可判断的证据。" } };
+    await context.addInitScript(data => {
+      localStorage.setItem("anicca_workspace_v2", JSON.stringify(data)); localStorage.setItem("anicca:seed-guide:v1", "done");
+    }, fixture);
+    const page = await context.newPage(); setActivePage(page); page.setDefaultTimeout(30_000);
+    const errors = []; page.on("pageerror", error => errors.push(error.message));
+    const result = { name: `ordinary-${spec.name}`, passed: false, errors }; results.push(result);
+    try {
+      await page.goto(`${baseUrl}/dialogue`, { waitUntil: "networkidle" });
+      const input = page.getByRole("textbox", { name: "输入", exact: true });
+      const draft = "我想先留下一个能在明天重读时判断对错的小问题。";
+      await input.fill(draft);
+      await page.getByTestId("dialogue-stage-node-negative").press("Enter");
+      const panel = page.getByTestId("dialogue-panel"); await panel.waitFor();
+      if (spec.width < 500) await input.tap(); else await input.click();
+      assert(await panel.isVisible(), "Focusing ordinary writing preserves the reference");
+      assert((await page.getByLabel("续写对象", { exact: true }).innerText()).includes("写作来源"), "Browsing preserves the unfinished draft's source");
+      await frame(page);
+      result.geometry = await page.evaluate(() => {
+        const body = document.querySelector("[data-seed-passage]"), panel = document.querySelector('[data-testid="dialogue-panel"]');
+        const b = body.getBoundingClientRect(), p = panel.getBoundingClientRect();
+        return { width: innerWidth, height: innerHeight, visibleLines: (Math.min(p.bottom, b.bottom) - Math.max(p.top, b.top)) / parseFloat(getComputedStyle(body).lineHeight),
+          fontSize: parseFloat(getComputedStyle(body).fontSize), overflow: document.documentElement.scrollWidth > innerWidth + 1 };
+      });
+      assert(result.geometry.visibleLines >= (spec.width === 320 ? 6 : 8), JSON.stringify(result.geometry));
+      assert(result.geometry.fontSize >= 16); assert(!result.geometry.overflow);
+      await page.screenshot({ path: path.join(outputDir, `read-write-${spec.name}.png`) });
+      await input.press("Escape"); assert(await panel.isVisible());
+      const back = page.getByRole("button", { name: "返回种子，收起阅读", exact: true });
+      assert(await back.evaluate(button => button === document.activeElement));
+      await back.press("Escape"); await panel.waitFor({ state: "hidden" }); await waitForSeedLayout(page);
+      const centers = () => page.locator("[data-seed-concept]").evaluateAll(nodes => Object.fromEntries(nodes.map(node => {
+        const r = node.getBoundingClientRect(); return [node.dataset.seedConcept, { x: r.x + r.width / 2, y: r.y + r.height / 2 }];
+      })));
+      const before = await centers();
+      await page.getByTestId("dialogue-stage-node-negative").press("Enter"); await panel.waitFor(); await waitForSeedLayout(page);
+      const after = await centers();
+      result.maxStageShift = Math.max(...Object.keys(before).map(id => Math.hypot(before[id].x - after[id].x, before[id].y - after[id].y)));
+      assert(result.maxStageShift < 4, `Reading preserves the stage: ${result.maxStageShift}`);
+      await page.getByRole("button", { name: "继续写", exact: true }).click();
+      assert(await panel.isVisible()); assert((await page.getByLabel("续写对象", { exact: true }).innerText()).includes("阅读参考"));
+      await page.getByRole("button", { name: "写新想法", exact: true }).click();
+      assert(await panel.isVisible()); assert((await page.getByLabel("续写对象", { exact: true }).innerText()).includes("独立的新想法"));
+      await page.getByRole("button", { name: "演化全景", exact: true }).click();
+      const overview = page.getByTestId("evolution-overview");
+      await page.waitForFunction(() => [...document.querySelectorAll("canvas")].some(canvas => canvas.dataset.visibleNodes === "4"));
+      await overview.evaluate(element => Promise.all(element.getAnimations({ subtree: true })
+        .filter(animation => Number.isFinite(animation.effect?.getComputedTiming().endTime))
+        .map(animation => animation.finished.catch(() => {}))));
+      const enter = await overview.getByRole("button", { name: "进入种子", exact: true }).boundingBox();
+      assert(enter && enter.y >= 0 && enter.y + enter.height <= spec.height && enter.height >= 44);
+      assert(await overview.getByRole("button", { name: "进入种子", exact: true }).evaluate(button => {
+        const box = button.getBoundingClientRect(), clip = button.closest("aside").getBoundingClientRect();
+        const hit = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
+        return box.top >= clip.top && box.bottom <= clip.bottom && (hit === button || button.contains(hit));
+      }), "Enter is visible and hittable without scrolling the detail");
+      await page.screenshot({ path: path.join(outputDir, `four-node-overview-${spec.name}.png`) });
+      await overview.getByRole("button", { name: "返回种子", exact: true }).click();
+      assert(await panel.isVisible()); assert.equal(await input.inputValue(), draft);
+      assert((await page.getByLabel("续写对象", { exact: true }).innerText()).includes("独立的新想法"));
+      assert.deepEqual(errors, []); result.passed = true;
+    } catch (error) {
+      result.failure = String(error); await page.screenshot({ path: path.join(outputDir, `read-write-${spec.name}-failure.png`) }).catch(() => {}); throw error;
+    } finally { await context.close(); setActivePage(null); }
+  }
+  return results;
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const outputDir = process.env.ANICCA_QA_OUTPUT || `/tmp/anicca-reading-continuity-${Date.now()}`;
-  const browser = await chromium.launch({ headless: true, args: process.platform === "darwin" ? ["--use-angle=metal"]
+  const browser = await chromium.launch({ headless: true,
+  ...(process.env.DIALOGUE_SMOKE_BROWSER_EXECUTABLE_PATH ? { executablePath: process.env.DIALOGUE_SMOKE_BROWSER_EXECUTABLE_PATH } : {}), args: process.platform === "darwin" ? ["--use-angle=metal"]
     : ["--use-gl=angle", "--use-angle=swiftshader-webgl", "--enable-unsafe-swiftshader"] });
   try {
     for (const [index, baseUrl] of (process.env.ANICCA_QA_URLS || "http://127.0.0.1:48842/Anicca").split(",").entries()) {

@@ -59,6 +59,7 @@ export async function runFlowContinuity(browser, { baseUrl, outputDir, setActive
       await input.fill("");
       await openSeed("revisit");
       assert(await page.getByLabel("与此前想法的联系").isVisible());
+      await page.getByLabel("与此前想法的联系").locator(":scope > summary").click();
       await page.getByRole("button", { name: "换个角度展开", exact: true }).click();
       assert(await page.getByRole("button", { name: "返回种子阅读" }).isVisible());
       await page.getByRole("button", { name: "返回种子阅读" }).click();

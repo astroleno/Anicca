@@ -112,7 +112,7 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
       }));
       await openSeed("root");
       assert.equal(await page.getByRole("button", { name: "推演正反", exact: true }).count(), 1);
-      assert.equal(await page.getByRole("button", { name: "极性分裂", exact: true }).count(), 1);
+      assert.equal(await page.getByRole("button", { name: "沿极性展开", exact: true }).count(), 1);
       const readingPosition = await panel.evaluate(element => {
         element.scrollTop = 500; element.dispatchEvent(new Event("scroll")); return element.scrollTop;
       });
@@ -168,7 +168,7 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
       else assert.equal(await page.getByLabel("这一步的理解变化").count(), 0, "An unverified change must not become a claimed discovery");
       assert.equal(await panel.locator('details[open]').count(), 0, "The original quote remains available without repeating its whole history");
       await shot("response");
-      await activate(page.getByRole("button", { name: "极性分裂", exact: true }));
+      await activate(page.getByRole("button", { name: "沿极性展开", exact: true }));
       assert((await panel.innerText()).includes("围绕："));
       await activate(page.getByRole("radio", { name: /关切/ }));
       await shot("axis");
@@ -215,7 +215,7 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
       assert(synthesisSummary, "A synthesis must retain its explanation even without a verified change");
       assert((await page.getByTestId("dialogue-synthesis-context").innerText()).includes(synthesisSummary));
       await shot("synthesis");
-      await activate(page.getByRole("button", { name: "继续展开", exact: true }));
+      await activate(page.getByRole("button", { name: "阅读合", exact: true }));
       assert.equal(await panel.getByRole("group", { name: "种子基本操作" }).getByRole("button").count(), 3,
         "A synthesis keeps all three basic continuation operations at the same level");
       await activate(page.getByRole("button", { name: "推演正反", exact: true }));
@@ -235,7 +235,7 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
       assert((await choices.getByRole("button").first().innerText()).includes(continuedCompanion.meta.label));
       await shot("continued-pair-after-refresh");
       await openSeed(synthesis.id);
-      await activate(page.getByRole("button", { name: "极性分裂", exact: true }));
+      await activate(page.getByRole("button", { name: "沿极性展开", exact: true }));
       await activate(page.getByRole("radio", { name: /时间/ }));
       await activate(page.getByRole("button", { name: "沿「时间」展开", exact: true }));
       await waitCount(12); await waitForSeedLayout(page); await shot("after-polarity");

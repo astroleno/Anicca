@@ -52,7 +52,24 @@ export function separateSeedLabels(
 }
 
 export type SeedLabelOffset = { x: number; y: number };
-export type SeedLabelSurface = { x: number; y: number; radius: number };
+export type SeedLabelSurface = { id?: string; x: number; y: number; radius: number };
+
+/** Connect a displaced or ambiguous caption using the exact frame used for its ink. */
+export function seedLabelLeader(label: SeedLabelBox, offset: SeedLabelOffset, surfaces: readonly SeedLabelSurface[]) {
+  const source = surfaces.find(surface => surface.id === label.id);
+  if (!source) return null;
+  const x = label.x + offset.x, y = label.y + offset.y;
+  const distance = Math.hypot(x - source.x, y - source.y);
+  const ambiguous = surfaces.some(other => other.id !== source.id &&
+    Math.hypot(x - other.x, y - other.y) - other.radius + 12 < distance - source.radius);
+  if (Math.hypot(offset.x, offset.y) < 24 && !ambiguous) return null;
+  if (!distance) return null;
+  const ux = (x - source.x) / distance, uy = (y - source.y) / distance;
+  const textEdge = Math.min(Math.abs(ux) > .001 ? label.width / 2 / Math.abs(ux) : Infinity,
+    Math.abs(uy) > .001 ? label.height / 2 / Math.abs(uy) : Infinity);
+  const start = source.radius + 4, length = distance - textEdge - start - 4;
+  return length > 6 ? { x: ux * start, y: uy * start, length, angle: Math.atan2(uy, ux) * 180 / Math.PI } : null;
+}
 
 /** A crowded column may not fit vertically. Move only the conflicting text
  * into the nearest free space, keeping every liquid surface at its own origin. */
@@ -122,6 +139,16 @@ export function layoutSeedLabels(
   const surfaceWeight = viewportWidth * viewportHeight * 4;
   for (const label of surfaces.length ? [...placed].sort((a, b) => b.width - a.width || a.y - b.y || a.id.localeCompare(b.id)) : []) {
     const origin = originals.get(label.id)!;
+    const source = surfaces.find(surface => surface.id === label.id);
+    const others = surfaces.filter(surface => surface.id !== source?.id);
+    const distanceScore = (x: number, y: number) => {
+      const distance = (x - origin.x) ** 2 + (y - origin.y) ** 2;
+      if (!source) return distance;
+      const own = Math.hypot(x - source.x, y - source.y) - source.radius;
+      let other = Infinity;
+      for (const surface of others) other = Math.min(other, Math.hypot(x - surface.x, y - surface.y) - surface.radius);
+      return distance + Math.max(0, own - other) ** 2 * 4;
+    };
     const xs = [label.x, origin.x, margin + label.width / 2, viewportWidth - margin - label.width / 2];
     const ys = [label.y, origin.y, margin + label.height / 2, viewportHeight - margin - label.height / 2];
     for (const other of placed) {
@@ -146,7 +173,7 @@ export function layoutSeedLabels(
       for (const x of candidatesX) for (const y of candidatesY) {
         candidate.x = x; candidate.y = y;
         if (!surfaces.some(surface => crossesSurface(candidate, surface))) {
-          free.push({ x, y, score: (x - origin.x) ** 2 + (y - origin.y) ** 2 });
+          free.push({ x, y, score: distanceScore(x, y) });
         }
       }
       options = free.sort((a, b) => a.score - b.score).slice(0, 128);
@@ -157,12 +184,12 @@ export function layoutSeedLabels(
     const atOrigin = { ...label, x: origin.x, y: origin.y };
     if (candidatesX.includes(origin.x) && candidatesY.includes(origin.y) &&
         !occupied.some(other => overlaps(atOrigin, other)) &&
-        !surfaces.some(surface => crossesSurface(atOrigin, surface))) {
+        !surfaces.some(surface => crossesSurface(atOrigin, surface)) && distanceScore(origin.x, origin.y) === 0) {
       label.x = origin.x; label.y = origin.y; occupied.push(label); continue;
     }
     let best: Option | null = null;
     for (const x of candidatesX) for (const y of candidatesY) {
-      const distance = (x - origin.x) ** 2 + (y - origin.y) ** 2;
+      const distance = distanceScore(x, y);
       if (best && distance >= best.score) continue;
       candidate.x = x; candidate.y = y;
       if (occupied.some(other => overlaps(candidate, other))) continue;

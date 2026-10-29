@@ -44,6 +44,17 @@ function resetStageStore() {
   });
 }
 
+it("keeps a concept copy attached to its real origin during a new generation's arrival", () => {
+  resetStageStore();
+  render(<BubbleStage layoutKey="arrival-copy" focusNodeId="result" onSelect={vi.fn()}
+    arrivalOrigins={{ result: ["pending-thesis", "root"] }} nodes={[
+      { id: "result", label: "新结果", kind: "assistant", relation: "focus", seedX: 30, seedY: 40 },
+      { id: "copy", conceptId: "result", label: "结果分身", kind: "assistant", relation: "child", seedX: 70, seedY: 60, originNodeIds: ["result"] }
+    ]} />);
+  expect(JSON.parse(screen.getByTestId("dialogue-stage-node-result").dataset.liquidOrigins!)).toEqual(["pending-thesis", "root"]);
+  expect(JSON.parse(screen.getByTestId("dialogue-stage-node-copy").dataset.liquidOrigins!)).toEqual(["result"]);
+});
+
 function mockViewportRect(element: HTMLElement) {
   Object.defineProperty(element, "getBoundingClientRect", {
     configurable: true,
@@ -1035,7 +1046,7 @@ describe("BubbleStage", () => {
     stubPointerMode("fine");
     render(<BubbleStage layoutKey="focus:empty" nodes={[]} focusNodeId={null} onSelect={vi.fn()} />);
 
-    expect(screen.getByText("在下方输入一个想法，看它分裂为正与反")).toBeInTheDocument();
+    expect(screen.getByText("在下方输入一个想法，看它推演正反")).toBeInTheDocument();
   });
 
   it("focuses input from a quiet empty prompt without showing illustrative seeds", () => {

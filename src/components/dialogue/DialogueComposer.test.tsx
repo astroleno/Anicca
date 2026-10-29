@@ -26,7 +26,7 @@ it("shows elapsed time without inventing server progress and releases the timer"
     expect(screen.getByLabelText("已用时间")).toHaveTextContent("0 秒");
     act(() => vi.advanceTimersByTime(12000));
     expect(screen.getByLabelText("已用时间")).toHaveTextContent("12 秒");
-    expect(screen.getByText("还在生成，可以继续写下一个想法")).toBeInTheDocument();
+    expect(screen.getByText("还在生成，输入内容仍可修改")).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "输入" })).toHaveValue("保留我的想法");
     fireEvent.click(screen.getByRole("button", { name: "取消" }));
     expect(cancel).toHaveBeenCalledOnce();

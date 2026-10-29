@@ -14,9 +14,10 @@ function sourceOffset(passage: HTMLElement, container: Node, offset: number): nu
   return Number(source.dataset.passageStart) + prefix.toString().length;
 }
 
-export function SeedPassage({ nodeId, text, className, busy, onInquiry, inquiryTarget, inquiryComposer, onSelectionChange }: {
+export function SeedPassage({ nodeId, text, className, busy, onInquiry, inquiryTarget, inquiryComposer, onSelectionChange, selectionRequest = 0, showEntry = true, onChoosingChange }: {
   nodeId: string; text: string; className: string; busy: boolean; onInquiry?(target: InquiryTarget): void;
   inquiryTarget?: InquiryTarget; inquiryComposer?: ReactNode; onSelectionChange?(active: boolean): void;
+  selectionRequest?: number; showEntry?: boolean; onChoosingChange?(choosing: boolean): void;
 }) {
   const passage = useRef<HTMLDivElement>(null);
   const action = useRef<HTMLButtonElement>(null);
@@ -27,6 +28,14 @@ export function SeedPassage({ nodeId, text, className, busy, onInquiry, inquiryT
   const activeQuote = activeSelection?.quote || "";
   const quoteOffset = activeSelection ? inquiryQuoteStart(text, activeSelection) : -1;
   const nativeSelectionEnabled = Boolean(onInquiry) && !inquiryTarget;
+  const lastSelectionRequest = useRef(0);
+  useEffect(() => {
+    if (selectionRequest !== lastSelectionRequest.current) {
+      lastSelectionRequest.current = selectionRequest;
+      setChoosing(value => !value); setSelectedQuote(null);
+    }
+  }, [selectionRequest]);
+  useEffect(() => { onChoosingChange?.(choosing); }, [choosing, onChoosingChange]);
   useEffect(() => { onSelectionChange?.(choosing || quoteOffset >= 0); }, [choosing, quoteOffset, onSelectionChange]);
   useEffect(() => {
     if (!nativeSelectionEnabled) return;
@@ -95,9 +104,14 @@ export function SeedPassage({ nodeId, text, className, busy, onInquiry, inquiryT
     else requestAnimationFrame(() => action.current?.focus({ preventScroll: true }));
   };
   return <>
-    {onInquiry ? <div className={styles.entry} data-seed-meaning><button type="button" disabled={busy} aria-expanded={choosing}
+    {onInquiry && showEntry ? <div className={styles.entry} data-seed-meaning><button type="button" disabled={busy} aria-expanded={choosing}
       onClick={() => { setChoosing(value => !value); setSelectedQuote(null); }}>{choosing ? "返回全文" : inquiryTarget ? "换一句追问" : "选一句追问"}</button></div> : null}
-    <div ref={passage} className={className} data-seed-passage>
+    <div ref={passage} className={className} data-seed-passage
+      onKeyDown={event => {
+        if (event.key !== "Escape" || event.nativeEvent.isComposing || inquiryTarget || (!choosing && !selectedQuote)) return;
+        event.preventDefault(); event.stopPropagation(); setChoosing(false); setSelectedQuote(null);
+        window.getSelection()?.removeAllRanges();
+      }}>
       {choosing ? <div className={styles.sentences} aria-label="选择要追问的原句">
         {inquirySentenceRanges(text).map(sentence => <button type="button" key={sentence.quoteStart} disabled={busy || sentence.quote.length > 600}
           onClick={() => chooseSentence(sentence)}>{sentence.quote}</button>)}

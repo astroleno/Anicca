@@ -102,7 +102,7 @@ export function PerspectivePanel({ space, draft, onDraftChange, onDiscardDraft, 
         <button type="button" onClick={() => setDraft(defaultThinkingSpace())}>默认维度</button></div>
       <footer className={styles.footer}><button type="button" onClick={() => { onDiscardDraft(); setEditing(false); setError(""); }}>取消编辑</button><button type="submit" className={styles.primary}>保存维度</button></footer>
     </form> : <>
-      <p className={styles.help}>选一端，下一次生成就从这里展开。几个角度可以叠加，正反合仍各自展开。</p>
+      <p className={styles.help}>选一端，新的写作与组合会从这里展开。已有种子继续推演时沿用原来的角度，也可以改用当前角度。</p>
       <p className={styles.help}>种子的色相随极性微调，偏向越明确颜色越浓，后代略亮。</p>
       {hasJohari ? <div className={styles.johari}><p>按你的了解选择区域；未知的部分留作问题。</p><div>{([
         ["公开区", 1, 1], ["盲区", -1, 1], ["隐藏区", 1, -1], ["未知区", -1, -1]
@@ -117,9 +117,9 @@ export function PerspectivePanel({ space, draft, onDraftChange, onDiscardDraft, 
       </section>)}</div>
       <div className={styles.current}><span>{perspectiveLabel(space) ? `将从「${perspectiveLabel(space)}」展开` : "当前不限定观察角度"}</span>
         {perspectiveLabel(space) ? <button type="button" onClick={() => onChange({ ...space, focus: {} })}>清空选择</button> : null}</div>
-      <div className={styles.views}><span>只转动视角</span><div>{([ ["front", "前"], ["back", "后"], ["left", "左"], ["right", "右"], ["top", "上"], ["bottom", "下"] ] as const).map(([direction, label]) =>
+      <div className={styles.views}><span>只改变观察方向</span><div>{([ ["front", "前"], ["back", "后"], ["left", "左"], ["right", "右"], ["top", "上"], ["bottom", "下"] ] as const).map(([direction, label]) =>
         <button type="button" key={direction} aria-label={`从${label}方观察`} onClick={() => { onLook(direction); onClose(); }}>{label}</button>)}</div></div>
-      <button type="button" className={styles.arrange} onClick={() => { onResetView(); onClose(); }}>复位视角与缩放</button>
+      <button type="button" className={styles.arrange} onClick={() => { onResetView(); onClose(); }}>复位观察方向与缩放</button>
       <button type="button" className={styles.arrange} onClick={() => { onArrange(); onClose(); }}>按已有角度归位</button>
       <section className={styles.suggestions} aria-label="可补充的视角"><div className={styles.suggestionHeading}><h3>还有什么没看见</h3>
         <button type="button" disabled={busy || !topic.trim() || draft.axes.length >= 24} onClick={() => void askForAxes()}>{busy ? "正在寻找…" : "请 AI 提醒"}</button></div>

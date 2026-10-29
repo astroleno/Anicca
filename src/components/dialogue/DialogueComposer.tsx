@@ -31,11 +31,13 @@ type Props = {
   onCancel?(): void;
   onRetry?(): void;
   onResetTarget?(): void;
+  onFocus?(): void;
+  onEscape?(): void;
 };
 
 export function DialogueComposer({
   target, perspectiveLabel, value, disabled, pendingAction, pendingMessage, connectionTarget, inquiryTarget, inline, draftSaveError, onRemember, isEmptyStart, errorState,
-  rootRef, textareaRef, onChange, onSubmit, onCancel, onRetry, onResetTarget
+  rootRef, textareaRef, onChange, onSubmit, onCancel, onRetry, onResetTarget, onFocus, onEscape
 }: Props) {
   const [elapsed, setElapsed] = useState(0);
   const fieldRef = useRef<HTMLTextAreaElement | null>(null);
@@ -76,7 +78,7 @@ export function DialogueComposer({
     return () => window.clearInterval(timer);
   }, [pendingAction]);
   return (
-    <form ref={rootRef} className={styles.composer} data-mode="compose"
+    <form ref={rootRef} className={styles.composer} data-mode="compose" data-preserve-seed-reading
       data-target={pendingAction === "synthesis" ? "synthesis" : target.nodeId ? "seed" : "root"}
       data-empty-start={isEmptyStart ? "true" : undefined} data-empty-open="true"
       data-inquiry={inquiryTarget ? "true" : undefined}
@@ -100,7 +102,13 @@ export function DialogueComposer({
           maxLength={DIALECTIC_INPUT_MAX_LENGTH}
           placeholder={pendingAction ? "等待时，也可以继续写…" : inquiryTarget ? "围绕这句话，你想追问什么？" : connectionTarget ? "你想让它们怎样相遇？" : target.nodeId ? "补充你的想法…" : "写下一个想法…"}
           onChange={(event) => onChange(event.target.value)}
+          onFocus={onFocus}
           onKeyDown={(event) => {
+            if (event.nativeEvent.isComposing) return;
+            if (event.key === "Escape" && onEscape) {
+              event.preventDefault(); event.stopPropagation();
+              event.currentTarget.blur(); onEscape(); return;
+            }
             if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
               event.preventDefault();
               if (!disabled && value.trim()) onSubmit();
@@ -118,7 +126,7 @@ export function DialogueComposer({
       </div>
       {draftSaveError ? <p className={styles.draftSaveError} role="status">草稿暂时未能保存，请先保留这段文字。</p> : null}
       {pendingAction ? <div className={styles.generationProgress}>
-        <span>{elapsed < 10 ? (pendingMessage || (pendingAction === "synthesis" ? "正在寻找两颗想法的新联系" : "正在展开正反两种视角")) : elapsed < 30 ? "还在生成，可以继续写下一个想法" : "这次需要久一点，你可以取消后重试"}</span>
+        <span>{elapsed < 10 ? `${pendingMessage || (pendingAction === "synthesis" ? "正在寻找两颗想法的新联系" : "正在展开正反两种思路")}，输入仍可修改` : elapsed < 30 ? "还在生成，输入内容仍可修改" : "这次需要久一点，可以继续编辑或取消后重试"}</span>
         <span aria-label="已用时间">{elapsed} 秒</span>
         <span className={styles.generationShimmer} aria-hidden="true" />
       </div> : null}

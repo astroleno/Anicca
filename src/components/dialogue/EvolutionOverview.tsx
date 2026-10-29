@@ -8,6 +8,7 @@ import { semanticSeedColor, seedColorPolarity } from "./liquid/color";
 import styles from "./EvolutionOverview.module.css";
 import { layoutEvolutionLabels, type EvolutionLabelBox } from "./evolutionLabels";
 import { UnderstandingChange } from "./SeedMeaning";
+import { clusterEvolutionNodes } from "./evolutionClustering";
 
 type Props = { graph: Graph; initialNodeId: string | null; theme: "light" | "dark"; returnFocus?: HTMLElement | null; onEnter(id: string): void; onDismiss(): void };
 type Camera = { x: number; y: number; scale: number };
@@ -189,17 +190,14 @@ export function EvolutionOverview({ graph, initialNodeId, theme, returnFocus, on
         context.strokeStyle = dark ? "rgba(205,193,218,.05)" : "rgba(107,87,122,.05)";
         context.beginPath(); context.moveTo(x, 42); context.lineTo(x, height); context.stroke();
       }
-      const groups = new Map<string, Hit>(), endpoints = new Map<string, Hit>();
-      const cluster = m.nodes.length > 120 || c.scale < .78;
-      for (const node of m.nodes) {
-        const x = node.x * c.scale + c.x, y = node.y * c.scale + c.y;
-        if (x < -160 || x > width + 160 || y < -100 || y > height + 100) continue;
-        const key = cluster ? `${Math.floor(node.x * c.scale / 155)}:${Math.floor(node.y * c.scale / 100)}` : node.id;
-        let group = groups.get(key);
-        if (!group) { group = { x: 0, y: 0, ids: [], nodes: [] }; groups.set(key, group); }
-        group.x += x; group.y += y; group.ids.push(node.id); group.nodes.push(node); endpoints.set(node.id, group);
-      }
-      for (const group of groups.values()) { group.x /= group.ids.length; group.y /= group.ids.length; }
+      const protectedIds = new Set([selected, ...(m.byId.get(selected)?.parents || []), ...path.slice(Math.max(0, index - 1), index + 1)]);
+      const groups: Hit[] = clusterEvolutionNodes(m.nodes, c, { width, height }, protectedIds, node => {
+        const label = node.label.length > 11 ? `${node.label.slice(0, 11)}…` : node.label;
+        if (!textWidths.has(label)) { if (textWidths.size > 512) textWidths.clear(); textWidths.set(label, context.measureText(label).width); }
+        return textWidths.get(label)!;
+      });
+      const endpoints = new Map<string, Hit>();
+      for (const group of groups) for (const id of group.ids) endpoints.set(id, group);
       const seenPath = new Set(path.slice(0, index + 1)), allPath = new Set(path);
       const relevant = path.length ? allPath : new Set(evolutionPath(m, selected));
       const drawnEdges = new Set<string>();
@@ -219,12 +217,12 @@ export function EvolutionOverview({ graph, initialNodeId, theme, returnFocus, on
         context.bezierCurveTo(a.x + bend, a.y, b.x - bend, b.y, b.x, b.y); context.stroke();
       }
       context.setLineDash([]); context.globalAlpha = 1;
-      hits.current = [...groups.values()].sort((a, b) => Number(b.ids.includes(selected)) - Number(a.ids.includes(selected)));
+      hits.current = groups.sort((a, b) => Number(b.ids.includes(selected)) - Number(a.ids.includes(selected)));
       const labels = hits.current.map(group => {
         const node = group.nodes.find(item => item.id === selected) || group.nodes[0];
         const label = group.ids.length > 1 ? `${group.ids.length} 个想法` : node.label.length > 11 ? `${node.label.slice(0, 11)}…` : node.label;
-        const caption = group.ids.length === 1 && c.scale >= .78 ? node.kind === "polarity" ? polarityCaption(node)
-          : node.kind === "fission" ? `${node.source.branchType} · 裂变` : node.kind === "inquiry" ? "一句话追问" : node.kind === "synthesis" ? "合流" : node.parents.length ? "延续" : "起点" : "";
+        const caption = group.ids.length === 1 && (m.nodes.length <= 8 || c.scale >= .78 || protectedIds.has(node.id)) ? node.kind === "polarity" ? polarityCaption(node)
+          : node.kind === "fission" ? `${node.source.branchType} · 推演正反` : node.kind === "inquiry" ? "一句话追问" : node.kind === "synthesis" ? "合流" : node.parents.length ? "延续" : "起点" : "";
         const measure = (text: string) => {
           if (!textWidths.has(text)) { if (textWidths.size > 512) textWidths.clear(); textWidths.set(text, context.measureText(text).width); }
           return textWidths.get(text)!;
@@ -258,7 +256,7 @@ export function EvolutionOverview({ graph, initialNodeId, theme, returnFocus, on
       }
       context.globalAlpha = 1;
       canvas.dataset.draws = String(Number(canvas.dataset.draws || 0) + 1);
-      canvas.dataset.visibleNodes = String(groups.size);
+      canvas.dataset.visibleNodes = String(groups.length);
       canvas.dataset.scale = c.scale.toFixed(4);
       if (tween) request();
     };
@@ -340,7 +338,7 @@ export function EvolutionOverview({ graph, initialNodeId, theme, returnFocus, on
         onChange={event => { setQuery(event.target.value); setMembers(null); setPage(0); setPlaying(false); setSelectedId(activeId); setReplay([]); setSearchOpen(true); }}
         onKeyDown={event => { if (event.key === "Enter" && results[0]) choose(results[0].id); }} /></label>
       <select aria-label="筛选演化关系" value={kind} onChange={event => { setKind(event.target.value); setMembers(null); setPage(0); setPlaying(false); setSelectedId(activeId); setReplay([]); setSearchOpen(true); }}>
-        <option value="all">全部关系</option><option value="polarity">极性展开</option><option value="fission">正反裂变</option><option value="synthesis">合流</option><option value="inquiry">一句话追问</option>
+        <option value="all">全部关系</option><option value="polarity">沿极性展开</option><option value="fission">推演正反</option><option value="synthesis">合流</option><option value="inquiry">一句话追问</option>
       </select>
       <span className={styles.count}>{model.nodes.length} 个想法 · {model.nodes.length ? model.maxGeneration + 1 : 0} 代</span>
     </div>
@@ -386,13 +384,13 @@ export function EvolutionOverview({ graph, initialNodeId, theme, returnFocus, on
         {active ? <article className={styles.reading}>
           <p className={styles.phase} role="status">{active.cyclic ? "来源待梳理" : `第 ${active.generation} 代`} · {active.phase}</p>
           <h3>{active.label}</h3>
-          <UnderstandingChange node={graph.nodes[active.id]} graph={graph} onPick={choose} />
-          {active.source.inquiry ? <p className={styles.lens}>围绕原句 · {active.source.inquiry.quote}</p> : null}
-          {active.lens ? <p className={styles.lens}>当时的视角 · {active.lens}</p> : null}
-          <p className={styles.summary}>{active.summary}</p>
-          {active.parents.length ? <div className={styles.sources}><span>{active.kind === "synthesis" ? "共同来源" : "从这里生长"}</span>{active.parents.map(id => <button key={id} type="button" onClick={() => choose(id)}>{model.byId.get(id)?.label}</button>)}</div> : null}
           <div className={styles.readActions}><button type="button" onClick={() => enter(active.id)}>进入种子</button>
             <button type="button" disabled={!candidatePath.length || replay.length > 0} onClick={beginReplay}>回放来路</button></div>
+          <UnderstandingChange node={graph.nodes[active.id]} graph={graph} onPick={choose} />
+          {active.source.inquiry ? <p className={styles.lens}>围绕原句 · {active.source.inquiry.quote}</p> : null}
+          {active.lens ? <p className={styles.lens}>当时的思考角度 · {active.lens}</p> : null}
+          <p className={styles.summary}>{active.summary}</p>
+          {active.parents.length ? <div className={styles.sources}><span>{active.kind === "synthesis" ? "共同来源" : "从这里生长"}</span>{active.parents.map(id => <button key={id} type="button" onClick={() => choose(id)}>{model.byId.get(id)?.label}</button>)}</div> : null}
           {active.cyclic ? <p>这条来路有循环，请先在来源中梳理关系。</p> : null}
         </article> : <p>种下一个想法，便能看见它的来路。</p>}
       </aside>

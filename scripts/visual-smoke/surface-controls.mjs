@@ -99,7 +99,7 @@ export async function runSurfaceControls(browser, { baseUrl, outputDir, setActiv
           assert.deepEqual((await note("complete")).pending, []);
           const stageActions = page.getByTestId("dialogue-stage-primary-actions");
           assert.equal(await stageActions.getByRole("group", { name: "种子基本操作" }).getByRole("button").count(), 3);
-          await stageActions.getByRole("button", { name: "极性分裂", exact: true }).click();
+          await stageActions.getByRole("button", { name: "沿极性展开", exact: true }).click();
           await page.getByRole("heading", { name: "沿极性展开" }).waitFor(); await note("direct-polarity");
           await page.keyboard.press("Escape"); await page.getByRole("button", { name: "返回种子，收起阅读" }).click();
           await input.fill("等待中继续写"); await page.getByRole("button", { name: "生成", exact: true }).click();
@@ -119,7 +119,8 @@ export async function runSurfaceControls(browser, { baseUrl, outputDir, setActiv
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const browser = await chromium.launch({ headless: true, args: process.platform === "darwin" ? ["--use-angle=metal"] : ["--use-gl=angle", "--use-angle=swiftshader-webgl", "--enable-unsafe-swiftshader"] });
+  const browser = await chromium.launch({ headless: true,
+  ...(process.env.DIALOGUE_SMOKE_BROWSER_EXECUTABLE_PATH ? { executablePath: process.env.DIALOGUE_SMOKE_BROWSER_EXECUTABLE_PATH } : {}), args: process.platform === "darwin" ? ["--use-angle=metal"] : ["--use-gl=angle", "--use-angle=swiftshader-webgl", "--enable-unsafe-swiftshader"] });
   try {
     for (const [index, baseUrl] of (process.env.ANICCA_QA_URLS || "http://127.0.0.1:48843/Anicca").split(",").entries()) {
       const result = await runSurfaceControls(browser, { baseUrl, outputDir: path.join(process.env.ANICCA_QA_OUTPUT || "/tmp/anicca-surface-controls", `${index}-${new URL(baseUrl).hostname}`), setActivePage() {} });

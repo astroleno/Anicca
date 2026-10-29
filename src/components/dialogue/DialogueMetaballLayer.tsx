@@ -11,7 +11,7 @@ import type { LiquidRendererMode, LiquidRendererStatus } from "./liquid/preferen
 import { LiquidQuality } from "./liquid/quality";
 import { LiquidSceneClock } from "./liquid/clock";
 import { DEFAULT_SEED_ORBIT, projectSpatialSeed, readSeedOrbit, readSeedZoom, publishSpatialFrame, clearSpatialFrame, fitSpatialSeed, fitSeedScene } from "./liquid/space";
-import { layoutSeedLabels } from "./labelLayout";
+import { layoutSeedLabels, seedLabelLeader } from "./labelLayout";
 import {
   computeFusedPairs,
   MAX_DIALOGUE_METABALLS,
@@ -155,7 +155,7 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
     let reportedReady = false;
     let geometryDirty = true;
     let labelsDirty = true;
-    let measuredCaptions: Array<{ id: string; width: number; height: number; inset: number; element: HTMLElement; caption: HTMLElement }> = [];
+    let measuredCaptions: Array<{ id: string; width: number; height: number; inset: number; element: HTMLElement; caption: HTMLElement; leader: HTMLElement | null }> = [];
     let measuredPair: { element: HTMLElement; width: number; height: number } | null = null;
     let hostRect: DOMRect | null = null;
     let cachedNodes: ReturnType<typeof projectMetaballSurfaces> = [];
@@ -221,6 +221,9 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
         caption.style.removeProperty("transform");
         caption.style.removeProperty("--stage-label-offset-x");
         caption.style.removeProperty("--stage-label-offset-y");
+      }
+      for (const leader of host.querySelectorAll<HTMLElement>("[data-seed-leader]")) {
+        leader.hidden = true; leader.style.removeProperty("width"); leader.style.removeProperty("transform");
       }
       motionOffsets.clear();
     };
@@ -303,7 +306,8 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
               const range = document.createRange(); range.selectNodeContents(text);
               return sum + Math.min(text.offsetWidth, range.getBoundingClientRect().width);
             }, 24);
-            return [{ id: element.dataset.metaballSurface!, width: Math.min(caption.offsetWidth, width), height: caption.offsetHeight, inset: element.clientTop, element, caption }];
+            return [{ id: element.dataset.metaballSurface!, width: Math.min(caption.offsetWidth, width), height: caption.offsetHeight, inset: element.clientTop, element, caption,
+              leader: element.querySelector<HTMLElement>("[data-seed-leader]") }];
           });
           const pair = host.querySelector<HTMLElement>('[data-testid="dialogue-synthesis-pair-label"]');
           measuredPair = pair ? { element: pair, width: pair.offsetWidth, height: pair.offsetHeight } : null;
@@ -382,8 +386,9 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
           const pairBox = pairCaption && source && partner ? [{ id: "__pair", x: (source.x+partner.x)/2,
             y: (source.y+partner.y)/2 + Math.max(source.radiusPx, partner.radiusPx) + 18 + (measuredPair?.height || 0)/2,
             width: measuredPair!.width, height: measuredPair!.height }] : [];
+          const labelSurfaces = localNodes.map(node => ({ id: node.id, x: node.x, y: node.y, radius: node.radiusPx * 1.08 }));
           const offsets = layoutSeedLabels([...captions, ...pairBox], trackRect.width, trackRect.height,
-            localNodes.map(node => ({ x: node.x, y: node.y, radius: node.radiusPx * 1.08 })),
+            labelSurfaces,
             { top: Number(host.dataset.labelInsetTop) || 0, bottom: Number(host.dataset.labelInsetBottom) || 0 });
           for (const caption of captions) {
             const scale = motionOffsets.get(caption.id)?.scale || 1;
@@ -395,6 +400,15 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
             const transform = `translate(calc(-50% + ${x}px), ${y}px) scale(${1 / scale})`;
             if (caption.caption.style.transform !== transform) caption.caption.style.transform = transform;
             ownStyles.set(caption.caption, caption.caption.getAttribute("style") || "");
+            if (caption.leader) {
+              const leader = seedLabelLeader(caption, offsets[caption.id] || { x: 0, y: 0 }, labelSurfaces);
+              caption.leader.hidden = !leader;
+              if (leader) {
+                caption.leader.style.width = `${leader.length / scale}px`;
+                caption.leader.style.transform = `translate(${leader.x / scale}px, ${leader.y / scale}px) rotate(${leader.angle}deg)`;
+              }
+              ownStyles.set(caption.leader, caption.leader.getAttribute("style") || "");
+            }
           }
           if (pairCaption && pairBox[0]) {
             pairCaption.style.left = `${pairBox[0].x + (offsets.__pair?.x || 0)}px`;

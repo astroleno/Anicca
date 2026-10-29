@@ -2,6 +2,18 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { SeedPassage } from "./SeedPassage";
 
 const text = "自由探索可以持续。每条伏线都需要认领吗？";
+it("opens sentence selection from an external reading toolbar and consumes Escape before the reading parent", async () => {
+  const selection = vi.fn(), onInquiry = vi.fn(), escaped = vi.fn();
+  const view = render(<div onKeyDown={escaped}><SeedPassage nodeId="seed" text={text} className="body" busy={false}
+    onInquiry={onInquiry} showEntry={false} selectionRequest={0} onSelectionChange={selection} /></div>);
+  expect(screen.queryByRole("button", { name: "选一句追问" })).not.toBeInTheDocument();
+  view.rerender(<div onKeyDown={escaped}><SeedPassage nodeId="seed" text={text} className="body" busy={false}
+    onInquiry={onInquiry} showEntry={false} selectionRequest={1} onSelectionChange={selection} /></div>);
+  fireEvent.keyDown(screen.getByRole("button", { name: "自由探索可以持续。" }), { key: "Escape" });
+  expect(screen.queryByLabelText("选择要追问的原句")).not.toBeInTheDocument();
+  expect(escaped).not.toHaveBeenCalled();
+  await waitFor(() => expect(selection).toHaveBeenLastCalledWith(false));
+});
 it("offers a keyboard and touch path to ask about one exact sentence", () => {
   const onInquiry = vi.fn();
   render(<SeedPassage nodeId="seed" text={text} className="body" busy={false} onInquiry={onInquiry} />);

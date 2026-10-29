@@ -20,7 +20,7 @@ import type { DialogueMetaballRendererState } from "./DialogueMetaballLayer";
 import type { LiquidRendererMode, LiquidRendererStatus } from "./liquid/preference";
 import styles from "./DialogueShell.module.css";
 import type { MetaballRole } from "./metaball/model";
-import { layoutSeedLabels } from "./labelLayout";
+import { layoutSeedLabels, seedLabelLeader } from "./labelLayout";
 import type { DialogueTheme } from "./useDialogueTheme";
 import { DEFAULT_SEED_ORBIT, orbitSeedSpace, spatialStagePoint, dragSpatialStagePoint, SEED_VIEWS, wrapSeedYaw,
   readSpatialFrame, canCaptureSpatialPair, spatialPairInContact, SEED_CAMERA_DISTANCE, SEED_WORLD_CAMERA_DISTANCE,
@@ -38,6 +38,7 @@ type BubbleStageProps = {
   convergenceEventId?: string | null;
   eventNodeId?: string | null;
   arrivals?: { sourceId: string; firstId: string; secondId: string } | null;
+  arrivalOrigins?: Record<string, string[]>;
   pendingPreview?: StagePendingPreview | null;
   synthesisAction?: DialogueSynthesisAction | null;
   onProposeSynthesis?: (action: DialogueSynthesisAction) => void;
@@ -160,6 +161,7 @@ export function BubbleStage({
   convergenceEventId = null,
   eventNodeId = null,
   arrivals = null,
+  arrivalOrigins,
   pendingPreview = null,
   synthesisAction = null,
   onProposeSynthesis,
@@ -270,7 +272,7 @@ export function BubbleStage({
       : hasThesis && hasAntithesis
         ? "拖动两颗想法靠近，稍停后松手合成；移开可取消。"
         : null;
-  const emptyStageHint = "在下方输入一个想法，看它分裂为正与反";
+  const emptyStageHint = "在下方输入一个想法，看它推演正反";
   const usesCompactGrowthLayout = isNarrowViewport;
   const stageLayoutMode = usesCompactGrowthLayout ? "compact" : "wide";
   const stageLayoutViewport = stageLayoutMode === "compact" ? stageLayout?.compact : stageLayout;
@@ -395,7 +397,7 @@ export function BubbleStage({
       y: position.y * labelGeometry.height / 100 + size.anchorOffsetY }] : [];
   }), labelGeometry.width, labelGeometry.height, positionedNodes.flatMap(({ node, position }) => {
     const size = labelGeometry.labels[node.id];
-    return size ? [{ x: position.x * labelGeometry.width / 100,
+    return size ? [{ id: node.id, x: position.x * labelGeometry.width / 100,
       y: position.y * labelGeometry.height / 100, radius: size.surfaceRadius }] : [];
   }), labelGeometry.insets), [positionedNodes, labelGeometry, metaballRendererState]);
 
@@ -1066,7 +1068,7 @@ export function BubbleStage({
                 </div>
                 <p className={styles.stagePendingCaption}>{pendingBranchNodes.axis
                   ? `正在沿「${pendingBranchNodes.axis.label}」探索两端。`
-                  : "正在深化主张、质疑前提，正与反会在这里落位。"}</p>
+                  : "正在深化主张、质疑前提。"}</p>
               </div>
             ) : null}
             {pendingSynthesisMark ? (
@@ -1138,10 +1140,18 @@ export function BubbleStage({
                 node.id === attractionPartnerId || node.id === synthesisCandidateId;
               const label = node.kind === "user" && node.preview && node.preview.length > node.label.length && node.preview.startsWith(node.label)
                 ? `${node.label}…` : node.label;
-              const origins = node.id === arrivals?.firstId ? ["pending-thesis", arrivals.sourceId]
+              const origins = arrivalOrigins?.[node.id] || (node.id === arrivals?.firstId ? ["pending-thesis", arrivals.sourceId]
                 : node.id === arrivals?.secondId ? ["pending-antithesis", arrivals.sourceId]
                   : node.id === eventNodeId ? ["pending-synthesis", ...nodes.filter(source => source.sourceRole === "source").map(source => source.id), ...(node.originNodeIds || [])]
-                    : node.originNodeIds;
+                    : node.originNodeIds);
+              const size = labelGeometry.labels[node.id];
+              const leader = metaballRendererState !== "ready" && size ? seedLabelLeader({ id: node.id, ...size,
+                x: position.x * labelGeometry.width / 100, y: position.y * labelGeometry.height / 100 + size.anchorOffsetY },
+              labelOffsets[node.id] || { x: 0, y: 0 }, positionedNodes.flatMap(item => {
+                const geometry = labelGeometry.labels[item.node.id];
+                return geometry ? [{ id: item.node.id, x: item.position.x * labelGeometry.width / 100,
+                  y: item.position.y * labelGeometry.height / 100, radius: geometry.surfaceRadius }] : [];
+              })) : null;
 
               return (
                 <button
@@ -1209,6 +1219,8 @@ export function BubbleStage({
                   <span id={`${descriptionPrefix}-${node.id}`} hidden>{[node.preview, node.summary].filter(Boolean).join("；")}</span>
                   <span className={styles.seedHitArea} aria-hidden="true" />
                   <span className={styles.seedSourceGlow} aria-hidden="true" />
+                  <span className={styles.seedLabelLeader} data-seed-leader aria-hidden="true" hidden={!leader}
+                    style={leader ? { width: leader.length, transform: `translate(${leader.x}px, ${leader.y}px) rotate(${leader.angle}deg)` } : undefined} />
                   <span className={styles.stageNodeInner} data-seed-caption
                     data-polarity-caption={pole ? "true" : undefined}
                     data-source-caption={node.sourceRole === "source" && node.instanceNumber ? "true" : undefined}>

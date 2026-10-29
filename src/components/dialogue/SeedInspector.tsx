@@ -4,7 +4,7 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import type { Graph, SeedInstances } from "@/types/anicca";
 import { seedLabel } from "@/features/dialectic/seeds";
 import { conceptInstances, sourceInstances, seedConceptId } from "@/features/dialectic/seedInstances";
-import { defaultThinkingSpace, normalizeSeedPerspective, normalizeThinkingSpace, perspectiveLabel, seedPerspectiveLabel, type ThinkingSpace } from "@/features/perspectives/model";
+import { defaultThinkingSpace, normalizeSeedPerspective, perspectiveLabel, seedPerspectiveLabel, type ThinkingSpace } from "@/features/perspectives/model";
 import { normalizePolarityOrigin, polarityAxis, polarityLabel } from "@/features/perspectives/polarity";
 import styles from "./DialogueShell.module.css";
 import { deferredSyntheses, readUnderstandingChange } from "@/features/dialectic/meaning";
@@ -15,8 +15,9 @@ import { readNovelty } from "@/features/dialectic/novelty";
 import type { ReadingPosition } from "@/lib/persist/readingState";
 import { captureReadingPosition, restoreReadingPosition } from "./readingPosition";
 import { SeedPrimaryActions } from "./SeedPrimaryActions";
+import { resolveSeedExpansionFrame } from "@/features/perspectives/seedExpansionFrame";
 
-export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = {}, space = defaultThinkingSpace(), combining, busy, activeDeferredId, onContinueDeferred, onClose, onSplit, onExpandPolarity, onWrite, onCombine, onPick, onCreateInstance, onRemoveInstance, onExpandSources, onInquiry, inquiryTarget, inquiryComposer, companionId, getReadingPosition, onRememberPosition, onReadingIntent, onReadNewResponse, polarityRequest = 0 }: {
+export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = {}, space = defaultThinkingSpace(), combining, busy, activeDeferredId, onContinueDeferred, onClose, onSplit, onExpandPolarity, onWrite, onCombine, onPick, onCreateInstance, onRemoveInstance, onExpandSources, onInquiry, inquiryTarget, inquiryComposer, companionId, getReadingPosition, onRememberPosition, onReadingIntent, onReadNewResponse, polarityRequest = 0, useCurrentAngle: controlledAngle, onUseCurrentAngleChange }: {
   graph: Graph; nodeId: string; combining: boolean; busy: boolean;
   instanceId?: string; instances?: SeedInstances;
   space?: ThinkingSpace;
@@ -29,13 +30,18 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
   getReadingPosition?(id: string): ReadingPosition | undefined; onRememberPosition?(id: string, position: ReadingPosition): void;
   onReadingIntent?(): void; onReadNewResponse?(): void;
   polarityRequest?: number;
+  useCurrentAngle?: boolean; onUseCurrentAngleChange?(current: boolean): void;
   onCreateInstance?(): void; onRemoveInstance?(): void; onExpandSources?(): void;
 }) {
   const [query, setQuery] = useState("");
   const [polarityOpen, setPolarityOpen] = useState(false);
   const [axisId, setAxisId] = useState("");
-  const [useCurrentAngle, setUseCurrentAngle] = useState(false);
+  const [localUseCurrentAngle, setLocalUseCurrentAngle] = useState(false);
+  const useCurrentAngle = controlledAngle ?? localUseCurrentAngle;
+  const setUseCurrentAngle = (current: boolean) => { setLocalUseCurrentAngle(current); onUseCurrentAngleChange?.(current); };
   const [selectionActive, setSelectionActive] = useState(false);
+  const [selectionRequest, setSelectionRequest] = useState(0);
+  const [choosingSentence, setChoosingSentence] = useState(false);
   const selecting = selectionActive || Boolean(inquiryTarget);
   const inspectorRef = useRef<HTMLElement | null>(null);
   const polarityButtonRef = useRef<HTMLButtonElement>(null);
@@ -43,6 +49,16 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
   const readingPositionRef = useRef<ReadingPosition>({ scrollTop: 0 });
   const wasChoosingRef = useRef(false);
   const wasInlineRef = useRef(Boolean(inquiryComposer));
+  useLayoutEffect(() => {
+    const panel = inspectorRef.current;
+    if (!panel) return;
+    const toggled = (event: Event) => {
+      if (event.target instanceof HTMLElement && event.target.matches("[data-reading-summary]"))
+        restoreReadingPosition(panel, readingPositionRef.current);
+    };
+    panel.addEventListener("toggle", toggled, true);
+    return () => panel.removeEventListener("toggle", toggled, true);
+  }, [nodeId]);
   useLayoutEffect(() => {
     if (polarityRequest && polarityRequest !== lastPolarityRequest.current) {
       if (inspectorRef.current) readingPositionRef.current = captureReadingPosition(inspectorRef.current);
@@ -97,9 +113,7 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
   const inquiry = readInquiryOrigin(node.meta?.inquiry, graph);
   const origin = normalizePolarityOrigin(node.meta?.polarity);
   const originAxis = origin ? polarityAxis(origin) : null;
-  const capturedFrame = origin?.frame || (node.meta?.fissionFrame ? normalizeThinkingSpace(node.meta.fissionFrame) : null);
-  const expansionFrame = capturedFrame && !useCurrentAngle ? capturedFrame : space;
-  const frameDiffers = capturedFrame && JSON.stringify(capturedFrame) !== JSON.stringify(normalizeThinkingSpace(space));
+  const { capturedFrame, frame: expansionFrame, differs: frameDiffers } = resolveSeedExpansionFrame(node, space, useCurrentAngle);
   const chosenAxis = expansionFrame.axes.find(axis => axis.id === axisId) || expansionFrame.axes[0];
   const otherAngles = chosenAxis ? perspectiveLabel({ ...expansionFrame,
     focus: Object.fromEntries(Object.entries(expansionFrame.focus).filter(([id]) => id !== chosenAxis.id)) }) : "";
@@ -129,7 +143,7 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
         onPolarity={onExpandPolarity ? () => { if (inspectorRef.current) readingPositionRef.current = captureReadingPosition(inspectorRef.current); setPolarityOpen(true); } : undefined} />}
     {capturedFrame && (continuationLens || frameDiffers) ? <p className={styles.seedLensHint}>
       {continuationLens ? `从「${continuationLens}」继续` : useCurrentAngle ? "当前入口未限定极性" : "沿用原来的入口，未限定极性"}
-      {frameDiffers ? <button type="button" disabled={busy} onClick={() => setUseCurrentAngle(value => !value)}>
+      {frameDiffers ? <button type="button" disabled={busy} onClick={() => setUseCurrentAngle(!useCurrentAngle)}>
         {useCurrentAngle ? "用种子原来的角度" : "改用当前角度"}</button> : null}
     </p> : null}
     {!expansionFrame.axes.length ? <p className={styles.seedLensHint}>在「换个角度」中添加维度，就可以沿两端展开。</p> : null}
@@ -152,7 +166,7 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
   return (
     <div className={styles.seedInspectorFrame}
       onKeyDown={event => {
-        if (event.key !== "Escape" || !polarityOpen) return;
+        if (event.nativeEvent.isComposing || event.key !== "Escape" || !polarityOpen) return;
         event.preventDefault();
         event.stopPropagation();
         setPolarityOpen(false);
@@ -161,11 +175,19 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
         {onReadNewResponse ? <button type="button" className={styles.seedNewResponse} onClick={onReadNewResponse}
           aria-label="阅读新回应">新回应已保存 · 阅读</button>
           : <span>{polarityOpen ? `从「${seedLabel(graph, nodeId)}」继续` : combining ? "组合" : activeEncounter ? "暂不融合" : inquiry ? inquiryLabel(inquiry.intent) : origin ? "极性视角" : node.branchType || "想法"}</span>}
-        <button type="button" className={styles.seedReadingBack} aria-label={polarityOpen ? "返回种子阅读" : "返回种子，收起阅读"}
+        {!polarityOpen && !combining && !activeEncounter && onInquiry && node.text?.trim() ? <button type="button"
+          className={styles.seedSentenceTrigger} disabled={busy} aria-expanded={choosingSentence}
+          onClick={() => { onReadingIntent?.(); setSelectionRequest(value => value + 1); }}>
+          {choosingSentence ? "返回全文" : inquiryTarget ? "换一句追问" : "选一句追问"}</button> : null}
+        <button type="button" data-reading-return className={styles.seedReadingBack} aria-label={polarityOpen ? "返回种子阅读" : "返回种子，收起阅读"}
           onClick={polarityOpen ? () => setPolarityOpen(false) : onClose}>{polarityOpen ? "返回阅读" : "返回种子"}</button>
       </div>
     <section ref={inspectorRef} className={styles.seedInspector} data-testid="dialogue-panel" aria-labelledby="conversation-panel-heading"
       data-mode={polarityOpen ? "polarity" : combining ? "combine" : "read"} data-selecting={selecting ? "true" : undefined}
+      onClickCapture={event => {
+        if (event.target instanceof Element && event.target.closest("[data-reading-summary] > summary") && inspectorRef.current)
+          readingPositionRef.current = captureReadingPosition(inspectorRef.current);
+      }}
       onWheel={event => { if (!(event.target instanceof Element) || !event.target.closest("input, textarea, select, [contenteditable='true']")) onReadingIntent?.(); }}
       onPointerDown={event => {
         if (event.target instanceof Element && !event.target.closest("button, a, input, textarea, select, label, summary, [contenteditable='true']")) onReadingIntent?.();
@@ -210,12 +232,13 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
             <button type="button" onClick={() => onPick(inquiry.sourceNodeId)}>从「{seedLabel(graph, inquiry.sourceNodeId)}」的一句话继续</button>
             <blockquote>{inquiry.quote}</blockquote><p>{inquiry.question}</p>
           </details> : null}
-          <UnderstandingChange node={node} graph={graph} onPick={onPick}
+          <UnderstandingChange compact node={node} graph={graph} onPick={onPick}
             onReframe={onExpandPolarity && !busy && !selecting ? () => { if (inspectorRef.current) readingPositionRef.current = captureReadingPosition(inspectorRef.current); setPolarityOpen(true); } : undefined} />
           {!selecting ? expansionControls : null}
           <SeedPassage key={node.id} nodeId={node.id} text={node.text || "这颗种子还没有正文。"} className={styles.seedBody}
             busy={busy} onInquiry={!polarityOpen && node.text?.trim() ? onInquiry : undefined}
-            inquiryTarget={inquiryTarget} inquiryComposer={inquiryComposer} onSelectionChange={setSelectionActive} />
+            inquiryTarget={inquiryTarget} inquiryComposer={inquiryComposer} onSelectionChange={setSelectionActive}
+            showEntry={false} selectionRequest={selectionRequest} onChoosingChange={setChoosingSentence} />
           {node.meta?.connectionInput ? <details className={styles.seedPerspective} data-seed-meaning><summary>这次补充的联系</summary><p>{node.meta.connectionInput}</p></details> : null}
           {encounters.length ? <details className={styles.seedPerspective} data-seed-meaning><summary>暂存的相遇 · {encounters.length}</summary>
             {encounters.map(encounter => <DeferredEncounter key={encounter.id} encounter={encounter} graph={graph} busy={busy} onPick={onPick}

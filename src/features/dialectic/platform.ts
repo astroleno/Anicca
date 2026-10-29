@@ -6,7 +6,7 @@ export type DialogueViewportMetrics = {
 };
 
 export function stageGestureHint(coarsePointer: boolean) {
-  return coarsePointer ? "拖空白平移 · 拖球合成 · 双指转动与缩放" : "拖动空白，转动视角";
+  return coarsePointer ? "拖空白平移 · 拖球合成 · 双指转动与缩放" : "拖动空白，改变观察方向";
 }
 
 type ViewportWindow = Pick<Window, "innerWidth" | "innerHeight" | "visualViewport">;

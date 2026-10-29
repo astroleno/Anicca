@@ -16,6 +16,7 @@ const outputDir = path.resolve(process.env.ANICCA_QA_OUTPUT || `/tmp/anicca-publ
 await mkdir(outputDir, { recursive: true });
 const results = [];
 const browser = await chromium.launch({ headless: true,
+  ...(process.env.DIALOGUE_SMOKE_BROWSER_EXECUTABLE_PATH ? { executablePath: process.env.DIALOGUE_SMOKE_BROWSER_EXECUTABLE_PATH } : {}),
   args: process.platform === "darwin" ? ["--use-angle=metal"]
     : ["--use-gl=angle", "--use-angle=swiftshader-webgl", "--enable-unsafe-swiftshader"] });
 try {

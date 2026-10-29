@@ -25,7 +25,7 @@ async function fresh(baseUrl, mobile) {
   await page.waitForFunction(() => document.querySelector('[data-testid="dialogue-stage-track"]')?.dataset.metaballRenderer === "ready");
   const hint = await page.getByLabel("探索提示", { exact: true }).innerText();
   const coarse = await page.evaluate(() => matchMedia("(pointer: coarse)").matches);
-  const gestureHint = coarse ? "拖空白平移 · 拖球合成 · 双指转动与缩放" : "拖动空白，转动视角";
+  const gestureHint = coarse ? "拖空白平移 · 拖球合成 · 双指转动与缩放" : "拖动空白，改变观察方向";
   assert(hint.includes(gestureHint), "First-visit help describes the actual primary input");
   await page.getByRole("button", { name: "关闭提示", exact: true }).click();
   await waitForSeedLayout(page);

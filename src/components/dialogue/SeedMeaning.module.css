@@ -1,6 +1,16 @@
 .change { margin: 0 0 18px; padding: 0 0 0 14px; border-left: 1px solid var(--line, #d9d2df); color: var(--text, #494151); }
 .change > span { display: block; margin-bottom: 6px; font: 12px/1.6 var(--anicca-font-interface); color: var(--muted, #746c7c); letter-spacing: .06em; }
 .change p { margin: 0; font: 14px/1.85 var(--anicca-font-literary); overflow-wrap: anywhere; }
+.compact { padding: 0; border: 0; margin-bottom: 8px; flex-shrink: 0; }
+.compact > summary { display: flex; align-items: center; gap: 12px; min-height: 44px; cursor: pointer; color: var(--muted); font: 12px/1.6 var(--anicca-font-interface); list-style: none; }
+.compact > summary::-webkit-details-marker { display: none; }
+.compact > summary > span:first-child { flex-shrink: 0; }
+.compact > summary > span:first-child::after { content: " · 展开"; }
+.compact[open] > summary > span:first-child::after { content: " · 收起"; }
+.preview { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.compact[open] > summary { align-items: flex-start; flex-direction: column; gap: 6px; padding-block: 10px; }
+.compact[open] > summary .preview { white-space: normal; color: var(--text); font-size: 14px; line-height: 1.85; }
+.compact[open] { padding-bottom: 12px; }
 .encounter { color: var(--text, #494151); overflow-wrap: anywhere; font: 14px/1.85 var(--anicca-font-interface); }
 .encounter h3 { margin: 8px 0 14px; font: 500 18px/1.6 var(--anicca-font-literary); }
 .encounter p { margin: 12px 0; }

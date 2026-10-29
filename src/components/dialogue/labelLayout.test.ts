@@ -1,6 +1,15 @@
-import { layoutSeedLabels, separateSeedLabels, type SeedLabelBox } from "./labelLayout";
+import { layoutSeedLabels, separateSeedLabels, seedLabelLeader, type SeedLabelBox } from "./labelLayout";
 
 const label = (id: string, x: number, y: number): SeedLabelBox => ({ id, x, y, width: 116, height: 64 });
+it("connects displaced captions to their own surface and leaves clear nearby captions undecorated", () => {
+  const surfaces = [{ id: "a", x: 80, y: 80, radius: 30 }, { id: "b", x: 230, y: 80, radius: 30 }];
+  const caption = { id: "a", x: 80, y: 130, width: 60, height: 20 };
+  expect(seedLabelLeader(caption, { x: 0, y: 0 }, surfaces)).toBeNull();
+  const leader = seedLabelLeader(caption, { x: 150, y: 20 }, surfaces)!;
+  expect(leader.length).toBeGreaterThan(50);
+  expect(leader.x).toBeGreaterThan(0); expect(leader.y).toBeGreaterThan(0);
+  expect(seedLabelLeader({ ...caption, id: "missing" }, { x: 100, y: 0 }, surfaces)).toBeNull();
+});
 
 it("keeps narrow-screen captions out of the polarity context and fusion status", () => {
   const boxes = [label("root", 145, 42), label("pole", 250, 96), label("pair", 160, 280)]
