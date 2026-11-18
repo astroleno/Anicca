@@ -19,6 +19,8 @@ import { createPortal } from "react-dom";
 import type { DialogueMetaballRendererState } from "./DialogueMetaballLayer";
 import type { LiquidRendererMode, LiquidRendererStatus } from "./liquid/preference";
 import styles from "./DialogueShell.module.css";
+import { StageField } from "./StageField";
+import type { ThinkingSpace } from "@/features/perspectives/model";
 import type { MetaballRole } from "./metaball/model";
 import { layoutSeedLabels, seedLabelLeader } from "./labelLayout";
 import type { DialogueTheme } from "./useDialogueTheme";
@@ -61,6 +63,9 @@ type BubbleStageProps = {
   attentionIds?: readonly string[] | null;
   reading?: boolean;
   suspended?: boolean;
+  /** Thinking directions laid out on the stage; their faint field aims the next thought. */
+  thinkingSpace?: ThinkingSpace | null;
+  onAimThinking?(patch: Record<string, number>): void;
 };
 
 type StagePendingPreview =
@@ -181,7 +186,9 @@ export function BubbleStage({
   cameraView = null,
   attentionIds = null,
   reading = false,
-  suspended = false
+  suspended = false,
+  thinkingSpace = null,
+  onAimThinking
 }: BubbleStageProps) {
   const descriptionPrefix = useId();
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -1015,6 +1022,10 @@ export function BubbleStage({
             data-testid="dialogue-stage-track"
             data-metaball-renderer={metaballRendererState}
           >
+            {thinkingSpace && onAimThinking && nodes.length ? <StageField space={thinkingSpace} nodes={nodes}
+              carrying={gesture?.kind === "node"}
+              hidden={viewRotated || reading || suspended || metaballRendererState === "fallback"}
+              onFocus={onAimThinking} /> : null}
             {pendingBranchNodes ? (
               <div
                 className={styles.stagePendingLayer}

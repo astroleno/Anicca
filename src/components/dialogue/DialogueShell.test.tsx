@@ -8,7 +8,7 @@ import {
 } from "@/components/dialogue/DialogueShell";
 import { useDialogueUiStore } from "@/features/dialectic/store";
 import { seedLabel } from "@/features/dialectic/seeds";
-import { defaultThinkingSpace } from "@/features/perspectives/model";
+import { defaultThinkingSpace, johariThinkingSpace } from "@/features/perspectives/model";
 import { polarityPerspective } from "@/features/perspectives/polarity";
 import {
   DialogueTelemetryEvent,
@@ -692,6 +692,18 @@ describe("DialogueShell", () => {
     expect(readFetchBody(fetchMock, 1).perspective.focus).toEqual({ concern: -1, horizon: 1 });
     expect(screen.getByTestId("dialogue-expansion-context")).toHaveTextContent("推演正反");
     expect(useDialogueUiStore.getState().thinkingSpace.focus).toEqual({ horizon: 1 });
+  });
+
+  it("aims the next thought from a Johari region chosen on the stage itself", async () => {
+    const { rootUserId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId, thinkingSpace: johariThinkingSpace() });
+    seedActiveWorkspaceFromCurrentGraph();
+    render(<DialogueShell />);
+    fireEvent.click(await screen.findByRole("button", { name: "下一个想法从「盲区」展开" }));
+    expect(useDialogueUiStore.getState().thinkingSpace.focus).toEqual({ "johari-self": -1, "johari-others": 1 });
+    await waitFor(() => expect(screen.getByTestId("dialogue-composer")).toHaveAttribute("data-perspective", "true"));
+    fireEvent.click(screen.getByRole("button", { name: "下一个想法从「盲区」展开" }));
+    expect(useDialogueUiStore.getState().thinkingSpace.focus).toEqual({});
   });
 
   it("retries polarity expansion with its original axis snapshot after global definitions change", async () => {

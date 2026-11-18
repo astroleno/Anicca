@@ -2281,6 +2281,12 @@ export function DialogueShell() {
             }
           }}
           emptyDraftLength={isEmptyWorkspace ? draft.trim().length : 0}
+          thinkingSpace={thinkingSpace}
+          onAimThinking={patch => {
+            const focus = Object.fromEntries(Object.entries({ ...thinkingSpace.focus, ...patch }).filter(([, value]) => value !== 0));
+            setThinkingSpace({ ...thinkingSpace, focus });
+            focusComposerSoon();
+          }}
           emptyAction={
             demoWorkspaceEnabled && isEmptyWorkspace
               ? {

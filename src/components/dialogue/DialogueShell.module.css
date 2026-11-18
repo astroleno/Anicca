@@ -4372,3 +4372,44 @@
 .seedReadingContent .seedInspector:not([data-mode="polarity"]) .seedActions { margin-top: 4px; }
 .seedReadingContent .seedInspector:not([data-mode="polarity"]) .seedActions button:not(:disabled) { color: var(--muted); }
 .seedReadingContent .seedInspector:not([data-mode="polarity"]) .seedActions button:is(:hover, :focus-visible) { color: var(--text); }
+
+/* Stage field: the laid-out thinking directions, drawn as light rather than as chart axes.
+   Resting, it is barely there; while a seed is carried it rises so the placement reads. */
+.stageField { position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: .5; transition: opacity 700ms ease; }
+.stageField[data-carrying="true"] { opacity: 1; }
+.stageField[data-hidden="true"] { opacity: 0; }
+.stageFieldAxis { position: absolute; left: 50%; top: 50%; pointer-events: none; }
+.stageFieldAxis[data-axis="x"] { width: 70%; height: 1px; transform: translate(-50%, -50%);
+  background: linear-gradient(90deg, transparent, rgba(110, 96, 140, .16) 30%, rgba(110, 96, 140, .16) 70%, transparent); }
+.stageFieldAxis[data-axis="y"] { width: 1px; height: 70%; transform: translate(-50%, -50%);
+  background: linear-gradient(180deg, transparent, rgba(110, 96, 140, .16) 30%, rgba(110, 96, 140, .16) 70%, transparent); }
+.stageFieldPole, .stageFieldRegion { position: absolute; min-width: 44px; min-height: 44px; padding: 10px 12px; border: 0; border-radius: 999px;
+  background: transparent; color: var(--muted); font: 12px/1.6 var(--anicca-font-interface); letter-spacing: .08em;
+  opacity: .55; pointer-events: auto; cursor: pointer; transition: opacity 260ms ease, color 260ms ease; }
+.stageField[data-hidden="true"] :is(.stageFieldPole, .stageFieldRegion) { pointer-events: none; }
+.stageFieldPole:hover, .stageFieldRegion:hover, .stageFieldPole:focus-visible, .stageFieldRegion:focus-visible,
+.stageFieldPole[aria-pressed="true"], .stageFieldRegion[aria-pressed="true"] { opacity: 1; color: var(--text); }
+.stageFieldPole:focus-visible, .stageFieldRegion:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.stageFieldPole[data-side="left"] { left: 3%; top: 50%; transform: translateY(-50%); }
+.stageFieldPole[data-side="right"] { right: 3%; top: 50%; transform: translateY(-50%); }
+.stageFieldPole[data-side="top"] { left: 50%; top: 13%; transform: translateX(-50%); }
+.stageFieldPole[data-side="bottom"] { left: 50%; bottom: 13%; transform: translateX(-50%); }
+.stageFieldRegion[data-self="-1"] { left: 6%; }
+.stageFieldRegion[data-self="1"] { right: 6%; }
+.stageFieldRegion[data-others="1"] { top: 15%; }
+.stageFieldRegion[data-others="-1"] { bottom: 15%; }
+/* An unexplored region breathes: a soft wash around its name, never a badge or a count. */
+.stageFieldRegion::before { content: ""; position: absolute; inset: -60px; z-index: -1; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(165, 140, 205, .2), transparent); opacity: 0; transition: opacity 600ms ease; }
+.stageFieldRegion[data-unexplored="true"]::before { animation: fieldBreath 5.6s ease-in-out infinite; }
+.stageFieldRegion[aria-pressed="true"]::before { opacity: .8; animation: none; }
+@keyframes fieldBreath { 0%, 100% { opacity: 0; } 50% { opacity: .9; } }
+@media (max-width: 640px) {
+  .stageFieldPole, .stageFieldRegion { font-size: 11px; padding: 10px 6px; }
+  .stageFieldRegion[data-others="-1"] { bottom: 24%; }
+  .stageFieldPole[data-side="bottom"] { bottom: 24%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stageFieldRegion[data-unexplored="true"]::before { animation: none; opacity: .5; }
+}
+.shell[data-theme="dark"] .stageFieldAxis[data-axis] { filter: invert(1) brightness(1.6); }
