@@ -2309,7 +2309,7 @@ export function DialogueShell() {
           <button type="button" onClick={() => { setExpandedResultId(null); useDialogueUiStore.getState().endStagePreview(); }}>收起来源</button>
         </div> : null}
         {!expandedResultId && !readingOpen && !hasPendingRequest && visibleExpansion ? <div className={styles.explorationContext}
-          role="region" aria-label="本轮展开" data-testid="dialogue-expansion-context" data-stage-label-chrome="top">
+          role="region" aria-label="本轮展开" data-testid="dialogue-expansion-context" data-stage-label-chrome="top" data-whisper="true">
           <span>{visibleExpansion.axis ? `沿「${visibleExpansion.axis.label}」展开` : "推演正反"}</span>
           <p>{visibleExpansion.axis ? `${visibleExpansion.axis.negative} ↔ ${visibleExpansion.axis.positive}` : "深化主张 ↔ 质疑前提"}
             {visibleExpansion.lens ? ` · ${visibleExpansion.lens}` : ""}</p>
@@ -2326,7 +2326,7 @@ export function DialogueShell() {
           <button className={styles.seedResultTrail} type="button" onClick={() => handleSelectNode(visibleExpansion.sourceId)}>回看起点</button>
         </div> : null}
         {!expandedResultId && !readingOpen && !hasPendingRequest && !visibleExpansion && view.currentNode?.branchType === "合" ? <div
-          className={styles.explorationContext} role="region" aria-label="本轮合流" data-testid="dialogue-synthesis-context" data-stage-label-chrome="top">
+          className={styles.explorationContext} role="region" aria-label="本轮合流" data-testid="dialogue-synthesis-context" data-stage-label-chrome="top" data-whisper="true">
           <span>合流 · {seedLabel(graphSnapshot.graph, view.currentNode.id)}</span>
           <p className={styles.synthesisInsight}>{readUnderstandingChange(graphSnapshot.graph.nodes[view.currentNode.id]?.meta?.change) || view.currentNode.summary || graphSnapshot.graph.nodes[view.currentNode.id]?.meta?.summary}</p>
           <button type="button" onClick={() => setReadingOpen(true)}>阅读合</button>

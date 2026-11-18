@@ -1051,7 +1051,6 @@ export function BubbleStage({
                   aria-hidden="true"
                 >
                   <strong>{pendingBranchNodes.axis?.negative || "正"}</strong>
-                  <small>正在生成</small>
                 </div>
                 <div
                   className={[styles.stagePendingGhost, styles.stagePendingAntithesis].join(" ")}
@@ -1067,11 +1066,7 @@ export function BubbleStage({
                   aria-hidden="true"
                 >
                   <strong>{pendingBranchNodes.axis?.positive || "反"}</strong>
-                  <small>正在生成</small>
                 </div>
-                <p className={styles.stagePendingCaption}>{pendingBranchNodes.axis
-                  ? `正在沿「${pendingBranchNodes.axis.label}」探索两端。`
-                  : "正在深化主张、质疑前提。"}</p>
               </div>
             ) : null}
             {pendingSynthesisMark ? (
@@ -1093,9 +1088,7 @@ export function BubbleStage({
                   aria-hidden="true"
                 >
                   <strong>合</strong>
-                  <small>合流中</small>
                 </div>
-                <p className={styles.stagePendingCaption}>正在收束「{pendingSynthesisMark.label}」。</p>
               </div>
             ) : null}
             {synthesisCandidateId ? (
@@ -1146,6 +1139,8 @@ export function BubbleStage({
               const pole = polarityLabel(node.polarity);
               const attended = node.id === focusNodeId || !attentionIds?.length || attentionIds.includes(node.id) || isDragging ||
                 node.id === attractionPartnerId || node.id === synthesisCandidateId;
+              // Aufhebung: once a 合 is in focus its sources stay, but step back a little.
+              const sublated = node.relation === "source" && !isDragging && node.id !== attractionPartnerId && node.id !== synthesisCandidateId;
               const label = node.kind === "user" && node.preview && node.preview.length > node.label.length && node.preview.startsWith(node.label)
                 ? `${node.label}…` : node.label;
               const origins = arrivalOrigins?.[node.id] || (node.id === arrivals?.firstId ? ["pending-thesis", arrivals.sourceId]
@@ -1190,7 +1185,8 @@ export function BubbleStage({
                   data-seed-instance={node.instanceNumber}
                   data-source-role={node.sourceRole}
                   data-seed-focus={attended ? "related" : "background"}
-                  data-seed-attention={reading ? attended ? .65 : .06 : attended ? 1 : .3}
+                  data-seed-attention={reading ? attended ? .65 : .06 : attended ? sublated ? .7 : 1 : .3}
+                  data-sublated={sublated ? "true" : undefined}
                   data-expansion-kind={pole ? "polarity" : node.branchType === "正" || node.branchType === "反" ? "dialectic" : undefined}
                   data-metaball-role={getMetaballRole(node)}
                   data-metaball-relation={node.relation}

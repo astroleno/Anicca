@@ -1236,7 +1236,9 @@ describe("BubbleStage", () => {
       />
     );
 
-    expect(screen.getByTestId("dialogue-stage-pending-branches")).toHaveTextContent("正在深化主张、质疑前提");
+    // Waiting is shown by the forming droplets alone; the composer carries the words.
+    expect(screen.getByTestId("dialogue-stage-pending-branches")).not.toHaveTextContent("正在");
+    expect(screen.getByTestId("dialogue-stage-pending-thesis")).toHaveTextContent("正");
     expect(screen.getByTestId("dialogue-stage-pending-branches").querySelector("svg")).toBeNull();
     expect(screen.getByTestId("dialogue-stage-pending-thesis")).toHaveAttribute(
       "data-metaball-role",
@@ -1313,7 +1315,7 @@ describe("BubbleStage", () => {
       />
     );
 
-    expect(screen.getByTestId("dialogue-stage-pending-synthesis")).toHaveTextContent("正在收束");
+    expect(screen.getByTestId("dialogue-stage-pending-synthesis")).toHaveTextContent(/^合$/);
     expect(screen.getByTestId("dialogue-stage-pending-synthesis").querySelector("svg")).toBeNull();
     expect(screen.getByTestId("dialogue-stage-pending-synthesis-node")).toHaveAttribute(
       "data-metaball-role",
@@ -1428,6 +1430,13 @@ describe("BubbleStage", () => {
       "source"
     );
     expect(screen.queryByTestId("dialogue-stage-relations")).not.toBeInTheDocument();
+    // Sources are preserved yet lifted: they stay present but step back behind the 合.
+    for (const id of ["thesis", "antithesis"]) {
+      expect(screen.getByTestId(`dialogue-stage-node-${id}`)).toHaveAttribute("data-sublated", "true");
+      expect(screen.getByTestId(`dialogue-stage-node-${id}`)).toHaveAttribute("data-seed-attention", "0.7");
+    }
+    expect(screen.getByTestId("dialogue-stage-node-synthesis")).not.toHaveAttribute("data-sublated");
+    expect(screen.getByTestId("dialogue-stage-node-synthesis")).toHaveAttribute("data-seed-attention", "1");
   });
 
   it("clamps default and dragged node positions away from the bottom edge", () => {

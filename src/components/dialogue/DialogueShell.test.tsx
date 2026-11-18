@@ -2605,7 +2605,7 @@ describe("DialogueShell", () => {
 
     expect(screen.queryByRole("button", { name: "合流中..." })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "合成中…" })).toBeDisabled();
-    expect(screen.getByTestId("dialogue-stage-pending-synthesis")).toHaveTextContent("继续 / 暂停");
+    expect(screen.getByTestId("dialogue-stage-pending-synthesis-node")).toHaveAttribute("data-liquid-color-key", "继续 / 暂停");
 
     fetchDeferred.resolve(
       new Response(
