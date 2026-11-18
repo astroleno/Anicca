@@ -21,7 +21,7 @@ env:
 jobs:
   quality:
     name: Lint, types, tests, build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - name: Check out repository
@@ -44,7 +44,7 @@ jobs:
 
   visual-dialogue:
     name: Production dialogue smoke (${{ matrix.group }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 35
     strategy:
       fail-fast: false
