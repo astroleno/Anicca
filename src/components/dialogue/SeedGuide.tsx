@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useCoarsePointer } from "./useCoarsePointer";
 import styles from "./DialogueShell.module.css";
 
@@ -24,13 +24,8 @@ type Props = {
 
 export function SeedGuide({ empty, requested, pending, suspended, reading, combining, completed, onStart }: Props) {
   const coarsePointer = useCoarsePointer();
+  // Guidance is never pushed: the stage teaches through touch, and help opens only on request from 更多.
   const [open, setOpen] = useState(false);
-  const initialized = useRef(false);
-  useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
-    try { if (!completed && localStorage.getItem(STORAGE_KEY) !== "done") setOpen(true); } catch { if (!completed) setOpen(true); }
-  }, [completed]);
   useEffect(() => { if (requested > 0) setOpen(true); }, [requested]);
   useEffect(() => {
     if (!completed) return;

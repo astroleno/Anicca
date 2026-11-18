@@ -13,7 +13,8 @@ it("distinguishes a continuation from a new thought, and freezes its target whil
   expect(screen.getByLabelText("续写对象")).toHaveTextContent("本次基于「身体识路」");
   expect(screen.getByRole("button", { name: "写新想法" })).toBeDisabled();
   view.rerender(<DialogueComposer {...props} target={{ nodeId: null, label: "新的想法", kind: "root", displayRole: "node" }} />);
-  expect(screen.getByLabelText("续写对象")).toHaveTextContent("独立的新想法");
+  // A fresh thought needs no caption: the placeholder already says what happens.
+  expect(screen.queryByLabelText("续写对象")).not.toBeInTheDocument();
   expect(screen.getByRole("textbox", { name: "输入" })).toHaveValue("补充");
 });
 

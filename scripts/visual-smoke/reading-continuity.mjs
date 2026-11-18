@@ -268,7 +268,7 @@ async function runOrdinaryReading(browser, { baseUrl, outputDir, setActivePage }
       await page.getByRole("button", { name: "继续写", exact: true }).click();
       assert(await panel.isVisible()); assert((await page.getByLabel("续写对象", { exact: true }).innerText()).includes("阅读参考"));
       await page.getByRole("button", { name: "写新想法", exact: true }).click();
-      assert(await panel.isVisible()); assert((await page.getByLabel("续写对象", { exact: true }).innerText()).includes("独立的新想法"));
+      assert(await panel.isVisible()); assert.equal(await page.getByLabel("续写对象", { exact: true }).count(), 0, "A fresh thought carries no caption");
       await page.getByRole("button", { name: "演化全景", exact: true }).click();
       const overview = page.getByTestId("evolution-overview");
       await page.waitForFunction(() => [...document.querySelectorAll("canvas")].some(canvas => canvas.dataset.visibleNodes === "4"));
@@ -285,7 +285,7 @@ async function runOrdinaryReading(browser, { baseUrl, outputDir, setActivePage }
       await page.screenshot({ path: path.join(outputDir, `four-node-overview-${spec.name}.png`) });
       await overview.getByRole("button", { name: "返回种子", exact: true }).click();
       assert(await panel.isVisible()); assert.equal(await input.inputValue(), draft);
-      assert((await page.getByLabel("续写对象", { exact: true }).innerText()).includes("独立的新想法"));
+      assert.equal(await page.getByLabel("续写对象", { exact: true }).count(), 0, "A fresh thought carries no caption");
       assert.deepEqual(errors, []); result.passed = true;
     } catch (error) {
       result.failure = String(error); await page.screenshot({ path: path.join(outputDir, `read-write-${spec.name}-failure.png`) }).catch(() => {}); throw error;

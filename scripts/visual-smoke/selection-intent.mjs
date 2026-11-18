@@ -23,11 +23,11 @@ async function fresh(baseUrl, mobile) {
   page.on("pageerror", error => errors.push(error.message));
   await page.goto(baseUrl, { waitUntil: "networkidle" });
   await page.waitForFunction(() => document.querySelector('[data-testid="dialogue-stage-track"]')?.dataset.metaballRenderer === "ready");
-  const hint = await page.getByLabel("探索提示", { exact: true }).innerText();
+  assert.equal(await page.getByLabel("探索提示", { exact: true }).count(), 0, "Guidance never opens on its own");
   const coarse = await page.evaluate(() => matchMedia("(pointer: coarse)").matches);
   const gestureHint = coarse ? "拖空白平移 · 拖球合成 · 双指转动与缩放" : "拖动空白，改变观察方向";
-  assert(hint.includes(gestureHint), "First-visit help describes the actual primary input");
-  await page.getByRole("button", { name: "关闭提示", exact: true }).click();
+  const hint = await page.evaluate(text => (document.body.textContent || "").includes(text) ? text : "", gestureHint);
+  assert(hint, "Assistive gesture text describes the actual primary input");
   await waitForSeedLayout(page);
   await page.getByTestId("dialogue-stage-node-root").locator("[data-seed-caption]").click();
   await page.locator('#dialogue-reading-drawer[data-open="true"]').waitFor();

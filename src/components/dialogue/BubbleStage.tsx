@@ -47,6 +47,8 @@ type BubbleStageProps = {
   onInteractionStart?: () => void;
   generationBusy?: boolean;
   generatingNodeId?: string | null;
+  /** Characters in the composer while the stage is empty; the first seed swells as the thought forms. */
+  emptyDraftLength?: number;
   emptyAction?: {
     label: string;
     onTrigger: () => void;
@@ -171,6 +173,7 @@ export function BubbleStage({
   generationBusy = false,
   generatingNodeId = null,
   emptyAction = null,
+  emptyDraftLength = 0,
   atmosphereVisible = false,
   rendererMode = "original",
   onRendererStatus,
@@ -923,7 +926,7 @@ export function BubbleStage({
     : null;
   const spaceControls = nodes.length > 0 && metaballRendererState !== "fallback" ? (
     <div className={styles.spaceControls}>
-      <span>{stageGestureHint(isCoarsePointer)}</span>
+      <span className={styles.screenReaderOnly}>{stageGestureHint(isCoarsePointer)}</span>
       <button type="button" onClick={resetView} disabled={!viewRotated} aria-label="复位三维视角">复位视角</button>
     </div>
   ) : null;
@@ -1118,9 +1121,14 @@ export function BubbleStage({
             ) : null}
             {!nodes.length && !pendingBranchNodes ? (
               <>
-                <button type="button" className={styles.emptyStagePrompt}
+                <button type="button" className={styles.emptySeed}
                   aria-label="点此输入一个想法" data-testid="dialogue-empty-stage-hint"
-                  onClick={() => onPrimaryAction?.(null)}>{emptyStageHint}</button>
+                  data-forming={emptyDraftLength > 0 ? "true" : undefined}
+                  style={{ "--draft": Math.min(1, emptyDraftLength / 48).toFixed(3) } as CSSProperties}
+                  onClick={() => onPrimaryAction?.(null)}>
+                  <span className={styles.emptySeedBody} aria-hidden="true" />
+                  <span className={styles.screenReaderOnly}>{emptyStageHint}</span>
+                </button>
                 {emptyAction ? (
                   <button
                     type="button"

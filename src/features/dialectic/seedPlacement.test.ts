@@ -49,3 +49,16 @@ it("keeps compact clusters separated and preserves saved layouts when the scene 
     expect(placeSeeds(arrangeSeedScene([...nodes].reverse()), positions, true)).toEqual(positions);
   }
 });
+
+it("lets a synthesis grow just below the pair it came from", () => {
+  const seed = (id: string, originNodeIds?: string[]) => ({ id, originNodeIds } as unknown as DialogueStageNode);
+  const pair = arrangeSeedScene([seed("root"), seed("thesis", ["root"]), seed("antithesis", ["root"])]);
+  for (const compact of [false, true]) {
+    const saved = placeSeeds(pair, {}, compact);
+    const placed = placeSeeds([...pair, seed("synthesis", ["thesis", "antithesis"])], saved, compact);
+    const midX = (saved.thesis.x + saved.antithesis.x) / 2, midY = (saved.thesis.y + saved.antithesis.y) / 2;
+    expect(placed.synthesis.y).toBeGreaterThan(midY);
+    expect(Math.abs(placed.synthesis.x - midX)).toBeLessThan(10);
+    expect(placed.thesis).toEqual(saved.thesis);
+  }
+});

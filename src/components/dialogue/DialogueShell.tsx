@@ -2280,6 +2280,7 @@ export function DialogueShell() {
               focusComposerSoon();
             }
           }}
+          emptyDraftLength={isEmptyWorkspace ? draft.trim().length : 0}
           emptyAction={
             demoWorkspaceEnabled && isEmptyWorkspace
               ? {

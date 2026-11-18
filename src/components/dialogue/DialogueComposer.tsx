@@ -86,7 +86,7 @@ export function DialogueComposer({
       data-testid="dialogue-composer" aria-busy={Boolean(pendingAction)}
       data-perspective={perspectiveLabel ? "true" : undefined}
       onSubmit={(event) => { event.preventDefault(); onSubmit(); }}>
-      {connectionTarget || target.nodeId || pendingAction === "synthesis" || !isEmptyStart || perspectiveLabel ? (
+      {connectionTarget || target.nodeId || pendingAction === "synthesis" || inquiryTarget || perspectiveLabel ? (
         <div className={styles.seedComposerTarget} aria-live="polite" aria-label={perspectiveLabel ? "生成视角与续写对象" : "续写对象"}>
           <span title={perspectiveLabel ? `从「${perspectiveLabel}」看${target.nodeId ? ` · ${target.label}` : ""}` : pendingAction === "synthesis" ? target.label : target.nodeId ? target.label : "独立的新想法"}>
             {inquiryTarget ? inline ? inquiryLabel(inquiryTarget.intent) : `${inquiryLabel(inquiryTarget.intent)} · ${target.label}` : connectionTarget ? `补充联系：${connectionTarget}` : perspectiveLabel ? `从「${perspectiveLabel}」看${target.nodeId ? ` · ${target.label}` : ""}`

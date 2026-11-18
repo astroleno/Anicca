@@ -33,7 +33,7 @@ it("matches the stage's primary input capability and updates when that capabilit
     removeEventListener: (_: string, listener: () => void) => listeners.delete(listener) };
   vi.stubGlobal("matchMedia", vi.fn(() => media));
   try {
-    const view = render(<SeedGuide {...initial} empty={false} />);
+    const view = render(<SeedGuide {...initial} empty={false} requested={1} />);
     expect(screen.getByText("点一颗读读；长按液滴后拖动合成")).toBeInTheDocument();
     act(() => { media.matches = false; listeners.forEach(listener => listener()); });
     expect(screen.getByText("点一颗读读；双击推演正反")).toBeInTheDocument();
@@ -61,16 +61,18 @@ it("remains dismissible when browser storage is unavailable", () => {
   } finally { get.mockRestore(); set.mockRestore(); }
 });
 const props = { empty: false, requested: 0, pending: false, reading: false, combining: false, completed: false, onStart: vi.fn() };
-it("temporarily yields to a result context without marking the first-visit guide dismissed", () => {
+it("never opens on its own, and a requested guide yields to a result context without being dismissed", () => {
   const view = render(<SeedGuide {...props} />);
+  expect(screen.queryByLabelText("探索提示")).not.toBeInTheDocument();
+  view.rerender(<SeedGuide {...props} requested={1} />);
   expect(screen.getByLabelText("探索提示")).toBeInTheDocument();
-  view.rerender(<SeedGuide {...props} suspended />);
+  view.rerender(<SeedGuide {...props} requested={1} suspended />);
   expect(screen.queryByLabelText("探索提示")).not.toBeInTheDocument();
   expect(localStorage.getItem("anicca:seed-guide:v1")).toBeNull();
-  view.rerender(<SeedGuide {...props} />);
+  view.rerender(<SeedGuide {...props} requested={1} />);
   expect(screen.getByLabelText("探索提示")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "关闭提示" }));
-  view.rerender(<SeedGuide {...props} suspended />); view.rerender(<SeedGuide {...props} />);
+  view.rerender(<SeedGuide {...props} requested={1} suspended />); view.rerender(<SeedGuide {...props} requested={1} />);
   expect(screen.queryByLabelText("探索提示")).not.toBeInTheDocument();
   expect(localStorage.getItem("anicca:seed-guide:v1")).toBe("done");
 });

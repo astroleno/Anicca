@@ -42,14 +42,20 @@ export function placeSeeds(nodes: DialogueStageNode[], saved: Record<string, Sta
     const fallback = { x: compact ? node.compactSeedX ?? node.seedX : node.seedX,
       y: compact ? node.compactSeedY ?? node.seedY : node.seedY, ...(node.seedZ !== undefined ? { z: node.seedZ } : {}) };
     const origins = (node.originNodeIds || []).flatMap(id => result[id] ? [result[id]] : []);
-    const center = origins.length && !node.spatialCoordinates ? {
+    const midpoint = origins.length ? {
       x: origins.reduce((sum, point) => sum + point.x, 0) / origins.length,
       y: origins.reduce((sum, point) => sum + point.y, 0) / origins.length
-    } : fallback;
+    } : null;
+    // A synthesis grows out of its sources: aim just below their midpoint so 正 · 反 → 合 reads downward.
+    const converges = origins.length >= 2 && !node.spatialCoordinates;
+    const center = midpoint && !node.spatialCoordinates
+      ? converges ? { x: midpoint.x, y: Math.min(84, midpoint.y + (compact ? 14 : 16)) } : midpoint
+      : fallback;
+    const reach = (point: StagePoint) => distance(point, center) + (converges && midpoint && point.y < midpoint.y ? 40 : 0);
     let position = fallback;
     const minimumClearance = compact ? 22 : 29;
     if (!initial || node.spatialCoordinates || (hasSpatialSeeds && occupied.some(other => distance(fallback, other) < minimumClearance))) {
-      let candidates: StagePoint[] = [fallback];
+      let candidates: StagePoint[] = converges ? [center, fallback] : [fallback];
       for (let row = 0; row < 7; row++) {
         for (let column = 0; column < 9; column++) candidates.push({
           x: 18 + column * 7.5 + (row % 2 ? 3 : 0),
@@ -63,9 +69,10 @@ export function placeSeeds(nodes: DialogueStageNode[], saved: Record<string, Sta
         if (matching.length) candidates = matching;
       }
       const clearance = (point: StagePoint) => Math.min(100, ...occupied.map(other => distance(point, other)));
-      const free = candidates.filter(point => clearance(point) >= minimumClearance);
+      // A synthesis may sit a little closer: nearness to both sources is part of its meaning.
+      const free = candidates.filter(point => clearance(point) >= minimumClearance * (converges ? .85 : 1));
       // Prefer a nearby open position; in a dense scene use the least crowded one.
-      position = (free.length ? free.sort((a, b) => distance(a, center) - distance(b, center))
+      position = (free.length ? free.sort((a, b) => reach(a) - reach(b))
         : candidates.sort((a, b) => clearance(b) - clearance(a)))[0];
     }
     result[node.id] = { ...position, ...(node.seedZ !== undefined ? { z: node.seedZ } : {}) };

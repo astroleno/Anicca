@@ -54,7 +54,7 @@ it("opens polarity directly from a stage request and returns to peer primary ope
   expect(screen.getByRole("heading", { name: "沿极性展开" })).toHaveFocus();
   fireEvent.keyDown(screen.getByRole("heading", { name: "沿极性展开" }), { key: "Escape" });
   const primary = screen.getByRole("group", { name: "种子基本操作" });
-  expect(within(primary).getAllByRole("button").map(button => button.textContent)).toEqual(["推演正反", "沿极性展开", "组合"]);
+  expect(within(primary).getAllByRole("button").map(button => button.textContent)).toEqual(["推演正反", "组合", "沿极性展开"]);
   expect(screen.getByRole("button", { name: "沿极性展开" })).toHaveFocus();
   fireEvent.click(within(primary).getByRole("button", { name: "组合" }));
   expect(onCombine).toHaveBeenCalledOnce();
