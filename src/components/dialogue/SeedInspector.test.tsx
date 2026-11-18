@@ -60,6 +60,15 @@ it("opens polarity directly from a stage request and returns to peer primary ope
   expect(onCombine).toHaveBeenCalledOnce();
 });
 
+it("lets the passage be read before the ways to continue it", () => {
+  const store = new BranchGraphStore(), id = store.createUserNode("共同维护花园");
+  render(<SeedInspector graph={store.getGraph()} nodeId={id} combining={false} busy={false}
+    onClose={vi.fn()} onWrite={vi.fn()} onCombine={vi.fn()} onPick={vi.fn()} onSplit={vi.fn()} onExpandPolarity={vi.fn()} />);
+  const passage = screen.getByText("共同维护花园", { selector: "[data-seed-passage] *" });
+  const actions = screen.getByRole("group", { name: "种子基本操作" });
+  expect(passage.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+});
+
 it("distinguishes ordinary fission from axis expansion and leaves the global lens untouched", () => {
   const store = new BranchGraphStore(), id = store.createUserNode("让探索持续下去");
   const space = defaultThinkingSpace(); space.focus.horizon = 1;

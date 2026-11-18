@@ -95,6 +95,15 @@ describe("evolution overview", () => {
     fireEvent.click(screen.getByRole("button", { name: "进入种子" })); expect(onEnter).toHaveBeenCalledWith(f.synthesis);
   });
 
+  it("names where a seed grew from, and says its change only once", () => {
+    const f = evolutionFixture(), node = f.graph.nodes[f.synthesis];
+    const said = "把两端都放进一周实验里检验。";
+    const graph = { ...f.graph, nodes: { ...f.graph.nodes, [f.synthesis]: { ...node, meta: { ...node.meta, summary: said, change: said } } } };
+    render(<EvolutionOverview graph={graph} initialNodeId={f.synthesis} theme="light" onEnter={() => {}} onDismiss={() => {}} />);
+    expect(screen.getAllByText(said)).toHaveLength(1);
+    expect(screen.queryByText("从这里生长")).not.toBeInTheDocument();
+  });
+
   it("searches a saved polarity and filters it separately from ordinary fission", () => {
     const f = evolutionFixture();
     render(<EvolutionOverview graph={f.graph} initialNodeId={f.synthesis} theme="light" onEnter={() => {}} onDismiss={() => {}} />);

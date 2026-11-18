@@ -234,11 +234,13 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
           </details> : null}
           <UnderstandingChange compact node={node} graph={graph} onPick={onPick}
             onReframe={onExpandPolarity && !busy && !selecting ? () => { if (inspectorRef.current) readingPositionRef.current = captureReadingPosition(inspectorRef.current); setPolarityOpen(true); } : undefined} />
-          {!selecting ? expansionControls : null}
+          {/* Choosing a polarity frames the passage, so the picker leads; otherwise the passage is read first. */}
+          {!selecting && polarityOpen ? expansionControls : null}
           <SeedPassage key={node.id} nodeId={node.id} text={node.text || "这颗种子还没有正文。"} className={styles.seedBody}
             busy={busy} onInquiry={!polarityOpen && node.text?.trim() ? onInquiry : undefined}
             inquiryTarget={inquiryTarget} inquiryComposer={inquiryComposer} onSelectionChange={setSelectionActive}
             showEntry={false} selectionRequest={selectionRequest} onChoosingChange={setChoosingSentence} />
+          {!selecting && !polarityOpen ? expansionControls : null}
           {node.meta?.connectionInput ? <details className={styles.seedPerspective} data-seed-meaning><summary>这次补充的联系</summary><p>{node.meta.connectionInput}</p></details> : null}
           {encounters.length ? <details className={styles.seedPerspective} data-seed-meaning><summary>暂存的相遇 · {encounters.length}</summary>
             {encounters.map(encounter => <DeferredEncounter key={encounter.id} encounter={encounter} graph={graph} busy={busy} onPick={onPick}

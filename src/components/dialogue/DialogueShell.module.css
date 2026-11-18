@@ -4366,3 +4366,9 @@
 /* Sources of a 合 are kept, not erased: their captions settle back with the droplets. */
 .stageNode[data-sublated="true"] [data-seed-caption] { opacity: .62; transition: opacity 900ms ease; }
 .stageNode[data-sublated="true"]:is(:hover, :focus-visible) [data-seed-caption] { opacity: 1; }
+/* Read first, then continue: one breath after the passage, the ways forward sit together;
+   the quieter bookkeeping (分身 · 继续写) follows them closely in a softer voice. */
+.seedInspector:not([data-mode="polarity"]) .seedBody + .seedContinuation { margin: 28px 0 0; }
+.seedReadingContent .seedInspector:not([data-mode="polarity"]) .seedActions { margin-top: 4px; }
+.seedReadingContent .seedInspector:not([data-mode="polarity"]) .seedActions button:not(:disabled) { color: var(--muted); }
+.seedReadingContent .seedInspector:not([data-mode="polarity"]) .seedActions button:is(:hover, :focus-visible) { color: var(--text); }

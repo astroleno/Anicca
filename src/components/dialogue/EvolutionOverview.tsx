@@ -8,6 +8,7 @@ import { semanticSeedColor, seedColorPolarity } from "./liquid/color";
 import styles from "./EvolutionOverview.module.css";
 import { layoutEvolutionLabels, type EvolutionLabelBox } from "./evolutionLabels";
 import { UnderstandingChange } from "./SeedMeaning";
+import { readUnderstandingChange } from "@/features/dialectic/meaning";
 import { clusterEvolutionNodes } from "./evolutionClustering";
 
 type Props = { graph: Graph; initialNodeId: string | null; theme: "light" | "dark"; returnFocus?: HTMLElement | null; onEnter(id: string): void; onDismiss(): void };
@@ -389,8 +390,9 @@ export function EvolutionOverview({ graph, initialNodeId, theme, returnFocus, on
           <UnderstandingChange node={graph.nodes[active.id]} graph={graph} onPick={choose} />
           {active.source.inquiry ? <p className={styles.lens}>围绕原句 · {active.source.inquiry.quote}</p> : null}
           {active.lens ? <p className={styles.lens}>当时的思考角度 · {active.lens}</p> : null}
-          <p className={styles.summary}>{active.summary}</p>
-          {active.parents.length ? <div className={styles.sources}><span>{active.kind === "synthesis" ? "共同来源" : "从这里生长"}</span>{active.parents.map(id => <button key={id} type="button" onClick={() => choose(id)}>{model.byId.get(id)?.label}</button>)}</div> : null}
+          {active.summary && active.summary !== readUnderstandingChange(graph.nodes[active.id]?.meta?.change)
+            ? <p className={styles.summary}>{active.summary}</p> : null}
+          {active.parents.length ? <div className={styles.sources}><span>{active.kind === "synthesis" ? "共同来源" : "生长自"}</span>{active.parents.map(id => <button key={id} type="button" onClick={() => choose(id)}>{model.byId.get(id)?.label}</button>)}</div> : null}
           {active.cyclic ? <p>这条来路有循环，请先在来源中梳理关系。</p> : null}
         </article> : <p>种下一个想法，便能看见它的来路。</p>}
       </aside>
