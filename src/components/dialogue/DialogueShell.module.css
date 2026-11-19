@@ -4435,3 +4435,5 @@
   .seedReadingContent .seedInspector { animation: readingArriveReduced 160ms ease both; }
   @keyframes readingArriveReduced { from { opacity: 0; } to { opacity: 1; } }
 }
+/* Without the liquid renderer the main drop is a plain disc; keep it a ground for the text, not an object. */
+.stageTrack[data-metaball-renderer="fallback"] .stageNode[data-reading-role="main"] { box-shadow: none; opacity: .55; }
