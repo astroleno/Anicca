@@ -97,7 +97,12 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
     };
     const openSeed = async id => {
       await closeReading(); await waitForSeedLayout(page);
-      await activate(page.getByTestId(`dialogue-stage-node-${id}`).locator("[data-seed-caption]"));
+      const caption = page.getByTestId(`dialogue-stage-node-${id}`).locator("[data-seed-caption]");
+      await activate(caption);
+      // On a slow software renderer a caption can still be gliding into place; tap it again once it rests.
+      if (!await panel.waitFor({ timeout: 8_000 }).then(() => true, () => false)) {
+        await waitForSeedLayout(page); await activate(caption);
+      }
       await panel.waitFor();
       await page.waitForFunction(() => getComputedStyle(document.getElementById("dialogue-reading-drawer")).opacity === "1");
     };
