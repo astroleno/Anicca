@@ -745,8 +745,22 @@ describe("DialogueShell", () => {
     expect(screen.getByTestId(`dialogue-stage-node-${pair.positiveId}`)).toBeInTheDocument();
     fireEvent.click(screen.getByTestId(`dialogue-stage-node-${copies[0]}`));
     await screen.findByRole("button", { name: "推演正反" });
-    expect(screen.getByTestId(`dialogue-stage-node-${copies[0]}`)).toHaveAttribute("data-seed-attention", "0.65");
+    expect(screen.getByTestId(`dialogue-stage-node-${copies[0]}`)).toHaveAttribute("data-reading-role", "main");
     expect(screen.getByTestId(`dialogue-stage-node-${pair.positiveId}`)).toBeInTheDocument();
+  });
+
+  it("reads a neighbouring thought by choosing its satellite, without leaving reading", async () => {
+    const user = userEvent.setup(), { rootUserId, thesisId, antithesisId } = seedPair();
+    useDialogueUiStore.setState({ focusedNodeId: rootUserId });
+    render(<DialogueShell />);
+    await openReadingDrawer(user);
+    expect(screen.getByTestId(`dialogue-stage-node-${rootUserId}`)).toHaveAttribute("data-reading-role", "main");
+    expect(screen.getByTestId(`dialogue-stage-node-${antithesisId}`)).toHaveAttribute("data-reading-role", "satellite");
+    await user.click(screen.getByRole("button", { name: "读「继续」" }));
+    await waitFor(() => expect(screen.getByTestId(`dialogue-stage-node-${thesisId}`)).toHaveAttribute("data-reading-role", "main"));
+    expect(document.getElementById("dialogue-reading-drawer")).toHaveAttribute("data-open", "true");
+    expect(screen.getByRole("heading", { level: 2, name: "继续" })).toBeInTheDocument();
+    expect(screen.getByTestId(`dialogue-stage-node-${rootUserId}`)).toHaveAttribute("data-reading-role", "satellite");
   });
 
   it("keeps reading and its focus when thinking-space settings are opened and closed", async () => {
@@ -759,7 +773,11 @@ describe("DialogueShell", () => {
     await user.click(within(dialog).getByRole("button", { name: "群体" }));
     await user.click(within(dialog).getByRole("button", { name: "关闭思考空间" }));
     expect(document.getElementById("dialogue-reading-drawer")).toHaveAttribute("data-open", "true");
-    expect(screen.getByTestId("dialogue-stage-track").inert).toBe(true);
+    // Behind the text only the satellites stay reachable; the stage itself leaves the tab order.
+    const track = screen.getByTestId("dialogue-stage-track");
+    expect(track).toHaveAttribute("data-reading-orbit", "true");
+    expect(track).toHaveAttribute("tabindex", "-1");
+    expect(screen.getByTestId(`dialogue-stage-node-${rootUserId}`).inert).toBe(true);
     expect(screen.getByRole("button", { name: "换个角度" })).toHaveFocus();
   });
 

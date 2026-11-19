@@ -262,9 +262,14 @@ async function runOrdinaryReading(browser, { baseUrl, outputDir, setActivePage }
       })));
       const before = await centers();
       await page.getByTestId("dialogue-stage-node-negative").press("Enter"); await panel.waitFor(); await waitForSeedLayout(page);
+      // Reading gathers the stage into one main drop with satellites, then gives every seed back its place.
+      result.readingRoles = await page.locator("[data-reading-role]").evaluateAll(nodes => nodes.map(node => node.dataset.readingRole));
+      assert(result.readingRoles.includes("main") && result.readingRoles.includes("satellite"), `Reading orbits the read seed: ${result.readingRoles}`);
+      await back.press("Escape"); await panel.waitFor({ state: "hidden" }); await waitForSeedLayout(page);
       const after = await centers();
       result.maxStageShift = Math.max(...Object.keys(before).map(id => Math.hypot(before[id].x - after[id].x, before[id].y - after[id].y)));
-      assert(result.maxStageShift < 4, `Reading preserves the stage: ${result.maxStageShift}`);
+      assert(result.maxStageShift < 4, `Closing reading restores the stage: ${result.maxStageShift}`);
+      await page.getByTestId("dialogue-stage-node-negative").press("Enter"); await panel.waitFor(); await waitForSeedLayout(page);
       await page.getByRole("button", { name: "继续写", exact: true }).click();
       assert(await panel.isVisible()); assert((await page.getByLabel("续写对象", { exact: true }).innerText()).includes("阅读参考"));
       await page.getByRole("button", { name: "写新想法", exact: true }).click();

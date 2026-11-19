@@ -4413,3 +4413,25 @@
   .stageFieldRegion[data-unexplored="true"]::before { animation: none; opacity: .5; }
 }
 .shell[data-theme="dark"] .stageFieldAxis[data-axis] { filter: invert(1) brightness(1.6); }
+
+/* Reading orbit: the read seed becomes the main drop behind the text; its relations orbit as satellites.
+   Positions and sizes change at once in the DOM; the liquid springs carry the exchange. */
+.stageNode[data-reading-role="main"] { --seed-diameter: min(440px, 44vw); cursor: default; }
+.stageNode[data-reading-role="satellite"] { --seed-diameter: 64px; cursor: pointer; }
+.stageNode[data-reading-role="rest"] { --seed-diameter: 20px; }
+.shell[data-reading="true"] .stageCanvas:has([data-reading-orbit="true"]) { opacity: .5; }
+.shell[data-reading="true"] .stageNode[data-reading-role="satellite"] .stageNodeInner { opacity: .64; width: 104px; }
+.shell[data-reading="true"] .stageNode[data-reading-role="satellite"]:is(:hover, :focus-visible) .stageNodeInner { opacity: 1; }
+.stageNode[data-reading-role="satellite"] .stageNodeInner strong { font-size: 12px; }
+.stageNode[data-reading-role="satellite"] .stageNodeInner small { font-size: 11px; }
+.seedReadingContent .seedInspector { animation: readingArrive 300ms 140ms cubic-bezier(.22, 1, .36, 1) both; }
+@keyframes readingArrive { from { opacity: 0; filter: blur(6px); } to { opacity: 1; filter: none; } }
+@media (max-width: 760px) {
+  .stageNode[data-reading-role="main"] { --seed-diameter: min(300px, 76vw); }
+  .stageNode[data-reading-role="satellite"] { --seed-diameter: 46px; }
+  .shell[data-reading="true"] .stageNode[data-reading-role="satellite"] .stageNodeInner { width: 76px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .seedReadingContent .seedInspector { animation: readingArriveReduced 160ms ease both; }
+  @keyframes readingArriveReduced { from { opacity: 0; } to { opacity: 1; } }
+}

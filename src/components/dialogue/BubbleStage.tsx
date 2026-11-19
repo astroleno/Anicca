@@ -4,7 +4,7 @@ import { seedColorPolarity } from "./liquid/color";
 import { polarityLabel } from "@/features/perspectives/polarity";
 import type { ThinkingAxis } from "@/features/perspectives/model";
 
-import { PointerEvent as ReactPointerEvent, useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
+import { PointerEvent as ReactPointerEvent, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useDialogueUiStore } from "@/features/dialectic/store";
 import { findSynthesisGestureCandidate } from "@/features/dialectic/gestures";
 import { LIQUID_DWELL_MS } from "@/features/dialectic/liquidInteraction";
@@ -20,6 +20,7 @@ import type { DialogueMetaballRendererState } from "./DialogueMetaballLayer";
 import type { LiquidRendererMode, LiquidRendererStatus } from "./liquid/preference";
 import styles from "./DialogueShell.module.css";
 import { StageField } from "./StageField";
+import { arrangeReadingOrbit } from "./readingOrbit";
 import type { ThinkingSpace } from "@/features/perspectives/model";
 import type { MetaballRole } from "./metaball/model";
 import { layoutSeedLabels, seedLabelLeader } from "./labelLayout";
@@ -115,6 +116,9 @@ const NODE_MAX_X_PERCENT = 88;
 const NODE_MIN_Y_PERCENT = 12;
 const NODE_MAX_Y_PERCENT = 84;
 const GROWTH_NODE_MAX_Y_PERCENT = 90;
+/** Below this stage width the text column leaves no gutters, so satellites gather above it. */
+const READING_ORBIT_SIDES_MIN_WIDTH = 760;
+const READING_ORBIT_ATTENTION = { main: .5, satellite: .85, rest: .04 } as const;
 
 const RELATION_LABELS: Record<DialogueStageNode["relation"], string> = {
   focus: "当前焦点",
@@ -331,10 +335,17 @@ export function BubbleStage({
     );
   };
 
+  // Reading gives the stage one main drop behind the text, with its relations as satellites.
+  const orbitLayout = labelGeometry.width >= READING_ORBIT_SIDES_MIN_WIDTH ? "sides" : "row";
+  const readingOrbit = useMemo(() => reading && !suspended ? arrangeReadingOrbit(nodes, focusNodeId, orbitLayout) : null,
+    [reading, suspended, nodes, focusNodeId, orbitLayout]);
+
   const positionedNodes = useMemo(() => nodes.map((node) => {
     const defaultPosition = usesCompactGrowthLayout && node.compactSeedX !== undefined && node.compactSeedY !== undefined
       ? { x: node.compactSeedX, y: node.compactSeedY }
       : { x: node.seedX, y: node.seedY };
+    const orbitPlace = readingOrbit?.[node.id];
+    if (orbitPlace?.x !== undefined && orbitPlace.y !== undefined) return { node, position: { x: orbitPlace.x, y: orbitPlace.y, z: 0 } };
     return {
       node,
       position: clampNodePosition(
@@ -342,7 +353,18 @@ export function BubbleStage({
         node.isGrowthPerspective ? GROWTH_NODE_MAX_Y_PERCENT : NODE_MAX_Y_PERCENT
       )
     };
-  }), [nodes, placements, stageLayoutMode, usesCompactGrowthLayout]);
+  }), [nodes, placements, stageLayoutMode, usesCompactGrowthLayout, readingOrbit]);
+
+  useLayoutEffect(() => {
+    const track = trackRef.current;
+    if (!readingOrbit || !track) return;
+    // Only the satellites stay reachable; everything else behind the text rests.
+    const resting = Array.from(track.children).filter((child): child is HTMLElement =>
+      child instanceof HTMLElement && child.dataset.readingRole !== "satellite");
+    const previous = resting.map(element => element.inert);
+    for (const element of resting) element.inert = true;
+    return () => resting.forEach((element, index) => { element.inert = previous[index]; });
+  }, [readingOrbit, positionedNodes]);
 
   const measureLabels = useCallback(() => {
     const viewport = viewportRef.current;
@@ -817,7 +839,7 @@ export function BubbleStage({
   ]);
 
   const handleStagePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (suspended || gesture || touchNavigation.blocksSinglePointer() || !canPanStage || metaballRendererState === "fallback" || event.button !== 0 || (event.target !== event.currentTarget && event.target !== trackRef.current)) {
+    if (readingOrbit || suspended || gesture || touchNavigation.blocksSinglePointer() || !canPanStage || metaballRendererState === "fallback" || event.button !== 0 || (event.target !== event.currentTarget && event.target !== trackRef.current)) {
       return;
     }
     event.preventDefault();
@@ -847,6 +869,8 @@ export function BubbleStage({
     if (suspended || gesture || touchNavigation.blocksSinglePointer()) return;
     suppressDragClickRef.current = false;
     pointerTypeRef.current = event.pointerType;
+    // A satellite is chosen, never carried, while reading.
+    if (readingOrbit) return;
     if (event.button !== 0) {
       return;
     }
@@ -885,6 +909,10 @@ export function BubbleStage({
     if (clickTimerRef.current !== null) window.clearTimeout(clickTimerRef.current);
     if (detail > 1) return;
     const select = () => { actionsRef.current.onSelect(node.id); actionsRef.current.onPrimaryAction?.(node.id); };
+    if (readingOrbit) {
+      if (readingOrbit[node.id]?.role === "satellite") select();
+      return;
+    }
     if (onSplit && detail > 0 && pointerTypeRef.current !== "touch") {
       onSelectionPending?.();
       clickTimerRef.current = window.setTimeout(select, 260);
@@ -1002,7 +1030,7 @@ export function BubbleStage({
                 "--liquid-dwell-duration": `${LIQUID_DWELL_MS}ms`
               } as CSSProperties
             }
-            tabIndex={nodes.length ? 0 : undefined}
+            tabIndex={nodes.length ? readingOrbit ? -1 : 0 : undefined}
             aria-label={nodes.length ? "三维种子舞台：单指拖空白平移，拖动球体合成；双指或方向键转动视角，双指开合缩放，Home 复位" : undefined}
             onKeyDown={event => {
               if (event.key === "Enter" || event.key === " ") suppressDragClickRef.current = false;
@@ -1020,6 +1048,7 @@ export function BubbleStage({
               setViewRotated(true);
             }}
             data-testid="dialogue-stage-track"
+            data-reading-orbit={readingOrbit ? "true" : undefined}
             data-metaball-renderer={metaballRendererState}
           >
             {thinkingSpace && onAimThinking && nodes.length ? <StageField space={thinkingSpace} nodes={nodes}
@@ -1158,6 +1187,7 @@ export function BubbleStage({
                 : node.id === arrivals?.secondId ? ["pending-antithesis", arrivals.sourceId]
                   : node.id === eventNodeId ? ["pending-synthesis", ...nodes.filter(source => source.sourceRole === "source").map(source => source.id), ...(node.originNodeIds || [])]
                     : node.originNodeIds);
+              const orbitRole = readingOrbit?.[node.id]?.role;
               const size = labelGeometry.labels[node.id];
               const leader = metaballRendererState !== "ready" && size ? seedLabelLeader({ id: node.id, ...size,
                 x: position.x * labelGeometry.width / 100, y: position.y * labelGeometry.height / 100 + size.anchorOffsetY },
@@ -1196,7 +1226,9 @@ export function BubbleStage({
                   data-seed-instance={node.instanceNumber}
                   data-source-role={node.sourceRole}
                   data-seed-focus={attended ? "related" : "background"}
-                  data-seed-attention={reading ? attended ? .65 : .06 : attended ? sublated ? .7 : 1 : .3}
+                  data-seed-attention={orbitRole ? READING_ORBIT_ATTENTION[orbitRole] : reading ? attended ? .65 : .06 : attended ? sublated ? .7 : 1 : .3}
+                  data-reading-role={orbitRole}
+                  data-preserve-seed-reading={orbitRole === "satellite" ? "true" : undefined}
                   data-sublated={sublated ? "true" : undefined}
                   data-expansion-kind={pole ? "polarity" : node.branchType === "正" || node.branchType === "反" ? "dialectic" : undefined}
                   data-metaball-role={getMetaballRole(node)}
@@ -1210,7 +1242,7 @@ export function BubbleStage({
                     (pendingPreview?.kind === "synthesis" && (pendingPreview.thesisId === node.id || pendingPreview.antithesisId === node.id)) ? "true" : undefined}
                   data-liquid-pending={node.id === generatingNodeId || node.conceptId === generatingNodeId || (pendingPreview?.kind === "synthesis" &&
                     (node.id === pendingPreview.thesisId || node.id === pendingPreview.antithesisId)) ? "true" : undefined}
-                  aria-label={buildStageNodeAriaLabel(node, label)}
+                  aria-label={orbitRole === "satellite" ? `读「${label}」` : buildStageNodeAriaLabel(node, label)}
                   aria-describedby={`${descriptionPrefix}-${node.id}`}
                   style={
                     {
@@ -1225,7 +1257,7 @@ export function BubbleStage({
                   onClick={(event) => handleNodeClick(node, event.detail)}
                   onDoubleClick={() => {
                     if (clickTimerRef.current !== null) window.clearTimeout(clickTimerRef.current);
-                    if (pointerTypeRef.current === "touch" || generationBusy || performance.now() < suppressClickUntilRef.current) return;
+                    if (readingOrbit || pointerTypeRef.current === "touch" || generationBusy || performance.now() < suppressClickUntilRef.current) return;
                     onSplit?.(node.id);
                   }}
                   onPointerDown={(event) => handleNodePointerDown(event, node)}

@@ -323,6 +323,28 @@ describe("BubbleStage", () => {
     fireEvent.pointerCancel(window, { pointerId: 1 });
   });
 
+  it("while reading, a satellite is read at once and the main drop rests behind the text", () => {
+    const read = vi.fn(), split = vi.fn(), interact = vi.fn();
+    render(<BubbleStage layoutKey="orbit" reading focusNodeId="root" onSelect={read} onSplit={split} onInteractionStart={interact} nodes={[
+      { id: "root", label: "想法", kind: "user", relation: "focus", seedX: 50, seedY: 30 },
+      { id: "thesis", label: "继续", kind: "assistant", branchType: "正", relation: "child", seedX: 30, seedY: 60 },
+      { id: "antithesis", label: "暂停", kind: "assistant", branchType: "反", relation: "child", seedX: 70, seedY: 60 }
+    ]} />);
+    const main = screen.getByTestId("dialogue-stage-node-root");
+    expect(main).toHaveAttribute("data-reading-role", "main");
+    expect(main.inert).toBe(true);
+    const thesis = screen.getByRole("button", { name: "读「继续」" });
+    expect(thesis).toHaveAttribute("data-preserve-seed-reading", "true");
+    expect(thesis.style.left).toBe("39.5%");
+    expect(screen.getByRole("button", { name: "读「暂停」" }).style.left).toBe("60.5%");
+    fireEvent.pointerDown(thesis, { button: 0, pointerType: "mouse" });
+    fireEvent.click(thesis, { detail: 1 });
+    fireEvent.doubleClick(thesis);
+    expect(read).toHaveBeenCalledExactlyOnceWith("thesis");
+    expect(split).not.toHaveBeenCalled();
+    expect(interact).not.toHaveBeenCalled();
+  });
+
   it("double click splits once without opening the reading card; keyboard activation still reads", () => {
     vi.useFakeTimers();
     try {

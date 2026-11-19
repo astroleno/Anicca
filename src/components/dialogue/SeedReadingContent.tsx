@@ -64,7 +64,8 @@ export function SeedReadingContent({ open = true, suspended = false, originNodeI
     if (!open || !present || suspended) return;
     const stage = document.querySelector<HTMLElement>('[data-testid="dialogue-stage-track"]');
     const previousInert = stage?.inert ?? false;
-    if (stage) stage.inert = true;
+    // A stage orbiting the reading keeps its satellites reachable and rests everything else itself.
+    if (stage && stage.dataset.readingOrbit !== "true") stage.inert = true;
     const dismiss = (event: PointerEvent) => {
       if (event.target instanceof Element && event.target.closest('[data-testid="dialogue-workspace-bar"], [data-preserve-seed-reading], dialog[open]')) return;
       if (event.target instanceof Node && !root.current?.contains(event.target)) onDismiss();
