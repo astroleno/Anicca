@@ -1,3 +1,4 @@
+import { johariThinkingSpace } from "@/features/perspectives/model";
 import { act, createEvent, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { BubbleStage } from "@/components/dialogue/BubbleStage";
 import { useDialogueUiStore } from "@/features/dialectic/store";
@@ -343,6 +344,29 @@ describe("BubbleStage", () => {
     expect(read).toHaveBeenCalledExactlyOnceWith("thesis");
     expect(split).not.toHaveBeenCalled();
     expect(interact).not.toHaveBeenCalled();
+  });
+
+  it("while reading in a Johari space, offers the regions no thought has reached and aims the next thought there", async () => {
+    const width = vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(1440);
+    const height = vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(900);
+    try {
+      const aim = vi.fn();
+      render(<BubbleStage layoutKey="johari-orbit" reading focusNodeId="root" onSelect={vi.fn()} thinkingSpace={johariThinkingSpace()} onAimThinking={aim} nodes={[
+        { id: "root", label: "想法", kind: "user", relation: "focus", seedX: 50, seedY: 30, spatialCoordinates: { x: .8, y: .8 } },
+        { id: "blind", label: "别人看见的", kind: "assistant", relation: "child", seedX: 30, seedY: 60, spatialCoordinates: { x: -.8, y: .8 } }
+      ]} />);
+      const satellite = await screen.findByRole("button", { name: "读「别人看见的」" });
+      expect(satellite.style.left).toBe("18%");
+      expect(satellite.style.top).toBe("28%");
+      const invitations = [...document.querySelectorAll<HTMLButtonElement>('[data-reading-role="invitation"]')];
+      expect(invitations.map(item => item.textContent)).toEqual(["未知区", "隐藏区"]);
+      const hidden = invitations[1];
+      expect(hidden).toHaveAccessibleName("下一个想法从「隐藏区」展开");
+      expect(hidden).toHaveAttribute("data-preserve-seed-reading", "true");
+      expect(hidden.inert).not.toBe(true);
+      fireEvent.click(hidden);
+      expect(aim).toHaveBeenCalledWith({ "johari-self": 1, "johari-others": -1 });
+    } finally { width.mockRestore(); height.mockRestore(); }
   });
 
   it("double click splits once without opening the reading card; keyboard activation still reads", () => {
@@ -1338,6 +1362,19 @@ describe("BubbleStage", () => {
     );
 
     expect(screen.getByTestId("dialogue-stage-pending-synthesis")).toHaveTextContent(/^合$/);
+    // The sources lean toward their 合 so the three can bridge; the 合 forms where they meet.
+    expect(parseFloat(screen.getByTestId("dialogue-stage-node-thesis").style.left)).toBeCloseTo(28 + 22 * .4);
+    expect(parseFloat(screen.getByTestId("dialogue-stage-node-antithesis").style.left)).toBeCloseTo(72 - 22 * .4);
+    expect(screen.getByTestId("dialogue-stage-pending-synthesis-node").style.left).toBe("50%");
+  });
+
+  it("does not pile sources that already sit close onto their forming 合", () => {
+    render(<BubbleStage layoutKey="close-pair" nodes={[
+      { id: "thesis", label: "继续", kind: "assistant", branchType: "正", relation: "child", seedX: 40, seedY: 60 },
+      { id: "antithesis", label: "暂停", kind: "assistant", branchType: "反", relation: "child", seedX: 56, seedY: 60 }
+    ]} focusNodeId="thesis" onSelect={vi.fn()} pendingPreview={{ kind: "synthesis", thesisId: "thesis", antithesisId: "antithesis", label: "继续 / 暂停" }} />);
+    expect(screen.getByTestId("dialogue-stage-node-thesis").style.left).toBe("40%");
+    expect(screen.getByTestId("dialogue-stage-node-antithesis").style.left).toBe("56%");
     expect(screen.getByTestId("dialogue-stage-pending-synthesis").querySelector("svg")).toBeNull();
     expect(screen.getByTestId("dialogue-stage-pending-synthesis-node")).toHaveAttribute(
       "data-metaball-role",

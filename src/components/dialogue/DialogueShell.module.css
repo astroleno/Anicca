@@ -4419,7 +4419,7 @@
 .stageNode[data-reading-role="main"] { --seed-diameter: min(440px, 44vw); cursor: default; }
 .stageNode[data-reading-role="satellite"] { --seed-diameter: 64px; cursor: pointer; }
 .stageNode[data-reading-role="rest"] { --seed-diameter: 20px; }
-.shell[data-reading="true"] .stageCanvas:has([data-reading-orbit="true"]) { opacity: .5; }
+.shell[data-reading="true"] .stageCanvas:has([data-reading-orbit="true"]) { opacity: .7; }
 .shell[data-reading="true"] .stageNode[data-reading-role="satellite"] .stageNodeInner { opacity: .64; width: 104px; }
 .shell[data-reading="true"] .stageNode[data-reading-role="satellite"]:is(:hover, :focus-visible) .stageNodeInner { opacity: 1; }
 .stageNode[data-reading-role="satellite"] .stageNodeInner strong { font-size: 12px; }
@@ -4437,3 +4437,16 @@
 }
 /* Without the liquid renderer the main drop is a plain disc; keep it a ground for the text, not an object. */
 .stageTrack[data-metaball-renderer="fallback"] .stageNode[data-reading-role="main"] { box-shadow: none; opacity: .55; }
+/* A forming 合 is a full drop between its leaning sources, so the three bridge into one body while it forms. */
+.stagePendingGhost.stagePendingSynthesis { width: 148px; height: 148px; }
+@media (max-width: 760px) { .stagePendingGhost.stagePendingSynthesis { width: 96px; height: 96px; } }
+/* While reading in a Johari space, a region no thought has reached waits in its corner as a soft breathing wash. */
+.readingInvitation { position: absolute; z-index: 2; min-width: 44px; min-height: 44px; padding: 10px 14px; transform: translate(-50%, -50%);
+  border: 0; border-radius: 999px; background: transparent; color: var(--muted); font: 12px/1.6 var(--anicca-font-interface); letter-spacing: .04em;
+  opacity: .55; cursor: pointer; transition: opacity 220ms ease; }
+.readingInvitation::before { content: ""; position: absolute; inset: -36px; z-index: -1; border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--muted) 16%, transparent), transparent 68%);
+  animation: fieldBreath 5.6s ease-in-out infinite; }
+.readingInvitation:hover, .readingInvitation:focus-visible, .readingInvitation[aria-pressed="true"] { opacity: 1; color: var(--text); }
+.readingInvitation:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .readingInvitation::before { animation: none; opacity: .5; } }

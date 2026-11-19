@@ -3,30 +3,10 @@
 import type { ReactNode } from "react";
 import type { DialogueStageNode } from "@/features/dialectic/viewModel";
 import type { ThinkingAxis, ThinkingSpace } from "@/features/perspectives/model";
-import { defaultThinkingSpace } from "@/features/perspectives/model";
+import { isChosenSpace, isJohari, JOHARI_REGIONS, lean, placed, type Sign } from "./thinkingField";
 import styles from "./DialogueShell.module.css";
 
-type Sign = 1 | -1;
 type FocusPatch = Record<string, number>;
-
-/** Johari regions in the panel's terms: x = what I know, y = what others know. */
-const JOHARI_REGIONS: ReadonlyArray<{ label: string; self: Sign; others: Sign }> = [
-  { label: "盲区", self: -1, others: 1 },
-  { label: "公开区", self: 1, others: 1 },
-  { label: "未知区", self: -1, others: -1 },
-  { label: "隐藏区", self: 1, others: -1 }
-];
-const DEFAULT_AXIS_IDS = new Set(defaultThinkingSpace().axes.map(axis => axis.id));
-/** A seed counts as leaning toward a pole the same way placement does. */
-const LEANS = .4;
-
-function placed(space: ThinkingSpace, placement: "x" | "y") {
-  return space.axes.find(axis => axis.placement === placement);
-}
-
-function lean(value: number | undefined): Sign | 0 {
-  return value === undefined || Math.abs(value) < LEANS ? 0 : value > 0 ? 1 : -1;
-}
 
 /**
  * The faint field behind the seeds: where a thinking direction is laid out on the stage, its poles
@@ -42,10 +22,10 @@ export function StageField({ space, nodes, carrying = false, hidden = false, onF
 }) {
   const xAxis = placed(space, "x"), yAxis = placed(space, "y");
   if (!xAxis && !yAxis) return null;
-  const johari = xAxis?.id === "johari-self" && yAxis?.id === "johari-others";
+  const johari = isJohari(space);
   const directed = nodes.filter(node => node.spatialCoordinates);
   // The built-in directions only surface while a seed is carried; chosen ones (Johari, your own axes) rest faintly.
-  const chosenSpace = space.axes.some(axis => !DEFAULT_AXIS_IDS.has(axis.id)) || Object.keys(space.focus).length > 0;
+  const chosenSpace = isChosenSpace(space);
   const asleep = hidden || (!chosenSpace && !carrying);
   const field = (content: ReactNode) => <div className={styles.stageField} data-testid="dialogue-stage-field"
     data-carrying={carrying ? "true" : undefined} data-hidden={asleep ? "true" : undefined}

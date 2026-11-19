@@ -2,7 +2,13 @@ import type { DialogueMetaballNode } from "../metaball/model";
 import { liquidProximity } from "@/features/dialectic/liquidInteraction";
 import { seedSpaceDepth } from "./space";
 
-type Body = { node: DialogueMetaballNode; vx: number; vy: number; vz: number; vr: number; goalX: number; goalY: number; goalZ: number };
+type Body = { node: DialogueMetaballNode; vx: number; vy: number; vz: number; vr: number; goalX: number; goalY: number; goalZ: number;
+  /** A seed still separating from where it grew moves on a softer spring, so the bud's neck can be seen before it lets go. */
+  budding?: boolean };
+
+const SPRING = { stiffness: 140, damping: 13 } as const;
+/** About 0.8s with a slight overshoot: a bud swells on its origin, stretches a neck, then pinches off. */
+const BUDDING_SPRING = { stiffness: 52, damping: 10.5 } as const;
 
 /** A single spring state drives both the liquid and its accessible DOM label. */
 export class LiquidMotion {
@@ -71,12 +77,15 @@ export class LiquidMotion {
           radius: emerging ? handoff?.node.radius ?? target.radius * .15 : target.radius },
           vx: handoff && !reduced ? handoff.vx : 0, vy: handoff && !reduced ? handoff.vy : 0,
           vz: handoff && !reduced ? handoff.vz : 0, vr: handoff && !reduced ? handoff.vr : 0,
-          goalX: target.center[0], goalY: target.center[1], goalZ: target.spaceDepth ?? seedSpaceDepth(target.id) };
+          goalX: target.center[0], goalY: target.center[1], goalZ: target.spaceDepth ?? seedSpaceDepth(target.id),
+          budding: emerging && (handoff ? handoff.budding ?? true : true) };
         this.bodies.set(target.id, body);
       }
       const changedTarget = body.goalX !== target.center[0] || body.goalY !== target.center[1]
         || body.goalZ !== (target.spaceDepth ?? seedSpaceDepth(target.id));
       const stepTime = newBody || changedTarget ? Math.min(dt, 1 / 60) : dt;
+      const { stiffness, damping } = body.budding ? BUDDING_SPRING : SPRING;
+      let bodyMoving = false;
       const spring = (current: number, goal: number, velocity: number): [number, number] => {
         if (reduced || (Math.abs(goal - current) < .0003 && Math.abs(velocity) < .002)) return [goal, 0];
         // Integrate missed visible time in bounded, stable steps. Dropped frames
@@ -84,12 +93,12 @@ export class LiquidMotion {
         // New targets and contacts still start with one gentle normal step.
         for (let remaining = stepTime; remaining > 0;) {
           const step = Math.min(1 / 60, remaining);
-          velocity += ((goal - current) * 140 - velocity * 13) * step;
+          velocity += ((goal - current) * stiffness - velocity * damping) * step;
           current += velocity * step;
           remaining -= step;
         }
         if (Math.abs(goal - current) < .0003 && Math.abs(velocity) < .002) return [goal, 0];
-        moving = true;
+        moving = true; bodyMoving = true;
         return [current, velocity];
       };
       const attraction = !reduced && target.id === activePartner?.id
@@ -105,6 +114,7 @@ export class LiquidMotion {
       const [z, vz] = target.id === pressedId ? [held?.z ?? targetZ, 0]
         : spring(body.node.spaceDepth ?? targetZ, targetZ, body.vz);
       body.vx = vx; body.vy = vy; body.vz = vz; body.vr = vr;
+      if (!bodyMoving) body.budding = false;
       body.goalX = target.center[0]; body.goalY = target.center[1]; body.goalZ = targetZ;
       body.node = { ...target, center: [x, y], radius: Math.max(.001, radius),
         ...(target.spaceDepth !== undefined || z !== targetZ ? { spaceDepth: z } : {}) };

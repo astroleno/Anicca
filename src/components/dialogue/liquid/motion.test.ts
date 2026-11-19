@@ -161,3 +161,17 @@ it("does not spend a slow previous frame on a newly arriving target or contact",
   expect(caught.nodes[0].center).toEqual(redirected.nodes[0].center);
   expect(caught.nodes[0].radius).toBeGreaterThan(.095);
 });
+
+it("lets a bud linger on its origin before it pinches off, then settles like any seed", () => {
+  const budding = new LiquidMotion(), moving = new LiquidMotion();
+  budding.step([node("a", 0)], 0, false); moving.step([node("a", 0), node("b", 0)], 0, false);
+  let bud = budding.step([node("a", 0), node("b", .5)], 16, false), moved = moving.step([node("a", 0), node("b", .5)], 16, false);
+  for (let time = 32; time <= 200; time += 16) {
+    bud = budding.step([node("a", 0), node("b", .5)], time, false);
+    moved = moving.step([node("a", 0), node("b", .5)], time, false);
+  }
+  expect(bud.nodes[1].center[0]).toBeLessThan(moved.nodes[1].center[0] * .75);
+  for (let time = 216; time <= 3000; time += 16) bud = budding.step([node("a", 0), node("b", .5)], time, false);
+  expect(bud.nodes[1].center[0]).toBe(.5);
+  expect(bud.moving).toBe(false);
+});

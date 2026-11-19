@@ -20,7 +20,7 @@ import type { DialogueMetaballRendererState } from "./DialogueMetaballLayer";
 import type { LiquidRendererMode, LiquidRendererStatus } from "./liquid/preference";
 import styles from "./DialogueShell.module.css";
 import { StageField } from "./StageField";
-import { arrangeReadingOrbit } from "./readingOrbit";
+import { arrangeReadingOrbit, readingInvitations } from "./readingOrbit";
 import type { ThinkingSpace } from "@/features/perspectives/model";
 import type { MetaballRole } from "./metaball/model";
 import { layoutSeedLabels, seedLabelLeader } from "./labelLayout";
@@ -118,7 +118,11 @@ const NODE_MAX_Y_PERCENT = 84;
 const GROWTH_NODE_MAX_Y_PERCENT = 90;
 /** Below this stage width the text column leaves no gutters, so satellites gather above it. */
 const READING_ORBIT_SIDES_MIN_WIDTH = 760;
-const READING_ORBIT_ATTENTION = { main: .5, satellite: .85, rest: .04 } as const;
+const READING_ORBIT_ATTENTION = { main: .35, satellite: .95, rest: .04 } as const;
+/** How far each source travels toward the other while their 合 forms. */
+const SYNTHESIS_LEAN = .4;
+/** The closest (in stage percent) two leaning sources come, so each stays readable beside its 合. */
+const SYNTHESIS_MIN_GAP = 20;
 
 const RELATION_LABELS: Record<DialogueStageNode["relation"], string> = {
   focus: "当前焦点",
@@ -337,10 +341,12 @@ export function BubbleStage({
 
   // Reading gives the stage one main drop behind the text, with its relations as satellites.
   const orbitLayout = labelGeometry.width >= READING_ORBIT_SIDES_MIN_WIDTH ? "sides" : "row";
-  const readingOrbit = useMemo(() => reading && !suspended ? arrangeReadingOrbit(nodes, focusNodeId, orbitLayout) : null,
-    [reading, suspended, nodes, focusNodeId, orbitLayout]);
+  const readingOrbit = useMemo(() => reading && !suspended ? arrangeReadingOrbit(nodes, focusNodeId, orbitLayout, thinkingSpace) : null,
+    [reading, suspended, nodes, focusNodeId, orbitLayout, thinkingSpace]);
+  const invitations = useMemo(() => readingOrbit && onAimThinking ? readingInvitations(thinkingSpace, nodes, orbitLayout) : [],
+    [readingOrbit, onAimThinking, thinkingSpace, nodes, orbitLayout]);
 
-  const positionedNodes = useMemo(() => nodes.map((node) => {
+  const basePositionedNodes = useMemo(() => nodes.map((node) => {
     const defaultPosition = usesCompactGrowthLayout && node.compactSeedX !== undefined && node.compactSeedY !== undefined
       ? { x: node.compactSeedX, y: node.compactSeedY }
       : { x: node.seedX, y: node.seedY };
@@ -355,16 +361,31 @@ export function BubbleStage({
     };
   }), [nodes, placements, stageLayoutMode, usesCompactGrowthLayout, readingOrbit]);
 
+  // While a 合 forms, its two sources lean toward each other and bridge through it; they return when it arrives.
+  const convergingIds = pendingPreview?.kind === "synthesis" ? [pendingPreview.thesisId, pendingPreview.antithesisId] : null;
+  const positionedNodes = useMemo(() => {
+    const sources = convergingIds ? basePositionedNodes.filter(({ node }) => convergingIds.includes(node.id)) : [];
+    if (sources.length !== 2) return basePositionedNodes;
+    const center = { x: (sources[0].position.x + sources[1].position.x) / 2, y: (sources[0].position.y + sources[1].position.y) / 2 };
+    const distance = Math.hypot(sources[0].position.x - sources[1].position.x, sources[0].position.y - sources[1].position.y);
+    // Sources already close enough to touch their 合 stay where they are rather than piling onto it.
+    const lean = distance > 0 ? Math.max(0, Math.min(SYNTHESIS_LEAN, (distance - SYNTHESIS_MIN_GAP) / distance)) : 0;
+    if (!lean) return basePositionedNodes;
+    return basePositionedNodes.map(item => convergingIds!.includes(item.node.id) ? { ...item, position: { ...item.position,
+      x: item.position.x + (center.x - item.position.x) * lean, y: item.position.y + (center.y - item.position.y) * lean } } : item);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [basePositionedNodes, convergingIds?.[0], convergingIds?.[1]]);
+
   useLayoutEffect(() => {
     const track = trackRef.current;
     if (!readingOrbit || !track) return;
     // Only the satellites stay reachable; everything else behind the text rests.
     const resting = Array.from(track.children).filter((child): child is HTMLElement =>
-      child instanceof HTMLElement && child.dataset.readingRole !== "satellite");
+      child instanceof HTMLElement && child.dataset.readingRole !== "satellite" && child.dataset.readingRole !== "invitation");
     const previous = resting.map(element => element.inert);
     for (const element of resting) element.inert = true;
     return () => resting.forEach((element, index) => { element.inert = previous[index]; });
-  }, [readingOrbit, positionedNodes]);
+  }, [readingOrbit, positionedNodes, invitations]);
 
   const measureLabels = useCallback(() => {
     const viewport = viewportRef.current;
@@ -1173,6 +1194,17 @@ export function BubbleStage({
                 ) : null}
               </>
             ) : null}
+            {invitations.map(invitation => {
+              const chosen = thinkingSpace?.focus["johari-self"] === invitation.self && thinkingSpace.focus["johari-others"] === invitation.others;
+              return <button key={invitation.label} type="button" className={styles.readingInvitation}
+                data-reading-role="invitation" data-preserve-seed-reading="true" aria-pressed={chosen}
+                aria-label={`下一个想法从「${invitation.label}」展开`}
+                style={{ left: `${invitation.x}%`, top: `${invitation.y}%` }}
+                onClick={() => onAimThinking?.(chosen ? { "johari-self": 0, "johari-others": 0 }
+                  : { "johari-self": invitation.self, "johari-others": invitation.others })}>
+                {invitation.label}
+              </button>;
+            })}
             {positionedNodes.map(({ node, position }) => {
               const isDragging = gesture?.kind === "node" && gesture.nodeId === node.id;
               const polarity = seedColorPolarity(node.perspective);
