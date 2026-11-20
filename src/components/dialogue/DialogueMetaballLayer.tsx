@@ -304,11 +304,7 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
             if (reading && element.dataset.readingRole !== "satellite") return [];
             const caption = element.querySelector<HTMLElement>("[data-seed-caption]");
             if (!caption) return [];
-            const width = Array.from(caption.querySelectorAll<HTMLElement>("strong,small,em")).reduce((sum, text) => {
-              const range = document.createRange(); range.selectNodeContents(text);
-              return sum + Math.min(text.offsetWidth, range.getBoundingClientRect().width);
-            }, 24);
-            return [{ id: element.dataset.metaballSurface!, width: Math.min(caption.offsetWidth, width), height: caption.offsetHeight, inset: element.clientTop, element, caption,
+            return [{ id: element.dataset.metaballSurface!, width: caption.offsetWidth, height: caption.offsetHeight, inset: element.clientTop, element, caption,
               leader: element.querySelector<HTMLElement>("[data-seed-leader]") }];
           });
           const pair = host.querySelector<HTMLElement>('[data-testid="dialogue-synthesis-pair-label"]');

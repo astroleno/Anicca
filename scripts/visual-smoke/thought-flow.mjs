@@ -97,9 +97,12 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
       await reading.waitFor({ state: "hidden" });
     };
     const openSeed = async id => {
-      await closeReading(); await waitForSeedLayout(page);
+      await closeReading();
+      await page.waitForFunction(() => document.querySelector('[data-testid="dialogue-stage-track"]')?.dataset.metaballRenderer === "ready");
+      await page.evaluate(() => document.fonts.ready.then(() => {}));
+      await waitForSeedLayout(page, { captions: true });
       const seed = page.getByTestId(`dialogue-stage-node-${id}`);
-      await activate(seed.locator("[data-seed-caption]"));
+      await activate(seed.locator("[data-seed-caption] strong"));
       // Observe the open reader and the selected seed after the single activation.
       // A repeat can land on the reader just as it opens on a slow renderer.
       await reading.getByTestId("dialogue-panel").waitFor();

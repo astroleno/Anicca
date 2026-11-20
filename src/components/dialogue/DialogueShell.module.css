@@ -3935,7 +3935,7 @@
 .stageNode::before, .stageNode::after, .emptyStageBlob,
 .stagePendingGhost, .stagePendingGhost::after { animation: none; }
 .stageNodeSynthesisEvent, .stageNodeSynthesisEvent.stageNodeFocused { animation: none; }
-.stageNodeInner { position: absolute; top: calc(100% + 10px); left: 50%; display: flex; flex-direction: row; align-items: center; justify-content: center; width: 156px; height: 28px; min-height: 0; padding: 0; overflow: visible; flex-shrink: 0; gap: 8px; transform: translate(calc(-50% + var(--stage-label-offset-x, 0px)), var(--stage-label-offset-y, 0px)); transition: opacity 180ms ease; }
+.stageNodeInner { position: absolute; top: calc(100% + 10px); left: 50%; display: flex; flex-direction: row; align-items: center; justify-content: center; width: max-content; min-width: 44px; max-width: 156px; height: 28px; min-height: 0; padding: 0 6px; overflow: visible; flex-shrink: 0; gap: 8px; transform: translate(calc(-50% + var(--stage-label-offset-x, 0px)), var(--stage-label-offset-y, 0px)); transition: opacity 180ms ease; }
 .stageTrack[data-metaball-renderer="ready"] .stageNodeDragging:focus-visible { outline: none; box-shadow: none; }
 .stageNode[data-label-handoff="true"] .stageNodeInner { opacity: 0; visibility: hidden; transition: none; }
 .synthesisPairLabel { position: absolute; z-index: 18; display: grid; gap: 8px; width: 168px; transform: translate(-50%, var(--pair-caption-offset, 100px)); text-align: center; pointer-events: none; color: #40384c; text-shadow: none; }
@@ -4145,7 +4145,7 @@
   .stageNode[data-metaball-role="synthesis"] { --seed-diameter: 116px; }
   .stageNode[data-metaball-role="growth"] { --seed-diameter: 88px; }
   [data-stage-density="dense"] .stageNode { --seed-diameter: 84px; }
-  .stageNodeInner { width: 132px; padding: 0; }
+  .stageNodeInner { max-width: 132px; }
   .stageNodeInner strong { font-size: 14px; }
   .readingDrawer, .lineageDrawer { top: auto; right: 8px; left: 8px; bottom: calc(var(--dialogue-composer-height) + 28px + var(--safe-bottom)); height: min(56vh, calc(var(--dialogue-viewport-height, 100dvh) - var(--dialogue-composer-height) - 104px - var(--safe-bottom))); width: auto; }
   .readingDrawer .seedInspector { padding: 22px; }
@@ -4422,7 +4422,7 @@
 .stageNode[data-reading-role="rest"] { --seed-diameter: 20px; }
 .shell[data-reading="true"] .stageCanvas:has([data-reading-orbit="true"]) { opacity: .7; }
 .shell[data-reading="true"] .stageNode[data-reading-role="rest"] .stageNodeInner { opacity: 0; }
-.shell[data-reading="true"] .stageNode[data-reading-role="satellite"] .stageNodeInner { opacity: .64; width: 104px; }
+.shell[data-reading="true"] .stageNode[data-reading-role="satellite"] .stageNodeInner { opacity: .64; max-width: 104px; }
 .shell[data-reading="true"] .stageNode[data-reading-role="satellite"]:is(:hover, :focus-visible) .stageNodeInner { opacity: 1; }
 .stageNode[data-reading-role="satellite"] .stageNodeInner strong { font-size: 12px; }
 .stageNode[data-reading-role="satellite"] .stageNodeInner small { font-size: 11px; }

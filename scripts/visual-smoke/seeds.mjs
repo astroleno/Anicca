@@ -3,10 +3,10 @@ import path from "node:path";
 
 // A settled 3D projection can have a permanent screen offset. Wait for its
 // visible bounds to stop moving instead of requiring the old flat origin.
-export async function waitForSeedLayout(page) {
+export async function waitForSeedLayout(page, { captions = false } = {}) {
   await page.evaluate(() => { delete window.__seedLayoutProbe; });
-  await page.waitForFunction(() => {
-    const elements = [...document.querySelectorAll('[data-metaball-surface]')];
+  await page.waitForFunction(includeCaptions => {
+    const elements = [...document.querySelectorAll(includeCaptions ? '[data-metaball-surface], [data-seed-caption]' : '[data-metaball-surface]')];
     if (!elements.length) return false;
     const signature = elements.map(element => {
       const rect = element.getBoundingClientRect();
@@ -15,7 +15,7 @@ export async function waitForSeedLayout(page) {
     const now = performance.now();
     if (window.__seedLayoutProbe?.signature !== signature) window.__seedLayoutProbe = { signature, at: now };
     return now - window.__seedLayoutProbe.at >= 200;
-  });
+  }, captions);
 }
 
 // Exercise the seed workspace with intercepted APIs in an isolated browser context.

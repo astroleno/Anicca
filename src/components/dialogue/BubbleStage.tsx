@@ -388,12 +388,8 @@ export function BubbleStage({
     for (const [id, button] of Object.entries(nodeRefs.current)) {
       const inner = button?.querySelector("[data-seed-caption]");
       if (inner instanceof HTMLElement) {
-        const widths = Array.from(inner.querySelectorAll("strong, small, em")).map(text => {
-          const range = document.createRange();
-          range.selectNodeContents(text);
-          return Math.min((text as HTMLElement).offsetWidth, range.getBoundingClientRect?.().width || 0);
-        });
-        labels[id] = { width: Math.min(inner.offsetWidth, Math.max(48, widths.reduce((sum,width)=>sum+width,0)) + 16),
+        // Use the complete caption hit box for spacing, including its touch padding.
+        labels[id] = { width: inner.offsetWidth,
           height: inner.offsetHeight, anchorOffsetY: (button?.offsetHeight || 0)/2+10+inner.offsetHeight/2,
           surfaceRadius: Math.max(button?.offsetWidth || 0, button?.offsetHeight || 0) / 2 };
       }
