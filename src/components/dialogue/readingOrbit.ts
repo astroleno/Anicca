@@ -4,22 +4,33 @@ import { isChosenSpace, isJohari, JOHARI_REGIONS, lean as leanToward, placed, ty
 
 export type ReadingOrbitRole = "main" | "satellite" | "rest";
 export type ReadingOrbitPlace = { role: ReadingOrbitRole; x?: number; y?: number };
-/** Wide stages keep satellites in the gutters beside the text; narrow ones gather them above it. */
+/** Wide stages use the gutters beside the text. Narrow stages expose a row in the reader. */
 export type ReadingOrbitLayout = "sides" | "row";
+export type ReadingOrbit = {
+  layout: ReadingOrbitLayout;
+  places: Record<string, ReadingOrbitPlace>;
+  row: readonly DialogueStageNode[];
+};
 export type ReadingInvitation = { label: string; self: Sign; others: Sign; x: number; y: number };
 
 type Side = "left" | "right";
 
+export const READING_COLUMN_MAX_WIDTH = 520;
+// Leave room for the projected seed, its caption, and the gap to the text column.
+const MIN_READING_GUTTER_WIDTH = 300;
+const MIN_SIDE_VIEWPORT_HEIGHT = 640;
 const MAIN = { sides: { x: 50, y: 46 }, row: { x: 50, y: 54 } } as const;
 const SIDE_X: Record<Side, number> = { left: 18, right: 82 };
 const SIDE_Y = [28, 50, 72] as const;
-const ROW_Y = 14;
-const ROW_SPACING = 21;
 const ROW_LIMIT = 4;
 /** Unexplored Johari regions wait in the stage corners, clear of the satellites and the text. */
 const INVITATION = { x: { left: 20, right: 80 }, y: { top: 14, bottom: 84 } } as const;
 /** Where a thought comes from reads before where it went. */
 const RANK: Record<DialogueStageNode["relation"], number> = { source: 0, ancestor: 1, focus: 2, child: 3 };
+
+export function readingOrbitLayoutForSize(width: number, height: number): ReadingOrbitLayout {
+  return width >= READING_COLUMN_MAX_WIDTH + 2 * MIN_READING_GUTTER_WIDTH && height >= MIN_SIDE_VIEWPORT_HEIGHT ? "sides" : "row";
+}
 
 /** 正 leans left and 反 leans right, so opposites stay opposite while the reader moves between them. */
 function dialecticLean(node: DialogueStageNode) {
@@ -65,7 +76,7 @@ function placeInGutters(others: readonly DialogueStageNode[], directed: boolean)
  * When the reader has chosen a thinking space, satellites sit where their own direction points.
  */
 export function arrangeReadingOrbit(nodes: readonly DialogueStageNode[], focusId: string | null | undefined,
-  layout: ReadingOrbitLayout, space?: ThinkingSpace | null): Record<string, ReadingOrbitPlace> | null {
+  layout: ReadingOrbitLayout, space?: ThinkingSpace | null): ReadingOrbit | null {
   const main = nodes.find(node => node.id === focusId) || nodes.find(node => node.relation === "focus");
   if (!main) return null;
   const directed = Boolean(directedSpace(space));
@@ -75,17 +86,13 @@ export function arrangeReadingOrbit(nodes: readonly DialogueStageNode[], focusId
     .sort((a, b) => RANK[a.node.relation] - RANK[b.node.relation] || a.index - b.index)
     .map(({ node }) => node);
 
+  let row: DialogueStageNode[] = [];
   if (layout === "row") {
     const across = (node: DialogueStageNode) => directed && node.spatialCoordinates?.x !== undefined ? node.spatialCoordinates.x : dialecticLean(node);
-    const chosen = others.slice(0, ROW_LIMIT)
-      .map((node, index) => ({ node, index }))
-      .sort((a, b) => across(a.node) - across(b.node) || a.index - b.index);
-    chosen.forEach(({ node }, index) => {
-      places[node.id] = { role: "satellite", x: 50 + (index - (chosen.length - 1) / 2) * ROW_SPACING, y: ROW_Y };
-    });
+    row = others.slice(0, ROW_LIMIT).sort((a, b) => across(a) - across(b));
   } else Object.assign(places, placeInGutters(others, directed));
   for (const node of others) places[node.id] ||= { role: "rest" };
-  return places;
+  return { layout, places, row };
 }
 
 /**

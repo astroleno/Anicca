@@ -4,6 +4,7 @@ import { BubbleStage } from "@/components/dialogue/BubbleStage";
 import { useDialogueUiStore } from "@/features/dialectic/store";
 import { DialogueStageNode } from "@/features/dialectic/viewModel";
 import { spatialStagePoint, publishSpatialFrame } from "./liquid/space";
+import { arrangeReadingOrbit } from "./readingOrbit";
 
 const metaballLayerMock = vi.hoisted(() => ({
   state: "ready" as "loading" | "ready" | "fallback"
@@ -326,18 +327,20 @@ describe("BubbleStage", () => {
 
   it("while reading, a satellite is read at once and the main drop rests behind the text", () => {
     const read = vi.fn(), split = vi.fn(), interact = vi.fn();
-    render(<BubbleStage layoutKey="orbit" reading focusNodeId="root" onSelect={read} onSplit={split} onInteractionStart={interact} nodes={[
+    const nodes: DialogueStageNode[] = [
       { id: "root", label: "想法", kind: "user", relation: "focus", seedX: 50, seedY: 30 },
       { id: "thesis", label: "继续", kind: "assistant", branchType: "正", relation: "child", seedX: 30, seedY: 60 },
       { id: "antithesis", label: "暂停", kind: "assistant", branchType: "反", relation: "child", seedX: 70, seedY: 60 }
-    ]} />);
+    ];
+    render(<BubbleStage layoutKey="orbit" focusNodeId="root" onSelect={read} onSplit={split} onInteractionStart={interact}
+      nodes={nodes} readingOrbit={arrangeReadingOrbit(nodes, "root", "sides")} />);
     const main = screen.getByTestId("dialogue-stage-node-root");
     expect(main).toHaveAttribute("data-reading-role", "main");
     expect(main.inert).toBe(true);
     const thesis = screen.getByRole("button", { name: "读「继续」" });
     expect(thesis).toHaveAttribute("data-preserve-seed-reading", "true");
-    expect(thesis.style.left).toBe("39.5%");
-    expect(screen.getByRole("button", { name: "读「暂停」" }).style.left).toBe("60.5%");
+    expect(thesis.style.left).toBe("18%");
+    expect(screen.getByRole("button", { name: "读「暂停」" }).style.left).toBe("82%");
     fireEvent.pointerDown(thesis, { button: 0, pointerType: "mouse" });
     fireEvent.click(thesis, { detail: 1 });
     fireEvent.doubleClick(thesis);
@@ -347,26 +350,24 @@ describe("BubbleStage", () => {
   });
 
   it("while reading in a Johari space, offers the regions no thought has reached and aims the next thought there", async () => {
-    const width = vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(1440);
-    const height = vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(900);
-    try {
-      const aim = vi.fn();
-      render(<BubbleStage layoutKey="johari-orbit" reading focusNodeId="root" onSelect={vi.fn()} thinkingSpace={johariThinkingSpace()} onAimThinking={aim} nodes={[
-        { id: "root", label: "想法", kind: "user", relation: "focus", seedX: 50, seedY: 30, spatialCoordinates: { x: .8, y: .8 } },
-        { id: "blind", label: "别人看见的", kind: "assistant", relation: "child", seedX: 30, seedY: 60, spatialCoordinates: { x: -.8, y: .8 } }
-      ]} />);
-      const satellite = await screen.findByRole("button", { name: "读「别人看见的」" });
-      expect(satellite.style.left).toBe("18%");
-      expect(satellite.style.top).toBe("28%");
-      const invitations = [...document.querySelectorAll<HTMLButtonElement>('[data-reading-role="invitation"]')];
-      expect(invitations.map(item => item.textContent)).toEqual(["未知区", "隐藏区"]);
-      const hidden = invitations[1];
-      expect(hidden).toHaveAccessibleName("下一个想法从「隐藏区」展开");
-      expect(hidden).toHaveAttribute("data-preserve-seed-reading", "true");
-      expect(hidden.inert).not.toBe(true);
-      fireEvent.click(hidden);
-      expect(aim).toHaveBeenCalledWith({ "johari-self": 1, "johari-others": -1 });
-    } finally { width.mockRestore(); height.mockRestore(); }
+    const aim = vi.fn(), space = johariThinkingSpace();
+    const nodes: DialogueStageNode[] = [
+      { id: "root", label: "想法", kind: "user", relation: "focus", seedX: 50, seedY: 30, spatialCoordinates: { x: .8, y: .8 } },
+      { id: "blind", label: "别人看见的", kind: "assistant", relation: "child", seedX: 30, seedY: 60, spatialCoordinates: { x: -.8, y: .8 } }
+    ];
+    render(<BubbleStage layoutKey="johari-orbit" focusNodeId="root" onSelect={vi.fn()} thinkingSpace={space} onAimThinking={aim}
+      nodes={nodes} readingOrbit={arrangeReadingOrbit(nodes, "root", "sides", space)} />);
+    const satellite = await screen.findByRole("button", { name: "读「别人看见的」" });
+    expect(satellite.style.left).toBe("18%");
+    expect(satellite.style.top).toBe("28%");
+    const invitations = [...document.querySelectorAll<HTMLButtonElement>('[data-reading-role="invitation"]')];
+    expect(invitations.map(item => item.textContent)).toEqual(["未知区", "隐藏区"]);
+    const hidden = invitations[1];
+    expect(hidden).toHaveAccessibleName("下一个想法从「隐藏区」展开");
+    expect(hidden).toHaveAttribute("data-preserve-seed-reading", "true");
+    expect(hidden.inert).not.toBe(true);
+    fireEvent.click(hidden);
+    expect(aim).toHaveBeenCalledWith({ "johari-self": 1, "johari-others": -1 });
   });
 
   it("double click splits once without opening the reading card; keyboard activation still reads", () => {

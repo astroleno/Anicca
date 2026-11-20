@@ -15,7 +15,8 @@ import {
   useMemo,
   useRef,
   useState,
-  useSyncExternalStore
+  useSyncExternalStore,
+  type CSSProperties
 } from "react";
 import {
   buildContinuationCreatedEvent,
@@ -29,6 +30,7 @@ import { BubbleStage } from "@/components/dialogue/BubbleStage";
 import { SeedInspector } from "@/components/dialogue/SeedInspector";
 import { SeedPrimaryActions } from "@/components/dialogue/SeedPrimaryActions";
 import { SeedReadingContent } from "@/components/dialogue/SeedReadingContent";
+import { arrangeReadingOrbit, READING_COLUMN_MAX_WIDTH, readingOrbitLayoutForSize, type ReadingOrbitLayout } from "./readingOrbit";
 import { DialogueComposer } from "@/components/dialogue/DialogueComposer";
 import { PerspectiveControls } from "@/components/dialogue/PerspectiveControls";
 import { annotatePerspective, normalizeThinkingSpace, perspectiveLabel, type AxisSuggestion, type ThinkingAxis, type ThinkingSpace } from "@/features/perspectives/model";
@@ -598,6 +600,7 @@ export function DialogueShell() {
   const roundtablePendingRef = useRef<RoundtablePendingRequest | null>(null);
   const roundtableArtifactRef = useRef<WorkspaceRoundtableArtifact | null>(null);
   const shellRef = useRef<HTMLElement | null>(null);
+  const [readingOrbitLayout, setReadingOrbitLayout] = useState<ReadingOrbitLayout>("row");
   const dialogueControllerRef = useRef<DialogueController | null>(null);
   if (!dialogueControllerRef.current) {
     dialogueControllerRef.current = new DialogueController();
@@ -706,6 +709,21 @@ export function DialogueShell() {
     return () => controller?.cancelAll();
   }, []);
 
+  useLayoutEffect(() => {
+    const shell = shellRef.current;
+    if (!shell || !workspaceReady) return;
+    const measure = () => setReadingOrbitLayout(readingOrbitLayoutForSize(
+      shell.clientWidth || window.innerWidth, shell.clientHeight || window.innerHeight));
+    measure();
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", measure);
+      return () => window.removeEventListener("resize", measure);
+    }
+    const observer = new ResizeObserver(measure);
+    observer.observe(shell);
+    return () => observer.disconnect();
+  }, [workspaceReady]);
+
   const setVisibleRoundtableArtifact = useCallback((artifact: WorkspaceRoundtableArtifact | null) => {
     roundtableArtifactRef.current = artifact;
     setRoundtableArtifact(artifact);
@@ -802,6 +820,9 @@ export function DialogueShell() {
     pinnedInstanceIds: selectedPair?.sourceInstanceIds || encounterInstances || (combineSourceId ? [combineSourceId]
       : visibleExpansion ? [visibleExpansion.sourceId, visibleExpansion.firstId, visibleExpansion.secondId] : [])
   })), [graphSnapshot, seedInstances, view.focusNodeId, focusedInstanceId, expandedResultId, thinkingSpace, selectedPair, encounterInstances, combineSourceId, visibleExpansion]);
+  const readingOrbit = useMemo(() => readingOpen && !evolutionOpen
+    ? arrangeReadingOrbit(seedScene, focusedInstanceId, readingOrbitLayout, thinkingSpace) : null,
+    [readingOpen, evolutionOpen, seedScene, focusedInstanceId, readingOrbitLayout, thinkingSpace]);
   const attentionIds = useMemo(() => {
     if (selectedPair?.sourceInstanceIds) return selectedPair.sourceInstanceIds;
     if (encounterInstances) return encounterInstances;
@@ -2132,6 +2153,7 @@ export function DialogueShell() {
 
   return (
     <main ref={shellRef} className={styles.shell} data-theme={theme} data-testid="dialogue-shell" data-reading={readingOpen && view.currentNode ? "true" : undefined} data-stage-seed={view.currentNode ? "true" : undefined}
+      style={{ "--reading-column-max-width": `${READING_COLUMN_MAX_WIDTH}px` } as CSSProperties}
       data-inline-inquiry={inlineInquiry ? "true" : undefined}
       data-composer-context={composerTarget.nodeId || pendingAction === "synthesis" || composerPerspectiveLabel ? "true" : undefined}>
       <a className={styles.skipToInput} href="#dialogue-input" onClick={(event) => {
@@ -2249,7 +2271,7 @@ export function DialogueShell() {
           rendererMode={rendererMode}
           onRendererStatus={setRendererStatus}
           suspended={evolutionOpen}
-          reading={readingOpen}
+          readingOrbit={readingOrbit}
           attentionIds={attentionIds}
           cameraView={cameraView}
           theme={theme}
@@ -2371,6 +2393,7 @@ export function DialogueShell() {
               polarityRequest={polarityRequest}
               graph={graphSnapshot.graph} nodeId={seedConceptId(graphSnapshot.graph, seedInstances, combineSourceId) || view.currentNode.id}
               instances={seedInstances} instanceId={focusedInstanceId || view.currentNode.id}
+              readingSatellites={readingOrbit?.row}
               combining={Boolean(combineSourceId)} busy={hasPendingRequest}
               activeDeferredId={activeDeferredId} onContinueDeferred={continueDeferred}
               onClose={closeSeedPanel}

@@ -20,7 +20,7 @@ import type { DialogueMetaballRendererState } from "./DialogueMetaballLayer";
 import type { LiquidRendererMode, LiquidRendererStatus } from "./liquid/preference";
 import styles from "./DialogueShell.module.css";
 import { StageField } from "./StageField";
-import { arrangeReadingOrbit, readingInvitations } from "./readingOrbit";
+import { readingInvitations, type ReadingOrbit } from "./readingOrbit";
 import type { ThinkingSpace } from "@/features/perspectives/model";
 import type { MetaballRole } from "./metaball/model";
 import { layoutSeedLabels, seedLabelLeader } from "./labelLayout";
@@ -62,7 +62,7 @@ type BubbleStageProps = {
   theme?: DialogueTheme;
   cameraView?: { direction: SeedViewDirection | "reset"; revision: number } | null;
   attentionIds?: readonly string[] | null;
-  reading?: boolean;
+  readingOrbit?: ReadingOrbit | null;
   suspended?: boolean;
   /** Thinking directions laid out on the stage; their faint field aims the next thought. */
   thinkingSpace?: ThinkingSpace | null;
@@ -116,8 +116,6 @@ const NODE_MAX_X_PERCENT = 88;
 const NODE_MIN_Y_PERCENT = 12;
 const NODE_MAX_Y_PERCENT = 84;
 const GROWTH_NODE_MAX_Y_PERCENT = 90;
-/** Below this stage width the text column leaves no gutters, so satellites gather above it. */
-const READING_ORBIT_SIDES_MIN_WIDTH = 760;
 const READING_ORBIT_ATTENTION = { main: .35, satellite: .95, rest: .04 } as const;
 /** How far each source travels toward the other while their 合 forms. */
 const SYNTHESIS_LEAN = .4;
@@ -193,7 +191,7 @@ export function BubbleStage({
   theme = "light",
   cameraView = null,
   attentionIds = null,
-  reading = false,
+  readingOrbit = null,
   suspended = false,
   thinkingSpace = null,
   onAimThinking
@@ -339,18 +337,14 @@ export function BubbleStage({
     );
   };
 
-  // Reading gives the stage one main drop behind the text, with its relations as satellites.
-  const orbitLayout = labelGeometry.width >= READING_ORBIT_SIDES_MIN_WIDTH ? "sides" : "row";
-  const readingOrbit = useMemo(() => reading && !suspended ? arrangeReadingOrbit(nodes, focusNodeId, orbitLayout, thinkingSpace) : null,
-    [reading, suspended, nodes, focusNodeId, orbitLayout, thinkingSpace]);
-  const invitations = useMemo(() => readingOrbit && onAimThinking ? readingInvitations(thinkingSpace, nodes, orbitLayout) : [],
-    [readingOrbit, onAimThinking, thinkingSpace, nodes, orbitLayout]);
+  const invitations = useMemo(() => readingOrbit && onAimThinking ? readingInvitations(thinkingSpace, nodes, readingOrbit.layout) : [],
+    [readingOrbit, onAimThinking, thinkingSpace, nodes]);
 
   const basePositionedNodes = useMemo(() => nodes.map((node) => {
     const defaultPosition = usesCompactGrowthLayout && node.compactSeedX !== undefined && node.compactSeedY !== undefined
       ? { x: node.compactSeedX, y: node.compactSeedY }
       : { x: node.seedX, y: node.seedY };
-    const orbitPlace = readingOrbit?.[node.id];
+    const orbitPlace = readingOrbit?.places[node.id];
     if (orbitPlace?.x !== undefined && orbitPlace.y !== undefined) return { node, position: { x: orbitPlace.x, y: orbitPlace.y, z: 0 } };
     return {
       node,
@@ -931,7 +925,7 @@ export function BubbleStage({
     if (detail > 1) return;
     const select = () => { actionsRef.current.onSelect(node.id); actionsRef.current.onPrimaryAction?.(node.id); };
     if (readingOrbit) {
-      if (readingOrbit[node.id]?.role === "satellite") select();
+      if (readingOrbit.places[node.id]?.role === "satellite") select();
       return;
     }
     if (onSplit && detail > 0 && pointerTypeRef.current !== "touch") {
@@ -1048,6 +1042,7 @@ export function BubbleStage({
               {
                 "--stage-pan-x": `${resolvedPan.x}px`,
                 "--stage-pan-y": `${resolvedPan.y}px`,
+                "--reading-main-max-diameter": readingOrbit && labelGeometry.height ? `${Math.round(labelGeometry.height * .7)}px` : undefined,
                 "--liquid-dwell-duration": `${LIQUID_DWELL_MS}ms`
               } as CSSProperties
             }
@@ -1074,7 +1069,7 @@ export function BubbleStage({
           >
             {thinkingSpace && onAimThinking && nodes.length ? <StageField space={thinkingSpace} nodes={nodes}
               carrying={gesture?.kind === "node"}
-              hidden={viewRotated || reading || suspended || metaballRendererState === "fallback"}
+              hidden={viewRotated || Boolean(readingOrbit) || suspended || metaballRendererState === "fallback"}
               onFocus={onAimThinking} /> : null}
             {pendingBranchNodes ? (
               <div
@@ -1219,7 +1214,7 @@ export function BubbleStage({
                 : node.id === arrivals?.secondId ? ["pending-antithesis", arrivals.sourceId]
                   : node.id === eventNodeId ? ["pending-synthesis", ...nodes.filter(source => source.sourceRole === "source").map(source => source.id), ...(node.originNodeIds || [])]
                     : node.originNodeIds);
-              const orbitRole = readingOrbit?.[node.id]?.role;
+              const orbitRole = readingOrbit?.places[node.id]?.role;
               const size = labelGeometry.labels[node.id];
               const leader = metaballRendererState !== "ready" && size ? seedLabelLeader({ id: node.id, ...size,
                 x: position.x * labelGeometry.width / 100, y: position.y * labelGeometry.height / 100 + size.anchorOffsetY },
@@ -1258,7 +1253,7 @@ export function BubbleStage({
                   data-seed-instance={node.instanceNumber}
                   data-source-role={node.sourceRole}
                   data-seed-focus={attended ? "related" : "background"}
-                  data-seed-attention={orbitRole ? READING_ORBIT_ATTENTION[orbitRole] : reading ? attended ? .65 : .06 : attended ? sublated ? .7 : 1 : .3}
+                  data-seed-attention={orbitRole ? READING_ORBIT_ATTENTION[orbitRole] : attended ? sublated ? .7 : 1 : .3}
                   data-reading-role={orbitRole}
                   data-preserve-seed-reading={orbitRole === "satellite" ? "true" : undefined}
                   data-sublated={sublated ? "true" : undefined}

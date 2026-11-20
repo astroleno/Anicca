@@ -77,6 +77,7 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
     const activate = locator => spec.width < 500 ? locator.tap() : locator.click();
     const input = page.getByRole("textbox", { name: "输入", exact: true });
     const panel = page.getByTestId("dialogue-panel");
+    const reading = page.locator('#dialogue-reading-drawer[data-open="true"]');
     const snapshot = () => page.evaluate(() => JSON.parse(localStorage.getItem(`anicca_workspace_snapshot_v1:${localStorage.getItem("anicca_workspace_active_v1")}`)));
     const waitCount = count => page.waitForFunction(expected => {
       const saved = JSON.parse(localStorage.getItem(`anicca_workspace_snapshot_v1:${localStorage.getItem("anicca_workspace_active_v1")}`) || "null");
@@ -93,17 +94,16 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
     const closeReading = async () => {
       const close = page.getByRole("button", { name: "返回种子，收起阅读", exact: true });
       if (await close.isVisible()) await activate(close);
-      await page.locator('#dialogue-reading-drawer[data-open="true"]').waitFor({ state: "hidden" });
+      await reading.waitFor({ state: "hidden" });
     };
     const openSeed = async id => {
       await closeReading(); await waitForSeedLayout(page);
-      const caption = page.getByTestId(`dialogue-stage-node-${id}`).locator("[data-seed-caption]");
-      await activate(caption);
-      // On a slow software renderer a caption can still be gliding into place; tap it again once it rests.
-      if (!await panel.waitFor({ timeout: 8_000 }).then(() => true, () => false)) {
-        await waitForSeedLayout(page); await activate(caption);
-      }
-      await panel.waitFor();
+      const seed = page.getByTestId(`dialogue-stage-node-${id}`);
+      await activate(seed.locator("[data-seed-caption]"));
+      // Observe the open reader and the selected seed after the single activation.
+      // A repeat can land on the reader just as it opens on a slow renderer.
+      await reading.getByTestId("dialogue-panel").waitFor();
+      await seed.and(page.locator('[data-reading-role="main"]')).waitFor();
       await page.waitForFunction(() => getComputedStyle(document.getElementById("dialogue-reading-drawer")).opacity === "1");
     };
     try {

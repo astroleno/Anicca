@@ -4035,7 +4035,7 @@
 .seedBody { line-height: 1.85; font-size: 15px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .seedBody p { margin: 0; }
 .seedInspector[data-mode="polarity"] [data-seed-meaning] { display: none; }
-.seedReadingContent { position: absolute; z-index: 15; top: calc(112px + var(--safe-top)); bottom: calc(var(--dialogue-composer-height) + 52px + var(--safe-bottom)); left: 50%; transform: translateX(-50%); width: min(520px, calc(100% - 48px)); display: flex; align-items: center; pointer-events: none; }
+.seedReadingContent { position: absolute; z-index: 15; top: calc(112px + var(--safe-top)); bottom: calc(var(--dialogue-composer-height) + 52px + var(--safe-bottom)); left: 50%; transform: translateX(-50%); width: min(var(--reading-column-max-width, 520px), calc(100% - 48px)); display: flex; align-items: center; pointer-events: none; }
 .seedReadingContent .seedInspector { display: flex; flex-direction: column; width: 100%; min-height: 0; max-height: 100%; padding: 0; overflow: auto; pointer-events: auto; color: #342d46; }
 .seedReadingContent[data-open="false"] .seedInspector { pointer-events: none; }
 .seedInspectorFrame { display: flex; flex-direction: column; min-height: 0; max-height: 100%; width: 100%; pointer-events: auto; }
@@ -4416,10 +4416,12 @@
 
 /* Reading orbit: the read seed becomes the main drop behind the text; its relations orbit as satellites.
    Positions and sizes change at once in the DOM; the liquid springs carry the exchange. */
-.stageNode[data-reading-role="main"] { --seed-diameter: min(440px, 44vw); cursor: default; }
+.stageTrack[data-reading-orbit="true"] { transform: none; }
+.stageNode[data-reading-role="main"] { --seed-diameter: min(440px, 44vw, var(--reading-main-max-diameter, 440px)); cursor: default; }
 .stageNode[data-reading-role="satellite"] { --seed-diameter: 64px; cursor: pointer; }
 .stageNode[data-reading-role="rest"] { --seed-diameter: 20px; }
 .shell[data-reading="true"] .stageCanvas:has([data-reading-orbit="true"]) { opacity: .7; }
+.shell[data-reading="true"] .stageNode[data-reading-role="rest"] .stageNodeInner { opacity: 0; }
 .shell[data-reading="true"] .stageNode[data-reading-role="satellite"] .stageNodeInner { opacity: .64; width: 104px; }
 .shell[data-reading="true"] .stageNode[data-reading-role="satellite"]:is(:hover, :focus-visible) .stageNodeInner { opacity: 1; }
 .stageNode[data-reading-role="satellite"] .stageNodeInner strong { font-size: 12px; }
@@ -4427,10 +4429,17 @@
 .seedReadingContent .seedInspector { animation: readingArrive 300ms 140ms cubic-bezier(.22, 1, .36, 1) both; }
 @keyframes readingArrive { from { opacity: 0; filter: blur(6px); } to { opacity: 1; filter: none; } }
 @media (max-width: 760px) {
-  .stageNode[data-reading-role="main"] { --seed-diameter: min(300px, 76vw); }
-  .stageNode[data-reading-role="satellite"] { --seed-diameter: 46px; }
-  .shell[data-reading="true"] .stageNode[data-reading-role="satellite"] .stageNodeInner { width: 76px; }
+  .stageNode[data-reading-role="main"] { --seed-diameter: min(300px, 76vw, var(--reading-main-max-diameter, 300px)); }
 }
+.readingSatellites { display: flex; flex: 0 0 auto; gap: 4px; }
+.readingSatellites button { display: flex; flex: 1 1 0; align-items: center; gap: 3px; min-width: 0; min-height: 44px;
+  padding: 0 4px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); text-align: left;
+  font: 12px/1.6 var(--anicca-font-interface); cursor: pointer; }
+.readingSatellites button:is(:hover, :focus-visible, :active) { color: var(--text); background: var(--dialogue-hover); }
+.readingSatellites button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+.readingSatelliteDrop { display: grid; flex: 0 0 18px; height: 18px; place-items: center; font-size: 10px;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--muted) 25%, transparent), transparent); }
+.readingSatelliteLabel { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) {
   .seedReadingContent .seedInspector { animation: readingArriveReduced 160ms ease both; }
   @keyframes readingArriveReduced { from { opacity: 0; } to { opacity: 1; } }

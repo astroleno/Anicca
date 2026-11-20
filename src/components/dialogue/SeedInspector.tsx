@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import type { Graph, SeedInstances } from "@/types/anicca";
+import type { DialogueStageNode } from "@/features/dialectic/viewModel";
 import { seedLabel } from "@/features/dialectic/seeds";
 import { conceptInstances, sourceInstances, seedConceptId } from "@/features/dialectic/seedInstances";
 import { defaultThinkingSpace, normalizeSeedPerspective, perspectiveLabel, seedPerspectiveLabel, type ThinkingSpace } from "@/features/perspectives/model";
@@ -17,7 +18,7 @@ import { captureReadingPosition, restoreReadingPosition } from "./readingPositio
 import { SeedPrimaryActions } from "./SeedPrimaryActions";
 import { resolveSeedExpansionFrame } from "@/features/perspectives/seedExpansionFrame";
 
-export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = {}, space = defaultThinkingSpace(), combining, busy, activeDeferredId, onContinueDeferred, onClose, onSplit, onExpandPolarity, onWrite, onCombine, onPick, onCreateInstance, onRemoveInstance, onExpandSources, onInquiry, inquiryTarget, inquiryComposer, companionId, getReadingPosition, onRememberPosition, onReadingIntent, onReadNewResponse, polarityRequest = 0, useCurrentAngle: controlledAngle, onUseCurrentAngleChange }: {
+export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = {}, space = defaultThinkingSpace(), combining, busy, activeDeferredId, onContinueDeferred, onClose, onSplit, onExpandPolarity, onWrite, onCombine, onPick, onCreateInstance, onRemoveInstance, onExpandSources, onInquiry, inquiryTarget, inquiryComposer, companionId, getReadingPosition, onRememberPosition, onReadingIntent, onReadNewResponse, readingSatellites, polarityRequest = 0, useCurrentAngle: controlledAngle, onUseCurrentAngleChange }: {
   graph: Graph; nodeId: string; combining: boolean; busy: boolean;
   instanceId?: string; instances?: SeedInstances;
   space?: ThinkingSpace;
@@ -29,6 +30,7 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
   inquiryTarget?: InquiryTarget; inquiryComposer?: ReactNode; companionId?: string;
   getReadingPosition?(id: string): ReadingPosition | undefined; onRememberPosition?(id: string, position: ReadingPosition): void;
   onReadingIntent?(): void; onReadNewResponse?(): void;
+  readingSatellites?: readonly DialogueStageNode[];
   polarityRequest?: number;
   useCurrentAngle?: boolean; onUseCurrentAngleChange?(current: boolean): void;
   onCreateInstance?(): void; onRemoveInstance?(): void; onExpandSources?(): void;
@@ -182,6 +184,17 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
         <button type="button" data-reading-return className={styles.seedReadingBack} aria-label={polarityOpen ? "返回种子阅读" : "返回种子，收起阅读"}
           onClick={polarityOpen ? () => setPolarityOpen(false) : onClose}>{polarityOpen ? "返回阅读" : "返回种子"}</button>
       </div>
+      {readingSatellites?.length && !polarityOpen && !combining && !activeEncounter && !choosingSentence && !inquiryComposer ? (
+        <div className={styles.readingSatellites} role="group" aria-label="相关种子">
+          {readingSatellites.map(satellite => (
+            <button key={satellite.id} type="button" data-reading-role="satellite" aria-label={`读「${satellite.label}」`}
+              onClick={() => onPick(satellite.id)}>
+              <span className={styles.readingSatelliteDrop} aria-hidden="true">{satellite.branchType}</span>
+              <span className={styles.readingSatelliteLabel}>{satellite.label}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
     <section ref={inspectorRef} className={styles.seedInspector} data-testid="dialogue-panel" aria-labelledby="conversation-panel-heading"
       data-mode={polarityOpen ? "polarity" : combining ? "combine" : "read"} data-selecting={selecting ? "true" : undefined}
       onClickCapture={event => {

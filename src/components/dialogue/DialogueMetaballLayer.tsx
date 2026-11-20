@@ -297,9 +297,11 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
           const fusedPairs = computeFusedPairs(cachedNodes, DIALOGUE_METABALL_SMOOTHNESS).join(",");
           if (canvas.dataset.fusedPairs !== fusedPairs) canvas.dataset.fusedPairs = fusedPairs;
         }
-        // Read caption dimensions before any per-frame layout writes.
+        const reading = host.dataset.readingOrbit === "true";
+        // Read visible caption dimensions before any per-frame layout writes.
         if (labelsDirty) {
           measuredCaptions = surfaces.flatMap(element => {
+            if (reading && element.dataset.readingRole !== "satellite") return [];
             const caption = element.querySelector<HTMLElement>("[data-seed-caption]");
             if (!caption) return [];
             const width = Array.from(caption.querySelectorAll<HTMLElement>("strong,small,em")).reduce((sum, text) => {
@@ -320,7 +322,7 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
           motionActive = result.moving;
           spatialLayoutDirty = true;
         }
-        const orbit = readSeedOrbit(host);
+        const orbit = reading ? DEFAULT_SEED_ORBIT : readSeedOrbit(host);
         if (spatialLayoutDirty && trackRect && hostRect.height) {
           const pivot: [number, number] = [(trackRect.left + trackRect.width/2 - hostRect.left - hostRect.width/2)/hostRect.height,
             (hostRect.top + hostRect.height/2 - trackRect.top - trackRect.height/2)/hostRect.height];
@@ -334,7 +336,7 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
         depthActive = depth.moving;
         const rawChanged = lastLayoutBase !== unfittedNodes || lastLayoutDepth !== depth.nodes;
         const dragging = manipulatingSeed && Boolean(pressedId);
-        if (rawChanged && trackRect && !dragging) {
+        if (rawChanged && trackRect && !dragging && !reading) {
           // Automatic framing belongs to the scene layout. Reframing the rotated
           // projection changes camera distance during a rotation, even at fixed zoom.
           if (framingSource !== renderedNodes) {
@@ -346,9 +348,10 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
         const fitElapsed = lastFitTime === null ? 1 : Math.max(0, (sceneTime - lastFitTime) / 1000);
         const fitDt = lastFitTime === null || fitActive ? fitElapsed : Math.min(1 / 60, fitElapsed);
         lastFitTime = sceneTime;
-        if (!dragging) viewFit = prefersReducedMotion || fitGoal < viewFit || Math.abs(fitGoal - viewFit) < .0001 ? fitGoal : viewFit + (fitGoal - viewFit) * (1 - Math.exp(-12 * fitDt));
-        fitActive = !dragging && Math.abs(fitGoal - viewFit) >= .0001;
-        const sceneFit = viewFit * readSeedZoom(host);
+        if (!dragging && !reading) viewFit = prefersReducedMotion || fitGoal < viewFit || Math.abs(fitGoal - viewFit) < .0001 ? fitGoal : viewFit + (fitGoal - viewFit) * (1 - Math.exp(-12 * fitDt));
+        fitActive = !reading && !dragging && Math.abs(fitGoal - viewFit) >= .0001;
+        // Reading coordinates are screen-space gutters. Keep normal stage fitting and zoom for browsing.
+        const sceneFit = reading ? 1 : viewFit * readSeedZoom(host);
         if ((rawChanged || sceneFit !== lastLayoutFit) && trackRect) {
           lastLayoutBase = unfittedNodes; lastLayoutDepth = depth.nodes; lastLayoutFit = sceneFit;
           spatialNodes = sceneFit === 1 ? unfittedNodes : unfittedNodes.map(node => fitSpatialSeed(node, spatialPivot, sceneFit));
@@ -577,12 +580,13 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
       if (changed.every(record => ["data-space-yaw", "data-space-pitch", "data-space-zoom", "data-space-navigating"].includes(record.attributeName || ""))) {
         spatialLayoutDirty = true; activeUntil = performance.now() + 250; wake(); return;
       }
-      if (changed.some(record => record.type === "childList" || record.type === "characterData" || record.attributeName === "class")) { labelsDirty = true; activeUntil = performance.now() + 500; }
+      if (changed.some(record => record.type === "childList" || record.type === "characterData" ||
+        ["class", "data-reading-orbit", "data-reading-role"].includes(record.attributeName || ""))) { labelsDirty = true; activeUntil = performance.now() + 500; }
       if (changed.some(record => record.attributeName === "data-seed-attention")) activeUntil = performance.now() + 650;
       invalidate();
     });
     mutationObserver.observe(host, { subtree: true, childList: true, characterData: true, attributes: true,
-      attributeFilter: ["style", "class", "data-space-paused", "data-label-inset-top", "data-label-inset-bottom", "data-metaball-role", "data-metaball-relation", "data-liquid-origins", "data-liquid-color-key", "data-liquid-pending", "data-atmosphere", "data-theme", "data-liquid-partner", "data-liquid-contact", "data-label-handoff", "data-space-yaw", "data-space-pitch", "data-space-zoom", "data-space-navigating", "data-space-depth", "data-seed-generation", "data-seed-hue-shift", "data-seed-polarity-strength", "data-seed-attention"] });
+      attributeFilter: ["style", "class", "data-reading-orbit", "data-reading-role", "data-space-paused", "data-label-inset-top", "data-label-inset-bottom", "data-metaball-role", "data-metaball-relation", "data-liquid-origins", "data-liquid-color-key", "data-liquid-pending", "data-atmosphere", "data-theme", "data-liquid-partner", "data-liquid-contact", "data-label-handoff", "data-space-yaw", "data-space-pitch", "data-space-zoom", "data-space-navigating", "data-space-depth", "data-seed-generation", "data-seed-hue-shift", "data-seed-polarity-strength", "data-seed-attention"] });
     const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(remeasure) : null;
     resizeObserver?.observe(host);
     host.addEventListener("pointerdown", handlePointerDown, { passive: true });

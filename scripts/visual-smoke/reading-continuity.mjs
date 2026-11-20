@@ -214,7 +214,8 @@ export async function runReadingContinuity(browser, { baseUrl, outputDir, setAct
 
 async function runOrdinaryReading(browser, { baseUrl, outputDir, setActivePage }) {
   const results = [];
-  for (const spec of [{ name: "desktop", width: 1280, height: 720 }, { name: "mobile-390", width: 390, height: 844 }, { name: "mobile-320", width: 320, height: 640 }]) {
+  for (const spec of [{ name: "desktop", width: 1280, height: 720 }, { name: "tablet-768", width: 768, height: 900 },
+    { name: "mobile-390", width: 390, height: 844 }, { name: "mobile-320", width: 320, height: 640 }]) {
     const context = await browser.newContext({ viewport: { width: spec.width, height: spec.height }, deviceScaleFactor: 1,
       hasTouch: spec.width < 500, isMobile: spec.width < 500 });
     const fixture = structuredClone(thoughtFlowFixture), graph = fixture.graph;
@@ -270,6 +271,20 @@ async function runOrdinaryReading(browser, { baseUrl, outputDir, setActivePage }
       result.maxStageShift = Math.max(...Object.keys(before).map(id => Math.hypot(before[id].x - after[id].x, before[id].y - after[id].y)));
       assert(result.maxStageShift < 4, `Closing reading restores the stage: ${result.maxStageShift}`);
       await page.getByTestId("dialogue-stage-node-negative").press("Enter"); await panel.waitFor(); await waitForSeedLayout(page);
+      const row = page.getByRole("group", { name: "相关种子", exact: true });
+      const compact = spec.width <= 768;
+      assert.equal(await row.count(), compact ? 1 : 0, "Only the compact reader puts satellites above its text");
+      const drop = compact ? row.getByRole("button", { name: "读「写作来源」", exact: true }).locator("span").first()
+        : page.getByTestId("dialogue-stage-node-positive");
+      const label = compact ? row.getByRole("button", { name: "读「阅读参考」", exact: true }).getByText("阅读参考", { exact: true })
+        : page.getByTestId("dialogue-stage-node-negative").locator("[data-seed-caption]");
+      const activate = target => spec.width < 500 ? target.tap() : target.click();
+      await activate(drop);
+      await panel.getByRole("heading", { name: "写作来源", exact: true }).waitFor();
+      await waitForSeedLayout(page);
+      await activate(label);
+      await panel.getByRole("heading", { name: "阅读参考", exact: true }).waitFor();
+      assert.equal(await input.inputValue(), draft, "Switching satellites preserves the unfinished draft");
       await page.getByRole("button", { name: "继续写", exact: true }).click();
       assert(await panel.isVisible()); assert((await page.getByLabel("续写对象", { exact: true }).innerText()).includes("阅读参考"));
       await page.getByRole("button", { name: "写新想法", exact: true }).click();

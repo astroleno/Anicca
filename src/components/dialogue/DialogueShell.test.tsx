@@ -563,8 +563,8 @@ describe("DialogueShell", () => {
     fireEvent.click(screen.getByTestId(`dialogue-stage-node-${thesisId}`));
     fireEvent.click(await screen.findByRole("button", { name: "继续写" }));
     fireEvent.change(screen.getByRole("textbox", { name: "输入" }), { target: { value: "继续之前先问一个问题" } });
-    fireEvent.click(screen.getByTestId(`dialogue-stage-node-${antithesisId}`));
-    await screen.findByRole("button", { name: "继续写" });
+    fireEvent.click(within(screen.getByRole("group", { name: "相关种子" })).getByRole("button", { name: "读「暂停」" }));
+    await screen.findByRole("heading", { name: "暂停", level: 2 });
     expect(useDialogueUiStore.getState().composerParentId).toBe(thesisId);
     fireEvent.click(screen.getByRole("button", { name: "继续写" }));
     expect(useDialogueUiStore.getState().composerParentId).toBe(antithesisId);
@@ -749,18 +749,19 @@ describe("DialogueShell", () => {
     expect(screen.getByTestId(`dialogue-stage-node-${pair.positiveId}`)).toBeInTheDocument();
   });
 
-  it("reads a neighbouring thought by choosing its satellite, without leaving reading", async () => {
+  it("reads a neighbouring thought from the compact reader row, without leaving reading", async () => {
     const user = userEvent.setup(), { rootUserId, thesisId, antithesisId } = seedPair();
     useDialogueUiStore.setState({ focusedNodeId: rootUserId });
     render(<DialogueShell />);
     await openReadingDrawer(user);
     expect(screen.getByTestId(`dialogue-stage-node-${rootUserId}`)).toHaveAttribute("data-reading-role", "main");
-    expect(screen.getByTestId(`dialogue-stage-node-${antithesisId}`)).toHaveAttribute("data-reading-role", "satellite");
-    await user.click(screen.getByRole("button", { name: "读「继续」" }));
+    expect(screen.getByTestId(`dialogue-stage-node-${antithesisId}`)).toHaveAttribute("data-reading-role", "rest");
+    expect(screen.getByTestId(`dialogue-stage-node-${antithesisId}`).inert).toBe(true);
+    await user.click(within(screen.getByRole("group", { name: "相关种子" })).getByRole("button", { name: "读「继续」" }));
     await waitFor(() => expect(screen.getByTestId(`dialogue-stage-node-${thesisId}`)).toHaveAttribute("data-reading-role", "main"));
     expect(document.getElementById("dialogue-reading-drawer")).toHaveAttribute("data-open", "true");
     expect(screen.getByRole("heading", { level: 2, name: "继续" })).toBeInTheDocument();
-    expect(screen.getByTestId(`dialogue-stage-node-${rootUserId}`)).toHaveAttribute("data-reading-role", "satellite");
+    expect(within(screen.getByRole("group", { name: "相关种子" })).getByRole("button", { name: "读「要不要继续这个项目」" })).toBeVisible();
   });
 
   it("keeps reading and its focus when thinking-space settings are opened and closed", async () => {
