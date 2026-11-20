@@ -4432,6 +4432,7 @@
   .stageNode[data-reading-role="main"] { --seed-diameter: min(300px, 76vw, var(--reading-main-max-diameter, 300px)); }
 }
 .readingSatellites { display: flex; flex: 0 0 auto; gap: 4px; }
+.shell[data-keyboard-open="true"] .readingSatellites { display: none; }
 .readingSatellites button { display: flex; flex: 1 1 0; align-items: center; gap: 3px; min-width: 0; min-height: 44px;
   padding: 0 4px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); text-align: left;
   font: 12px/1.6 var(--anicca-font-interface); cursor: pointer; }

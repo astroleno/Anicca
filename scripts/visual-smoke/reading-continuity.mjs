@@ -231,6 +231,13 @@ async function runOrdinaryReading(browser, { baseUrl, outputDir, setActivePage }
     await context.addInitScript(data => {
       localStorage.setItem("anicca_workspace_v2", JSON.stringify(data)); localStorage.setItem("anicca:seed-guide:v1", "done");
     }, fixture);
+    if (spec.width < 500) await context.addInitScript(({ width, height }) => {
+      const events = new EventTarget();
+      const viewport = { width, height, offsetTop: 0, offsetLeft: 0, scale: 1,
+        addEventListener: events.addEventListener.bind(events), removeEventListener: events.removeEventListener.bind(events) };
+      Object.defineProperty(window, "visualViewport", { configurable: true, value: viewport });
+      window.__setReaderKeyboard = open => { viewport.height = open ? height - 230 : height; events.dispatchEvent(new Event("resize")); };
+    }, spec);
     const page = await context.newPage(); setActivePage(page); page.setDefaultTimeout(30_000);
     const errors = []; page.on("pageerror", error => errors.push(error.message));
     const result = { name: `ordinary-${spec.name}`, passed: false, errors }; results.push(result);
@@ -285,6 +292,15 @@ async function runOrdinaryReading(browser, { baseUrl, outputDir, setActivePage }
       await activate(label);
       await panel.getByRole("heading", { name: "阅读参考", exact: true }).waitFor();
       assert.equal(await input.inputValue(), draft, "Switching satellites preserves the unfinished draft");
+      if (spec.width < 500) {
+        await input.focus();
+        await page.evaluate(() => window.__setReaderKeyboard(true));
+        await row.waitFor({ state: "hidden" });
+        await panel.getByRole("heading", { name: "阅读参考", exact: true }).waitFor();
+        await page.evaluate(() => window.__setReaderKeyboard(false));
+        await row.waitFor();
+        assert.equal(await input.inputValue(), draft, "The reader and draft survive the keyboard resizing the viewport");
+      }
       await page.getByRole("button", { name: "继续写", exact: true }).click();
       assert(await panel.isVisible()); assert((await page.getByLabel("续写对象", { exact: true }).innerText()).includes("阅读参考"));
       await page.getByRole("button", { name: "写新想法", exact: true }).click();
