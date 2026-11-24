@@ -26,7 +26,7 @@ import {
 } from "@/lib/analytics/dialogue";
 import { buildWorkspaceContext } from "@/chat/workspaceContext";
 import { BranchSidebar } from "@/components/dialogue/BranchSidebar";
-import { BubbleStage } from "@/components/dialogue/BubbleStage";
+import { BubbleStage, hasStageLiquid } from "@/components/dialogue/BubbleStage";
 import { SeedInspector } from "@/components/dialogue/SeedInspector";
 import { SeedPrimaryActions } from "@/components/dialogue/SeedPrimaryActions";
 import { SeedReadingContent } from "@/components/dialogue/SeedReadingContent";
@@ -504,7 +504,7 @@ type SeedExpansionResult = { sourceId: string; firstId: string; secondId: string
 
 export function DialogueShell() {
   const { theme, preference: themePreference, selectTheme } = useDialogueTheme();
-  const { rendererMode, selectRenderer } = useLiquidRenderer();
+  const { rendererMode, rendererPreferenceReady, selectRenderer } = useLiquidRenderer();
   const [rendererStatus, setRendererStatus] = useState<LiquidRendererStatus | null>(null);
   const graphSnapshot = useSyncExternalStore(
     branchGraphStore.subscribe.bind(branchGraphStore),
@@ -2036,6 +2036,10 @@ export function DialogueShell() {
           label: pending.synthesis.sourceLabel || relevantSynthesisAction.label
         }
       : null;
+  const stageHasLiquid = hasStageLiquid(seedScene, stagePendingPreview);
+  if (rendererStatus && (!stageHasLiquid || rendererStatus.requested !== rendererMode)) {
+    setRendererStatus(null);
+  }
   const flowStatusHandledInContext = workspaceStatus?.startsWith("画作视角已生成") ||
     workspaceStatus === "正反已生成。" || workspaceStatus === "合流已生成，继续从这里想。";
   const retrievalDebugPreview = useMemo(() => {
@@ -2219,7 +2223,8 @@ export function DialogueShell() {
                   checked={rendererMode === value} onChange={() => selectRenderer(value)} /><span>{label}</span></label>
               )}</div>
               <p role="status" className={styles.rendererStatus}>
-                {rendererStatus?.requested !== rendererMode ? "正在切换…"
+                {!stageHasLiquid ? "将在舞台有液滴时启用所选渲染模式"
+                  : !rendererStatus || rendererStatus.requested !== rendererMode ? "正在切换…"
                   : rendererStatus.backend === "unavailable" ? "图形不可用，已使用简化画面"
                   : rendererStatus.fallback ? "TSL 不可用，已回退原版"
                   : rendererStatus.backend === "original" ? "当前使用原版"
@@ -2269,6 +2274,7 @@ export function DialogueShell() {
       <div className={styles.workspace}>
         <BubbleStage
           rendererMode={rendererMode}
+          rendererPreferenceReady={rendererPreferenceReady}
           onRendererStatus={setRendererStatus}
           suspended={evolutionOpen}
           readingOrbit={readingOrbit}

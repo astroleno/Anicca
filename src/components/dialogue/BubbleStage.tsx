@@ -58,6 +58,7 @@ type BubbleStageProps = {
   } | null;
   atmosphereVisible?: boolean;
   rendererMode?: LiquidRendererMode;
+  rendererPreferenceReady?: boolean;
   onRendererStatus?(status: LiquidRendererStatus): void;
   theme?: DialogueTheme;
   cameraView?: { direction: SeedViewDirection | "reset"; revision: number } | null;
@@ -82,6 +83,10 @@ type StagePendingPreview =
       antithesisId: string;
       label: string;
     };
+
+export function hasStageLiquid(nodes: DialogueStageNode[], pendingPreview?: StagePendingPreview | null) {
+  return nodes.length > 0 || pendingPreview?.kind === "branches";
+}
 
 type ActiveStageGesture =
   | {
@@ -187,6 +192,7 @@ export function BubbleStage({
   emptyDraftLength = 0,
   atmosphereVisible = false,
   rendererMode = "original",
+  rendererPreferenceReady = true,
   onRendererStatus,
   theme = "light",
   cameraView = null,
@@ -219,6 +225,13 @@ export function BubbleStage({
   const [isNarrowViewport, setIsNarrowViewport] = useState(false);
   const [metaballRendererState, setMetaballRendererState] =
     useState<DialogueMetaballRendererState>("loading");
+  const activeRendererMode = rendererPreferenceReady && hasStageLiquid(nodes, pendingPreview) ? rendererMode : null;
+  const [previousRendererMode, setPreviousRendererMode] = useState(activeRendererMode);
+  if (previousRendererMode !== activeRendererMode) {
+    // Keep the CSS surfaces visible until the new renderer has drawn its first frame.
+    setPreviousRendererMode(activeRendererMode);
+    setMetaballRendererState("loading");
+  }
   const [synthesisCandidateId, setSynthesisCandidateId] = useState<string | null>(null);
   const [attractionPartnerId, setAttractionPartnerId] = useState<string | null>(null);
   const contactRef = useRef<string | null>(null);
@@ -995,8 +1008,10 @@ export function BubbleStage({
         <h2 id="dialogue-stage-heading">当前结构</h2>
       </div>
       <div className={styles.stageCanvas}>
-        <DialogueMetaballLayer hostRef={trackRef} onStateChange={setMetaballRendererState}
-          rendererMode={rendererMode} onRendererStatus={onRendererStatus} />
+        {activeRendererMode ? (
+          <DialogueMetaballLayer key={activeRendererMode} hostRef={trackRef} onStateChange={setMetaballRendererState}
+            rendererMode={activeRendererMode} onRendererStatus={onRendererStatus} />
+        ) : null}
         <div className={styles.stageGlow} />
         <div className={styles.stageGlowSecondary} />
         <div

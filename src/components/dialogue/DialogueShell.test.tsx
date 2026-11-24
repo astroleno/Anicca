@@ -31,6 +31,7 @@ import { createEmptyGraph } from "@/types/anicca";
 import { PersistedWorkspaceSnapshot } from "@/types/workspace";
 import { createDeferred } from "../../../tests/deferred";
 import { loadComposerDraft } from "@/lib/persist/composerDraft";
+import { LIQUID_RENDERER_KEY } from "./liquid/preference";
 
 function resetWorkspace(focusedNodeId: string | null = null) {
   branchGraphStore.setGraph(createEmptyGraph());
@@ -1290,6 +1291,49 @@ describe("DialogueShell", () => {
       expect(screen.queryByTestId("dialogue-panel-pending-branches")).not.toBeInTheDocument();
       expect(branchGraphStore.getGraph().entryIds).toHaveLength(1);
     });
+  });
+
+  it("saves an empty-stage renderer selection and keeps a cancelled root response out of the retry", async () => {
+    const user = userEvent.setup();
+    const first = createDeferred<Response>();
+    const second = createDeferred<Response>();
+    const fetchMock = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>()
+      .mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+    vi.stubGlobal("fetch", fetchMock);
+    render(<DialogueShell />);
+
+    await openMore(user);
+    const rendererMenu = screen.getByRole("group", { name: "液体渲染对照" });
+    await user.click(within(rendererMenu).getByRole("radio", { name: "TSL WebGL2" }));
+    expect(localStorage.getItem(LIQUID_RENDERER_KEY)).toBe("tsl-webgl");
+    expect(within(rendererMenu).getByRole("status")).toHaveTextContent("将在舞台有液滴时启用");
+    expect(screen.queryByTestId("dialogue-metaball-canvas")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "更多" }));
+
+    await user.type(screen.getByLabelText("输入"), "这个方向还值得投入吗");
+    expect(screen.getByTestId("dialogue-empty-stage-hint")).toHaveAttribute("data-forming", "true");
+    await user.click(screen.getByRole("button", { name: "生成" }));
+    const firstRequestId = readFetchBody(fetchMock, 0).requestId;
+    expect(screen.getByTestId("dialogue-stage-pending-thesis")).toBeInTheDocument();
+    expect(screen.getByTestId("dialogue-stage-pending-antithesis")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "取消" }));
+    expect(screen.queryByTestId("dialogue-metaball-canvas")).not.toBeInTheDocument();
+    expect(screen.getByTestId("dialogue-empty-stage-hint")).toHaveAttribute("data-forming", "true");
+    await user.click(screen.getByRole("button", { name: "生成" }));
+    const secondRequestId = readFetchBody(fetchMock, 1).requestId;
+
+    const response = (requestId: string, label: string) => new Response(JSON.stringify({
+      requestId,
+      thesis: { text: label, summary: label, label, stance: "正" },
+      antithesis: { text: "暂停", summary: "暂停重构", label: "暂停", stance: "反" }
+    }));
+    first.resolve(response(firstRequestId, "已经取消的结果"));
+    await waitFor(() => expect(screen.getByTestId("dialogue-metaball-canvas")).toHaveAttribute("data-renderer-requested", "tsl-webgl"));
+    expect(useDialogueUiStore.getState().pending.branches?.requestId).toBe(secondRequestId);
+    expect(branchGraphStore.getGraph().entryIds).toHaveLength(0);
+    second.resolve(response(secondRequestId, "重试结果"));
+    await waitFor(() => expect(branchGraphStore.getGraph().entryIds).toHaveLength(1));
+    expect(Object.values(branchGraphStore.getGraph().nodes).map(node => node.text)).toContain("重试结果");
   });
 
   it("boots from the active workspace registry instead of the legacy single snapshot key", async () => {

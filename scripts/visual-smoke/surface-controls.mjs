@@ -79,15 +79,20 @@ export async function runSurfaceControls(browser, { baseUrl, outputDir, setActiv
         const note = async name => { await settle(page); const state = { name, ...await geometry(page) }; states.push(state); assertGeometry(state); return state; };
         try {
           const response = await page.goto(baseUrl, { waitUntil: "networkidle" }); assert.equal(response.status(), 200); assert(await page.title());
-          await page.waitForFunction(() => document.querySelector('[data-testid="dialogue-metaball-canvas"]')?.dataset.rendererState === "ready");
+          const canvas = page.getByTestId("dialogue-metaball-canvas");
+          await page.getByTestId("dialogue-empty-stage-hint").waitFor();
+          assert.equal(await canvas.count(), 0, "The empty seed does not require a GPU canvas");
           if (mode === "original") for (const [width, height] of [[320, 568], [390, 844], [768, 1024], [980, 700], [981, 700], [844, 390], [1440, 900]]) {
             await page.setViewportSize({ width, height }); await note(`navigation-${width}-${height}`);
           }
           await page.setViewportSize({ width: spec.width, height: spec.height });
           const input = page.getByRole("textbox", { name: "输入", exact: true }); await input.fill("让花园的开放用途与共同维护一起生长");
-          await note("line-input-focused"); await page.getByRole("button", { name: "生成", exact: true }).click();
+          await note("line-input-focused");
+          assert.equal(await canvas.count(), 0, "Typing without generating does not require a GPU canvas");
+          await page.getByRole("button", { name: "生成", exact: true }).click();
           await page.getByTestId("dialogue-stage-pending-root").waitFor();
           const pending = await note("generation-surface"); assert(pending.pending.length >= 3);
+          await page.waitForFunction(() => document.querySelector('[data-testid="dialogue-metaball-canvas"]')?.dataset.rendererState === "ready");
           await page.waitForTimeout(250); await page.screenshot({ path: path.join(outputDir, `surface-${result.name}-pending.png`) });
           if (reduced) {
             await page.waitForTimeout(300);

@@ -11,7 +11,7 @@ function deviceDefault(): LiquidRendererMode {
 
 export function useLiquidRenderer() {
   // Resolve after hydration, once per visit rather than during resize/drag.
-  const [mode, setMode] = useState<LiquidRendererMode>("original");
+  const [mode, setMode] = useState<LiquidRendererMode | null>(null);
   useEffect(() => {
     const resolveMode = (value: string | null) => isLiquidRendererMode(value) ? value : deviceDefault();
     try {
@@ -27,5 +27,5 @@ export function useLiquidRenderer() {
     setMode(value);
     try { localStorage.setItem(LIQUID_RENDERER_KEY, value); } catch { /* Keep the current selection without storage. */ }
   }, []);
-  return { rendererMode: mode, selectRenderer };
+  return { rendererMode: mode ?? "original", rendererPreferenceReady: mode !== null, selectRenderer };
 }

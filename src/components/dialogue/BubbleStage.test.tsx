@@ -15,17 +15,19 @@ vi.mock("./DialogueMetaballLayer", async () => {
 
   return {
     DialogueMetaballLayer: ({
-      onStateChange
+      onStateChange, rendererMode
     }: {
       onStateChange(state: "loading" | "ready" | "fallback"): void;
+      rendererMode: string;
     }) => {
       React.useEffect(() => {
         onStateChange(metaballLayerMock.state);
-      }, [onStateChange]);
+      }, [onStateChange, rendererMode]);
 
       return React.createElement("canvas", {
         "aria-hidden": "true",
-        "data-testid": "dialogue-metaball-canvas"
+        "data-testid": "dialogue-metaball-canvas",
+        "data-renderer-requested": rendererMode
       });
     }
   };
@@ -1315,6 +1317,39 @@ describe("BubbleStage", () => {
       "empty-root"
     );
     expect(screen.queryByRole("button", { name: /点此输入/ })).not.toBeInTheDocument();
+  });
+
+  it("restarts liquid rendering from the CSS preview after cancellation and a mode change", async () => {
+    const props = { layoutKey: "empty", nodes: [], focusNodeId: null, onSelect: vi.fn() };
+    const pending = { kind: "branches" as const, anchorNodeId: null, prompt: "一个想法" };
+    const { rerender } = render(<BubbleStage {...props} />);
+    const track = screen.getByTestId("dialogue-stage-track");
+    expect(screen.queryByTestId("dialogue-metaball-canvas")).not.toBeInTheDocument();
+    rerender(<BubbleStage {...props} emptyDraftLength={8} rendererMode="tsl" />);
+    expect(screen.getByTestId("dialogue-empty-stage-hint")).toHaveAttribute("data-forming", "true");
+    expect(screen.queryByTestId("dialogue-metaball-canvas")).not.toBeInTheDocument();
+
+    rerender(<BubbleStage {...props} pendingPreview={pending} rendererMode="tsl" rendererPreferenceReady={false} />);
+    expect(screen.getByTestId("dialogue-stage-pending-thesis")).toBeInTheDocument();
+    expect(screen.getByTestId("dialogue-stage-pending-antithesis")).toBeInTheDocument();
+    expect(screen.queryByTestId("dialogue-metaball-canvas")).not.toBeInTheDocument();
+    rerender(<BubbleStage {...props} pendingPreview={pending} rendererMode="tsl" />);
+    await waitFor(() => expect(track).toHaveAttribute("data-metaball-renderer", "ready"));
+
+    rerender(<BubbleStage {...props} emptyDraftLength={8} rendererMode="original" />);
+    expect(screen.getByTestId("dialogue-empty-stage-hint")).toBeInTheDocument();
+    expect(screen.queryByTestId("dialogue-metaball-canvas")).not.toBeInTheDocument();
+    metaballLayerMock.state = "loading";
+
+    rerender(<BubbleStage {...props} pendingPreview={pending} rendererMode="original" />);
+    expect(track).toHaveAttribute("data-metaball-renderer", "loading");
+    const retryCanvas = await screen.findByTestId("dialogue-metaball-canvas");
+    expect(retryCanvas).toHaveAttribute("data-renderer-requested", "original");
+
+    const root: DialogueStageNode = { id: "root", label: "一个想法", kind: "user", relation: "focus", seedX: 50, seedY: 42 };
+    rerender(<BubbleStage {...props} nodes={[root]} focusNodeId="root" rendererMode="original" />);
+    expect(screen.getByTestId("dialogue-metaball-canvas")).toBe(retryCanvas);
+    expect(screen.getByTestId("dialogue-stage-node-root")).toBeInTheDocument();
   });
 
   it("renders in-stage pending feedback while synthesis is converging", () => {
