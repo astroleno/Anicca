@@ -53,7 +53,7 @@ import {
   ownsPendingResponse
 } from "@/features/dialectic/controller";
 import { observeDialogueViewport } from "@/features/dialectic/platform";
-import { buildSeedContext, fissionPair, seedLabel } from "@/features/dialectic/seeds";
+import { buildSeedContext, fissionPair, ordinarySourcePair, seedLabel } from "@/features/dialectic/seeds";
 import { buildSeedInstanceScene, seedConceptId, seedInstancePairAction, sourceInstances, unfoldedSourcePositions, separatedEncounterPositions } from "@/features/dialectic/seedInstances";
 import { arrangeSeedScene } from "@/features/dialectic/seedPlacement";
 import { createClientId, DialogueErrorState, PendingRequest, useDialogueUiStore } from "@/features/dialectic/store";
@@ -569,6 +569,7 @@ export function DialogueShell() {
   const [activeInstanceId, setActiveInstanceId] = useState<string | null>(null);
   const [expandedResultId, setExpandedResultId] = useState<string | null>(null);
   const [expansionResult, setExpansionResult] = useState<SeedExpansionResult | null>(null);
+  const [unrevealedSourceId, setUnrevealedSourceId] = useState<string | null>(null);
   const [seedArrivals, setSeedArrivals] = useState<{ sessionId: string; requestId: string; origins: Record<string, string[]> } | null>(null);
   useEffect(() => {
     if (!seedArrivals) return;
@@ -618,7 +619,7 @@ export function DialogueShell() {
   const arrangeStage = useDialogueUiStore((state) => state.arrangeStage);
   useLayoutEffect(() => {
     setAxisSuggestions([]); setCameraView(null); pendingPerspectiveRef.current = null;
-    setActiveInstanceId(null); setExpandedResultId(null); setExpansionResult(null); setSeedArrivals(null);
+    setActiveInstanceId(null); setExpandedResultId(null); setExpansionResult(null); setUnrevealedSourceId(null); setSeedArrivals(null);
     setEvolutionOpen(false); setInquiryResult(null); setPolarityRequest(0); setStageSelectionPending(false);
     setActiveDeferredId(null); setConnectionTargetId(null);
   }, [workspaceSessionId]);
@@ -795,6 +796,12 @@ export function DialogueShell() {
     const ordinaryPair = node && fissionPair(graphSnapshot.graph, node.id);
     if (ordinaryPair) return { ...ordinaryPair,
       lens: node.meta?.fissionFrame ? perspectiveLabel(normalizeThinkingSpace(node.meta.fissionFrame)) : undefined };
+    const sourcePair = node && focusedNodeId === node.id && node.id !== unrevealedSourceId && ordinarySourcePair(graphSnapshot.graph, node.id);
+    if (sourcePair) {
+      const frame = graphSnapshot.graph.nodes[sourcePair.firstId].meta?.fissionFrame
+        ?? graphSnapshot.graph.nodes[sourcePair.secondId].meta?.fissionFrame;
+      return { ...sourcePair, lens: frame ? perspectiveLabel(normalizeThinkingSpace(frame)) : undefined };
+    }
     const origin = normalizePolarityOrigin(node?.meta?.polarity);
     if (!origin || !node?.parents[0]) return null;
     const siblings = (graphSnapshot.graph.nodes[node.parents[0]]?.children || []).map(id => graphSnapshot.graph.nodes[id])
@@ -803,7 +810,7 @@ export function DialogueShell() {
     const second = siblings.find(sibling => sibling.meta?.polarity?.pole === 1);
     return first && second ? { sourceId: node.parents[0], firstId: first.id, secondId: second.id, axis: polarityAxis(origin),
       lens: perspectiveLabel({ ...origin.frame, focus: Object.fromEntries(Object.entries(origin.frame.focus).filter(([id]) => id !== origin.axisId)) }) } : null;
-  }, [expansionResult, graphSnapshot, view.focusNodeId]);
+  }, [expansionResult, focusedNodeId, graphSnapshot, unrevealedSourceId, view.focusNodeId]);
   const encounters = useMemo(() => deferredSyntheses(graphSnapshot.graph), [graphSnapshot]);
   const connectionTarget = encounters.find(item => item.id === connectionTargetId && !item.resolvedNodeId);
   const activeEncounter = encounters.find(item => item.id === activeDeferredId && !item.resolvedNodeId);
@@ -1048,6 +1055,7 @@ export function DialogueShell() {
     }
     const conceptId = seedConceptId(graphSnapshot.graph, seedInstances, nodeId);
     if (!conceptId) return;
+    if (conceptId === unrevealedSourceId) setUnrevealedSourceId(null);
     if (inquiryResult?.responseId === conceptId) setInquiryResult(null);
     if (fromOverview) setCombineSourceId(null);
     if (expansionResult && ![expansionResult.sourceId, expansionResult.firstId, expansionResult.secondId].some(id =>
@@ -1392,6 +1400,8 @@ export function DialogueShell() {
           targetAssistantId: targetId, userText: text, response, perspective: annotatePerspective(requestPerspective), frame: requestPerspective
         });
         resultFocusId = pair.userNodeId;
+        nextExpansion = { sourceId: pair.userNodeId, firstId: pair.thesisId, secondId: pair.antithesisId,
+          lens: perspectiveLabel(requestPerspective) };
         setSeedArrivals({ sessionId: workspaceSessionId, requestId, origins: {
           ...(isEmptyWorkspace ? { [pair.userNodeId]: ["empty-root"] } : {}),
           [pair.thesisId]: ["pending-thesis", pair.userNodeId], [pair.antithesisId]: ["pending-antithesis", pair.userNodeId]
@@ -1418,6 +1428,8 @@ export function DialogueShell() {
           setFocusedNodeId(resultFocusId);
         });
       } else {
+        // The view can adopt its first root even when this request lost attention.
+        if (!splitSeedId && !focusedNodeId) setUnrevealedSourceId(resultFocusId);
         setWorkspaceStatus("正反已生成。");
       }
     } catch (error: unknown) {
@@ -2244,10 +2256,20 @@ export function DialogueShell() {
       <PerspectiveControls workspaceId={workspaceId || "local"} space={thinkingSpace}
         topic={draft.trim() || view.currentNode?.text || graphSnapshot.graph.nodes[graphSnapshot.graph.entryIds[0]]?.text || ""}
         suggestions={axisSuggestions.filter(axis => !thinkingSpace.axes.some(existing => existing.negative === axis.negative && existing.positive === axis.positive))}
-        onChange={setThinkingSpace}
-        onLook={direction => setCameraView(current => ({ direction, revision: (current?.revision || 0) + 1 }))}
-        onResetView={() => setCameraView(current => ({ direction: "reset", revision: (current?.revision || 0) + 1 }))}
-        onArrange={() => { setExpandedResultId(null); arrangeStage(`seeds:${workspaceId || "local"}`); }} />
+        onChange={space => { noticeReadingIntent(); setThinkingSpace(space); }}
+        onLook={direction => {
+          noticeReadingIntent();
+          setCameraView(current => ({ direction, revision: (current?.revision || 0) + 1 }));
+        }}
+        onResetView={() => {
+          noticeReadingIntent();
+          setCameraView(current => ({ direction: "reset", revision: (current?.revision || 0) + 1 }));
+        }}
+        onArrange={() => {
+          noticeReadingIntent();
+          setExpandedResultId(null);
+          arrangeStage(`seeds:${workspaceId || "local"}`);
+        }} />
       <div className={styles.navigationSceneControls} data-stage-navigation-controls />
       </nav>
       <input
@@ -2311,6 +2333,7 @@ export function DialogueShell() {
           emptyDraftLength={isEmptyWorkspace ? draft.trim().length : 0}
           thinkingSpace={thinkingSpace}
           onAimThinking={patch => {
+            noticeReadingIntent();
             const focus = Object.fromEntries(Object.entries({ ...thinkingSpace.focus, ...patch }).filter(([, value]) => value !== 0));
             setThinkingSpace({ ...thinkingSpace, focus });
             focusComposerSoon();

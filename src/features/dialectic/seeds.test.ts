@@ -1,6 +1,6 @@
 import { BranchGraphStore } from "@/store/branchGraph";
 import { deriveDialogueView } from "./viewModel";
-import { buildSeedContext, buildSeedScene, fissionPair, seedPairAction } from "./seeds";
+import { buildSeedContext, buildSeedScene, fissionPair, ordinarySourcePair, seedPairAction } from "./seeds";
 import { commitSeedSplitResult } from "./controller";
 import { serializeWorkspaceBundle, importWorkspaceBundleText } from "@/lib/io/workspaceBundle";
 import { ANICCA_WORKSPACE_SCHEMA_VERSION } from "@/lib/persist/local";
@@ -32,9 +32,15 @@ describe("seed operations", () => {
     const store = new BranchGraphStore(), source = store.createUserNode("旧工作区"), pair = store.createAssistantPair(source);
     const graph = store.getGraph();
     for (const id of [pair.thesisId, pair.antithesisId]) delete graph.nodes[id].meta!.fissionGroupId;
+    graph.nodes[source].children.push(pair.thesisId);
     expect(fissionPair(graph, pair.thesisId)?.secondId).toBe(pair.antithesisId);
+    expect(ordinarySourcePair(graph, source)).toEqual({ sourceId: source, firstId: pair.thesisId, secondId: pair.antithesisId });
+    graph.nodes[pair.antithesisId].meta!.fissionGroupId = "another-round";
+    expect(ordinarySourcePair(graph, source)).toBeNull();
+    delete graph.nodes[pair.antithesisId].meta!.fissionGroupId;
     const later = store.createAssistantPair(source);
     expect(fissionPair(graph, pair.thesisId)?.secondId).toBe(pair.antithesisId);
+    expect(ordinarySourcePair(graph, source)).toBeNull();
     for (const id of [later.thesisId, later.antithesisId]) delete graph.nodes[id].meta!.fissionGroupId;
     expect(fissionPair(graph, pair.thesisId)).toBeNull();
     expect(fissionPair(graph, later.thesisId)).toBeNull();

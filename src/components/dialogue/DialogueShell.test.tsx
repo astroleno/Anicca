@@ -1263,7 +1263,8 @@ describe("DialogueShell", () => {
     const fetchDeferred = createDeferred<Response>();
     vi.stubGlobal("fetch", vi.fn(() => fetchDeferred.promise));
 
-    render(<DialogueShell />);
+    const shell = render(<DialogueShell />);
+    act(() => useDialogueUiStore.getState().setThinkingSpace({ ...defaultThinkingSpace(), focus: { horizon: 1 } }));
 
     await user.click(await screen.findByRole("button", { name: /点此输入/ }));
     await user.type(screen.getByLabelText("输入"), "这个方向还值得投入吗");
@@ -1291,6 +1292,59 @@ describe("DialogueShell", () => {
       expect(screen.queryByTestId("dialogue-panel-pending-branches")).not.toBeInTheDocument();
       expect(branchGraphStore.getGraph().entryIds).toHaveLength(1);
     });
+    const result = within(await screen.findByTestId("dialogue-expansion-context"));
+    expect(result.getByRole("button", { name: "阅读正「继续」" })).toBeInTheDocument();
+    expect(result.getByRole("button", { name: "阅读反「暂停」" })).toBeInTheDocument();
+    expect(result.getByRole("button", { name: "回看起点" })).toBeInTheDocument();
+    expect(result.getByText(/长远/)).toBeInTheDocument();
+    expect(screen.queryByTestId("dialogue-panel")).not.toBeInTheDocument();
+
+    act(() => useDialogueUiStore.getState().setThinkingSpace({ ...defaultThinkingSpace(), focus: { horizon: -1 } }));
+    seedActiveWorkspaceFromCurrentGraph();
+    shell.unmount();
+    render(<DialogueShell />);
+    const restored = within(await screen.findByTestId("dialogue-expansion-context"));
+    expect(restored.getByText(/长远/)).toBeInTheDocument();
+    expect(restored.queryByText(/当下/)).not.toBeInTheDocument();
+    await user.click(restored.getByRole("button", { name: "阅读反「暂停」" }));
+    expect(await screen.findByRole("heading", { name: "暂停" })).toBeInTheDocument();
+  });
+
+  it.each(["writing", "changing perspective"] as const)("does not reveal a late first round while %s", async (activity) => {
+    const response = createDeferred<Response>();
+    const fetchMock = vi.fn(() => response.promise);
+    vi.stubGlobal("fetch", fetchMock);
+    render(<DialogueShell />);
+    const input = screen.getByRole("textbox", { name: "输入" });
+    fireEvent.change(input, { target: { value: "这是一开始的问题" } });
+    fireEvent.click(screen.getByRole("button", { name: "生成" }));
+    if (activity === "writing") {
+      input.focus();
+      fireEvent.change(input, { target: { value: "接下来还有一个问题" } });
+    } else {
+      fireEvent.click(screen.getByRole("button", { name: "换个角度" }));
+      const perspective = within(await screen.findByRole("dialog", { name: "换个角度看" }));
+      fireEvent.click(perspective.getByRole("button", { name: "群体" }));
+    }
+    response.resolve(new Response(JSON.stringify({
+      requestId: readFetchBody(fetchMock).requestId,
+      thesis: { text: "继续", summary: "继续推进", label: "继续", stance: "正" },
+      antithesis: { text: "暂停", summary: "暂停重构", label: "暂停", stance: "反" }
+    })));
+    await waitFor(() => expect(branchGraphStore.getGraph().entryIds).toHaveLength(1));
+    expect(screen.queryByTestId("dialogue-expansion-context")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("dialogue-panel")).not.toBeInTheDocument();
+    if (activity === "writing") {
+      expect(input).toHaveValue("接下来还有一个问题");
+      expect(input).toHaveFocus();
+      const [sourceId] = branchGraphStore.getGraph().entryIds;
+      fireEvent.click(screen.getByTestId(`dialogue-stage-node-${sourceId}`));
+      fireEvent.click(await screen.findByRole("button", { name: "返回种子，收起阅读" }));
+      expect(await screen.findByTestId("dialogue-expansion-context")).toBeInTheDocument();
+    } else {
+      expect(screen.getByRole("dialog", { name: "换个角度看" })).toBeInTheDocument();
+      expect(useDialogueUiStore.getState().thinkingSpace.focus).toEqual({ concern: 1 });
+    }
   });
 
   it("saves an empty-stage renderer selection and keeps a cancelled root response out of the retry", async () => {
@@ -2413,6 +2467,13 @@ describe("DialogueShell", () => {
         entryCount: 1
       }
     });
+    const [sourceId] = branchGraphStore.getGraph().nodes[thesisId].children;
+    const result = within(await screen.findByTestId("dialogue-expansion-context"));
+    expect(result.getByRole("button", { name: "阅读正「拆小」" })).toBeInTheDocument();
+    expect(result.getByRole("button", { name: "阅读反「停一周」" })).toBeInTheDocument();
+    await user.click(result.getByRole("button", { name: "回看起点" }));
+    expect(useDialogueUiStore.getState().focusedNodeId).toBe(sourceId);
+    expect(await screen.findByTestId("dialogue-panel")).toHaveTextContent("继续的话下一步做什么");
   });
 
   it("preserves a deferred meeting, accepts a user bridge, and saves the resulting change", async () => {

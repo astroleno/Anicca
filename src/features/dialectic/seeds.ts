@@ -9,6 +9,12 @@ export function seedLabel(graph: Graph, id: string) {
   return node?.meta?.label || (node?.text || "想法").slice(0, 14);
 }
 
+function ordinaryBranchChildren(graph: Graph, sourceId: string) {
+  return [...new Set(graph.nodes[sourceId]?.children || [])].map(id => graph.nodes[id]).filter(sibling =>
+    sibling?.kind === "assistant" && ["正", "反"].includes(sibling.branchType || "") && !sibling.meta?.polarity &&
+    sibling.parents.length === 1 && sibling.parents[0] === sourceId);
+}
+
 /** Recover an exact fission pair; ambiguous legacy siblings never imply a pairing. */
 export function fissionPair(graph: Graph, nodeId: string) {
   const node = graph.nodes[nodeId];
@@ -16,13 +22,20 @@ export function fissionPair(graph: Graph, nodeId: string) {
     node.meta?.polarity || node.parents.length !== 1) return null;
   const sourceId = node.parents[0], groupId = node.meta?.fissionGroupId;
   if (groupId !== undefined && (typeof groupId !== "string" || !groupId.trim())) return null;
-  const siblings = [...new Set(graph.nodes[sourceId]?.children || [])].map(id => graph.nodes[id]).filter(sibling =>
-    sibling?.kind === "assistant" && ["正", "反"].includes(sibling.branchType || "") && !sibling.meta?.polarity &&
-    sibling.parents.length === 1 && sibling.parents[0] === sourceId && sibling.meta?.fissionGroupId === groupId);
+  const siblings = ordinaryBranchChildren(graph, sourceId).filter(sibling => sibling.meta?.fissionGroupId === groupId);
   if (siblings.length !== 2 || !siblings.some(sibling => sibling.id === nodeId)) return null;
   const first = siblings.find(sibling => sibling.branchType === "正");
   const second = siblings.find(sibling => sibling.branchType === "反");
   return first && second ? { sourceId, firstId: first.id, secondId: second.id } : null;
+}
+
+/** Restore a user source only when it identifies a single ordinary round. */
+export function ordinarySourcePair(graph: Graph, sourceId: string) {
+  if (graph.nodes[sourceId]?.kind !== "user") return null;
+  const children = ordinaryBranchChildren(graph, sourceId);
+  if (children.length !== 2) return null;
+  const pair = fissionPair(graph, children[0].id);
+  return pair?.sourceId === sourceId && [pair.firstId, pair.secondId].includes(children[1].id) ? pair : null;
 }
 
 // The historical action field names remain compatible with saved views and pending previews.
