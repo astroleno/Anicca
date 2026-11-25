@@ -8,6 +8,7 @@ export type DialogueStageNode = {
   instanceNumber?: number;
   sourceRole?: "result" | "source" | "shared" | "other";
   commonParentId?: string;
+  semanticColor?: [number, number, number];
   label: string;
   preview?: string;
   summary?: string;
@@ -27,6 +28,15 @@ export type DialogueStageNode = {
   compactSeedY?: number;
   originNodeIds?: string[];
 };
+
+export function stageSeedRole(node: Pick<DialogueStageNode, "kind" | "branchType" | "displayRole" | "isGrowthPerspective">) {
+  if (node.kind === "user") return "user";
+  if (node.branchType === "正") return "thesis";
+  if (node.branchType === "反") return "antithesis";
+  if (node.branchType === "合" || node.kind === "merge" || node.displayRole === "synthesis-record") return "synthesis";
+  if (node.isGrowthPerspective) return "growth";
+  return "neutral";
+}
 
 export type DialogueSceneProjection = {
   nodes: DialogueStageNode[];

@@ -1,8 +1,9 @@
 import type { Graph, SeedInstances, StagePoint } from "@/types/anicca";
-import type { ThinkingSpace } from "@/features/perspectives/model";
+import { graphGenerations, type ThinkingSpace } from "@/features/perspectives/model";
+import { mixRgb, seedColorPolarity, semanticSeedColor } from "@/components/dialogue/liquid/color";
 import { buildSeedScene, seedPairAction } from "./seeds";
 import { placeSeeds } from "./seedPlacement";
-import type { DialogueStageNode } from "./sceneProjection";
+import { stageSeedRole, type DialogueStageNode } from "./sceneProjection";
 
 const hasOwn = (value: object, key: string) => Object.prototype.hasOwnProperty.call(value, key);
 
@@ -50,15 +51,68 @@ export function sourceInstances(graph: Graph, instances: SeedInstances, resultId
   return synthesisSourceSlots(graph, instances, resultId).slice(0, 2).flatMap(source => source ? [source.instanceId] : []);
 }
 
-function commonDirectParent(graph: Graph, instances: SeedInstances, result: string, slots: ReturnType<typeof synthesisSourceSlots>) {
+function distinctSourceConcepts(slots: ReturnType<typeof synthesisSourceSlots>): [string, string] | undefined {
   if (slots.length !== 2) return undefined;
-  const resultConcept = seedConceptId(graph, instances, result);
   const left = slots[0]?.conceptId, right = slots[1]?.conceptId;
-  if (!left || !right || left === right || left === resultConcept || right === resultConcept) return undefined;
+  return left && right && left !== right ? [left, right] : undefined;
+}
+
+function commonDirectParent(graph: Graph, instances: SeedInstances, result: string, slots: ReturnType<typeof synthesisSourceSlots>) {
+  const sources = distinctSourceConcepts(slots);
+  if (!sources) return undefined;
+  const resultConcept = seedConceptId(graph, instances, result);
+  const [left, right] = sources;
+  if (left === resultConcept || right === resultConcept) return undefined;
   const eligible = (id: string) => id !== left && id !== right && id !== resultConcept && hasOwn(graph.nodes, id);
   const rightParents = new Set(graph.nodes[right].parents.filter(eligible));
   const shared = [...new Set(graph.nodes[left].parents.filter(id => rightParents.has(id)))];
   return shared.length === 1 ? shared[0] : undefined;
+}
+
+type SeedColor = NonNullable<DialogueStageNode["semanticColor"]>;
+
+function seedColorResolver(graph: Graph, instances: SeedInstances, generations: ReturnType<typeof graphGenerations>) {
+  // Null identifies a cyclic dependency. It propagates to any synthesis using
+  // that cycle, so the visible subset and its traversal order cannot change the hue.
+  const resolved = new Map<string, SeedColor | null>();
+  const base = (id: string) => {
+    const node = graph.nodes[id];
+    return semanticSeedColor(stageSeedRole(node), generations.get(id), seedColorPolarity(node.meta?.perspective));
+  };
+  return (id: string): SeedColor => {
+    const stack: { id: string; sources?: [string, string]; next: number }[] = [{ id, next: 0 }];
+    const active = new Set<string>();
+    while (stack.length) {
+      const frame = stack[stack.length - 1];
+      if (resolved.has(frame.id)) {
+        active.delete(frame.id);
+        stack.pop();
+        continue;
+      }
+      if (!active.has(frame.id)) {
+        active.add(frame.id);
+        const node = graph.nodes[frame.id];
+        const isSynthesis = node.branchType === "合" || node.kind === "merge";
+        frame.sources = isSynthesis ? distinctSourceConcepts(synthesisSourceSlots(graph, instances, frame.id)) : undefined;
+        // Canonical order keeps the floating point result bit-for-bit invariant.
+        frame.sources?.sort();
+      }
+      if (!frame.sources) {
+        resolved.set(frame.id, base(frame.id));
+        continue;
+      }
+      const source = frame.sources[frame.next];
+      if (source !== undefined) {
+        frame.next++;
+        if (active.has(source)) resolved.set(source, null);
+        else if (!resolved.has(source)) stack.push({ id: source, next: 0 });
+        continue;
+      }
+      const left = resolved.get(frame.sources[0]), right = resolved.get(frame.sources[1]);
+      resolved.set(frame.id, left && right ? mixRgb(left, right, .5) : null);
+    }
+    return resolved.get(id) ?? base(id);
+  };
 }
 
 export function seedInstancePairAction(graph: Graph, instances: SeedInstances, left: string, right: string) {
@@ -88,9 +142,12 @@ export function buildSeedInstanceScene(input: {
     ...(input.pinnedInstanceIds || []), active, focusId, ...focusCopies, ...relatedResults]
     .filter((id): id is string => Boolean(id));
   const budget = Math.min(8, 5 + Object.keys(instances).length);
+  const generations = graphGenerations(graph);
+  const resolveColor = seedColorResolver(graph, instances, generations);
   const base = buildSeedScene(graph, focusId, null, thinkingSpace, 8,
-    required.flatMap(id => seedConceptId(graph, instances, id) || []));
+    required.flatMap(id => seedConceptId(graph, instances, id) || []), generations);
   const templates = new Map(base.map(node => [node.id, node]));
+  for (const node of base) if (node.branchType === "合" || node.kind === "merge") node.semanticColor = resolveColor(node.id);
   const sourceConcepts = new Set(sources.map(id => seedConceptId(graph, instances, id)));
   const selected = new Set<string>();
   for (const id of [...required, ...Object.keys(instances).reverse(), ...base.map(node => node.id)]) {
@@ -110,6 +167,7 @@ export function buildSeedInstanceScene(input: {
       relation: id === active ? "focus" : sources.includes(id) ? "source" : "child",
       ...(copies.length ? { instanceNumber: id === conceptId ? 0 : instances[id].ordinal } : {}),
       sourceRole,
+      ...(sourceRole === "source" ? { semanticColor: resolveColor(conceptId) } : {}),
       ...(id === result && commonParentId ? { commonParentId } : {}),
       originNodeIds: id !== conceptId ? [conceptId] : template.originNodeIds };
   });

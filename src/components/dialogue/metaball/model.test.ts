@@ -53,6 +53,13 @@ describe("dialogue metaball projection", () => {
     expect(packed.emphasis.slice(1)).toEqual(Array(7).fill(0));
   });
 
+  it("packs a resolved synthesis color without reapplying the role palette", () => {
+    const semanticColor: [number, number, number] = [.85, .73, .76];
+    const node: MetaballSurfaceRect = { id: "result", role: "synthesis", relation: "focus", generation: 3,
+      left: 350, top: 275, width: 150, height: 150, semanticColor };
+    expect(packMetaballUniforms(projectMetaballSurfaces(host, [node])).colors.slice(0, 3)).toEqual(semanticColor);
+  });
+
   it("stably keeps the eight highest-priority surfaces", () => {
     const surfaces: MetaballSurfaceRect[] = [
       { id: "decorative-pending", role: "pending", relation: "decorative", left: 100, top: 50, width: 80, height: 80 },

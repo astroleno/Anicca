@@ -8,7 +8,7 @@ const node = (id, label, parents, children, branchType) => ({
   branchType, meta: { label }
 });
 
-const fixture = {
+export const crossTopicFixture = {
   schemaVersion: "anicca-workspace-v2", workspaceId: "cross-topic-stage", focusedNodeId: "result",
   composerParentId: null, stageLayouts: {}, graph: { version: "anicca-dialectic-v2", entryIds: ["root"], edges: {}, nodes: {
     root: node("root", "早期共同问题", [], ["branch-a", "branch-b"]),
@@ -25,17 +25,22 @@ const fixture = {
   ].map(([id, conceptId, ordinal]) => [id, { id, conceptId, ordinal, createdAt: date }]))
 };
 
-export async function runCrossTopicSynthesis(browser, { baseUrl, outputDir, blindDir, setActivePage = () => {} }) {
-  const context = await browser.newContext({ viewport: { width: 320, height: 568 }, deviceScaleFactor: 1, hasTouch: true, isMobile: true });
+export async function loadSynthesisSnapshot(context, fixture) {
   await context.addInitScript(({ snapshot, date }) => {
     localStorage.setItem("anicca_workspace_active_v1", snapshot.workspaceId);
     localStorage.setItem(`anicca_workspace_snapshot_v1:${snapshot.workspaceId}`, JSON.stringify(snapshot));
     localStorage.setItem("anicca_workspace_registry_v1", JSON.stringify({
       schemaVersion: "anicca-workspace-registry-v1", entries: [{
-        id: snapshot.workspaceId, title: "跨母题", createdAt: date, updatedAt: date, lastOpenedAt: date, entryCount: 1, nodeCount: 6
+        id: snapshot.workspaceId, title: "跨母题", createdAt: date, updatedAt: date, lastOpenedAt: date,
+        entryCount: snapshot.graph.entryIds.length, nodeCount: Object.keys(snapshot.graph.nodes).length
       }]
     }));
   }, { snapshot: fixture, date });
+}
+
+export async function runCrossTopicSynthesis(browser, { baseUrl, outputDir, blindDir, setActivePage = () => {} }) {
+  const context = await browser.newContext({ viewport: { width: 320, height: 568 }, deviceScaleFactor: 1, hasTouch: true, isMobile: true });
+  await loadSynthesisSnapshot(context, crossTopicFixture);
   const page = await context.newPage();
   setActivePage(page);
   const seed = id => page.getByTestId(`dialogue-stage-node-${id}`);

@@ -3979,6 +3979,7 @@
   white-space: nowrap;
   pointer-events: none;
 }
+.shell[data-theme="dark"] .synthesisRole { color: var(--caption-ink); }
 .seedSourceGlow { position: absolute; inset: -12%; border-radius: 50%; pointer-events: none; opacity: 0; background: radial-gradient(ellipse, color-mix(in srgb, var(--muted) 12%, transparent) 10%, transparent 70%); transition: opacity 260ms ease; }
 .seedLabelLeader { position: absolute; left: 50%; top: 50%; height: 1px; background: var(--muted); opacity: .4; transform-origin: 0 50%; pointer-events: none; }
 .seedLabelLeader[hidden], .shell[data-reading="true"] .seedLabelLeader, .stageNode[data-label-handoff="true"] .seedLabelLeader { display: none; }
@@ -4308,6 +4309,16 @@
 .shell .errorPanel button { background: transparent; }
 .shell[data-theme="dark"] .stageNode { border-color: var(--line); background: #393044; color: var(--text); text-shadow: none; }
 .shell[data-theme="dark"] .stageTrack[data-metaball-renderer="ready"] .stageNode { border-color: transparent; background: transparent; }
+.stageTrack[data-metaball-renderer="fallback"] .stageNode[data-seed-semantic-color]:is([data-metaball-role="synthesis"], [data-synthesis-tier="source"]) {
+  --seed-fill: rgb(var(--seed-semantic-color));
+  border-color: var(--line);
+  background: linear-gradient(152deg, color-mix(in srgb, var(--seed-fill) 82%, white), var(--seed-fill));
+}
+.shell[data-theme="dark"] .stageTrack[data-metaball-renderer="fallback"] .stageNode[data-seed-semantic-color]:is([data-metaball-role="synthesis"], [data-synthesis-tier="source"]) {
+  background: linear-gradient(152deg, color-mix(in srgb, var(--seed-fill) 42%, #191620), color-mix(in srgb, var(--seed-fill) 23%, #191620));
+}
+.stageTrack[data-metaball-renderer="fallback"] .stageNode[data-seed-semantic-color]:is([data-metaball-role="synthesis"], [data-synthesis-tier="source"])::before,
+.stageTrack[data-metaball-renderer="fallback"] .stageNode[data-seed-semantic-color]:is([data-metaball-role="synthesis"], [data-synthesis-tier="source"])::after { background: none; }
 .themeControls { margin: 14px 0 0; padding: 0 12px; border: 0; min-width: 0; }
 .themeControls legend { padding: 4px 0; font: 500 13px/1.5 var(--anicca-font-interface); }
 .themeControls > div { display: flex; gap: 2px; }
@@ -4398,9 +4409,9 @@
 /* Sources of a 合 are kept, not erased: their captions settle back with the droplets. */
 .stageNode[data-sublated="true"] [data-seed-caption] { opacity: .62; transition: opacity 900ms ease; }
 .stageNode[data-sublated="true"]:is(:hover, :focus-visible) [data-seed-caption] { opacity: 1; }
-/* The liquid renderer dims source bodies separately. Keep their smaller stage text legible. */
-.shell:not([data-reading]) .stageTrack[data-compact-stage][data-metaball-renderer="ready"] .stageNode[data-source-role="source"][data-sublated="true"] { opacity: 1; }
-.shell:not([data-reading]) .stageTrack[data-compact-stage][data-metaball-renderer="ready"] .stageNode[data-source-role="source"][data-sublated="true"] [data-seed-caption] { opacity: .92; }
+/* Keep smaller stage text legible. The source's size still keeps it secondary. */
+.shell:not([data-reading]) .stageTrack[data-compact-stage]:is([data-metaball-renderer="ready"], [data-compact-synthesis][data-metaball-renderer="fallback"]) .stageNode[data-source-role="source"][data-sublated="true"] { opacity: 1; }
+.shell:not([data-reading]) .stageTrack[data-compact-stage]:is([data-metaball-renderer="ready"], [data-compact-synthesis][data-metaball-renderer="fallback"]) .stageNode[data-source-role="source"][data-sublated="true"] [data-seed-caption] { opacity: .92; }
 /* Read first, then continue: one breath after the passage, the ways forward sit together;
    the quieter bookkeeping (分身 · 继续写) follows them closely in a softer voice. */
 .seedInspector:not([data-mode="polarity"]) .seedBody + .seedContinuation { margin: 28px 0 0; }

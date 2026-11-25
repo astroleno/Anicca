@@ -95,6 +95,9 @@ function readSurfaceRects(host: HTMLDivElement, offsets: Map<string, SurfaceProj
     const rect = element.getBoundingClientRect();
     const offset = offsets.get(id) || { x: 0, y: 0, scale: 1 };
     const width = rect.width / offset.scale, height = rect.height / offset.scale;
+    const channels = element.dataset.seedSemanticColor?.split(" ").map(Number);
+    const semanticColor = channels?.length === 3 && channels.every(channel => Number.isFinite(channel) && channel >= 0 && channel <= 1)
+      ? channels as [number, number, number] : undefined;
     let emergeFrom: string[] = [];
     try {
       const origins: unknown = JSON.parse(element.dataset.liquidOrigins || "[]");
@@ -104,6 +107,7 @@ function readSurfaceRects(host: HTMLDivElement, offsets: Map<string, SurfaceProj
       {
         id,
         colorKey: element.dataset.liquidColorKey,
+        semanticColor,
         role,
         relation,
         ...(element.dataset.liquidPending === "true" ? { generating: true } : {}),
@@ -456,7 +460,9 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
         }
         if (previousSpaceNodes !== displayNodes) {
           previousSpaceNodes = displayNodes;
-          canvas.dataset.spaceNodes = JSON.stringify(displayNodes.map(node => ({ id: node.id, center: node.center, depth: node.depth, radius: node.radius })));
+          canvas.dataset.spaceNodes = JSON.stringify(displayNodes.map(node => ({
+            id: node.id, center: node.center, depth: node.depth, radius: node.radius, color: node.color
+          })));
         }
         const atmosphere = host.dataset.atmosphere === "true";
         const theme = host.dataset.theme || "light";
@@ -618,7 +624,7 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
       invalidate();
     });
     mutationObserver.observe(host, { subtree: true, childList: true, characterData: true, attributes: true,
-      attributeFilter: ["style", "class", "data-reading-orbit", "data-reading-role", "data-compact-stage", "data-compact-synthesis", "data-synthesis-tier", "data-source-role", "data-space-paused", "data-label-inset-top", "data-label-inset-bottom", "data-metaball-role", "data-metaball-relation", "data-liquid-origins", "data-liquid-color-key", "data-liquid-pending", "data-atmosphere", "data-theme", "data-liquid-partner", "data-liquid-contact", "data-label-handoff", "data-space-yaw", "data-space-pitch", "data-space-zoom", "data-space-navigating", "data-space-depth", "data-seed-generation", "data-seed-hue-shift", "data-seed-polarity-strength", "data-seed-attention"] });
+      attributeFilter: ["style", "class", "data-reading-orbit", "data-reading-role", "data-compact-stage", "data-compact-synthesis", "data-synthesis-tier", "data-source-role", "data-space-paused", "data-label-inset-top", "data-label-inset-bottom", "data-metaball-role", "data-metaball-relation", "data-liquid-origins", "data-liquid-color-key", "data-liquid-pending", "data-atmosphere", "data-theme", "data-liquid-partner", "data-liquid-contact", "data-label-handoff", "data-space-yaw", "data-space-pitch", "data-space-zoom", "data-space-navigating", "data-space-depth", "data-seed-generation", "data-seed-semantic-color", "data-seed-hue-shift", "data-seed-polarity-strength", "data-seed-attention"] });
     if (shell) mutationObserver.observe(shell, { attributeFilter: ["data-reading"] });
     const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(remeasure) : null;
     resizeObserver?.observe(host);

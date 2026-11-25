@@ -22,7 +22,7 @@ import styles from "./DialogueShell.module.css";
 import { StageField } from "./StageField";
 import { readingInvitations, type ReadingOrbit } from "./readingOrbit";
 import type { ThinkingSpace } from "@/features/perspectives/model";
-import type { MetaballRole } from "./metaball/model";
+import { stageSeedRole } from "@/features/dialectic/sceneProjection";
 import { layoutSeedLabels, seedLabelLeader } from "./labelLayout";
 import { isCompactStageWidth, MIN_SYNTHESIS_TARGET, synthesisStageGeometry } from "./synthesisStageGeometry";
 import type { DialogueTheme } from "./useDialogueTheme";
@@ -160,15 +160,6 @@ function buildStageNodeAriaLabel(node: DialogueStageNode, visibleLabel: string) 
   if (node.sourceRole === "shared") parts.push("共享概念");
   parts.push(RELATION_LABELS[node.relation]);
   return parts.filter(Boolean).join("，");
-}
-
-function getMetaballRole(node: DialogueStageNode): MetaballRole {
-  if (node.kind === "user") return "user";
-  if (node.branchType === "正") return "thesis";
-  if (node.branchType === "反") return "antithesis";
-  if (node.branchType === "合" || node.displayRole === "synthesis-record") return "synthesis";
-  if (node.isGrowthPerspective) return "growth";
-  return "neutral";
 }
 
 export function BubbleStage({
@@ -1308,10 +1299,11 @@ export function BubbleStage({
                   data-preserve-seed-reading={orbitRole === "satellite" ? "true" : undefined}
                   data-sublated={sublated ? "true" : undefined}
                   data-expansion-kind={pole ? "polarity" : node.branchType === "正" || node.branchType === "反" ? "dialectic" : undefined}
-                  data-metaball-role={getMetaballRole(node)}
+                  data-metaball-role={stageSeedRole(node)}
                   data-metaball-relation={node.relation}
                   data-space-depth={position.z}
                   data-seed-generation={node.generation || 0}
+                  data-seed-semantic-color={node.semanticColor?.join(" ")}
                   data-seed-hue-shift={polarity?.hueShift}
                   data-seed-polarity-strength={polarity?.strength}
                   data-liquid-color-key={node.preview || node.label}
@@ -1327,6 +1319,7 @@ export function BubbleStage({
                     {
                       left: `${position.x}%`,
                       top: `${position.y}%`,
+                      "--seed-semantic-color": node.semanticColor?.map(channel => `${channel * 100}%`).join(" "),
                       "--stage-node-drag-x": "0px",
                       "--stage-node-drag-y": "0px",
                       "--synthesis-seed-diameter": synthesisSize ? `${synthesisSize.diameter}px` : undefined,

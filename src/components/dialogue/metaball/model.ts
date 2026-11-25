@@ -25,6 +25,7 @@ export type MetaballSurfaceRect = {
   generation?: number;
   attention?: number;
   polarity?: import("../liquid/color").SeedColorPolarity;
+  semanticColor?: [number, number, number];
   spaceDepth?: number;
   emergeFrom?: readonly string[];
   role: MetaballRole;
@@ -74,7 +75,7 @@ const RELATION_EMPHASIS: Record<MetaballRelation, number> = {
 };
 
 function getSurfaceColor(surface: MetaballSurfaceRect): [number, number, number] {
-  return semanticSeedColor(surface.role, surface.generation, surface.polarity);
+  return surface.semanticColor ?? semanticSeedColor(surface.role, surface.generation, surface.polarity);
 }
 
 function rankSurface(surface: MetaballSurfaceRect, index: number) {

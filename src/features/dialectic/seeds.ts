@@ -92,7 +92,7 @@ export function buildSeedContext(graph: Graph, sourceIds: string[]): DialecticCo
 }
 
 /** Eight visible seeds is a drawing budget; every other seed remains accessible in history. */
-export function buildSeedScene(graph: Graph, focusId: string | null, pinnedId: string | null, thinkingSpace?: ThinkingSpace, budget = 8, requiredIds: string[] = []): DialogueStageNode[] {
+export function buildSeedScene(graph: Graph, focusId: string | null, pinnedId: string | null, thinkingSpace?: ThinkingSpace, budget = 8, requiredIds: string[] = [], generations = graphGenerations(graph)): DialogueStageNode[] {
   const all = Object.keys(graph.nodes);
   const limit = Math.max(3, Math.min(8, budget));
   const selected = new Set<string>();
@@ -120,7 +120,6 @@ export function buildSeedScene(graph: Graph, focusId: string | null, pinnedId: s
   }
   for (let i = all.length - 1; i >= 0 && selected.size < limit; i--) retain(all[i]);
   const visible = all.filter(id => selected.has(id));
-  const generations = graphGenerations(graph);
   const positions = visible.length <= 3
     ? [[50, 36], [28, 61], [72, 61]]
     : visible.length <= 6 ? [[22, 27], [50, 27], [78, 27], [22, 72], [50, 72], [78, 72]]

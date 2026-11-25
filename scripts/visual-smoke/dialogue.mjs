@@ -10,6 +10,7 @@ import { runCanvasLifecycle, runSeedRecoveryAndTouch } from "./soft-interactions
 import { runFlowContinuity } from "./continuity.mjs";
 import { runThoughtFlow } from "./thought-flow.mjs";
 import { runCrossTopicSynthesis } from "./synthesis-common-parent.mjs";
+import { runSynthesisColors } from "./synthesis-colors.mjs";
 import { runAppExperience } from "./app-experience.mjs";
 import { runReadingContinuity } from "./reading-continuity.mjs";
 import { runSurfaceControls } from "./surface-controls.mjs";
@@ -1176,6 +1177,10 @@ async function main() {
       }
       for (const [name, scenario] of [["liquid-surface", runLiquidSurface], ["surface-controls", runSurfaceControls], ["app-experience", runAppExperience], ["reading-continuity", runReadingContinuity], ["seed-recovery-and-touch", runSeedRecoveryAndTouch], ["canvas-lifecycle", runCanvasLifecycle], ["flow-continuity", runFlowContinuity], ["thought-flow", runThoughtFlow], ["synthesis-common-parent", runCrossTopicSynthesis]]) {
         if (!scenarioNameFilter.size || scenarioNameFilter.has(name)) interactionScenarios.push(await runStep(`interaction:${name}`, () => scenario(browser, { baseUrl, outputDir, setActivePage })));
+      }
+      // This explicit visual comparison requires a working WebGPU adapter.
+      if (scenarioNameFilter.has("synthesis-colors")) {
+        interactionScenarios.push(await runStep("interaction:synthesis-colors", () => runSynthesisColors(browser, { baseUrl, outputDir, setActivePage })));
       }
 
       await runStep("teardown:close-browser", () => browser.close());
