@@ -175,16 +175,19 @@ export async function POST(req: NextRequest) {
     const client = getDialecticOpenAiClient();
     const perspective = readThinkingSpaceRequest(body.perspective);
 
-    const cards = retrieveDialecticPolicyCards([rootInput, connectionInput,
-      ...(seedMode && sources ? sources.map(source => source.text) : [])].filter(Boolean).join("\n"));
+    const selectedSources = sources || [
+      toSynthesisSource(thesis as Required<SynthesisInput>, "正"),
+      toSynthesisSource(antithesis as Required<SynthesisInput>, "反")
+    ];
+    const cards = retrieveDialecticPolicyCards([rootInput, connectionInput, ...selectedSources.map(source => source.text)]);
     const context: SynthesisStageContext = {
       meaning: body.meaningVersion === 1,
       connectionInput,
       sourceMode: seedMode ? "seeds" : undefined,
       perspective,
       rootInput,
-      thesis: sources?.[0] || toSynthesisSource(thesis as Required<SynthesisInput>, "正"),
-      antithesis: sources?.[1] || toSynthesisSource(antithesis as Required<SynthesisInput>, "反"),
+      thesis: selectedSources[0],
+      antithesis: selectedSources[1],
       contextMessages: serializeContextMessages(body.contextMessages),
       cards
     };

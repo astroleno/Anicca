@@ -125,6 +125,51 @@ describe("dialectic routes", () => {
     expect(prompt).not.toContain("同一母题下真正冲突");
   });
 
+  it.each([
+    {
+      name: "does not combine evidence from separate household fragments",
+      rootInput: "我每天只有2小时陪孩子",
+      connectionInput: "工作让我很愧疚",
+      sourceTexts: ["我希望陪伴可以更自在", "工作让我很愧疚"],
+      expectedTitles: [],
+    },
+    {
+      name: "keeps independently supported business cards in order despite an ordinary connection",
+      rootInput: "两位合作者对品牌定位和拍板权有分歧，应该由谁决定",
+      connectionInput: "工作让我很愧疚",
+      sourceTexts: ["每周只有两天，如何分配旧项目维护与新功能验证？", "我每天只有2小时陪孩子"],
+      expectedTitles: ["可撤回主理权", "固定时间预算"],
+    },
+    {
+      name: "retains a high-risk decision expressed in one source of a mixed request",
+      rootInput: "我每天只有2小时陪孩子",
+      connectionInput: "工作让我很愧疚",
+      sourceTexts: ["董事会要求评估员工个人效率，但没有同意，能否采集键盘活动和窗口活动？", "我希望陪伴可以更自在"],
+      expectedTitles: ["员工监控边界", "同意与隐私"],
+      highRisk: true,
+    },
+  ])("$name", async ({ rootInput, connectionInput, sourceTexts, expectedTitles, highRisk }) => {
+    if (highRisk) {
+      createResponse.mockResolvedValueOnce(modelSynthesis(VALID_HIGH_RISK_DRAFT))
+        .mockResolvedValueOnce(modelSynthesis(VALID_HIGH_RISK_DRAFT))
+        .mockResolvedValueOnce(passingEmployeeMonitoringAudit())
+        .mockResolvedValueOnce(modelSynthesis(VALID_HIGH_RISK_FINAL));
+    } else {
+      createResponse.mockResolvedValueOnce(modelSynthesis(VALID_LOW_RISK_DRAFT))
+        .mockResolvedValueOnce(modelSynthesis(VALID_LOW_RISK_CRITIC));
+    }
+    const sources = sourceTexts.map((text, index) => ({
+      id: `source-${index}`, text, summary: "", label: `来源${index}`, stance: "想法"
+    }));
+    const response = await synthesisPost(new NextRequest("http://localhost/api/synthesis", {
+      method: "POST", body: JSON.stringify({ requestId: "context-pair", rootInput, connectionInput, sources })
+    }));
+    const prompt = String(createResponse.mock.calls[0][0].input);
+    expect(Array.from(prompt.matchAll(/规则卡【([^】]+)】/g), match => match[1])).toEqual(expectedTitles);
+    expect(response.status).toBe(200);
+    expect(createResponse).toHaveBeenCalledTimes(highRisk ? 4 : 2);
+  });
+
   it("uses the selected polarity in generation and keeps independent stance, model position and request snapshot", async () => {
     const perspective = defaultThinkingSpace(); perspective.focus.horizon = 1;
     createResponse.mockResolvedValue({ output_text: JSON.stringify({
@@ -667,8 +712,8 @@ describe("dialectic routes", () => {
         body: JSON.stringify({
           requestId: "req-low-risk-pipeline",
           rootInput: "两位合作者对品牌拍板权有分歧，应该由谁决定",
-          thesis: { text: VALID_THESIS_TEXT, summary: "单人拍板", label: "主理", stance: "正" },
-          antithesis: { text: VALID_ANTITHESIS_TEXT, summary: "共同决策", label: "共识", stance: "反" }
+          thesis: { text: "由一位负责人定下作品方向，争议发生时再复盘。", summary: "单人拍板", label: "主理", stance: "正" },
+          antithesis: { text: "围绕作品目标继续协商，再共同决定采用的方向。", summary: "共同决策", label: "共识", stance: "反" }
         })
       })
     );
@@ -704,8 +749,8 @@ describe("dialectic routes", () => {
         body: JSON.stringify({
           requestId: "req-five-sentence-target",
           rootInput: "两位合作者对品牌拍板权有分歧，应该由谁决定",
-          thesis: { text: VALID_THESIS_TEXT, summary: "单人拍板", label: "主理", stance: "正" },
-          antithesis: { text: VALID_ANTITHESIS_TEXT, summary: "共同决策", label: "共识", stance: "反" }
+          thesis: { text: "由一位负责人定下作品方向，争议发生时再复盘。", summary: "单人拍板", label: "主理", stance: "正" },
+          antithesis: { text: "围绕作品目标继续协商，再共同决定采用的方向。", summary: "共同决策", label: "共识", stance: "反" }
         })
       })
     );
@@ -733,8 +778,8 @@ describe("dialectic routes", () => {
         body: JSON.stringify({
           requestId: "req-overlong-draft",
           rootInput: "两位合作者对品牌拍板权有分歧，应该由谁决定",
-          thesis: { text: VALID_THESIS_TEXT, summary: "单人拍板", label: "主理", stance: "正" },
-          antithesis: { text: VALID_ANTITHESIS_TEXT, summary: "共同决策", label: "共识", stance: "反" }
+          thesis: { text: "由一位负责人定下作品方向，争议发生时再复盘。", summary: "单人拍板", label: "主理", stance: "正" },
+          antithesis: { text: "围绕作品目标继续协商，再共同决定采用的方向。", summary: "共同决策", label: "共识", stance: "反" }
         })
       })
     );
@@ -762,8 +807,8 @@ describe("dialectic routes", () => {
         body: JSON.stringify({
           requestId: "req-unsupported-quantity",
           rootInput: "两位合作者对品牌拍板权有分歧，应该由谁决定",
-          thesis: { text: VALID_THESIS_TEXT, summary: "单人拍板", label: "主理", stance: "正" },
-          antithesis: { text: VALID_ANTITHESIS_TEXT, summary: "共同决策", label: "共识", stance: "反" }
+          thesis: { text: "由一位负责人定下作品方向，争议发生时再复盘。", summary: "单人拍板", label: "主理", stance: "正" },
+          antithesis: { text: "围绕作品目标继续协商，再共同决定采用的方向。", summary: "共同决策", label: "共识", stance: "反" }
         })
       })
     );

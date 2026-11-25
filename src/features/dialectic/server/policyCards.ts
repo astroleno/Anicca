@@ -13,7 +13,7 @@ export type DialecticRuleCheck = {
   rule: string;
 };
 
-export const DIALECTIC_POLICY_CARD_VERSION = "1.2.1-dev-derived";
+export const DIALECTIC_POLICY_CARD_VERSION = "1.3.0-dev-derived";
 export const MAX_DIALECTIC_POLICY_CARDS = 2;
 export const HIGH_RISK_POLICY_PRIORITY = 80;
 
@@ -186,30 +186,51 @@ const DIALECTIC_POLICY_CARDS: DialecticPolicyCard[] = [
   }
 ];
 
-const CACHE_OR_CONSISTENCY = /缓存|快取|陈旧|一致性|强一致|旧读/u;
+const CACHE_OR_CONSISTENCY = /缓存|快取|强一致|旧读|可陈旧|短暂陈旧/u;
 const AUTHORITATIVE_READ = /授权|鉴权|权限|访问控制|余额|库存|撤权|回源|失效|写入|租户|读(?:取)?接口|读请求|读端点/u;
-const TIME_ALLOCATION = /(?:时间|工时|执行)预算|(?:每天|每日|每周|每月|只有|只能(?:投入|用)?|最多|不超过|可用|可投入|仅有|总共|限)\s*(?:\d+(?:\.\d+)?|[一二两三四五六七八九十百半]+)\s*(?:个?小时|分钟|工作日|天|周|个月|个?(?:上午|下午|晚上|早上|夜晚))/u;
-const EXECUTION_WORK = /工作|项目|开源|产品|开发|维护|排期|工程|任务|交付|验证|执行|工时|冲刺|发布/u;
-const POLICY_CONTEXT_MATCHERS: Partial<Record<string, (input: string) => boolean>> = {
+const TIME_ALLOCATION = /(?:时间|工时|执行)预算|(?:\d+(?:\.\d+)?|[一二两三四五六七八九十百半]+)\s*(?:个?小时|分钟|工作日|天|周|个月|个?(?:上午|下午|晚上|早上|夜晚))/u;
+const ALLOCATION_DECISION = /分配|兼顾|平衡|排期|排优先|优先级|先后顺序|交付顺序|同时维护|继续维护|集中验证|时间验证|只能选|(?:该先|维护|处理|交付)[^。！？；]{0,28}还是/u;
+const EXECUTION_COMMITMENT = /(?:维护|处理|交付)[^。！？；]{0,14}(?:工具|开源|项目|插件|产品|网站|报错|issue)|(?:旧|开源|已有|现有)(?:项目|工具|插件|开源库|产品|网站)[^。！？；]{0,8}(?:维护|报错|用户)|旧插件|新(?:项目|功能|方向)验证|交付顺序/u;
+const POLICY_CONTEXT_MATCHERS: Record<string, (input: string) => boolean> = {
+  "survival-cash": (input) => /现金流|现金窗口|付费客户/u.test(input) ||
+    (/现金|定金|续命/u.test(input) && /公司|团队|客户|付费|融资/u.test(input)) ||
+    (/(?:资金|现金)(?:还|只)剩|(?:还|只)剩[^。！？；]{0,8}(?:资金|现金)/u.test(input) && /增长|预付款|融资|收入|消耗/u.test(input)) ||
+    (/销售/u.test(input) && /客户|采购/u.test(input) && /交付|收入|签约|转化/u.test(input)),
+  "bounded-abstraction": (input) => /客户|签约|订单|采购/u.test(input) &&
+    /集成|连接器|插件平台|sdk|专属(?:报表|字段)|定制/u.test(input),
+  "consent-privacy": (input) => /遥测|埋点|行为追踪|行为分析|session replay|个人效率监控/u.test(input) ||
+    (/隐私|没有同意|键盘活动|录屏/u.test(input) && /采集|监控|员工|用户|数据|排错|产品/u.test(input)),
+  "employee-monitoring": (input) => /员工|公司|董事会|企业设备|绩效/u.test(input) &&
+    /个人效率|个人行为|键盘活动|窗口活动|窗口与键盘|监控员工|员工监控|追踪[^。！？；]{0,12}浏览历史|采集[^。！？；]{0,12}浏览历史|行为采样|(?:员工|办公|企业)[^。！？；]{0,12}(?:电脑|设备|窗口)[^。！？；]{0,8}录屏/u.test(input),
+  "contain-security-risk": (input) => /跨租户|权限泄漏|数据污染|数据错乱|安全漏洞|审计日志/u.test(input) ||
+    (/复现|泄漏/u.test(input) && /线上|故障|支付|账本|系统|发布|写入|数据/u.test(input)),
   "authoritative-decision": (input) => /权威服务|权限查询/u.test(input) ||
     (CACHE_OR_CONSISTENCY.test(input) && AUTHORITATIVE_READ.test(input)),
-  "bounded-attention": (input) => TIME_ALLOCATION.test(input) && EXECUTION_WORK.test(input),
-  "verified-recovery": (input) => /备份|删除生产|历史数据|加密密钥|存储费用|磁盘/u.test(input) ||
-    (input.includes("恢复") && /数据库|快照|灾备|生产数据/u.test(input))
+  "safe-compatibility": (input) => /客户端|旧设备|旧协议|扫码枪|schema|请求签名/u.test(input) &&
+    /兼容|迁移|升级|签名|鉴权|写入|弃用|并行|过渡/u.test(input),
+  "bounded-attention": (input) => TIME_ALLOCATION.test(input) &&
+    ALLOCATION_DECISION.test(input) && EXECUTION_COMMITMENT.test(input),
+  "downstream-distribution": (input) => /中文|英文|长篇|长文|短视频|播客|翻译/u.test(input) &&
+    /受众|读者|扩大影响|分发|生产线|增长|转化|订阅/u.test(input),
+  "revocable-ownership": (input) => /合作者|合伙人|产品线|主理人|团队.{0,8}责任人/u.test(input) &&
+    /拍板|责任人|授权|负责的范围|品牌定位|决定|共识/u.test(input),
+  "accessible-release-gate": (input) => /键盘用户|纯键盘|屏幕阅读器|无障碍|焦点/u.test(input) &&
+    /发布|上线|阻断|核心流程|结账页|退款申请|无法完成|开放购买/u.test(input),
+  "verified-recovery": (input) => /生产(?:数据|库|历史数据|机|系统|环境)|数据库|快照|灾备|对象存储|数据中心|磁带|密钥/u.test(input) &&
+    /备份|恢复|还原|删除|归档|回滚|回收/u.test(input)
 };
 
-export function retrieveDialecticPolicyCards(input: string): DialecticPolicyCard[] {
-  const normalized = input.trim().toLowerCase();
+export function retrieveDialecticPolicyCards(input: string | readonly string[]): DialecticPolicyCard[] {
+  const fragments = (typeof input === "string" ? [input] : input).map(fragment => fragment.trim().toLowerCase());
 
   return DIALECTIC_POLICY_CARDS.map((card) => {
-    const contextMatches = POLICY_CONTEXT_MATCHERS[card.id];
-    if (contextMatches && !contextMatches(normalized)) return { card, score: 0 };
+    const matchingFragments = fragments.filter(POLICY_CONTEXT_MATCHERS[card.id]);
+    if (!matchingFragments.length) return { card, score: 0 };
     const score = card.keywords.reduce(
-      (sum, keyword) => sum + (normalized.includes(keyword.toLowerCase()) ? 1 : 0),
+      (sum, keyword) => sum + Number(matchingFragments.some(fragment => fragment.includes(keyword.toLowerCase()))),
       0
     );
-    // A contextual paraphrase can qualify even without the card's original keywords.
-    return { card, score: contextMatches ? Math.max(1, score) : score };
+    return { card, score: Math.max(1, score) };
   })
     .filter((entry) => entry.score > 0)
     .sort(
