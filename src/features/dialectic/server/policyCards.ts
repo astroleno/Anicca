@@ -13,7 +13,7 @@ export type DialecticRuleCheck = {
   rule: string;
 };
 
-export const DIALECTIC_POLICY_CARD_VERSION = "1.2.0-dev-derived";
+export const DIALECTIC_POLICY_CARD_VERSION = "1.2.1-dev-derived";
 export const MAX_DIALECTIC_POLICY_CARDS = 2;
 export const HIGH_RISK_POLICY_PRIORITY = 80;
 
@@ -186,16 +186,31 @@ const DIALECTIC_POLICY_CARDS: DialecticPolicyCard[] = [
   }
 ];
 
+const CACHE_OR_CONSISTENCY = /缓存|快取|陈旧|一致性|强一致|旧读/u;
+const AUTHORITATIVE_READ = /授权|鉴权|权限|访问控制|余额|库存|撤权|回源|失效|写入|租户|读(?:取)?接口|读请求|读端点/u;
+const TIME_ALLOCATION = /(?:时间|工时|执行)预算|(?:每天|每日|每周|每月|只有|只能(?:投入|用)?|最多|不超过|可用|可投入|仅有|总共|限)\s*(?:\d+(?:\.\d+)?|[一二两三四五六七八九十百半]+)\s*(?:个?小时|分钟|工作日|天|周|个月|个?(?:上午|下午|晚上|早上|夜晚))/u;
+const EXECUTION_WORK = /工作|项目|开源|产品|开发|维护|排期|工程|任务|交付|验证|执行|工时|冲刺|发布/u;
+const POLICY_CONTEXT_MATCHERS: Partial<Record<string, (input: string) => boolean>> = {
+  "authoritative-decision": (input) => /权威服务|权限查询/u.test(input) ||
+    (CACHE_OR_CONSISTENCY.test(input) && AUTHORITATIVE_READ.test(input)),
+  "bounded-attention": (input) => TIME_ALLOCATION.test(input) && EXECUTION_WORK.test(input),
+  "verified-recovery": (input) => /备份|删除生产|历史数据|加密密钥|存储费用|磁盘/u.test(input) ||
+    (input.includes("恢复") && /数据库|快照|灾备|生产数据/u.test(input))
+};
+
 export function retrieveDialecticPolicyCards(input: string): DialecticPolicyCard[] {
   const normalized = input.trim().toLowerCase();
 
-  return DIALECTIC_POLICY_CARDS.map((card) => ({
-    card,
-    score: card.keywords.reduce(
+  return DIALECTIC_POLICY_CARDS.map((card) => {
+    const contextMatches = POLICY_CONTEXT_MATCHERS[card.id];
+    if (contextMatches && !contextMatches(normalized)) return { card, score: 0 };
+    const score = card.keywords.reduce(
       (sum, keyword) => sum + (normalized.includes(keyword.toLowerCase()) ? 1 : 0),
       0
-    )
-  }))
+    );
+    // A contextual paraphrase can qualify even without the card's original keywords.
+    return { card, score: contextMatches ? Math.max(1, score) : score };
+  })
     .filter((entry) => entry.score > 0)
     .sort(
       (left, right) =>
