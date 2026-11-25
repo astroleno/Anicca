@@ -106,7 +106,7 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
       await page.screenshot({ path: path.join(blindDir, filename), style: `
         html { filter: grayscale(1); }
         header, [data-testid="dialogue-workspace-bar"], [data-stage-label-chrome], [data-stage-navigation-controls],
-        [data-testid="dialogue-composer"], [data-seed-caption], [data-synthesis-marker], [data-seed-leader], [data-testid="dialogue-stage-hint"] {
+        [data-testid="dialogue-composer"], [data-seed-caption], [data-synthesis-marker], [data-common-parent-marker], [data-seed-leader], [data-testid="dialogue-stage-hint"] {
           visibility: hidden !important;
         }` });
     };
@@ -201,7 +201,7 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
         const id = seed.getAttribute("data-metaball-surface");
         const node = projected.find(item => item.id === id);
         const x = body.x + body.width / 2, y = body.y + body.height / 2;
-        return { id, tier: seed.dataset.synthesisTier, x, y, diameter: body.width,
+        return { id, tier: seed.dataset.synthesisTier, commonParent: seed.dataset.commonParent === "true", x, y, diameter: body.width,
           stage: { left: bounds.left, top: bounds.top + Number(stage.dataset.labelInsetTop),
             right: bounds.right, bottom: bounds.bottom - Number(stage.dataset.labelInsetBottom) },
           modelDiameter: node && node.radius * 2 * raster.height, hitDiameter: target.width,
@@ -264,6 +264,36 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
       assert((await panel.innerText()).includes(graph.nodes[distance.id].text.slice(0, 14)));
       await closeReading();
       return button;
+    };
+    const returnToSynthesis = async label => {
+      await activate(page.getByRole("button", { name: "演化全景", exact: true }));
+      const overview = page.getByTestId("evolution-overview");
+      await overview.getByRole("textbox", { name: "搜索想法或极性" }).fill(label);
+      await activate(overview.getByRole("button").filter({ hasText: label }));
+      await activate(overview.getByRole("button", { name: "进入种子", exact: true }));
+      await reading.waitFor();
+      await closeReading();
+    };
+    const readCommonParent = async (geometry, pole, restore) => {
+      const common = geometry.filter(seed => seed.commonParent);
+      assert.equal(common.length, 1);
+      assert.equal(common[0].id, pole.id);
+      assert.equal(common[0].tier, "distant");
+      assert(Math.abs(common[0].x - spec.width / 2) <= 2);
+      assert(geometry.filter(seed => seed.tier === "source").every(source => source.y > common[0].y));
+      const button = page.getByTestId(`dialogue-stage-node-${pole.id}`);
+      assert((await button.getAttribute("aria-label")).includes(pole.meta.label));
+      assert.equal(await button.locator("[data-common-parent-marker]").innerText(), "起点");
+      await openSeed(pole.id, { sourceTarget: "surface" });
+      assert.equal(await panel.getByRole("heading", { level: 2 }).innerText(), pole.meta.label);
+      await closeReading();
+      await restore();
+      await button.focus();
+      await page.keyboard.press("Enter");
+      await button.and(page.locator('[data-reading-role="main"]')).waitFor();
+      assert.equal(await panel.getByRole("heading", { level: 2 }).innerText(), pole.meta.label);
+      await closeReading();
+      await restore();
     };
     try {
       await page.goto(`${baseUrl}${entryPath}`, { waitUntil: "networkidle" });
@@ -385,6 +415,7 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
       assertSourceLayout(synthesisLayout, graph);
       assertTiers(synthesisTiers);
       await assertCompactCaptions();
+      if (spec.width === 320) await readCommonParent(synthesisTiers, pole, () => returnToSynthesis(synthesis.meta.label));
       for (const [index, sourceId] of synthesis.parents.entries()) {
         await openSeed(sourceId, { sourceTarget: index === 1 ? "surface" : "caption" });
         assert.equal(await panel.getByRole("heading", { level: 2 }).innerText(), graph.nodes[sourceId].meta.label);
@@ -394,14 +425,8 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
         await page.getByTestId("dialogue-synthesis-context").waitFor();
       }
       if (spec.width <= 640) {
-        await checkDistant(synthesisTiers.find(seed => seed.tier === "distant"), graph);
-        await activate(page.getByRole("button", { name: "演化全景", exact: true }));
-        const overview = page.getByTestId("evolution-overview");
-        await overview.getByRole("textbox", { name: "搜索想法或极性" }).fill(synthesis.meta.label);
-        await activate(overview.getByRole("button").filter({ hasText: synthesis.meta.label }));
-        await activate(overview.getByRole("button", { name: "进入种子", exact: true }));
-        await reading.waitFor();
-        await closeReading();
+        await checkDistant(synthesisTiers.find(seed => seed.tier === "distant" && !seed.commonParent), graph);
+        await returnToSynthesis(synthesis.meta.label);
       }
       await activate(page.getByRole("button", { name: "展开来源", exact: true }));
       const sourceContext = page.getByTestId("dialogue-source-context");
@@ -412,8 +437,10 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
       assertSourceLayout(sourceLayout, graph);
       assertTiers(sourceTiers);
       await assertCompactCaptions();
+      if (spec.width === 320) await readCommonParent(sourceTiers, pole, () => sourceContext.waitFor());
       if (spec.width <= 640) {
-        const distant = sourceTiers.find(seed => seed.tier === "distant");
+        await waitForSeedLayout(page, { captions: true });
+        const distant = (await tierGeometry()).find(seed => seed.tier === "distant" && !seed.commonParent);
         const button = await checkDistant(distant, graph);
         await sourceContext.waitFor();
         await button.focus();

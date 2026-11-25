@@ -7,6 +7,7 @@ export type DialogueStageNode = {
   conceptId?: string;
   instanceNumber?: number;
   sourceRole?: "result" | "source" | "shared" | "other";
+  commonParentId?: string;
   label: string;
   preview?: string;
   summary?: string;

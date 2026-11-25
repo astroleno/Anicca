@@ -26,6 +26,59 @@ beforeEach(() => {
 });
 
 describe("shared concept instances", () => {
+  it.each([
+    ["same direct parent", ["root"], ["root"], true],
+    ["only an earlier ancestor", ["mid-a"], ["mid-b"], false],
+    ["two shared direct parents", ["root", "mid-a"], ["root", "mid-a"], false],
+    ["no shared direct parent", [], ["root"], false],
+    ["duplicate or dangling edges", ["root", "root", "gone"], ["root", "gone"], true],
+    ["cycle back to result", ["result"], ["result"], false],
+    ["source as its own parent", ["left"], ["left"], false],
+  ] as const)("resolves the common parent from concept edges: %s", (_name, left, right, shared) => {
+    const { store, root, a, b, c, x } = setup();
+    const other = store.createUserNode("远景");
+    const result = store.createSynthesisAssistant([a, b], { text: "合", sourceInstanceIds: [x, b] });
+    const graph = structuredClone(store.getGraph()), instances = useDialogueUiStore.getState().seedInstances;
+    const ids: Record<string, string> = { root, "mid-a": c, "mid-b": other, result, left: a };
+    graph.nodes[a].parents = left.map(id => ids[id] || id);
+    graph.nodes[b].parents = right.map(id => ids[id] || id);
+    graph.nodes[c].parents = graph.nodes[other].parents = [root];
+    graph.nodes[a].branchType = "正";
+    const scene = buildSeedInstanceScene({ graph, instances, focusId: result, activeInstanceId: result,
+      expandedResultId: result, thinkingSpace: defaultThinkingSpace() });
+    expect(scene.find(node => node.id === result)?.commonParentId).toEqual(shared ? root : undefined);
+    expect(scene.find(node => node.id === x)).toMatchObject({ conceptId: a, sourceRole: "source" });
+    expect(scene.find(node => node.id === b)).toMatchObject({ sourceRole: "source" });
+    if (shared) expect(scene.some(node => node.id === root)).toBe(true);
+  });
+
+  it("uses old parents when metadata is absent, and keeps the one verifiable source of a damaged result", () => {
+    const { store, root, a, b } = setup();
+    const result = store.createSynthesisAssistant([a, b], { text: "内层合" });
+    const graph = structuredClone(store.getGraph());
+    const scene = () => buildSeedInstanceScene({ graph, instances: {}, focusId: result, activeInstanceId: result,
+      expandedResultId: null, thinkingSpace: defaultThinkingSpace() });
+    graph.nodes[result].meta = undefined;
+    expect(scene().find(node => node.id === result)?.commonParentId).toBe(root);
+    graph.nodes[result].meta = { sourceNodeIds: [a, "lost"], sourceInstanceIds: ["missing-copy", b] };
+    expect(scene().filter(node => node.sourceRole === "source").map(node => node.id)).toEqual([a]);
+    expect(scene().find(node => node.id === result)?.commonParentId).toBeUndefined();
+    graph.nodes[result].meta = { sourceNodeIds: [a, b, "lost"] };
+    expect(scene().find(node => node.id === result)?.commonParentId).toBeUndefined();
+    graph.nodes[result].meta = { sourceNodeIds: [a, a] };
+    expect(scene().find(node => node.id === result)?.commonParentId).toBeUndefined();
+  });
+
+  it("can use a nested synthesis as the immediate common parent without opening its ancestors", () => {
+    const { store, a, b } = setup();
+    const inner = store.createSynthesisAssistant([a, b], { text: "内层合" });
+    const pair = store.createAssistantPair(inner, { thesis: { text: "新正" }, antithesis: { text: "新反" } });
+    const outer = store.createSynthesisAssistant([pair.thesisId, pair.antithesisId], { text: "外层合" });
+    const scene = buildSeedInstanceScene({ graph: store.getGraph(), instances: {}, focusId: outer, activeInstanceId: outer,
+      expandedResultId: null, thinkingSpace: defaultThinkingSpace() });
+    expect(scene.find(node => node.id === outer)?.commonParentId).toBe(inner);
+    expect(scene.filter(node => node.sourceRole === "source").map(node => node.id).sort()).toEqual([pair.thesisId, pair.antithesisId].sort());
+  });
   it("shares live content and perspective without duplicating graph history, while moving independently", () => {
     const { store, a, x, y } = setup();
     const graph = store.getGraph(), instances = useDialogueUiStore.getState().seedInstances;

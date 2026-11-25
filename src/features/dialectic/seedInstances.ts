@@ -35,14 +35,30 @@ export function conceptInstances(instances: SeedInstances, conceptId: string) {
     .sort((a, b) => a.ordinal - b.ordinal || a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
 }
 
-export function sourceInstances(graph: Graph, instances: SeedInstances, resultId: string): string[] {
+function synthesisSourceSlots(graph: Graph, instances: SeedInstances, resultId: string) {
   const node = graph.nodes[seedConceptId(graph, instances, resultId) || ""];
   const sourceIds = node?.meta?.sourceNodeIds || (node?.branchType === "合" || node?.kind === "merge" ? node.parents : []);
-  return sourceIds.flatMap((conceptId, index) => {
-    if (!graph.nodes[conceptId]) return [];
+  if (!Array.isArray(sourceIds)) return [];
+  return sourceIds.map((conceptId, index) => {
+    if (typeof conceptId !== "string" || !hasOwn(graph.nodes, conceptId)) return null;
     const saved = node?.meta?.sourceInstanceIds?.[index];
-    return saved && seedConceptId(graph, instances, saved) === conceptId ? [saved] : [conceptId];
+    return { conceptId, instanceId: saved && seedConceptId(graph, instances, saved) === conceptId ? saved : conceptId };
   });
+}
+
+export function sourceInstances(graph: Graph, instances: SeedInstances, resultId: string): string[] {
+  return synthesisSourceSlots(graph, instances, resultId).slice(0, 2).flatMap(source => source ? [source.instanceId] : []);
+}
+
+function commonDirectParent(graph: Graph, instances: SeedInstances, result: string, slots: ReturnType<typeof synthesisSourceSlots>) {
+  if (slots.length !== 2) return undefined;
+  const resultConcept = seedConceptId(graph, instances, result);
+  const left = slots[0]?.conceptId, right = slots[1]?.conceptId;
+  if (!left || !right || left === right || left === resultConcept || right === resultConcept) return undefined;
+  const eligible = (id: string) => id !== left && id !== right && id !== resultConcept && hasOwn(graph.nodes, id);
+  const rightParents = new Set(graph.nodes[right].parents.filter(eligible));
+  const shared = [...new Set(graph.nodes[left].parents.filter(id => rightParents.has(id)))];
+  return shared.length === 1 ? shared[0] : undefined;
 }
 
 export function seedInstancePairAction(graph: Graph, instances: SeedInstances, left: string, right: string) {
@@ -56,17 +72,20 @@ export function buildSeedInstanceScene(input: {
   graph: Graph; instances: SeedInstances; focusId: string | null;
   activeInstanceId: string | null; pinnedInstanceIds?: string[];
   expandedResultId: string | null; thinkingSpace: ThinkingSpace;
-}): DialogueStageNode[] {
+} & { reserveCommonParent?: boolean }): DialogueStageNode[] {
   const { graph, instances, focusId, thinkingSpace } = input;
   const active = seedConceptId(graph, instances, input.activeInstanceId) === focusId ? input.activeInstanceId : focusId;
   const result = input.expandedResultId || active;
   const sources = result ? sourceInstances(graph, instances, result) : [];
+  const commonParentId = result ? commonDirectParent(graph, instances, result, synthesisSourceSlots(graph, instances, result)) : undefined;
   const focusCopies = focusId ? conceptInstances(instances, focusId).map(instance => instance.id).reverse() : [];
   const relatedResults = Array.from(new Set([focusId, ...sources].flatMap(id => {
     const conceptId = seedConceptId(graph, instances, id);
     return (conceptId ? graph.nodes[conceptId].children : []).filter(child => graph.nodes[child]?.branchType === "合");
   }))).reverse();
-  const required = [input.expandedResultId, ...sources, ...(input.pinnedInstanceIds || []), active, focusId, ...focusCopies, ...relatedResults]
+  const required = [input.expandedResultId, ...sources,
+    ...(input.reserveCommonParent === false ? [] : [sources.length ? result : null, commonParentId]),
+    ...(input.pinnedInstanceIds || []), active, focusId, ...focusCopies, ...relatedResults]
     .filter((id): id is string => Boolean(id));
   const budget = Math.min(8, 5 + Object.keys(instances).length);
   const base = buildSeedScene(graph, focusId, null, thinkingSpace, 8,
@@ -91,6 +110,7 @@ export function buildSeedInstanceScene(input: {
       relation: id === active ? "focus" : sources.includes(id) ? "source" : "child",
       ...(copies.length ? { instanceNumber: id === conceptId ? 0 : instances[id].ordinal } : {}),
       sourceRole,
+      ...(id === result && commonParentId ? { commonParentId } : {}),
       originNodeIds: id !== conceptId ? [conceptId] : template.originNodeIds };
   });
 }

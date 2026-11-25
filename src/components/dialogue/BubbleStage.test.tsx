@@ -71,6 +71,19 @@ it("uses one synthesis size scale across the compact-stage boundary", () => {
   }
 });
 
+it("reserves the upper centre only for the real common parent at the visible budget", () => {
+  const rect = { width: 320, height: 340, insets: { top: 44, bottom: 22 } };
+  const ids = ["synthesis", "left", "right", "topic", "extra-a", "extra-b", "extra-c", "extra-d"];
+  const withoutParent = synthesisStageGeometry(rect, ids, "synthesis", ["left", "right"]);
+  expect(Object.values(withoutParent).filter(seed => seed.tier === "distant")).toHaveLength(5);
+  expect(Object.values(withoutParent).every(seed => seed.center.y >= withoutParent.left.center.y ||
+    Math.abs(seed.center.x - 50) > 15)).toBe(true);
+  const withParent = synthesisStageGeometry(rect, ids, "synthesis", ["left", "right"], "topic");
+  expect(withParent.topic.center.x).toBe(50);
+  expect(withParent.topic.center.y).toBeLessThan(withParent.left.center.y);
+  expect(withParent.topic.diameter / withParent.synthesis.diameter).toBeCloseTo(.45);
+});
+
 it("scales synthesis scene roles without changing reading, generation, or stored positions", () => {
   resetStageStore();
   vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(320);

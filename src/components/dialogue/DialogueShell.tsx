@@ -825,12 +825,18 @@ export function DialogueShell() {
       return instance && seedConceptId(graphSnapshot.graph, seedInstances, instance) === id ? instance : id;
     });
   }, [activeEncounter, connectionTarget, graphSnapshot, seedInstances]);
-  const seedScene = useMemo(() => arrangeSeedScene(buildSeedInstanceScene({
-    graph: graphSnapshot.graph, instances: seedInstances, focusId: view.focusNodeId,
-    activeInstanceId: focusedInstanceId, expandedResultId, thinkingSpace,
-    pinnedInstanceIds: selectedPair?.sourceInstanceIds || encounterInstances || (combineSourceId ? [combineSourceId]
-      : stageExpansion ? [stageExpansion.sourceId, stageExpansion.firstId, stageExpansion.secondId] : [])
-  })), [graphSnapshot, seedInstances, view.focusNodeId, focusedInstanceId, expandedResultId, thinkingSpace, selectedPair, encounterInstances, combineSourceId, stageExpansion]);
+  const { ordinarySeedScene, synthesisSeedScene } = useMemo(() => {
+    const sceneInput = {
+      graph: graphSnapshot.graph, instances: seedInstances, focusId: view.focusNodeId,
+      activeInstanceId: focusedInstanceId, expandedResultId, thinkingSpace,
+      pinnedInstanceIds: selectedPair?.sourceInstanceIds || encounterInstances || (combineSourceId ? [combineSourceId]
+        : stageExpansion ? [stageExpansion.sourceId, stageExpansion.firstId, stageExpansion.secondId] : [])
+    };
+    const ordinary = arrangeSeedScene(buildSeedInstanceScene({ ...sceneInput, reserveCommonParent: false }));
+    return { ordinarySeedScene: ordinary, synthesisSeedScene: ordinary.some(node => node.commonParentId)
+      ? arrangeSeedScene(buildSeedInstanceScene(sceneInput)) : ordinary };
+  }, [graphSnapshot, seedInstances, view.focusNodeId, focusedInstanceId, expandedResultId, thinkingSpace, selectedPair, encounterInstances, combineSourceId, stageExpansion]);
+  const seedScene = readingOpen ? ordinarySeedScene : synthesisSeedScene;
   const readingOrbit = useMemo(() => readingOpen && !evolutionOpen
     ? arrangeReadingOrbit(seedScene, focusedInstanceId, readingOrbitLayout, thinkingSpace) : null,
     [readingOpen, evolutionOpen, seedScene, focusedInstanceId, readingOrbitLayout, thinkingSpace]);
@@ -2308,6 +2314,7 @@ export function DialogueShell() {
           atmosphereVisible={atmosphereVisible}
           layoutKey={`seeds:${workspaceId || "local"}`}
           nodes={seedScene}
+          ordinaryNodes={ordinarySeedScene}
           focusNodeId={focusedInstanceId}
           convergenceEventId={relevantSynthesisAction?.synthesisId || null}
           eventNodeId={synthesisRevealId}
