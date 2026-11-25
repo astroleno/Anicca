@@ -2341,6 +2341,7 @@ export function DialogueShell() {
           }}
           emptyDraftLength={isEmptyWorkspace ? draft.trim().length : 0}
           thinkingSpace={thinkingSpace}
+          synthesisActive={Boolean(pending.synthesis || expandedResultId || view.currentNode?.branchType === "合")}
           onAimThinking={patch => {
             noticeReadingIntent();
             const focus = Object.fromEntries(Object.entries({ ...thinkingSpace.focus, ...patch }).filter(([, value]) => value !== 0));

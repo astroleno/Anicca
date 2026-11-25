@@ -12,6 +12,7 @@ import { runThoughtFlow } from "./thought-flow.mjs";
 import { runCrossTopicSynthesis } from "./synthesis-common-parent.mjs";
 import { runSynthesisColors } from "./synthesis-colors.mjs";
 import { runSynthesisTitles } from "./synthesis-titles.mjs";
+import { runJohariSynthesis } from "./johari-synthesis.mjs";
 import { runAppExperience } from "./app-experience.mjs";
 import { runReadingContinuity } from "./reading-continuity.mjs";
 import { runSurfaceControls } from "./surface-controls.mjs";
@@ -1185,6 +1186,9 @@ async function main() {
       }
       if (scenarioNameFilter.has("synthesis-titles")) {
         interactionScenarios.push(await runStep("interaction:synthesis-titles", () => runSynthesisTitles(browser, { baseUrl, outputDir, setActivePage })));
+      }
+      if (scenarioNameFilter.has("johari-synthesis")) {
+        interactionScenarios.push(await runStep("interaction:johari-synthesis", () => runJohariSynthesis(browser, { baseUrl, outputDir, setActivePage })));
       }
 
       await runStep("teardown:close-browser", () => browser.close());

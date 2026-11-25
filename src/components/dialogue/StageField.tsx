@@ -13,16 +13,18 @@ type FocusPatch = Record<string, number>;
  * are named at the edges. It rests nearly invisible, rises while a seed is carried, and an unexplored
  * Johari region breathes softly. Choosing a region or pole only aims the next thought; nothing moves.
  */
-export function StageField({ space, nodes, carrying = false, hidden = false, onFocus }: {
+export function StageField({ space, nodes, carrying = false, hidden = false, synthesisActive = false, onFocus }: {
   space: ThinkingSpace;
   nodes: readonly DialogueStageNode[];
   carrying?: boolean;
   hidden?: boolean;
+  synthesisActive?: boolean;
   onFocus(patch: FocusPatch): void;
 }) {
   const xAxis = placed(space, "x"), yAxis = placed(space, "y");
   if (!xAxis && !yAxis) return null;
   const johari = isJohari(space);
+  if (johari && synthesisActive) return null;
   const directed = nodes.filter(node => node.spatialCoordinates);
   // The built-in directions only surface while a seed is carried; chosen ones (Johari, your own axes) rest faintly.
   const chosenSpace = isChosenSpace(space);

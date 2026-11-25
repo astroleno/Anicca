@@ -71,6 +71,7 @@ type BubbleStageProps = {
   suspended?: boolean;
   /** Thinking directions laid out on the stage; their faint field aims the next thought. */
   thinkingSpace?: ThinkingSpace | null;
+  synthesisActive?: boolean;
   onAimThinking?(patch: Record<string, number>): void;
 };
 
@@ -196,6 +197,7 @@ export function BubbleStage({
   readingOrbit = null,
   suspended = false,
   thinkingSpace = null,
+  synthesisActive = false,
   onAimThinking
 }: BubbleStageProps) {
   const descriptionPrefix = useId();
@@ -401,8 +403,10 @@ export function BubbleStage({
     const track = trackRef.current;
     if (!readingOrbit || !track) return;
     // Only the satellites stay reachable; everything else behind the text rests.
+    // StageField manages its own inert state as its hidden prop changes.
     const resting = Array.from(track.children).filter((child): child is HTMLElement =>
-      child instanceof HTMLElement && child.dataset.readingRole !== "satellite" && child.dataset.readingRole !== "invitation");
+      child instanceof HTMLElement && !child.classList.contains(styles.stageField) &&
+      child.dataset.readingRole !== "satellite" && child.dataset.readingRole !== "invitation");
     const previous = resting.map(element => element.inert);
     for (const element of resting) element.inert = true;
     return () => resting.forEach((element, index) => { element.inert = previous[index]; });
@@ -1115,6 +1119,7 @@ export function BubbleStage({
             {thinkingSpace && onAimThinking && nodes.length ? <StageField space={thinkingSpace} nodes={nodes}
               carrying={gesture?.kind === "node"}
               hidden={viewRotated || Boolean(readingOrbit) || suspended || metaballRendererState === "fallback"}
+              synthesisActive={synthesisActive || Boolean(synthesisResultId)}
               onFocus={onAimThinking} /> : null}
             {pendingBranchNodes ? (
               <div

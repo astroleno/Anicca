@@ -84,6 +84,43 @@ it("reserves the upper centre only for the real common parent at the visible bud
   expect(withParent.topic.diameter / withParent.synthesis.diameter).toBeCloseTo(.45);
 });
 
+it("hides Johari in a legacy synthesis composition without a branch label", () => {
+  resetStageStore();
+  const space = johariThinkingSpace();
+  const props = { layoutKey: "legacy-synthesis", focusNodeId: "result", onSelect: vi.fn(), thinkingSpace: space, onAimThinking: vi.fn() };
+  const nodes: DialogueStageNode[] = [
+    { id: "result", label: "旧合", kind: "merge", relation: "focus", sourceRole: "result", seedX: 50, seedY: 70 },
+    { id: "a", label: "来源甲", kind: "assistant", relation: "source", sourceRole: "source", seedX: 20, seedY: 30 },
+    { id: "b", label: "来源乙", kind: "assistant", relation: "source", sourceRole: "source", seedX: 80, seedY: 30 }
+  ];
+  const view = render(<BubbleStage {...props} nodes={nodes} />);
+  expect(screen.queryByTestId("dialogue-stage-field")).not.toBeInTheDocument();
+  view.rerender(<BubbleStage {...props} nodes={nodes} readingOrbit={arrangeReadingOrbit(nodes, "result", "sides", space)} />);
+  expect(screen.queryByTestId("dialogue-stage-field")).not.toBeInTheDocument();
+  view.rerender(<BubbleStage {...props} focusNodeId="a" nodes={nodes.slice(1).map(node => ({ ...node, sourceRole: undefined }))} />);
+  expect(screen.getByTestId("dialogue-stage-field")).toBeInTheDocument();
+});
+
+it("hands keyboard focusability back to the Johari field after ordinary reading", () => {
+  resetStageStore();
+  const thinkingSpace = johariThinkingSpace();
+  const nodes: DialogueStageNode[] = [
+    { id: "topic", label: "母题", kind: "user", relation: "focus", seedX: 50, seedY: 70 },
+    { id: "aside", label: "旁支", kind: "assistant", relation: "child", seedX: 20, seedY: 30 }
+  ];
+  const props = { layoutKey: "johari-reading-return", focusNodeId: "topic", onSelect: vi.fn(), thinkingSpace, onAimThinking: vi.fn(), nodes };
+  const view = render(<BubbleStage {...props} />);
+  const field = screen.getByTestId("dialogue-stage-field");
+  const writeInert = vi.fn();
+  Object.defineProperty(field, "inert", { get: () => field.dataset.hidden === "true", set: writeInert });
+  view.rerender(<BubbleStage {...props} readingOrbit={arrangeReadingOrbit(nodes, "topic", "sides", thinkingSpace)} />);
+  expect(field).toHaveAttribute("data-hidden", "true");
+  view.rerender(<BubbleStage {...props} />);
+  expect(field).not.toHaveAttribute("data-hidden");
+  expect(field.inert).toBe(false);
+  expect(writeInert).not.toHaveBeenCalled();
+});
+
 it("scales synthesis scene roles without changing reading, generation, or stored positions", () => {
   resetStageStore();
   vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(320);

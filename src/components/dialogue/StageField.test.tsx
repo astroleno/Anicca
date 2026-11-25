@@ -46,6 +46,20 @@ it("does not mark regions unexplored before any seed has been placed by directio
   expect(document.querySelectorAll("[data-unexplored]")).toHaveLength(0);
 });
 
+it.each([false, true])("restores the unchanged Johari selection after synthesis (selected: %s)", selected => {
+  const space = johariThinkingSpace();
+  if (selected) space.focus = { "johari-self": -1, "johari-others": 1 };
+  const onFocus = vi.fn();
+  const view = render(<StageField space={space} nodes={[]} onFocus={onFocus} />);
+  const name = "下一个想法从「盲区」展开";
+  expect(screen.getByRole("button", { name })).toHaveAttribute("aria-pressed", String(selected));
+  view.rerender(<StageField space={space} nodes={[]} synthesisActive onFocus={onFocus} />);
+  expect(screen.queryByTestId("dialogue-stage-field")).not.toBeInTheDocument();
+  view.rerender(<StageField space={space} nodes={[]} onFocus={onFocus} />);
+  expect(screen.getByRole("button", { name })).toHaveAttribute("aria-pressed", String(selected));
+  expect(onFocus).not.toHaveBeenCalled();
+});
+
 it("shows the poles of placed custom axes, and rises while a seed is carried", () => {
   const space: ThinkingSpace = { version: 1, focus: {}, axes: [
     { id: "pace", label: "节奏", negative: "慢", positive: "快", placement: "x", evidence: "content" },
@@ -56,7 +70,7 @@ it("shows the poles of placed custom axes, and rises while a seed is carried", (
   expect(screen.queryByText("群体")).not.toBeInTheDocument();
   const field = screen.getByTestId("dialogue-stage-field");
   expect(field).not.toHaveAttribute("data-carrying");
-  view.rerender(<StageField space={space} nodes={[]} carrying onFocus={vi.fn()} />);
+  view.rerender(<StageField space={space} nodes={[]} carrying synthesisActive onFocus={vi.fn()} />);
   expect(field).toHaveAttribute("data-carrying", "true");
   view.rerender(<StageField space={space} nodes={[]} hidden onFocus={vi.fn()} />);
   expect(field).toHaveAttribute("data-hidden", "true");
