@@ -3961,6 +3961,24 @@
 .stageTrack[data-metaball-renderer="fallback"] .stageNode:is([data-synthesis-tier="focus"], [data-synthesis-tier="source"]) {
   z-index: 2;
 }
+.stageTrack[data-metaball-renderer="fallback"] .stageNode[data-synthesis-tier] {
+  transition: width 240ms ease, height 240ms ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .stageTrack[data-metaball-renderer="fallback"] .stageNode[data-synthesis-tier] { transition: none; }
+}
+.stageTrack[data-compact-synthesis] .stageNode[data-synthesis-tier="distant"] [data-seed-caption],
+.stageTrack[data-compact-synthesis] .seedLabelLeader { display: none; }
+.stageTrack[data-compact-synthesis] .stageNode[data-synthesis-tier] .stageNodeInner { max-width: 108px; }
+.synthesisRole {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  color: var(--text);
+  font: 400 12px/1 var(--anicca-font-interface);
+  white-space: nowrap;
+  pointer-events: none;
+}
 .seedSourceGlow { position: absolute; inset: -12%; border-radius: 50%; pointer-events: none; opacity: 0; background: radial-gradient(ellipse, color-mix(in srgb, var(--muted) 12%, transparent) 10%, transparent 70%); transition: opacity 260ms ease; }
 .seedLabelLeader { position: absolute; left: 50%; top: 50%; height: 1px; background: var(--muted); opacity: .4; transform-origin: 0 50%; pointer-events: none; }
 .seedLabelLeader[hidden], .shell[data-reading="true"] .seedLabelLeader, .stageNode[data-label-handoff="true"] .seedLabelLeader { display: none; }

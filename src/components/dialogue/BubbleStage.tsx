@@ -24,7 +24,7 @@ import { readingInvitations, type ReadingOrbit } from "./readingOrbit";
 import type { ThinkingSpace } from "@/features/perspectives/model";
 import type { MetaballRole } from "./metaball/model";
 import { layoutSeedLabels, seedLabelLeader } from "./labelLayout";
-import { isCompactStageWidth, MIN_SYNTHESIS_TARGET, synthesisStageSeedSize } from "./synthesisStageGeometry";
+import { isCompactStageWidth, MIN_SYNTHESIS_TARGET, synthesisStageGeometry } from "./synthesisStageGeometry";
 import type { DialogueTheme } from "./useDialogueTheme";
 import { DEFAULT_SEED_ORBIT, orbitSeedSpace, spatialStagePoint, dragSpatialStagePoint, SEED_VIEWS, wrapSeedYaw,
   readSpatialFrame, canCaptureSpatialPair, spatialPairInContact, SEED_CAMERA_DISTANCE, SEED_WORLD_CAMERA_DISTANCE,
@@ -220,6 +220,8 @@ export function BubbleStage({
   const stageLayout = useDialogueUiStore((state) => state.stagePreview?.layoutKey === layoutKey
     ? state.stagePreview.view : state.stageLayouts[layoutKey] || null);
   const setStageNodePosition = useDialogueUiStore((state) => state.setStageNodePosition);
+  const setSynthesisStageNodePosition = useDialogueUiStore((state) => state.setSynthesisStageNodePosition);
+  const synthesisPositions = useDialogueUiStore(state => state.stageLayouts[layoutKey]?.synthesisPositions);
   const ensurePositions = useDialogueUiStore(state => state.ensureStageNodePositions);
   const [gesture, setGesture] = useState<ActiveStageGesture | null>(null);
   const isCoarsePointer = useCoarsePointer();
@@ -305,13 +307,23 @@ export function BubbleStage({
   const emptyStageHint = "在下方输入一个想法，看它推演正反";
   const usesCompactGrowthLayout = isNarrowViewport;
   const stageLayoutMode = usesCompactGrowthLayout ? "compact" : "wide";
+  const synthesisResultId = nodes.find(node => node.sourceRole === "result")?.id;
+  const sizingSynthesisStage = !readingOrbit && !generationBusy && Boolean(synthesisResultId);
+  const compactStage = isCompactStageWidth(labelGeometry.width);
+  const synthesisLayoutMode = compactStage ? "compact" : "wide";
+  const synthesisGeometry = useMemo(() => sizingSynthesisStage && synthesisResultId && labelGeometry.width && labelGeometry.height
+    ? synthesisStageGeometry(labelGeometry, nodes.map(node => node.id), synthesisResultId,
+      nodes.filter(node => node.sourceRole === "source").map(node => node.id)) : {},
+  [sizingSynthesisStage, synthesisResultId, labelGeometry, nodes]);
+  const synthesisOverrides = synthesisResultId ? synthesisPositions?.[synthesisResultId]?.[synthesisLayoutMode] : undefined;
   const stageLayoutViewport = stageLayoutMode === "compact" ? stageLayout?.compact : stageLayout;
-  const resolvedPan = stageLayoutViewport?.pan || DEFAULT_STAGE_PAN;
+  const resolvedPan = sizingSynthesisStage ? DEFAULT_STAGE_PAN : stageLayoutViewport?.pan || DEFAULT_STAGE_PAN;
   const placements = useMemo(() => ({
     wide: placeSeeds(nodes, stageLayout?.nodePositions),
     compact: placeSeeds(nodes, stageLayout?.compact?.nodePositions, true)
   }), [nodes, stageLayout]);
   useEffect(() => {
+    // Record missing ordinary defaults without ever copying synthesis geometry into that layout.
     if (nodes.length) ensurePositions(layoutKey, placements.wide, placements.compact);
   }, [layoutKey, nodes.length, placements, ensurePositions]);
 
@@ -341,6 +353,8 @@ export function BubbleStage({
   }, []);
 
   const getNodePosition = (node: DialogueStageNode): StagePoint => {
+    const synthesis = synthesisGeometry[node.id];
+    if (synthesis) return synthesisOverrides?.[node.id] || synthesis.center;
     const defaultPosition = usesCompactGrowthLayout && node.compactSeedX !== undefined && node.compactSeedY !== undefined
       ? { x: node.compactSeedX, y: node.compactSeedY }
       : { x: node.seedX, y: node.seedY };
@@ -360,6 +374,8 @@ export function BubbleStage({
       : { x: node.seedX, y: node.seedY };
     const orbitPlace = readingOrbit?.places[node.id];
     if (orbitPlace?.x !== undefined && orbitPlace.y !== undefined) return { node, position: { x: orbitPlace.x, y: orbitPlace.y, z: 0 } };
+    const synthesis = synthesisGeometry[node.id];
+    if (synthesis) return { node, position: synthesisOverrides?.[node.id] || synthesis.center };
     return {
       node,
       position: clampNodePosition(
@@ -367,7 +383,7 @@ export function BubbleStage({
         node.isGrowthPerspective ? GROWTH_NODE_MAX_Y_PERCENT : NODE_MAX_Y_PERCENT
       )
     };
-  }), [nodes, placements, stageLayoutMode, usesCompactGrowthLayout, readingOrbit]);
+  }), [nodes, placements, stageLayoutMode, usesCompactGrowthLayout, readingOrbit, synthesisGeometry, synthesisOverrides]);
 
   // While a 合 forms, its two sources lean toward each other and bridge through it; they return when it arrives.
   const convergingIds = pendingPreview?.kind === "synthesis" ? [pendingPreview.thesisId, pendingPreview.antithesisId] : null;
@@ -395,14 +411,13 @@ export function BubbleStage({
     return () => resting.forEach((element, index) => { element.inert = previous[index]; });
   }, [readingOrbit, positionedNodes, invitations]);
 
-  const sizingSynthesisStage = !readingOrbit && !generationBusy && nodes.some(node => node.sourceRole === "result");
   const measureLabels = useCallback(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
     const labels: Record<string, { width: number; height: number; anchorOffsetY: number; surfaceRadius: number }> = {};
     for (const [id, button] of Object.entries(nodeRefs.current)) {
       const inner = button?.querySelector("[data-seed-caption]");
-      if (inner instanceof HTMLElement) {
+      if (inner instanceof HTMLElement && inner.offsetWidth && inner.offsetHeight) {
         // Use the complete caption hit box for spacing, including its touch padding.
         labels[id] = { width: inner.offsetWidth,
           height: inner.offsetHeight, anchorOffsetY: (button?.offsetHeight || 0)/2+10+inner.offsetHeight/2,
@@ -424,7 +439,7 @@ export function BubbleStage({
       ? current : next);
   }, []);
 
-  useEffect(measureLabels, [measureLabels, nodes, stageLayoutMode, sizingSynthesisStage]);
+  useEffect(measureLabels, [measureLabels, nodes, stageLayoutMode, sizingSynthesisStage, compactStage]);
   useEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
@@ -454,11 +469,11 @@ export function BubbleStage({
       x: position.x * labelGeometry.width / 100,
       y: position.y * labelGeometry.height / 100 + size.anchorOffsetY }] : [];
   }), labelGeometry.width, labelGeometry.height, positionedNodes.flatMap(({ node, position }) => {
-    const size = labelGeometry.labels[node.id];
-    return size ? [{ id: node.id, x: position.x * labelGeometry.width / 100,
+    const size = labelGeometry.labels[node.id], radius = (synthesisGeometry[node.id]?.diameter || (size?.surfaceRadius || 0) * 2) / 2;
+    return radius ? [{ id: node.id, x: position.x * labelGeometry.width / 100,
       y: position.y * labelGeometry.height / 100,
-      radius: Math.max(size.surfaceRadius, sizingSynthesisStage ? MIN_SYNTHESIS_TARGET / 2 : 0) }] : [];
-  }), labelGeometry.insets), [positionedNodes, labelGeometry, metaballRendererState, sizingSynthesisStage]);
+      radius: Math.max(radius, sizingSynthesisStage ? MIN_SYNTHESIS_TARGET / 2 : 0) }] : [];
+  }), labelGeometry.insets), [positionedNodes, labelGeometry, metaballRendererState, sizingSynthesisStage, synthesisGeometry]);
 
   const getGestureGeometry = useCallback((draggedId: string, viewport: { width: number; height: number }) => {
     const frame = trackRef.current && readSpatialFrame(trackRef.current);
@@ -754,7 +769,11 @@ export function BubbleStage({
         const nextPosition = next?.position || gesture.startPosition;
 
         if (!cancelled) {
-          if (didDragRef.current) setStageNodePosition(layoutKey, gesture.nodeId, nextPosition, stageLayoutMode);
+          if (didDragRef.current) {
+            if (sizingSynthesisStage && synthesisResultId) {
+              setSynthesisStageNodePosition(layoutKey, synthesisResultId, gesture.nodeId, nextPosition, synthesisLayoutMode);
+            } else setStageNodePosition(layoutKey, gesture.nodeId, nextPosition, stageLayoutMode);
+          }
           const candidate = rect?.width && rect.height
             ? findSynthesisGestureCandidate({
                 draggedNodeId: gesture.nodeId,
@@ -854,9 +873,13 @@ export function BubbleStage({
     nodes,
     setNodeDragPreview,
     setStageNodePosition,
+    setSynthesisStageNodePosition,
     setOrbitPreview,
     setPanPreview,
     stageLayoutMode,
+    sizingSynthesisStage,
+    synthesisResultId,
+    synthesisLayoutMode,
     synthesisAction,
     resolveSynthesisAction,
     getGestureGeometry,
@@ -1035,7 +1058,9 @@ export function BubbleStage({
           <div
             ref={trackRef}
             data-space-paused={suspended ? "true" : undefined}
-            data-compact-stage={isCompactStageWidth(labelGeometry.width) ? "true" : undefined}
+            data-compact-stage={compactStage ? "true" : undefined}
+            data-synthesis-stage={sizingSynthesisStage ? "true" : undefined}
+            data-compact-synthesis={compactStage && sizingSynthesisStage ? "true" : undefined}
             data-atmosphere={atmosphereVisible ? "true" : "false"}
             data-theme={theme}
             data-space={metaballRendererState === "fallback" ? "flat" : "3d"}
@@ -1230,9 +1255,11 @@ export function BubbleStage({
                   : node.id === eventNodeId ? ["pending-synthesis", ...nodes.filter(source => source.sourceRole === "source").map(source => source.id), ...(node.originNodeIds || [])]
                     : node.originNodeIds);
               const orbitRole = readingOrbit?.places[node.id]?.role;
-              const synthesisSize = sizingSynthesisStage ? synthesisStageSeedSize(node.sourceRole, labelGeometry.width, nodes.length) : null;
+              const synthesisSize = synthesisGeometry[node.id];
+              const compactSynthesis = compactStage && synthesisSize;
+              const marker = node.sourceRole === "source" ? pole || node.branchType || "源" : "合";
               const size = labelGeometry.labels[node.id];
-              const leader = metaballRendererState !== "ready" && size ? seedLabelLeader({ id: node.id, ...size,
+              const leader = !compactSynthesis && metaballRendererState !== "ready" && size ? seedLabelLeader({ id: node.id, ...size,
                 x: position.x * labelGeometry.width / 100, y: position.y * labelGeometry.height / 100 + size.anchorOffsetY },
               labelOffsets[node.id] || { x: 0, y: 0 }, positionedNodes.flatMap(item => {
                 const geometry = labelGeometry.labels[item.node.id];
@@ -1286,7 +1313,8 @@ export function BubbleStage({
                     (pendingPreview?.kind === "synthesis" && (pendingPreview.thesisId === node.id || pendingPreview.antithesisId === node.id)) ? "true" : undefined}
                   data-liquid-pending={node.id === generatingNodeId || node.conceptId === generatingNodeId || (pendingPreview?.kind === "synthesis" &&
                     (node.id === pendingPreview.thesisId || node.id === pendingPreview.antithesisId)) ? "true" : undefined}
-                  aria-label={orbitRole === "satellite" ? `读「${label}」` : buildStageNodeAriaLabel(node, label)}
+                  aria-label={orbitRole === "satellite" ? `读「${label}」` :
+                    buildStageNodeAriaLabel(node, compactSynthesis && synthesisSize.tier === "distant" ? node.preview || node.label : label)}
                   aria-describedby={`${descriptionPrefix}-${node.id}`}
                   style={
                     {
@@ -1301,6 +1329,7 @@ export function BubbleStage({
                     } as CSSProperties
                   }
                   onClick={(event) => handleNodeClick(node, event.detail)}
+                  onTransitionEnd={synthesisSize && metaballRendererState === "fallback" ? measureLabels : undefined}
                   onDoubleClick={() => {
                     if (clickTimerRef.current !== null) window.clearTimeout(clickTimerRef.current);
                     if (readingOrbit || pointerTypeRef.current === "touch" || generationBusy || performance.now() < suppressClickUntilRef.current) return;
@@ -1312,14 +1341,17 @@ export function BubbleStage({
                   <span id={`${descriptionPrefix}-${node.id}`} hidden>{[node.preview, node.summary].filter(Boolean).join("；")}</span>
                   <span className={styles.seedHitArea} data-seed-hit-area aria-hidden="true" />
                   <span className={styles.seedSourceGlow} aria-hidden="true" />
+                  {compactSynthesis && synthesisSize.tier !== "distant" ? (
+                    <small className={styles.synthesisRole} data-synthesis-marker aria-hidden="true">{marker}</small>
+                  ) : null}
                   <span className={styles.seedLabelLeader} data-seed-leader aria-hidden="true" hidden={!leader}
                     style={leader ? { width: leader.length, transform: `translate(${leader.x}px, ${leader.y}px) rotate(${leader.angle}deg)` } : undefined} />
                   <span className={styles.stageNodeInner} data-seed-caption
                     data-polarity-caption={pole ? "true" : undefined}
                     data-source-caption={node.sourceRole === "source" && node.instanceNumber ? "true" : undefined}>
                     <strong>{label}</strong>
-                    {node.sourceRole === "source" ? <small>来源{pole || node.branchType ? ` · ${pole || node.branchType}` : ""}</small>
-                      : pole || node.branchType ? <small>{pole || node.branchType}</small> : null}
+                    {!compactSynthesis && (node.sourceRole === "source" ? <small>来源{pole || node.branchType ? ` · ${pole || node.branchType}` : ""}</small>
+                      : pole || node.branchType ? <small>{pole || node.branchType}</small> : null)}
                     {node.instanceNumber ? <em className={styles.seedInstanceMark}>分身 {node.instanceNumber}</em> : null}
                   </span>
                 </button>

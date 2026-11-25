@@ -38,7 +38,7 @@ export function thoughtFlowResponseFor(endpoint, body, sequence) {
 
 /** The same UI journey can use controlled responses in CI or the configured API locally. */
 export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePage,
-  live = false, fallback = false, blindDir, entryPath = "/dialogue",
+  live = false, fallback = false, blindDir, dragPersistence = false, entryPath = "/dialogue",
   specs = [{ name: "desktop", width: 1440, height: 900 }, { name: "mobile-390", width: 390, height: 844 }, { name: "mobile-320", width: 320, height: 568 }] }) {
   const results = [];
   const basePath = new URL(baseUrl).pathname.replace(/\/+$/, "");
@@ -60,6 +60,7 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
         addEventListener: events.addEventListener.bind(events), removeEventListener: events.removeEventListener.bind(events) };
       Object.defineProperty(window, "visualViewport", { configurable: true, value: viewport });
       window.__thoughtFlowKeyboard = open => { viewport.height = open ? Math.min(520, height - 230) : height; events.dispatchEvent(new Event("resize")); };
+      window.__thoughtFlowResizeHeight = next => { viewport.height = next; events.dispatchEvent(new Event("resize")); };
     }, spec);
     const page = await context.newPage(); setActivePage(page);
     page.setDefaultTimeout(30_000);
@@ -105,7 +106,7 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
       await page.screenshot({ path: path.join(blindDir, filename), style: `
         html { filter: grayscale(1); }
         header, [data-testid="dialogue-workspace-bar"], [data-stage-label-chrome], [data-stage-navigation-controls],
-        [data-testid="dialogue-composer"], [data-seed-caption], [data-seed-leader], [data-testid="dialogue-stage-hint"] {
+        [data-testid="dialogue-composer"], [data-seed-caption], [data-synthesis-marker], [data-seed-leader], [data-testid="dialogue-stage-hint"] {
           visibility: hidden !important;
         }` });
     };
@@ -165,6 +166,7 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
           const { left, top, right, bottom } = element.getBoundingClientRect();
           return { left, top, right, bottom };
         };
+        const compact = Boolean(document.querySelector("[data-compact-synthesis]"));
         return [synthesisId, ...sourceIds].map(id => {
           const seed = document.querySelector(`[data-testid="dialogue-stage-node-${CSS.escape(id)}"]`);
           const caption = seed.querySelector("[data-seed-caption]");
@@ -172,10 +174,15 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
           const hit = seed.querySelector("[data-seed-hit-area]");
           const bounds = rect(hit), label = rect(caption), style = getComputedStyle(caption);
           const opacity = Number(style.opacity) * Number(getComputedStyle(seed).opacity);
+          const marker = seed.querySelector("[data-synthesis-marker]");
+          const body = seed.getBoundingClientRect(), role = marker?.getBoundingClientRect();
+          const attached = role && Math.hypot(role.x + role.width / 2 - body.x - body.width / 2,
+            role.y + role.height / 2 - body.y - body.height / 2) < body.width / 2;
           const hits = bounds => document.elementFromPoint((bounds.left + bounds.right) / 2, (bounds.top + bounds.bottom) / 2)
             ?.closest("[data-metaball-surface]") === seed;
           return { id, role: seed.dataset.sourceRole, relation: seed.dataset.metaballRelation, text: title.textContent,
-            marker: caption.querySelector("small").textContent,
+            marker: (marker || caption.querySelector("small")).textContent,
+            compact, attached,
             label, bounds, opacity, visible: style.visibility === "visible" && opacity > 0,
             clipped: title.scrollWidth > title.clientWidth + 1, captionHit: hits(rect(title)), seedHit: hits(bounds) };
         });
@@ -184,6 +191,8 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
     const tierGeometry = async () => page.evaluate(() => {
       const canvas = document.querySelector('[data-testid="dialogue-metaball-canvas"]');
       const raster = canvas.getBoundingClientRect();
+      const stage = document.querySelector('[data-testid="dialogue-stage-track"]');
+      const bounds = stage.getBoundingClientRect();
       const projected = JSON.parse(canvas.dataset.spaceNodes || "[]");
       return [...document.querySelectorAll("[data-synthesis-tier]")].map(seed => {
         const body = seed.getBoundingClientRect();
@@ -193,6 +202,8 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
         const node = projected.find(item => item.id === id);
         const x = body.x + body.width / 2, y = body.y + body.height / 2;
         return { id, tier: seed.dataset.synthesisTier, x, y, diameter: body.width,
+          stage: { left: bounds.left, top: bounds.top + Number(stage.dataset.labelInsetTop),
+            right: bounds.right, bottom: bounds.bottom - Number(stage.dataset.labelInsetBottom) },
           modelDiameter: node && node.radius * 2 * raster.height, hitDiameter: target.width,
           hitCornerExcluded: document.elementFromPoint(target.left + 1, target.top + 1) !== hit,
           centreHit: document.elementFromPoint(x, y)?.closest("[data-metaball-surface]") === seed };
@@ -204,6 +215,10 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
       assert.equal(geometry.filter(node => node.tier === "source").length, 2);
       assert(geometry.some(node => node.tier === "distant"));
       const ratio = { focus: 1, source: .7, distant: .45 };
+      const { x, y, stage } = focus[0];
+      const sources = geometry.filter(node => node.tier === "source");
+      assert(Math.abs(x - spec.width / 2) <= .15 * spec.width && y > (stage.top + stage.bottom) / 2);
+      assert(sources.some(node => node.x < x && node.y < y) && sources.some(node => node.x > x && node.y < y));
       for (const node of geometry) {
         assert(Math.abs(node.diameter / focus[0].diameter - ratio[node.tier]) <= .05, JSON.stringify(geometry));
         if (!fallback) assert(Math.abs(node.modelDiameter - node.diameter) < 1, JSON.stringify(node));
@@ -225,7 +240,8 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
         assert.equal(seed.role, index === 0 ? "result" : "source");
         const { branchType, meta } = graph.nodes[seed.id];
         assert.equal(seed.text, meta.label);
-        assert.equal(seed.marker, index === 0 ? branchType : `来源 · ${branchType}`);
+        assert.equal(seed.marker, index === 0 || seed.compact ? branchType : `来源 · ${branchType}`);
+        if (seed.compact) assert(seed.attached);
         assert(seed.visible && !seed.clipped && seed.captionHit && seed.seedHit && fits(seed.label) && fits(seed.bounds),
           `Synthesis and both sources have readable captions and unobstructed targets at ${spec.width}: ${JSON.stringify(sourceLayout)}`);
         if (spec.width < 500 && !fallback) assert(seed.opacity >= .8, `The ${seed.role} caption should stay legible on a narrow stage`);
@@ -234,6 +250,20 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
             `Captions stay off the other seeds and captions: ${JSON.stringify(sourceLayout)}`);
         }
       }
+    };
+    const assertCompactCaptions = async () => {
+      if (spec.width > 640) return;
+      assert.equal(await page.locator("[data-compact-synthesis] [data-seed-caption]:visible").count(), 3);
+      assert.equal(await page.locator("[data-compact-synthesis] [data-synthesis-marker]:visible").count(), 3);
+      assert.equal(await page.locator("[data-compact-synthesis] [data-seed-leader]:visible").count(), 0);
+    };
+    const checkDistant = async (distance, graph) => {
+      const button = page.getByTestId(`dialogue-stage-node-${distance.id}`);
+      assert((await button.getAttribute("aria-label")).includes(graph.nodes[distance.id].text.slice(0, 8)));
+      await openSeed(distance.id, { sourceTarget: "surface" });
+      assert((await panel.innerText()).includes(graph.nodes[distance.id].text.slice(0, 14)));
+      await closeReading();
+      return button;
     };
     try {
       await page.goto(`${baseUrl}${entryPath}`, { waitUntil: "networkidle" });
@@ -354,6 +384,7 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
       await shotSynthesis("synthesis", "B.png");
       assertSourceLayout(synthesisLayout, graph);
       assertTiers(synthesisTiers);
+      await assertCompactCaptions();
       for (const [index, sourceId] of synthesis.parents.entries()) {
         await openSeed(sourceId, { sourceTarget: index === 1 ? "surface" : "caption" });
         assert.equal(await panel.getByRole("heading", { level: 2 }).innerText(), graph.nodes[sourceId].meta.label);
@@ -361,6 +392,16 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
         assert.equal(await panel.getByRole("heading", { level: 2 }).innerText(), synthesis.meta.label);
         await closeReading();
         await page.getByTestId("dialogue-synthesis-context").waitFor();
+      }
+      if (spec.width <= 640) {
+        await checkDistant(synthesisTiers.find(seed => seed.tier === "distant"), graph);
+        await activate(page.getByRole("button", { name: "演化全景", exact: true }));
+        const overview = page.getByTestId("evolution-overview");
+        await overview.getByRole("textbox", { name: "搜索想法或极性" }).fill(synthesis.meta.label);
+        await activate(overview.getByRole("button").filter({ hasText: synthesis.meta.label }));
+        await activate(overview.getByRole("button", { name: "进入种子", exact: true }));
+        await reading.waitFor();
+        await closeReading();
       }
       await activate(page.getByRole("button", { name: "展开来源", exact: true }));
       const sourceContext = page.getByTestId("dialogue-source-context");
@@ -370,13 +411,68 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
       await shotSynthesis("synthesis-sources", "A.png");
       assertSourceLayout(sourceLayout, graph);
       assertTiers(sourceTiers);
+      await assertCompactCaptions();
+      if (spec.width <= 640) {
+        const distant = sourceTiers.find(seed => seed.tier === "distant");
+        const button = await checkDistant(distant, graph);
+        await sourceContext.waitFor();
+        await button.focus();
+        await page.keyboard.press("Enter");
+        await button.and(page.locator('[data-reading-role="main"]')).waitFor();
+        await closeReading();
+        await sourceContext.waitFor();
+      }
       for (const [index, sourceId] of synthesis.parents.entries()) {
         await openSeed(sourceId, { sourceTarget: index === 1 ? "surface" : "caption" });
         assert.equal(await panel.getByRole("heading", { level: 2 }).innerText(), graph.nodes[sourceId].meta.label);
         await closeReading();
         await sourceContext.waitFor();
       }
-      await activate(sourceContext.getByRole("button", { name: "阅读合", exact: true }));
+      const readSynthesis = () => activate(sourceContext.getByRole("button", { name: "阅读合", exact: true }));
+      let dragEvidence;
+      if (dragPersistence && spec.width === 320) {
+        await readSynthesis();
+        await closeReading();
+        await waitForSeedLayout(page, { captions: true });
+        const area = (await tierGeometry()).find(node => node.id === synthesis.id);
+        await page.setViewportSize({ width: 320, height: 648 });
+        await page.evaluate(() => window.__thoughtFlowResizeHeight(648));
+        await waitForSeedLayout(page, { captions: true });
+        const enlarged = (await tierGeometry()).find(node => node.id === synthesis.id);
+        assert(enlarged.stage.bottom - enlarged.stage.top > area.stage.bottom - area.stage.top);
+        assert(enlarged.diameter > area.diameter && enlarged.centreHit);
+        await page.setViewportSize({ width: 320, height: 568 });
+        await page.evaluate(() => window.__thoughtFlowResizeHeight(568));
+        await waitForSeedLayout(page, { captions: true });
+        const workspace = await snapshot();
+        const key = `seeds:${workspace.workspaceId || "local"}`;
+        const oldLayout = workspace.stageLayouts[key];
+        const seed = (await tierGeometry()).find(node => node.id === synthesis.id);
+        await page.mouse.move(seed.x, seed.y);
+        await page.mouse.down();
+        await page.mouse.move(seed.x + 20, seed.y + 18, { steps: 8 });
+        await page.mouse.up();
+        await page.waitForFunction(({ key, id }) => {
+          const saved = JSON.parse(localStorage.getItem(`anicca_workspace_snapshot_v1:${localStorage.getItem("anicca_workspace_active_v1")}`));
+          return Boolean(saved?.stageLayouts[key]?.synthesisPositions?.[id]?.compact?.[id]);
+        }, { key, id: synthesis.id });
+        const layout = (await snapshot()).stageLayouts[key];
+        assert.deepEqual(layout.nodePositions, oldLayout.nodePositions);
+        assert.deepEqual(layout.compact, oldLayout.compact);
+        const savedPoint = layout.synthesisPositions[synthesis.id].compact[synthesis.id];
+        await page.reload({ waitUntil: "networkidle" });
+        await waitForRenderer();
+        await page.getByTestId("dialogue-synthesis-context").waitFor();
+        await page.waitForFunction(({ id, savedPoint }) => {
+          const element = document.querySelector(`[data-testid="dialogue-stage-node-${CSS.escape(id)}"]`);
+          return Math.abs(Number.parseFloat(element?.style.left) - savedPoint.x) < .001 &&
+            Math.abs(Number.parseFloat(element?.style.top) - savedPoint.y) < .001;
+        }, { id: synthesis.id, savedPoint });
+        dragEvidence = { originalCenter: { x: seed.x, y: seed.y }, savedPoint, ordinaryPositionsUnchanged: true,
+          stageArea: [area.stage, enlarged.stage], focusDiameters: [area.diameter, enlarged.diameter] };
+        await activate(page.getByRole("button", { name: "展开来源", exact: true }));
+      }
+      await readSynthesis();
       await reading.getByTestId("dialogue-panel").waitFor();
       assert.equal(await panel.getByRole("heading", { level: 2 }).innerText(), synthesis.meta.label);
       const actions = panel.getByRole("group", { name: "种子基本操作" });
@@ -425,7 +521,7 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
       assert(layout.scrollWidth <= layout.width + 1); assert.deepEqual(errors, []);
       assert(calls.every(call => call.status === 200));
       results.push({ ...spec, passed: true, live, renderer, requestCount: calls.length, nodeCount: Object.keys(graph.nodes).length,
-        inquiryId: response.id, synthesisId: synthesis.id, synthesisLayout, sourceLayout, synthesisTiers, sourceTiers,
+        inquiryId: response.id, synthesisId: synthesis.id, synthesisLayout, sourceLayout, synthesisTiers, sourceTiers, dragEvidence,
         readingPosition, quoteStart: response.meta.inquiry.quoteStart, layout, errors, calls });
     } catch (error) {
       await shot("failure").catch(() => {});

@@ -125,4 +125,27 @@ describe("useDialogueUiStore", () => {
       }
     });
   });
+
+  it("keeps synthesis drags by result and viewport without changing ordinary positions", () => {
+    const state = useDialogueUiStore.getState();
+    const key = "seeds:w";
+    state.setStageNodePosition(key, "left", { x: 15, y: 70 });
+    state.setStageNodePosition(key, "left", { x: 19, y: 71 }, "compact");
+    const ordinary = structuredClone(useDialogueUiStore.getState().stageLayouts[key]);
+    state.beginStagePreview(key, { left: { x: 20, y: 30 } }, {});
+    state.setSynthesisStageNodePosition(key, "result", "left", { x: 33, y: 40, z: 0 }, "compact");
+    state.setSynthesisStageNodePosition(key, "result", "left", { x: 55, y: 40, z: .2 }, "wide");
+    state.endStagePreview();
+    const saved = structuredClone(useDialogueUiStore.getState().stageLayouts);
+    expect(saved[key]).toMatchObject(ordinary);
+    expect(saved[key].synthesisPositions?.result).toEqual({
+      compact: { left: { x: 33, y: 40, z: 0 } },
+      wide: { left: { x: 55, y: 40, z: .2 } }
+    });
+    state.hydrateWorkspace({ workspaceId: "w", workspaceSessionId: "reload", focusedNodeId: "result",
+      composerParentId: null, stageLayouts: saved });
+    expect(useDialogueUiStore.getState().stageLayouts[key]).toEqual(saved[key]);
+    state.arrangeStage(key);
+    expect(useDialogueUiStore.getState().stageLayouts[key]).toBeUndefined();
+  });
 });

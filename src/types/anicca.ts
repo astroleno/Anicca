@@ -86,6 +86,7 @@ export interface StageLayoutView {
   // Legacy persisted layouts remain the wide view. Compact coordinates are opt-in
   // so importing an older workspace falls back to the responsive Growth seeds.
   compact?: StageLayoutViewport;
+  synthesisPositions?: Record<string, Partial<Record<StageLayoutMode, Record<string, StagePoint>>>>;
 }
 
 export type StageLayouts = Record<string, StageLayoutView>;

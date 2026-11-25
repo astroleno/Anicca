@@ -54,7 +54,7 @@ import {
 } from "@/features/dialectic/controller";
 import { observeDialogueViewport } from "@/features/dialectic/platform";
 import { buildSeedContext, fissionPair, ordinarySourcePair, seedLabel } from "@/features/dialectic/seeds";
-import { buildSeedInstanceScene, seedConceptId, seedInstancePairAction, sourceInstances, unfoldedSourcePositions, separatedEncounterPositions } from "@/features/dialectic/seedInstances";
+import { buildSeedInstanceScene, seedConceptId, seedInstancePairAction, sourceInstances, separatedEncounterPositions } from "@/features/dialectic/seedInstances";
 import { arrangeSeedScene } from "@/features/dialectic/seedPlacement";
 import { createClientId, DialogueErrorState, PendingRequest, useDialogueUiStore } from "@/features/dialectic/store";
 import {
@@ -1112,13 +1112,6 @@ export function DialogueShell() {
     const sources = sourceInstances(graph, seedInstances, focusedInstanceId);
     if (!sources.length) return;
     attentionVersionRef.current += 1;
-    const nodes = arrangeSeedScene(buildSeedInstanceScene({ graph, instances: seedInstances,
-      focusId: view.focusNodeId, activeInstanceId: focusedInstanceId, expandedResultId: focusedInstanceId, thinkingSpace }));
-    const state = useDialogueUiStore.getState(), key = `seeds:${workspaceId || "local"}`;
-    const layout = state.stagePreview?.layoutKey === key ? state.stagePreview.view : state.stageLayouts[key];
-    state.beginStagePreview(key,
-      unfoldedSourcePositions(nodes, layout?.nodePositions || {}, focusedInstanceId, sources, false),
-      unfoldedSourcePositions(nodes, layout?.compact?.nodePositions || {}, focusedInstanceId, sources, true));
     setExpandedResultId(focusedInstanceId);
     setExpansionResult(null);
     dismissSeedReading();
@@ -2372,7 +2365,7 @@ export function DialogueShell() {
         {expandedResultId && !readingOpen && !hasPendingRequest ? <div className={styles.sourceContextBar} aria-label="来源展开" data-testid="dialogue-source-context" data-stage-label-chrome="top">
           <span>来源 · {seedLabel(graphSnapshot.graph, seedConceptId(graphSnapshot.graph, seedInstances, expandedResultId) || "")}</span>
           <button type="button" onClick={() => handleSelectNode(expandedResultId)}>阅读合</button>
-          <button type="button" onClick={() => { setExpandedResultId(null); useDialogueUiStore.getState().endStagePreview(); }}>收起来源</button>
+          <button type="button" onClick={() => setExpandedResultId(null)}>收起来源</button>
         </div> : null}
         {!expandedResultId && !readingOpen && !hasPendingRequest && visibleExpansion ? <div className={styles.explorationContext}
           role="region" aria-label="本轮展开" data-testid="dialogue-expansion-context" data-stage-label-chrome="top" data-whisper="true"

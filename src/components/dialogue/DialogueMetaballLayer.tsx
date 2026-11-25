@@ -311,7 +311,7 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
           measuredCaptions = surfaces.flatMap(element => {
             if (reading && element.dataset.readingRole !== "satellite") return [];
             const caption = element.querySelector<HTMLElement>("[data-seed-caption]");
-            if (!caption) return [];
+            if (!caption || !caption.offsetWidth || !caption.offsetHeight) return [];
             return [{ id: element.dataset.metaballSurface!, width: caption.offsetWidth, height: caption.offsetHeight, inset: element.clientTop, element, caption,
               leader: element.querySelector<HTMLElement>("[data-seed-leader]") }];
           });
@@ -347,7 +347,9 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
             framingSource = renderedNodes;
             framingNodes = renderedNodes.map(node => projectSpatialSeed(node, spatialPivot, DEFAULT_SEED_ORBIT));
           }
-          fitGoal = fitSeedScene(framingNodes, spatialPivot, trackRect, hostRect.height);
+          // Synthesis centres are already inset for the usable stage and their labels.
+          fitGoal = host.dataset.synthesisStage === "true" ? 1 :
+            fitSeedScene(framingNodes, spatialPivot, trackRect, hostRect.height);
         }
         const fitElapsed = lastFitTime === null ? 1 : Math.max(0, (sceneTime - lastFitTime) / 1000);
         const fitDt = lastFitTime === null || fitActive ? fitElapsed : Math.min(1 / 60, fitElapsed);
@@ -420,7 +422,8 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
             if (caption.caption.style.transform !== transform) caption.caption.style.transform = transform;
             ownStyles.set(caption.caption, caption.caption.getAttribute("style") || "");
             if (caption.leader) {
-              const leader = seedLabelLeader(caption, offsets[caption.id] || { x: 0, y: 0 }, labelSurfaces);
+              const leader = host.dataset.compactSynthesis === "true" ? null :
+                seedLabelLeader(caption, offsets[caption.id] || { x: 0, y: 0 }, labelSurfaces);
               caption.leader.hidden = !leader;
               if (leader) {
                 caption.leader.style.width = `${leader.length / scale}px`;
@@ -610,12 +613,12 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
         spatialLayoutDirty = true; activeUntil = performance.now() + 250; wake(); return;
       }
       if (changed.some(record => record.type === "childList" || record.type === "characterData" ||
-        ["class", "data-reading-orbit", "data-reading-role"].includes(record.attributeName || ""))) { labelsDirty = true; activeUntil = performance.now() + 500; }
+        ["class", "data-reading-orbit", "data-reading-role", "data-compact-synthesis"].includes(record.attributeName || ""))) { labelsDirty = true; activeUntil = performance.now() + 500; }
       if (changed.some(record => record.attributeName === "data-seed-attention")) activeUntil = performance.now() + 650;
       invalidate();
     });
     mutationObserver.observe(host, { subtree: true, childList: true, characterData: true, attributes: true,
-      attributeFilter: ["style", "class", "data-reading-orbit", "data-reading-role", "data-compact-stage", "data-synthesis-tier", "data-source-role", "data-space-paused", "data-label-inset-top", "data-label-inset-bottom", "data-metaball-role", "data-metaball-relation", "data-liquid-origins", "data-liquid-color-key", "data-liquid-pending", "data-atmosphere", "data-theme", "data-liquid-partner", "data-liquid-contact", "data-label-handoff", "data-space-yaw", "data-space-pitch", "data-space-zoom", "data-space-navigating", "data-space-depth", "data-seed-generation", "data-seed-hue-shift", "data-seed-polarity-strength", "data-seed-attention"] });
+      attributeFilter: ["style", "class", "data-reading-orbit", "data-reading-role", "data-compact-stage", "data-compact-synthesis", "data-synthesis-tier", "data-source-role", "data-space-paused", "data-label-inset-top", "data-label-inset-bottom", "data-metaball-role", "data-metaball-relation", "data-liquid-origins", "data-liquid-color-key", "data-liquid-pending", "data-atmosphere", "data-theme", "data-liquid-partner", "data-liquid-contact", "data-label-handoff", "data-space-yaw", "data-space-pitch", "data-space-zoom", "data-space-navigating", "data-space-depth", "data-seed-generation", "data-seed-hue-shift", "data-seed-polarity-strength", "data-seed-attention"] });
     if (shell) mutationObserver.observe(shell, { attributeFilter: ["data-reading"] });
     const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(remeasure) : null;
     resizeObserver?.observe(host);

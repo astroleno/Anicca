@@ -905,7 +905,7 @@ describe("DialogueShell", () => {
     expect(screen.getByTestId(`dialogue-stage-node-${antithesisId}`)).toHaveAttribute("data-source-role", "source");
     expect(screen.getByTestId(`dialogue-stage-node-${result.id}`)).toHaveAttribute("data-source-role", "result");
     expect(useDialogueUiStore.getState().stageLayouts).toEqual(originalLayout);
-    expect(useDialogueUiStore.getState().stagePreview).not.toBeNull();
+    expect(useDialogueUiStore.getState().stagePreview).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "收起来源" }));
     expect(screen.queryByTestId("dialogue-source-context")).not.toBeInTheDocument();
     expect(useDialogueUiStore.getState().stagePreview).toBeNull();

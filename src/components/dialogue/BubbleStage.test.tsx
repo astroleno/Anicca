@@ -5,7 +5,7 @@ import { useDialogueUiStore } from "@/features/dialectic/store";
 import { DialogueStageNode } from "@/features/dialectic/viewModel";
 import { spatialStagePoint, publishSpatialFrame } from "./liquid/space";
 import { arrangeReadingOrbit } from "./readingOrbit";
-import { isCompactStageWidth, synthesisStageSeedSize } from "./synthesisStageGeometry";
+import { isCompactStageWidth, synthesisStageGeometry } from "./synthesisStageGeometry";
 
 const metaballLayerMock = vi.hoisted(() => ({
   state: "ready" as "loading" | "ready" | "fallback"
@@ -63,9 +63,8 @@ it("keeps a concept copy attached to its real origin during a new generation's a
 it("uses one synthesis size scale across the compact-stage boundary", () => {
   for (const width of [320, 640, 641, 1440]) {
     expect(isCompactStageWidth(width)).toBe(width <= 640);
-    const focus = synthesisStageSeedSize("result", width, 5);
-    const source = synthesisStageSeedSize("source", width, 5);
-    const distant = synthesisStageSeedSize("other", width, 5);
+    const { focus, source, distant } = synthesisStageGeometry({ width, height: 440, insets: { top: 35, bottom: 10 } },
+      ["focus", "source", "otherSource", "distant", "more"], "focus", ["source", "otherSource"]);
     expect([focus.tier, source.tier, distant.tier]).toEqual(["focus", "source", "distant"]);
     expect(source.diameter / focus.diameter).toBeCloseTo(.7);
     expect(distant.diameter / focus.diameter).toBeCloseTo(.45);
@@ -74,6 +73,8 @@ it("uses one synthesis size scale across the compact-stage boundary", () => {
 
 it("scales synthesis scene roles without changing reading, generation, or stored positions", () => {
   resetStageStore();
+  vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(320);
+  vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(370);
   const nodes: DialogueStageNode[] = [
     { id: "result", label: "合", kind: "assistant", relation: "focus", sourceRole: "result", seedX: 30, seedY: 40 },
     { id: "left", label: "正", kind: "assistant", relation: "source", sourceRole: "source", seedX: 20, seedY: 60, branchType: "正" },

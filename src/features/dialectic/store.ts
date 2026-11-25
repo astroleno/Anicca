@@ -57,6 +57,7 @@ type DialogueUiState = {
   setFocusedNodeId: (nodeId: string | null) => void;
   setComposerParentId: (nodeId: string | null) => void;
   setStageNodePosition: (layoutKey: string, nodeId: string, position: StagePoint, mode?: StageLayoutMode) => void;
+  setSynthesisStageNodePosition: (layoutKey: string, synthesisId: string, nodeId: string, position: StagePoint, mode: StageLayoutMode) => void;
   ensureStageNodePositions: (layoutKey: string, wide: Record<string, StagePoint>, compact: Record<string, StagePoint>) => void;
   setStagePan: (layoutKey: string, pan: StagePan, mode?: StageLayoutMode) => void;
   beginPending: (slot: PendingSlot, pending: PendingRequest) => void;
@@ -139,7 +140,13 @@ export const useDialogueUiStore = create<DialogueUiState>((set, get) => ({
     const stageLayouts = Object.fromEntries(Object.entries(state.stageLayouts).map(([key, layout]) => {
       const wide = { ...layout.nodePositions }, compact = { ...layout.compact?.nodePositions };
       delete wide[id]; delete compact[id];
-      return [key, { ...layout, nodePositions: wide, ...(layout.compact ? { compact: { ...layout.compact, nodePositions: compact } } : {}) }];
+      const synthesisPositions = layout.synthesisPositions && Object.fromEntries(Object.entries(layout.synthesisPositions)
+        .filter(([synthesisId]) => synthesisId !== id)
+        .map(([synthesisId, modes]) => [synthesisId, Object.fromEntries(Object.entries(modes).map(([mode, positions]) => [
+          mode, Object.fromEntries(Object.entries(positions).filter(([nodeId]) => nodeId !== id))
+        ]))]));
+      return [key, { ...layout, nodePositions: wide, ...(layout.compact ? { compact: { ...layout.compact, nodePositions: compact } } : {}),
+        ...(synthesisPositions ? { synthesisPositions } : {}) }];
     }));
     return { seedInstances: instances, stageLayouts };
   }),
@@ -197,6 +204,14 @@ export const useDialogueUiStore = create<DialogueUiState>((set, get) => ({
               : { nodePositions })
       });
     }),
+  setSynthesisStageNodePosition: (layoutKey, synthesisId, nodeId, position, mode) => set(state => {
+    const layout = getStageLayoutView(state.stageLayouts, layoutKey);
+    const views = layout.synthesisPositions || {};
+    const view = views[synthesisId] || {};
+    return { stageLayouts: { ...state.stageLayouts, [layoutKey]: {
+      ...layout, synthesisPositions: { ...views, [synthesisId]: { ...view, [mode]: { ...view[mode], [nodeId]: position } } }
+    } } };
+  }),
   setStagePan: (layoutKey, pan, mode = "wide") =>
     set((state) => {
       const currentView = activeLayout(state, layoutKey);
