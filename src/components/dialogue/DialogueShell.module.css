@@ -3975,7 +3975,7 @@
   inset: 50% auto auto 50%;
   transform: translate(-50%, -50%);
   color: var(--text);
-  font: 400 12px/1 var(--anicca-font-interface);
+  font: 600 12px/1 var(--anicca-font-interface);
   white-space: nowrap;
   pointer-events: none;
 }

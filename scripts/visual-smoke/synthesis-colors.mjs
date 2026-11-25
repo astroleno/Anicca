@@ -104,7 +104,8 @@ async function capture(browser, { baseUrl, outputDir, setActivePage }, renderer,
         const rect = item.getBoundingClientRect();
         const style = getComputedStyle(item);
         return { seed: item.closest("[data-metaball-surface]")?.dataset.metaballSurface, text: item.innerText,
-          ink: style.color, visible: Boolean(rect.width && rect.height && style.visibility === "visible"), rect: rect.toJSON() };
+          ink: style.color, font: { family: style.fontFamily, size: style.fontSize, weight: style.fontWeight },
+          visible: Boolean(rect.width && rect.height && style.visibility === "visible"), rect: rect.toJSON() };
       }).filter(item => item.visible);
       const sourceGeometry = Array.from(document.querySelectorAll('[data-source-role="source"]'), item => {
         const box = item.getBoundingClientRect();
