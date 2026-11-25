@@ -5,6 +5,53 @@ import {
 
 describe("dialectic policy retrieval", () => {
   it.each([
+    "我在家庭群里像一个兼容旧设备的客户端，总在迁移大家的情绪",
+    "我总在复现童年的故障模式，数据错乱一样",
+    "妈妈的手机里存着很多照片快照，要不要帮她备份到数据库一样的地方再删除？",
+    "我只剩三个月的现金了，辞职后要不要继续间隔年，还是回公司？",
+    "我和合伙人在感情里谁该拍板做决定？",
+    "我每周只有两个晚上，该优先维护旧项目还是陪伴家人？",
+    "我们还有个旧协议。我正考虑迁移照片。",
+    "新版客户端已经安装好，我准备迁移旅行照片。",
+    "我们有访问缓存，另外我想撤回家人对婚礼的授权。",
+    "缓存，缓存。",
+    "定金和定金有什么区别？",
+    "我在邮件里看到数据库，但还没决定要不要删除自己的日记。",
+    "书上写着旧设备，我考虑搬家迁移户口。",
+    "我在公司写客户端，但周末要怎样兼容爸妈不同的作息？",
+    "我把收藏夹命名为“缓存”，每次看到“缓存”两个字就想起父亲。",
+    "每周只有两个晚上可以陪父母。团队希望我兼顾旧项目维护和新功能验证，但团队工时并不受限。"
+  ])("requires two independent signals in the actual decision for %s", input => {
+    const cards = retrieveDialecticPolicyCards(input);
+    expect(cards).toEqual([]);
+    expect(isHighRiskDialectic(cards)).toBe(false);
+  });
+
+  it.each([
+    ["仓库还在用旧设备读取数据，是否要让旧协议在网关隔离过渡？", "safe-compatibility", true],
+    ["线上服务出现越租户数据错乱，要先停写再用只读回放吗？", "contain-security-risk", true],
+    ["删生产库前确认快照能还原", "verified-recovery", true],
+    ["团队现金只够撑三个月，该先向客户收预付款还是继续投入增长？", "survival-cash", true],
+    ["我和合伙人负责新品包装，这次由谁拍板并承担试销结果？", "revocable-ownership", false],
+    ["我每周只有两个晚上，该优先维护旧项目还是验证新功能？", "bounded-attention", false],
+    ["快取多久回源", "authoritative-decision", true],
+    ["图像缓存多久需要回源？", "authoritative-decision", true],
+    ["图像数据库要做独立备份再删除旧库", "verified-recovery", true],
+    ["镜像仓库里的数据库备份还原后要删掉原卷。", "verified-recovery", true],
+    ["数据库镜像能否还原昨天误删的订单？", "verified-recovery", true],
+    ["怎样用生产库的镜像恢复误删数据？", "verified-recovery", true],
+    ["下线生产库之前，怎样用异地快照验证真的能还原？", "verified-recovery", true],
+    ["生产数据库准备退役，删除前怎样验证快照可以恢复？", "verified-recovery", true],
+    ["两位合伙人对产品品牌定位有分歧，由谁拍板、谁负责结果？", "revocable-ownership", false],
+    ["两位合伙人对产品品牌定位有分歧，由谁拍板、谁来执行？", "revocable-ownership", false],
+    ["朋友圈最近让我很困惑。读取接口用了快取，撤权后要强制回源吗？", "authoritative-decision", true]
+  ])("retains the complete literal decision for %s", (input, id, highRisk) => {
+    const cards = retrieveDialecticPolicyCards(input);
+    expect(cards.map(card => card.id)).toEqual([id]);
+    expect(isHighRiskDialectic(cards)).toBe(highRisk);
+  });
+
+  it.each([
     "我在家里总扮演懂事的角色",
     "我为什么总觉得时间过得越来越快",
     "我在家庭中的角色改变后，要多久才能恢复平静？",
