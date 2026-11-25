@@ -11,14 +11,16 @@ import styles from "./DialogueShell.module.css";
 import { deferredSyntheses, readUnderstandingChange } from "@/features/dialectic/meaning";
 import { DeferredEncounter, UnderstandingChange } from "./SeedMeaning";
 import { SeedPassage } from "./SeedPassage";
-import { inquiryLabel, readInquiryOrigin, type InquiryTarget } from "@/features/dialectic/inquiry";
+import { inquiryLabel, readInquiryOrigin, resolveInquiryQuoteStart, type InquiryTarget } from "@/features/dialectic/inquiry";
 import { readNovelty } from "@/features/dialectic/novelty";
 import type { ReadingPosition } from "@/lib/persist/readingState";
 import { captureReadingPosition, restoreReadingPosition } from "./readingPosition";
 import { SeedPrimaryActions } from "./SeedPrimaryActions";
 import { resolveSeedExpansionFrame } from "@/features/perspectives/seedExpansionFrame";
 
-export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = {}, space = defaultThinkingSpace(), combining, busy, activeDeferredId, onContinueDeferred, onClose, onSplit, onExpandPolarity, onWrite, onCombine, onPick, onCreateInstance, onRemoveInstance, onExpandSources, onInquiry, inquiryTarget, inquiryComposer, companionId, getReadingPosition, onRememberPosition, onReadingIntent, onReadNewResponse, readingSatellites, polarityRequest = 0, useCurrentAngle: controlledAngle, onUseCurrentAngleChange }: {
+export type InquiryReadingReturn = Pick<InquiryTarget, "sourceNodeId" | "quote" | "quoteStart">;
+
+export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = {}, space = defaultThinkingSpace(), combining, busy, activeDeferredId, onContinueDeferred, onClose, onSplit, onExpandPolarity, onWrite, onCombine, onPick, onCreateInstance, onRemoveInstance, onExpandSources, onInquiry, inquiryTarget, inquiryComposer, inquiryReturn, onReturnToInquirySource, companionId, getReadingPosition, onRememberPosition, onReadingIntent, onReadNewResponse, readingSatellites, polarityRequest = 0, useCurrentAngle: controlledAngle, onUseCurrentAngleChange }: {
   graph: Graph; nodeId: string; combining: boolean; busy: boolean;
   instanceId?: string; instances?: SeedInstances;
   space?: ThinkingSpace;
@@ -28,6 +30,7 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
   onExpandPolarity?(axisId: string, frame: ThinkingSpace): void;
   onInquiry?(target: InquiryTarget): void;
   inquiryTarget?: InquiryTarget; inquiryComposer?: ReactNode; companionId?: string;
+  inquiryReturn?: InquiryReadingReturn; onReturnToInquirySource?(target: InquiryReadingReturn): void;
   getReadingPosition?(id: string): ReadingPosition | undefined; onRememberPosition?(id: string, position: ReadingPosition): void;
   onReadingIntent?(): void; onReadNewResponse?(): void;
   readingSatellites?: readonly DialogueStageNode[];
@@ -71,25 +74,41 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
   useLayoutEffect(() => {
     const panel = inspectorRef.current;
     if (!panel) return;
-    readingPositionRef.current = getReadingPosition?.(nodeId) || { scrollTop: 0 };
-    restoreReadingPosition(panel, readingPositionRef.current);
+    readingPositionRef.current = inquiryReturn ? { scrollTop: 0 } : getReadingPosition?.(nodeId) || { scrollTop: 0 };
+    const marker = panel.querySelector<HTMLElement>("[data-inquiry-return-offset]");
+    let placedScrollTop = panel.scrollTop;
+    const restore = () => {
+      if (marker?.isConnected) {
+        const top = marker.getBoundingClientRect().top - panel.getBoundingClientRect().top;
+        panel.scrollTop += top - Math.min(80, panel.clientHeight / 4);
+        readingPositionRef.current = captureReadingPosition(panel);
+      } else {
+        restoreReadingPosition(panel, readingPositionRef.current);
+      }
+      placedScrollTop = panel.scrollTop;
+    };
+    restore();
+    if (inquiryReturn) (marker || panel.querySelector<HTMLElement>("h2"))?.focus({ preventScroll: true });
     let disposed = false, interacted = false, frame = 0;
     const interact = () => { interacted = true; };
+    const scrolled = () => { if (Math.abs(panel.scrollTop - placedScrollTop) > 1) interact(); };
     const afterLayout = () => {
       if (disposed || interacted || panel.dataset.mode !== "read") return;
-      restoreReadingPosition(panel, readingPositionRef.current);
+      restore();
     };
     frame = requestAnimationFrame(afterLayout);
     // Font metrics may arrive after the first paint. Never move text after a
     // reader has started interacting with it.
     void document.fonts?.ready.then(() => { if (!disposed && !interacted) { cancelAnimationFrame(frame); frame = requestAnimationFrame(afterLayout); } });
     panel.addEventListener("pointerdown", interact, true); panel.addEventListener("wheel", interact, true); panel.addEventListener("keydown", interact, true);
+    if (inquiryReturn) panel.addEventListener("scroll", scrolled);
     return () => {
       disposed = true; cancelAnimationFrame(frame);
       panel.removeEventListener("pointerdown", interact, true); panel.removeEventListener("wheel", interact, true); panel.removeEventListener("keydown", interact, true);
+      if (inquiryReturn) panel.removeEventListener("scroll", scrolled);
       onRememberPosition?.(nodeId, readingPositionRef.current);
     };
-  }, [nodeId, getReadingPosition, onRememberPosition]);
+  }, [nodeId, getReadingPosition, inquiryReturn, onRememberPosition]);
   useLayoutEffect(() => {
     const panel = inspectorRef.current;
     if (!panel) return;
@@ -112,7 +131,12 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
   const node = graph.nodes[nodeId];
   if (!node) return null;
   const perspective = normalizeSeedPerspective(node.meta?.perspective);
-  const inquiry = readInquiryOrigin(node.meta?.inquiry, graph);
+  const rawInquiry = node.meta?.inquiry;
+  const inquiry = readInquiryOrigin(rawInquiry && { ...rawInquiry, quoteStart: undefined });
+  const inquirySource = inquiry && graph.nodes[inquiry.sourceNodeId];
+  const quotedOffset = inquirySource?.text && inquiry ? resolveInquiryQuoteStart(inquirySource.text, {
+    quote: inquiry.quote, quoteStart: rawInquiry?.quoteStart
+  }) : undefined;
   const origin = normalizePolarityOrigin(node.meta?.polarity);
   const originAxis = origin ? polarityAxis(origin) : null;
   const { capturedFrame, frame: expansionFrame, differs: frameDiffers } = resolveSeedExpansionFrame(node, space, useCurrentAngle);
@@ -242,7 +266,9 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
             {originAxis.evidence === "self-report" ? " · 待确认的假设视角" : ""}</p> : null}
           {inquiry ? <details className={styles.seedInquiryOrigin} data-seed-meaning>
             <summary title={inquiry.quote}>原句 · {inquiry.quote}</summary>
-            <button type="button" onClick={() => onPick(inquiry.sourceNodeId)}>从「{seedLabel(graph, inquiry.sourceNodeId)}」的一句话继续</button>
+            {inquirySource && onReturnToInquirySource ? <button type="button" onClick={() => onReturnToInquirySource({
+              sourceNodeId: inquiry.sourceNodeId, quote: inquiry.quote, quoteStart: quotedOffset
+            })}>{quotedOffset === undefined ? "回看来源" : "回到原句"}</button> : null}
             <blockquote>{inquiry.quote}</blockquote><p>{inquiry.question}</p>
           </details> : null}
           <UnderstandingChange compact node={node} graph={graph} onPick={onPick}
@@ -251,7 +277,7 @@ export function SeedInspector({ graph, nodeId, instanceId = nodeId, instances = 
           {!selecting && polarityOpen ? expansionControls : null}
           <SeedPassage key={node.id} nodeId={node.id} text={node.text || "这颗种子还没有正文。"} className={styles.seedBody}
             busy={busy} onInquiry={!polarityOpen && node.text?.trim() ? onInquiry : undefined}
-            inquiryTarget={inquiryTarget} inquiryComposer={inquiryComposer} onSelectionChange={setSelectionActive}
+            inquiryTarget={inquiryTarget} inquiryComposer={inquiryComposer} returnedQuote={inquiryReturn} onSelectionChange={setSelectionActive}
             showEntry={false} selectionRequest={selectionRequest} onChoosingChange={setChoosingSentence} />
           {!selecting && !polarityOpen ? expansionControls : null}
           {node.meta?.connectionInput ? <details className={styles.seedPerspective} data-seed-meaning><summary>这次补充的联系</summary><p>{node.meta.connectionInput}</p></details> : null}

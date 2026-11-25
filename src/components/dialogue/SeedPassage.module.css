@@ -9,4 +9,9 @@
 .selection > div { display: flex; flex-wrap: wrap; gap: 4px 20px; }
 .selection button:first-child { color: var(--text, #494151); }
 .entry button:focus-visible, .selection button:focus-visible, .sentences button:focus-visible { outline: 2px solid var(--focus-ring, #766286); outline-offset: 3px; border-radius: 6px; }
-.selection button:disabled, .entry button:disabled { opacity: .45; cursor: default; }
+.selection button:disabled, .entry button:disabled, .sentences button:disabled { opacity: .45; cursor: default; }
+.returnedQuote {
+  color: inherit;
+  background: color-mix(in srgb, var(--focus-ring, #766286) 22%, transparent);
+  border-radius: .15em;
+}

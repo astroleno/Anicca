@@ -87,3 +87,24 @@ it("validates a quote's occurrence before generating an inquiry", async () => {
   expect((await inquiryPost(request({ sourceText, origin }))).status).toBe(200);
   expect(generate).toHaveBeenCalledTimes(2);
 });
+
+it("sends the selected occurrence and its full context to the model", async () => {
+  const quote = "其余留在背景。";
+  const opening = "🌱在草稿里先保留细节。", middle = "\n定稿时只保留能改变选择的线索：", ending = "仍要让读者看到必要条件。";
+  const sourceText = `${opening}${quote}${middle}${quote}${ending}`;
+  const origin = { sourceNodeId: "a", quote, intent: "premise", question: "这里的前提是什么？" };
+  for (const quoteStart of [sourceText.indexOf(quote), sourceText.lastIndexOf(quote), undefined]) {
+    generate.mockResolvedValueOnce(respond({ inquiry: branch })).mockResolvedValueOnce(respond({ inquiry: checked() }));
+    const response = await inquiryPost(request({ sourceText, origin: { ...origin, quoteStart } }));
+    expect(response.status).toBe(200);
+  }
+  expect(generate).toHaveBeenCalledTimes(6);
+  const [first, second, legacy] = [0, 2, 4].map(index => generate.mock.calls[index][0].input);
+  expect(first).toContain(`来源语境=${JSON.stringify({ 前文: opening, 选句: quote, 后文: middle + quote + ending })}`);
+  expect(second).toContain(`来源语境=${JSON.stringify({ 前文: opening + quote + middle, 选句: quote, 后文: ending })}`);
+  expect(first).not.toEqual(second);
+  expect(legacy).toContain("原记录未保存选句位置");
+  expect(legacy).toContain(`来源全文=${JSON.stringify(sourceText)}`);
+  expect(legacy).not.toContain("来源语境=");
+  for (const prompt of [first, second, legacy]) expect(prompt).toContain(origin.question);
+});

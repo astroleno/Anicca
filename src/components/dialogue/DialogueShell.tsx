@@ -27,7 +27,7 @@ import {
 import { buildWorkspaceContext } from "@/chat/workspaceContext";
 import { BranchSidebar } from "@/components/dialogue/BranchSidebar";
 import { BubbleStage, hasStageLiquid } from "@/components/dialogue/BubbleStage";
-import { SeedInspector } from "@/components/dialogue/SeedInspector";
+import { SeedInspector, type InquiryReadingReturn } from "@/components/dialogue/SeedInspector";
 import { SeedPrimaryActions } from "@/components/dialogue/SeedPrimaryActions";
 import { SeedReadingContent } from "@/components/dialogue/SeedReadingContent";
 import { arrangeReadingOrbit, READING_COLUMN_MAX_WIDTH, readingOrbitLayoutForSize, type ReadingOrbitLayout } from "./readingOrbit";
@@ -500,7 +500,7 @@ function shouldAutoFocusPendingResult(pendingRequest: PendingRequest, graph: Gra
   return deriveDialogueView(graph, currentFocusedNodeId).focusSnapshotId === pendingRequest.focusSnapshotId;
 }
 
-type SeedExpansionResult = { sourceId: string; firstId: string; secondId: string; axis?: ThinkingAxis; lens?: string };
+type SeedExpansionResult = { sourceId: string; firstId: string; secondId: string; axis?: ThinkingAxis; lens?: string; fromComposer?: boolean };
 
 export function DialogueShell() {
   const { theme, preference: themePreference, selectTheme } = useDialogueTheme();
@@ -569,6 +569,7 @@ export function DialogueShell() {
   const [activeInstanceId, setActiveInstanceId] = useState<string | null>(null);
   const [expandedResultId, setExpandedResultId] = useState<string | null>(null);
   const [expansionResult, setExpansionResult] = useState<SeedExpansionResult | null>(null);
+  const [inquiryReturn, setInquiryReturn] = useState<InquiryReadingReturn>();
   const [unrevealedSourceId, setUnrevealedSourceId] = useState<string | null>(null);
   const [seedArrivals, setSeedArrivals] = useState<{ sessionId: string; requestId: string; origins: Record<string, string[]> } | null>(null);
   useEffect(() => {
@@ -622,6 +623,7 @@ export function DialogueShell() {
     setActiveInstanceId(null); setExpandedResultId(null); setExpansionResult(null); setUnrevealedSourceId(null); setSeedArrivals(null);
     setEvolutionOpen(false); setInquiryResult(null); setPolarityRequest(0); setStageSelectionPending(false);
     setActiveDeferredId(null); setConnectionTargetId(null);
+    setInquiryReturn(undefined);
   }, [workspaceSessionId]);
   const pendingAction = useDialogueUiStore((state) => state.pendingAction);
   const pending = useDialogueUiStore((state) => state.pending);
@@ -788,6 +790,7 @@ export function DialogueShell() {
   }, []);
 
   const view = useMemo(() => deriveDialogueView(graphSnapshot.graph, focusedNodeId), [graphSnapshot, focusedNodeId]);
+  const returnedQuote = inquiryReturn?.sourceNodeId === view.currentNode?.id ? inquiryReturn : undefined;
   const focusedInstanceId = seedConceptId(graphSnapshot.graph, seedInstances, activeInstanceId) === view.focusNodeId
     ? activeInstanceId : view.focusNodeId;
   const visibleExpansion = useMemo<SeedExpansionResult | null>(() => {
@@ -800,7 +803,7 @@ export function DialogueShell() {
     if (sourcePair) {
       const frame = graphSnapshot.graph.nodes[sourcePair.firstId].meta?.fissionFrame
         ?? graphSnapshot.graph.nodes[sourcePair.secondId].meta?.fissionFrame;
-      return { ...sourcePair, lens: frame ? perspectiveLabel(normalizeThinkingSpace(frame)) : undefined };
+      return { ...sourcePair, lens: frame ? perspectiveLabel(normalizeThinkingSpace(frame)) : undefined, fromComposer: true };
     }
     const origin = normalizePolarityOrigin(node?.meta?.polarity);
     if (!origin || !node?.parents[0]) return null;
@@ -811,6 +814,7 @@ export function DialogueShell() {
     return first && second ? { sourceId: node.parents[0], firstId: first.id, secondId: second.id, axis: polarityAxis(origin),
       lens: perspectiveLabel({ ...origin.frame, focus: Object.fromEntries(Object.entries(origin.frame.focus).filter(([id]) => id !== origin.axisId)) }) } : null;
   }, [expansionResult, focusedNodeId, graphSnapshot, unrevealedSourceId, view.focusNodeId]);
+  const stageExpansion = visibleExpansion?.fromComposer ? null : visibleExpansion;
   const encounters = useMemo(() => deferredSyntheses(graphSnapshot.graph), [graphSnapshot]);
   const connectionTarget = encounters.find(item => item.id === connectionTargetId && !item.resolvedNodeId);
   const activeEncounter = encounters.find(item => item.id === activeDeferredId && !item.resolvedNodeId);
@@ -825,8 +829,8 @@ export function DialogueShell() {
     graph: graphSnapshot.graph, instances: seedInstances, focusId: view.focusNodeId,
     activeInstanceId: focusedInstanceId, expandedResultId, thinkingSpace,
     pinnedInstanceIds: selectedPair?.sourceInstanceIds || encounterInstances || (combineSourceId ? [combineSourceId]
-      : visibleExpansion ? [visibleExpansion.sourceId, visibleExpansion.firstId, visibleExpansion.secondId] : [])
-  })), [graphSnapshot, seedInstances, view.focusNodeId, focusedInstanceId, expandedResultId, thinkingSpace, selectedPair, encounterInstances, combineSourceId, visibleExpansion]);
+      : stageExpansion ? [stageExpansion.sourceId, stageExpansion.firstId, stageExpansion.secondId] : [])
+  })), [graphSnapshot, seedInstances, view.focusNodeId, focusedInstanceId, expandedResultId, thinkingSpace, selectedPair, encounterInstances, combineSourceId, stageExpansion]);
   const readingOrbit = useMemo(() => readingOpen && !evolutionOpen
     ? arrangeReadingOrbit(seedScene, focusedInstanceId, readingOrbitLayout, thinkingSpace) : null,
     [readingOpen, evolutionOpen, seedScene, focusedInstanceId, readingOrbitLayout, thinkingSpace]);
@@ -834,12 +838,12 @@ export function DialogueShell() {
     if (selectedPair?.sourceInstanceIds) return selectedPair.sourceInstanceIds;
     if (encounterInstances) return encounterInstances;
     if (expandedResultId) return [expandedResultId, ...sourceInstances(graphSnapshot.graph, seedInstances, expandedResultId)];
-    if (visibleExpansion) return [visibleExpansion.sourceId, visibleExpansion.firstId, visibleExpansion.secondId];
+    if (stageExpansion) return [stageExpansion.sourceId, stageExpansion.firstId, stageExpansion.secondId];
     const sources = focusedInstanceId ? sourceInstances(graphSnapshot.graph, seedInstances, focusedInstanceId) : [];
     if (sources.length) return [focusedInstanceId!, ...sources];
     if (readingOpen && focusedInstanceId) return [focusedInstanceId, ...(graphSnapshot.graph.nodes[view.currentNode?.id || ""]?.parents || [])];
     return null;
-  }, [selectedPair, encounterInstances, expandedResultId, graphSnapshot, seedInstances, visibleExpansion, focusedInstanceId, readingOpen, view.currentNode]);
+  }, [selectedPair, encounterInstances, expandedResultId, graphSnapshot, seedInstances, stageExpansion, focusedInstanceId, readingOpen, view.currentNode]);
   const resolveSeedPair = useCallback((left: string, right: string) => seedInstancePairAction(graphSnapshot.graph, seedInstances, left, right), [graphSnapshot, seedInstances]);
   const isEmptyWorkspace = graphSnapshot.graph.entryIds.length === 0;
   const isBranchPending = pending.branches !== null;
@@ -926,10 +930,14 @@ export function DialogueShell() {
   useEffect(() => { setGenerationAnnouncement(null); }, [workspaceSessionId]);
 
   useEffect(() => {
-    if (!readingOpen || roundtableArtifactRef.current) return;
+    if (!readingOpen) setInquiryReturn(undefined);
+  }, [readingOpen]);
+
+  useEffect(() => {
+    if (!readingOpen || roundtableArtifactRef.current || returnedQuote) return;
     const timer = window.setTimeout(() => document.getElementById("conversation-panel-heading")?.focus({ preventScroll: true }), 0);
     return () => window.clearTimeout(timer);
-  }, [readingOpen, view.currentNode?.id, combineSourceId]);
+  }, [readingOpen, view.currentNode?.id, combineSourceId, returnedQuote]);
 
   useEffect(() => {
     if ((!readingOpen && !lineageOpen) || roundtableArtifact || evolutionOpen) return;
@@ -1039,7 +1047,7 @@ export function DialogueShell() {
     return () => window.clearTimeout(timeout);
   }, [synthesisRevealId]);
 
-  const handleSelectNode = (nodeId: string, fromOverview = false) => {
+  const handleSelectNode = (nodeId: string, fromOverview = false, returnToQuote?: InquiryReadingReturn) => {
     setStageSelectionPending(false);
     setPolarityRequest(0);
     attentionVersionRef.current += 1;
@@ -1055,6 +1063,7 @@ export function DialogueShell() {
     }
     const conceptId = seedConceptId(graphSnapshot.graph, seedInstances, nodeId);
     if (!conceptId) return;
+    setInquiryReturn(returnToQuote);
     if (conceptId === unrevealedSourceId) setUnrevealedSourceId(null);
     if (inquiryResult?.responseId === conceptId) setInquiryResult(null);
     if (fromOverview) setCombineSourceId(null);
@@ -1401,7 +1410,7 @@ export function DialogueShell() {
         });
         resultFocusId = pair.userNodeId;
         nextExpansion = { sourceId: pair.userNodeId, firstId: pair.thesisId, secondId: pair.antithesisId,
-          lens: perspectiveLabel(requestPerspective) };
+          lens: perspectiveLabel(requestPerspective), fromComposer: true };
         setSeedArrivals({ sessionId: workspaceSessionId, requestId, origins: {
           ...(isEmptyWorkspace ? { [pair.userNodeId]: ["empty-root"] } : {}),
           [pair.thesisId]: ["pending-thesis", pair.userNodeId], [pair.antithesisId]: ["pending-antithesis", pair.userNodeId]
@@ -2309,7 +2318,7 @@ export function DialogueShell() {
           focusNodeId={focusedInstanceId}
           convergenceEventId={relevantSynthesisAction?.synthesisId || null}
           eventNodeId={synthesisRevealId}
-          arrivals={expansionResult}
+          arrivals={expansionResult?.fromComposer ? null : expansionResult}
           arrivalOrigins={seedArrivals?.sessionId === workspaceSessionId ? seedArrivals.origins : undefined}
           pendingPreview={stagePendingPreview}
           synthesisAction={relevantSynthesisAction}
@@ -2366,7 +2375,8 @@ export function DialogueShell() {
           <button type="button" onClick={() => { setExpandedResultId(null); useDialogueUiStore.getState().endStagePreview(); }}>收起来源</button>
         </div> : null}
         {!expandedResultId && !readingOpen && !hasPendingRequest && visibleExpansion ? <div className={styles.explorationContext}
-          role="region" aria-label="本轮展开" data-testid="dialogue-expansion-context" data-stage-label-chrome="top" data-whisper="true">
+          role="region" aria-label="本轮展开" data-testid="dialogue-expansion-context" data-stage-label-chrome="top" data-whisper="true"
+          data-composer-result={visibleExpansion.fromComposer ? "true" : undefined}>
           <span>{visibleExpansion.axis ? `沿「${visibleExpansion.axis.label}」展开` : "推演正反"}</span>
           <p>{visibleExpansion.axis ? `${visibleExpansion.axis.negative} ↔ ${visibleExpansion.axis.positive}` : "深化主张 ↔ 质疑前提"}
             {visibleExpansion.lens ? ` · ${visibleExpansion.lens}` : ""}</p>
@@ -2430,6 +2440,8 @@ export function DialogueShell() {
               onInquiry={startInquiry}
               inquiryTarget={inquiryTarget?.sourceNodeId === view.currentNode.id ? inquiryTarget : undefined}
               inquiryComposer={inlineInquiry ? composer : undefined}
+              inquiryReturn={returnedQuote}
+              onReturnToInquirySource={target => handleSelectNode(target.sourceNodeId, true, target)}
               companionId={companionId}
               getReadingPosition={getReadingPosition} onRememberPosition={rememberReadingPosition}
               onReadingIntent={noticeReadingIntent}
@@ -2437,7 +2449,7 @@ export function DialogueShell() {
                 ? () => handleSelectNode(inquiryResult.responseId) : undefined}
               onExpandPolarity={(axisId, frame) => void handlePolarityExpansion(view.currentNode!.id, axisId, frame)}
               onWrite={() => { setInquiryTarget(null); setConnectionTargetId(null); setComposerParentId(view.currentNode!.id); focusComposerSoon(); }}
-              onCombine={() => { setCombineSourceId(focusedInstanceId || view.currentNode!.id); setSelectedPair(null); }}
+              onCombine={() => { setInquiryReturn(undefined); setCombineSourceId(focusedInstanceId || view.currentNode!.id); setSelectedPair(null); }}
               onCreateInstance={handleCreateInstance}
               onRemoveInstance={handleRemoveInstance}
               onExpandSources={handleExpandSources}

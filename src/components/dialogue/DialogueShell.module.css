@@ -4360,6 +4360,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .explorationContext[data-whisper] > :is(span, p) { animation: contextWhisperStill 7.2s linear both; }
+  .explorationContext[data-whisper][data-composer-result] > :is(span, p) { animation: none; }
   @keyframes contextWhisperStill { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
 }
 /* Sources of a 合 are kept, not erased: their captions settle back with the droplets. */

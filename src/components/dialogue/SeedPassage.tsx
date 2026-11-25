@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { inquiryQuoteStart, inquirySentenceRanges, type InquiryTarget } from "@/features/dialectic/inquiry";
+import { inquiryQuoteStart, inquirySentenceRanges, resolveInquiryQuoteStart, type InquiryTarget } from "@/features/dialectic/inquiry";
 import styles from "./SeedPassage.module.css";
 
 function sourceOffset(passage: HTMLElement, container: Node, offset: number): number | undefined {
@@ -14,10 +14,11 @@ function sourceOffset(passage: HTMLElement, container: Node, offset: number): nu
   return Number(source.dataset.passageStart) + prefix.toString().length;
 }
 
-export function SeedPassage({ nodeId, text, className, busy, onInquiry, inquiryTarget, inquiryComposer, onSelectionChange, selectionRequest = 0, showEntry = true, onChoosingChange }: {
+export function SeedPassage({ nodeId, text, className, busy, onInquiry, inquiryTarget, inquiryComposer, returnedQuote, onSelectionChange, selectionRequest = 0, showEntry = true, onChoosingChange }: {
   nodeId: string; text: string; className: string; busy: boolean; onInquiry?(target: InquiryTarget): void;
   inquiryTarget?: InquiryTarget; inquiryComposer?: ReactNode; onSelectionChange?(active: boolean): void;
   selectionRequest?: number; showEntry?: boolean; onChoosingChange?(choosing: boolean): void;
+  returnedQuote?: { quote: string; quoteStart?: number };
 }) {
   const passage = useRef<HTMLDivElement>(null);
   const action = useRef<HTMLButtonElement>(null);
@@ -27,6 +28,7 @@ export function SeedPassage({ nodeId, text, className, busy, onInquiry, inquiryT
   const activeSelection = inquiryTarget || selectedQuote;
   const activeQuote = activeSelection?.quote || "";
   const quoteOffset = activeSelection ? inquiryQuoteStart(text, activeSelection) : -1;
+  const returnedOffset = returnedQuote?.quoteStart === undefined ? undefined : resolveInquiryQuoteStart(text, returnedQuote);
   const nativeSelectionEnabled = Boolean(onInquiry) && !inquiryTarget;
   const lastSelectionRequest = useRef(0);
   useEffect(() => {
@@ -103,6 +105,17 @@ export function SeedPassage({ nodeId, text, className, busy, onInquiry, inquiryT
     if (inquiryTarget) onInquiry?.({ ...inquiryTarget, ...sentence });
     else requestAnimationFrame(() => action.current?.focus({ preventScroll: true }));
   };
+  const passageText = (start: number, end = text.length) => {
+    const quoteStart = returnedOffset;
+    if (quoteStart === undefined || !returnedQuote) return text.slice(start, end);
+    const first = Math.max(start, quoteStart);
+    const last = Math.min(end, quoteStart + returnedQuote.quote.length);
+    if (first >= last) return text.slice(start, end);
+    return <>{text.slice(start, first)}<mark className={styles.returnedQuote}
+      {...(first === quoteStart ? { tabIndex: -1, "data-inquiry-return-offset": quoteStart } : {})}>
+      {text.slice(first, last)}
+    </mark>{text.slice(last, end)}</>;
+  };
   return <>
     {onInquiry && showEntry ? <div className={styles.entry} data-seed-meaning><button type="button" disabled={busy} aria-expanded={choosing}
       onClick={() => { setChoosing(value => !value); setSelectedQuote(null); }}>{choosing ? "返回全文" : inquiryTarget ? "换一句追问" : "选一句追问"}</button></div> : null}
@@ -113,21 +126,21 @@ export function SeedPassage({ nodeId, text, className, busy, onInquiry, inquiryT
         window.getSelection()?.removeAllRanges();
       }}>
       {choosing ? <div className={styles.sentences} aria-label="选择要追问的原句">
-        {inquirySentenceRanges(text).map(sentence => <button type="button" key={sentence.quoteStart} disabled={busy || sentence.quote.length > 600}
+        {inquirySentenceRanges(text).map(sentence => <button type="button" key={sentence.quoteStart} disabled={busy || sentence.quote.length < 2 || sentence.quote.length > 600}
           onClick={() => chooseSentence(sentence)}>{sentence.quote}</button>)}
       </div> : quoteOffset >= 0 && onInquiry ? <>
-        {quoteOffset > 0 ? <p data-passage-start={0}>{text.slice(0, quoteOffset)}</p> : null}
+        {quoteOffset > 0 ? <p data-passage-start={0}>{passageText(0, quoteOffset)}</p> : null}
         <div className={styles.selection} aria-label="围绕选句继续" data-seed-meaning
           onKeyDown={event => { if (event.key === "Escape" && !inquiryTarget) { event.stopPropagation(); setSelectedQuote(null); } }}>
-          <blockquote data-passage-start={quoteOffset} aria-label={inquiryTarget ? "本次追问的原句" : undefined}>{activeQuote}</blockquote>
+          <blockquote data-passage-start={quoteOffset} aria-label={inquiryTarget ? "本次追问的原句" : undefined}>{passageText(quoteOffset, quoteOffset + activeQuote.length)}</blockquote>
           {inquiryTarget && inquiryComposer ? inquiryComposer : <div>
             <button ref={action} type="button" disabled={busy} onClick={() => onInquiry({ sourceNodeId: nodeId, quote: activeQuote, quoteStart: quoteOffset, intent: "premise" })}>追问前提</button>
             <button type="button" disabled={busy} onClick={() => onInquiry({ sourceNodeId: nodeId, quote: activeQuote, quoteStart: quoteOffset, intent: "counterexample" })}>找反例</button>
             <button type="button" aria-label="取消选句" onClick={() => { setSelectedQuote(null); window.getSelection()?.removeAllRanges(); }}>收起</button>
           </div>}
         </div>
-        {quoteOffset + activeQuote.length < text.length ? <p data-passage-start={quoteOffset + activeQuote.length}>{text.slice(quoteOffset + activeQuote.length)}</p> : null}
-      </> : <p data-passage-start={0}>{text}</p>}
+        {quoteOffset + activeQuote.length < text.length ? <p data-passage-start={quoteOffset + activeQuote.length}>{passageText(quoteOffset + activeQuote.length)}</p> : null}
+      </> : <p data-passage-start={0}>{passageText(0)}</p>}
     </div>
   </>;
 }

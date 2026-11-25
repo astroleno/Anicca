@@ -1,5 +1,5 @@
 import { BranchGraphStore } from "@/store/branchGraph";
-import { readInquiryTarget, inquirySentences, inquirySentenceRanges } from "./inquiry";
+import { readInquiryTarget, resolveInquiryQuoteStart, inquirySentences, inquirySentenceRanges } from "./inquiry";
 import { buildSeedContext } from "./seeds";
 import { projectEvolution, evolutionPath, searchEvolution } from "./evolution";
 import { normalizeGraphForRetrieval } from "@/features/retrieval/workspaceGraphQuery";
@@ -53,4 +53,15 @@ it("preserves a repeated quote's UTF-16 position through graph reload and reject
   const sentences = inquirySentenceRanges(`  ${quote}\n🌱背景。 ${quote}`);
   expect(sentences.map(item => item.quote)).toEqual([quote, "🌱背景。", quote]);
   expect(sentences[2].quoteStart).toBe(`  ${quote}\n🌱背景。 `.length);
+});
+
+it("locates an exact or unique UTF-16 occurrence without guessing about repeats", () => {
+  const quote = "相同的句子。";
+  const text = `🌱开头。${quote}\n不同语境。${quote}`;
+  expect(resolveInquiryQuoteStart(text, { quote, quoteStart: text.indexOf(quote) })).toBe("🌱开头。".length);
+  expect(resolveInquiryQuoteStart(text, { quote, quoteStart: text.lastIndexOf(quote) })).toBe(text.lastIndexOf(quote));
+  expect(resolveInquiryQuoteStart(text, { quote, quoteStart: 0 })).toBeUndefined();
+  expect(resolveInquiryQuoteStart(text, { quote })).toBeUndefined();
+  expect(resolveInquiryQuoteStart("哈哈哈", { quote: "哈哈" })).toBeUndefined();
+  expect(resolveInquiryQuoteStart(text, { quote: "不同语境。" })).toBe(text.indexOf("不同语境。"));
 });

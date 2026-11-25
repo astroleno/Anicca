@@ -423,6 +423,101 @@ describe("DialogueShell", () => {
     expect(screen.queryByRole("button", { name: "阅读新回应" })).not.toBeInTheDocument();
   });
 
+  it.each(["first", "second", "legacy repeat", "wrong offset"] as const)("returns to an inquiry source with %s location data", async location => {
+    const quote = "共同维护依赖明确的分工。";
+    const sourceText = `${quote}\n🌱后来条件不同。${quote}\n还有正文。`;
+    const sourceNodeId = branchGraphStore.createUserNode(sourceText);
+    const otherId = branchGraphStore.createUserNode("另一个来源的草稿");
+    const quoteStart = location === "first" ? 0 : sourceText.lastIndexOf(quote);
+    const { responseId } = branchGraphStore.createInquiry({
+      sourceNodeId, quote, quoteStart, intent: "premise", question: "这里怎么分工？"
+    }, { text: "回应正文。", label: "这里的回应" });
+    const meta = branchGraphStore.getGraph().nodes[responseId].meta!;
+    if (location === "legacy repeat") delete meta.inquiry!.quoteStart;
+    if (location === "wrong offset") meta.inquiry!.quoteStart = quoteStart + 1;
+    const located = location === "first" || location === "second";
+    useDialogueUiStore.setState({ focusedNodeId: responseId, composerParentId: otherId });
+    seedActiveWorkspaceFromCurrentGraph();
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    render(<DialogueShell />);
+    fireEvent.change(screen.getByRole("textbox", { name: "输入" }), { target: { value: "继续写给另一个来源" } });
+    fireEvent.click(screen.getByTestId(`dialogue-stage-node-${responseId}`));
+    fireEvent.click(await screen.findByText(`原句 · ${quote}`));
+    fireEvent.click(screen.getByRole("button", { name: located ? "回到原句" : "回看来源" }));
+
+    await waitFor(() => expect(useDialogueUiStore.getState().focusedNodeId).toBe(sourceNodeId));
+    const panel = screen.getByTestId("dialogue-panel");
+    const passage = panel.querySelector("[data-seed-passage]")!;
+    expect(passage.textContent).toBe(sourceText);
+    const marker = passage.querySelector("mark");
+    if (located) {
+      expect(marker).toHaveTextContent(quote);
+      expect(marker).toHaveAttribute("data-inquiry-return-offset", String(quoteStart));
+      expect(marker).toHaveFocus();
+    } else {
+      expect(marker).toBeNull();
+      expect(panel.scrollTop).toBe(0);
+    }
+    expect(screen.getByRole("textbox", { name: "输入" })).toHaveValue("继续写给另一个来源");
+    expect(useDialogueUiStore.getState().composerParentId).toBe(otherId);
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    if (location === "second") {
+      fireEvent.wheel(panel, { deltaY: 100 });
+      panel.scrollTop = 158;
+      fireEvent.scroll(panel);
+      fireEvent.click(screen.getByRole("button", { name: "返回种子，收起阅读" }));
+      fireEvent.click(screen.getByTestId(`dialogue-stage-node-${sourceNodeId}`));
+      const reopened = await screen.findByTestId("dialogue-panel");
+      expect(reopened.querySelector("mark")).toBeNull();
+      expect(reopened.scrollTop).toBe(158);
+    }
+  });
+
+  it("keeps a one-character sentence visible but unavailable for inquiry", async () => {
+    const sourceNodeId = branchGraphStore.createUserNode("字\n另一个完整句子。");
+    useDialogueUiStore.setState({ focusedNodeId: sourceNodeId });
+    seedActiveWorkspaceFromCurrentGraph();
+    render(<DialogueShell />);
+    fireEvent.click(screen.getByTestId(`dialogue-stage-node-${sourceNodeId}`));
+    fireEvent.click(await screen.findByRole("button", { name: "选一句追问" }));
+    const panel = screen.getByTestId("dialogue-panel");
+    expect(within(panel).getByRole("button", { name: "字" })).toBeDisabled();
+    expect(within(panel).getByRole("button", { name: "另一个完整句子。" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "返回全文" }));
+    expect(panel.querySelector("[data-seed-passage]")?.textContent).toBe("字\n另一个完整句子。");
+  });
+
+  it("returns to the saved occurrence without changing the source's inline inquiry draft", async () => {
+    const quote = "共同维护依赖明确的分工。";
+    const sourceText = `${quote}\n后来条件不同。${quote}`;
+    const sourceNodeId = branchGraphStore.createUserNode(sourceText);
+    const quoteStart = sourceText.lastIndexOf(quote);
+    const { responseId } = branchGraphStore.createInquiry({
+      sourceNodeId, quote, quoteStart, intent: "premise", question: "这里怎么分工？"
+    }, { text: "回应正文。", label: "这里的回应" });
+    useDialogueUiStore.setState({ focusedNodeId: sourceNodeId });
+    seedActiveWorkspaceFromCurrentGraph();
+    render(<DialogueShell />);
+    fireEvent.click(screen.getByTestId(`dialogue-stage-node-${sourceNodeId}`));
+    fireEvent.click(await screen.findByRole("button", { name: "选一句追问" }));
+    const passage = screen.getByTestId("dialogue-panel").querySelector<HTMLElement>("[data-seed-passage]")!;
+    fireEvent.click(within(passage).getAllByRole("button", { name: quote })[0]);
+    fireEvent.click(screen.getByRole("button", { name: "追问前提" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "输入" }), { target: { value: "先追问第一次出现的语境" } });
+    fireEvent.click(screen.getByRole("button", { name: "返回种子，收起阅读" }));
+    fireEvent.click(screen.getByTestId(`dialogue-stage-node-${responseId}`));
+    fireEvent.click(await screen.findByText(`原句 · ${quote}`));
+    fireEvent.click(screen.getByRole("button", { name: "回到原句" }));
+
+    const originalDraftQuote = await screen.findByLabelText("本次追问的原句");
+    expect(originalDraftQuote).toHaveAttribute("data-passage-start", "0");
+    expect(originalDraftQuote.querySelector("mark")).toBeNull();
+    expect(screen.getByTestId("dialogue-panel").querySelector("mark")).toHaveAttribute("data-inquiry-return-offset", String(quoteStart));
+    expect(screen.getByRole("textbox", { name: "输入" })).toHaveValue("先追问第一次出现的语境");
+  });
+
   it("does not treat a programmatic reading scroll as a decision to stop following an inquiry", async () => {
     const root = branchGraphStore.createUserNode("继续检验这个前提。");
     useDialogueUiStore.setState({ focusedNodeId: root }); seedActiveWorkspaceFromCurrentGraph();
@@ -1345,6 +1440,39 @@ describe("DialogueShell", () => {
       expect(screen.getByRole("dialog", { name: "换个角度看" })).toBeInTheDocument();
       expect(useDialogueUiStore.getState().thinkingSpace.focus).toEqual({ concern: 1 });
     }
+  });
+
+  it("keeps previous seeds at their positions when a second composer round is revealed", async () => {
+    let round = 0;
+    vi.stubGlobal("fetch", vi.fn(async (_url, init) => {
+      round += 1;
+      return new Response(JSON.stringify({
+        requestId: JSON.parse(init.body).requestId,
+        thesis: { text: `尝试${round}`, summary: "先试", label: `尝试${round}`, stance: "正" },
+        antithesis: { text: `质疑${round}`, summary: "再问", label: `质疑${round}`, stance: "反" }
+      }));
+    }));
+    render(<DialogueShell />);
+    const submit = (value: string) => {
+      fireEvent.change(screen.getByRole("textbox", { name: "输入" }), { target: { value } });
+      fireEvent.click(screen.getByRole("button", { name: "生成" }));
+    };
+    submit("第一个独立的想法");
+    const first = within(await screen.findByTestId("dialogue-expansion-context"));
+    expect(first.getByRole("button", { name: "阅读反「质疑1」" })).toBeInTheDocument();
+    const graph = branchGraphStore.getGraph();
+    const [sourceId] = graph.entryIds;
+    const previousIds = [sourceId, ...graph.nodes[sourceId].children];
+    const positions = () => previousIds.map(id => {
+      const seed = screen.getByTestId(`dialogue-stage-node-${id}`);
+      return [seed.style.left, seed.style.top];
+    });
+    const previous = positions();
+
+    submit("第二个独立的想法");
+    expect(await screen.findByRole("button", { name: "阅读反「质疑2」" })).toBeInTheDocument();
+    expect(branchGraphStore.getGraph().entryIds).toHaveLength(2);
+    expect(positions()).toEqual(previous);
   });
 
   it("saves an empty-stage renderer selection and keeps a cancelled root response out of the retry", async () => {

@@ -14,6 +14,13 @@ export function inquiryQuoteStart(text: string, target: Pick<InquiryTarget, "quo
   return Number.isSafeInteger(start) && start >= 0 && text.slice(start, start + target.quote.length) === target.quote ? start : -1;
 }
 
+/** Identify an occurrence from a verified offset or an unambiguous legacy quote. */
+export function resolveInquiryQuoteStart(text: string, target: Pick<InquiryTarget, "quote" | "quoteStart">): number | undefined {
+  const start = inquiryQuoteStart(text, target);
+  if (start < 0 || !target.quote) return;
+  if (target.quoteStart !== undefined || text.indexOf(target.quote, start + 1) === -1) return start;
+}
+
 export function readInquiryTarget(value: unknown, graph?: Graph): InquiryTarget | undefined {
   if (!value || typeof value !== "object") return;
   const raw = value as Partial<InquiryTarget>;
