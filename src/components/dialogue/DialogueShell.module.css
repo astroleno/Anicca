@@ -4349,10 +4349,9 @@
 .seedPrimaryActions .seedActionQuiet:not(:disabled):hover, .seedPrimaryActions .seedActionQuiet:focus-visible,
 .seedPrimaryActions .seedActionQuiet[aria-expanded="true"] { color: var(--text); }
 
-/* A round's context is a whisper, not a banner: it surfaces as the seeds arrive, then
-   steps back so the stage stays the only thing in view. Pointing at or focusing it recalls it. */
-.explorationContext[data-whisper] { animation: contextWhisper 7.2s cubic-bezier(.22,.8,.3,1) both; }
-.explorationContext[data-whisper]:is(:hover, :focus-within) { animation: none; opacity: 1; transition: opacity 240ms ease; }
+/* Let the summary fade while the round's actions stay available. */
+.explorationContext[data-whisper] > :is(span, p) { animation: contextWhisper 7.2s cubic-bezier(.22,.8,.3,1) both; }
+.explorationContext[data-whisper]:is(:hover, :focus-within) > :is(span, p) { animation: none; opacity: 1; transition: opacity 240ms ease; }
 @keyframes contextWhisper {
   0% { opacity: 0; transform: translateY(-4px); }
   9% { opacity: 1; transform: none; }
@@ -4360,7 +4359,7 @@
   100% { opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .explorationContext[data-whisper] { animation: contextWhisperStill 7.2s linear both; }
+  .explorationContext[data-whisper] > :is(span, p) { animation: contextWhisperStill 7.2s linear both; }
   @keyframes contextWhisperStill { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
 }
 /* Sources of a 合 are kept, not erased: their captions settle back with the droplets. */

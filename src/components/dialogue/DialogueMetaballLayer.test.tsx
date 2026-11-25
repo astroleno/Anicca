@@ -42,18 +42,21 @@ function Harness({ onStateChange, caption = false, fallbackOffset, mode, onRende
   const hostRef = useRef<HTMLDivElement | null>(null);
 
   return (
-    <div ref={hostRef} data-testid="host">
-      <button
-        data-testid="surface"
-        data-metaball-surface="root"
-        data-metaball-role="user"
-        data-metaball-relation="focus"
-        style={fallbackOffset === undefined ? undefined : { "--stage-label-offset-x": `${fallbackOffset}px` } as CSSProperties}
-      >
-        {caption ? <span data-seed-caption data-testid="caption"><strong>Root</strong></span> : "Root"}
-      </button>
+    <main data-testid="dialogue-shell">
+      <div ref={hostRef} data-testid="host">
+        <button
+          data-testid="surface"
+          data-metaball-surface="root"
+          data-metaball-role="user"
+          data-metaball-relation="focus"
+          style={fallbackOffset === undefined ? undefined : { "--stage-label-offset-x": `${fallbackOffset}px` } as CSSProperties}
+        >
+          {caption ? <span data-seed-caption data-testid="caption"><strong>Root</strong></span> : "Root"}
+        </button>
+      </div>
       <DialogueMetaballLayer hostRef={hostRef} onStateChange={onStateChange} rendererMode={mode} onRendererStatus={onRendererStatus} />
-    </div>
+      <textarea id="dialogue-input" />
+    </main>
   );
 }
 
@@ -295,6 +298,73 @@ describe("DialogueMetaballLayer", () => {
     act(() => vi.advanceTimersByTime(1000));
     expect(frames.size).toBe(0);
     expect(rendererMocks.render).toHaveBeenCalledTimes(2);
+  });
+
+  it("rests while the composer has focus and resumes its material phase on blur", () => {
+    render(<Harness onStateChange={vi.fn()} />);
+    runNextFrame(1000);
+    const input = screen.getByRole("textbox");
+    act(() => input.focus());
+    runNextFrame(1016);
+    const lastTime = rendererMocks.render.mock.lastCall?.[1];
+    expect(frames.size).toBe(0);
+
+    fireEvent.input(input, { target: { value: "继续写" } });
+    act(() => vi.advanceTimersByTime(3000));
+    expect(frames.size).toBe(0);
+    expect(rendererMocks.render).toHaveBeenCalledTimes(2);
+
+    act(() => input.blur());
+    runNextFrame(4016);
+    expect(rendererMocks.render.mock.lastCall?.[1]).toBe(lastTime);
+    act(() => vi.advanceTimersByTime(35));
+    runNextFrame(4051);
+    expect(rendererMocks.render.mock.lastCall?.[1]).toBeGreaterThan(lastTime!);
+    expect(rendererMocks.create).toHaveBeenCalledOnce();
+  });
+
+  it("rests during reading, wakes for pending or visibility changes, and resumes idle animation on close", async () => {
+    const { unmount } = render(<Harness onStateChange={vi.fn()} />);
+    const shell = screen.getByTestId("dialogue-shell"), surface = screen.getByTestId("surface");
+    vi.spyOn(performance, "now").mockReturnValue(1000);
+    const hidden = vi.spyOn(document, "hidden", "get").mockReturnValue(false);
+    runNextFrame(1000);
+    await act(async () => { shell.dataset.reading = "true"; });
+    runNextFrame(1016);
+    act(() => vi.advanceTimersByTime(3000));
+    expect(frames.size).toBe(0);
+    expect(rendererMocks.render).toHaveBeenCalledTimes(2);
+
+    fireEvent.focusIn(surface);
+    runNextFrame(4000);
+    expect(rendererMocks.render).toHaveBeenCalledTimes(3);
+    expect(frames.size).toBe(0);
+
+    await act(async () => { surface.dataset.liquidPending = "true"; });
+    runNextFrame(4016);
+    act(() => vi.advanceTimersByTime(90));
+    runNextFrame(4106);
+    expect(rendererMocks.render.mock.lastCall?.[0][0].generating).toBe(true);
+    await act(async () => { delete surface.dataset.liquidPending; });
+    runNextFrame(4122);
+    expect(frames.size).toBe(0);
+
+    hidden.mockReturnValue(true);
+    fireEvent(document, new Event("visibilitychange"));
+    expect(frames.size).toBe(0);
+    hidden.mockReturnValue(false);
+    fireEvent(document, new Event("visibilitychange"));
+    runNextFrame(6000);
+    await act(async () => { delete shell.dataset.reading; });
+    runNextFrame(6016);
+    act(() => vi.advanceTimersByTime(35));
+    runNextFrame(6051);
+    expect(rendererMocks.create).toHaveBeenCalledOnce();
+
+    unmount();
+    act(() => vi.advanceTimersByTime(3000));
+    expect(frames.size).toBe(0);
+    expect(rendererMocks.dispose).toHaveBeenCalledOnce();
   });
 
   it("prepares pointer intent without measuring geometry", () => {

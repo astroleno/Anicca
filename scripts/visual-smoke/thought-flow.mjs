@@ -93,8 +93,13 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
     };
     const closeReading = async () => {
       const close = page.getByRole("button", { name: "返回种子，收起阅读", exact: true });
-      if (await close.isVisible()) await activate(close);
+      const url = page.url();
+      if (await close.isVisible()) {
+        if (spec.width < 500) await activate(close);
+        else await close.click({ noWaitAfter: true });
+      }
       await reading.waitFor({ state: "hidden" });
+      assert.equal(page.url(), url, "Closing reading keeps the current address");
     };
     const openSeed = async id => {
       await closeReading();

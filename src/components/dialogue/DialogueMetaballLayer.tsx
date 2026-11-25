@@ -141,6 +141,9 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
 
     const host = hostRef.current;
     if (!host) return;
+    const shell = host.closest<HTMLElement>('[data-testid="dialogue-shell"]');
+    const isComposer = (target: EventTarget | null) =>
+      target instanceof HTMLTextAreaElement && target.id === "dialogue-input";
     let renderer: DialogueMetaballRenderer | null = null;
     const initialization = new AbortController();
     let initializationTimer = 0;
@@ -270,6 +273,7 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
       animationFrame = 0;
       if (disposed || !renderer || document.hidden || host.dataset.spacePaused === "true") return;
       const active = pointerDown || motionActive || depthActive || fitActive || timestamp < activeUntil;
+      const drawnQualityScale = qualityScale;
       try {
         const sceneTime = sceneClock.step(timestamp);
         // Geometry only changes on resize, scene mutations or pointer movement.
@@ -498,15 +502,20 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
         }
         // Only interaction frames inform quality. Intentional idle throttling
         // must not be mistaken for a slow GPU.
-        qualityScale = quality.step(timestamp,active,pointerDown);
+        qualityScale = quality.step(timestamp, active, pointerDown);
       } catch {
         enterFallback();
         return;
       }
       if (prefersReducedMotion && !inkReadback?.pending) return; // Finish a pending read without animating the material.
-      if (active || motionActive || depthActive || fitActive || inkReadback?.pending) animationFrame = window.requestAnimationFrame(drawFrame);
-      else {
-        const quiet = document.activeElement?.id === "dialogue-input" || host.closest<HTMLElement>('[data-testid="dialogue-shell"]')?.dataset.reading === "true";
+      if (active || motionActive || depthActive || fitActive || qualityScale !== drawnQualityScale || inkReadback?.pending) {
+        animationFrame = window.requestAnimationFrame(drawFrame);
+      } else {
+        const quiet = isComposer(document.activeElement) || shell?.dataset.reading === "true";
+        if (quiet && !cachedNodes.some(node => node.generating)) {
+          sceneClock.pause();
+          return;
+        }
         idleTimer = window.setTimeout(wake, 1000 / (quiet ? 12 : 30));
       }
     };
@@ -562,13 +571,17 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
       quality.resetTiming();
       if (!document.hidden) invalidate();
     };
+    const handleComposerFocus = (event: FocusEvent) => {
+      if (isComposer(event.target)) wake();
+    };
     const mutationObserver = new MutationObserver((records) => {
+      if (records.some(record => record.target === shell)) wake();
       if (records.some(record => record.target === host && record.attributeName === "data-space-paused")) {
         cancelScheduledFrame(); quality.resetTiming(); sceneClock.pause();
         if (host.dataset.spacePaused !== "true") invalidate();
         else { activePointerId = null; pointerDown = false; pressedId = null; }
       }
-      const changed = records.filter(record => record.target !== canvas &&
+      const changed = records.filter(record => record.target !== canvas && record.target !== shell &&
         !(record.target === host && record.attributeName === "class") &&
         !(record.type === "attributes" && record.attributeName === "style" && ownStyles.get(record.target as HTMLElement) === (record.target as HTMLElement).getAttribute("style") &&
           (!(record.target as HTMLElement).dataset.metaballSurface || measuredInputs.get(record.target as HTMLElement) === inputStyle(record.target as HTMLElement))));
@@ -583,11 +596,14 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
     });
     mutationObserver.observe(host, { subtree: true, childList: true, characterData: true, attributes: true,
       attributeFilter: ["style", "class", "data-reading-orbit", "data-reading-role", "data-space-paused", "data-label-inset-top", "data-label-inset-bottom", "data-metaball-role", "data-metaball-relation", "data-liquid-origins", "data-liquid-color-key", "data-liquid-pending", "data-atmosphere", "data-theme", "data-liquid-partner", "data-liquid-contact", "data-label-handoff", "data-space-yaw", "data-space-pitch", "data-space-zoom", "data-space-navigating", "data-space-depth", "data-seed-generation", "data-seed-hue-shift", "data-seed-polarity-strength", "data-seed-attention"] });
+    if (shell) mutationObserver.observe(shell, { attributeFilter: ["data-reading"] });
     const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(remeasure) : null;
     resizeObserver?.observe(host);
     host.addEventListener("pointerdown", handlePointerDown, { passive: true });
     host.addEventListener("pointerenter", prepareInteraction, { passive: true });
     host.addEventListener("focusin", prepareInteraction, { passive: true });
+    shell?.addEventListener("focusin", handleComposerFocus);
+    shell?.addEventListener("focusout", handleComposerFocus);
     window.addEventListener("pointermove", handlePointerMove, { passive: true });
     window.addEventListener("pointerup", handlePointerUp, { passive: true });
     window.addEventListener("pointercancel", handlePointerUp, { passive: true });
@@ -645,6 +661,8 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
       host.removeEventListener("pointerdown", handlePointerDown);
       host.removeEventListener("pointerenter", prepareInteraction);
       host.removeEventListener("focusin", prepareInteraction);
+      shell?.removeEventListener("focusin", handleComposerFocus);
+      shell?.removeEventListener("focusout", handleComposerFocus);
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
       window.removeEventListener("pointercancel", handlePointerUp);
