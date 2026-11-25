@@ -23,7 +23,7 @@ import { StageField } from "./StageField";
 import { readingInvitations, type ReadingOrbit } from "./readingOrbit";
 import type { ThinkingSpace } from "@/features/perspectives/model";
 import { stageSeedRole } from "@/features/dialectic/sceneProjection";
-import { layoutSeedLabels, seedLabelLeader } from "./labelLayout";
+import { compactSourceCaptionWidth, layoutSeedLabels, seedLabelLeader } from "./labelLayout";
 import { isCompactStageWidth, MIN_SYNTHESIS_TARGET, synthesisStageGeometry } from "./synthesisStageGeometry";
 import type { DialogueTheme } from "./useDialogueTheme";
 import { DEFAULT_SEED_ORBIT, orbitSeedSpace, spatialStagePoint, dragSpatialStagePoint, SEED_VIEWS, wrapSeedYaw,
@@ -31,6 +31,8 @@ import { DEFAULT_SEED_ORBIT, orbitSeedSpace, spatialStagePoint, dragSpatialStage
   type SeedOrbit, type SeedViewDirection } from "./liquid/space";
 
 const DialogueMetaballLayer = dynamic(() => import("./DialogueMetaballLayer").then(module => module.DialogueMetaballLayer), { ssr: false });
+
+type MeasuredStageLabel = { width: number; height: number; titleHeight?: number; titleOffsetY?: number; anchorOffsetY: number; surfaceRadius: number };
 
 type BubbleStageProps = {
   layoutKey: string;
@@ -206,7 +208,7 @@ export function BubbleStage({
   const nodeRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [labelGeometry, setLabelGeometry] = useState({
     width: 0, height: 0, insets: { top: 0, bottom: 0 },
-    labels: {} as Record<string, { width: number; height: number; anchorOffsetY: number; surfaceRadius: number }>
+    labels: {} as Record<string, MeasuredStageLabel>
   });
   const activePointerTargetRef = useRef<HTMLElement | null>(null);
   const cancelSingleGestureRef = useRef<(() => void) | null>(null);
@@ -409,12 +411,16 @@ export function BubbleStage({
   const measureLabels = useCallback(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
-    const labels: Record<string, { width: number; height: number; anchorOffsetY: number; surfaceRadius: number }> = {};
+    const labels: Record<string, MeasuredStageLabel> = {};
     for (const [id, button] of Object.entries(nodeRefs.current)) {
       const inner = button?.querySelector("[data-seed-caption]");
       if (inner instanceof HTMLElement && inner.offsetWidth && inner.offsetHeight) {
         // Use the complete caption hit box for spacing, including its touch padding.
-        labels[id] = { width: inner.offsetWidth,
+        const followsSource = button?.dataset.synthesisTier === "source" && Boolean(button.closest("[data-compact-synthesis]"));
+        const title = followsSource ? inner.querySelector("strong") : null;
+        labels[id] = { width: followsSource ? compactSourceCaptionWidth(inner) : inner.offsetWidth,
+          titleHeight: title?.offsetHeight,
+          titleOffsetY: title ? title.offsetTop + (title.offsetHeight - inner.offsetHeight) / 2 : undefined,
           height: inner.offsetHeight, anchorOffsetY: (button?.offsetHeight || 0)/2+10+inner.offsetHeight/2,
           surfaceRadius: Math.max(button?.offsetWidth || 0, button?.offsetHeight || 0) / 2 };
       }
@@ -430,7 +436,9 @@ export function BubbleStage({
     setLabelGeometry(current => current.width === next.width && current.height === next.height &&
       current.insets.top === insets.top && current.insets.bottom === insets.bottom &&
       Object.keys(current.labels).length === Object.keys(labels).length &&
-      Object.entries(labels).every(([id, size]) => current.labels[id]?.width === size.width && current.labels[id]?.height === size.height && current.labels[id]?.anchorOffsetY === size.anchorOffsetY && current.labels[id]?.surfaceRadius === size.surfaceRadius)
+      Object.entries(labels).every(([id, size]) => current.labels[id]?.width === size.width && current.labels[id]?.height === size.height
+        && current.labels[id]?.titleHeight === size.titleHeight && current.labels[id]?.titleOffsetY === size.titleOffsetY
+        && current.labels[id]?.anchorOffsetY === size.anchorOffsetY && current.labels[id]?.surfaceRadius === size.surfaceRadius)
       ? current : next);
   }, []);
 
@@ -461,14 +469,16 @@ export function BubbleStage({
   const labelOffsets = useMemo(() => metaballRendererState === "ready" ? {} : layoutSeedLabels(positionedNodes.flatMap(({ node, position }) => {
     const size = labelGeometry.labels[node.id];
     return size ? [{ id: node.id, ...size,
+      followSource: compactStage && sizingSynthesisStage && node.sourceRole === "source",
       x: position.x * labelGeometry.width / 100,
       y: position.y * labelGeometry.height / 100 + size.anchorOffsetY }] : [];
   }), labelGeometry.width, labelGeometry.height, positionedNodes.flatMap(({ node, position }) => {
     const size = labelGeometry.labels[node.id], radius = (synthesisGeometry[node.id]?.diameter || (size?.surfaceRadius || 0) * 2) / 2;
     return radius ? [{ id: node.id, x: position.x * labelGeometry.width / 100,
       y: position.y * labelGeometry.height / 100,
-      radius: Math.max(radius, sizingSynthesisStage ? MIN_SYNTHESIS_TARGET / 2 : 0) }] : [];
-  }), labelGeometry.insets), [positionedNodes, labelGeometry, metaballRendererState, sizingSynthesisStage, synthesisGeometry]);
+      radius: compactStage ? radius : Math.max(radius, sizingSynthesisStage ? MIN_SYNTHESIS_TARGET / 2 : 0),
+      hitRadius: compactStage && sizingSynthesisStage ? MIN_SYNTHESIS_TARGET / 2 : undefined }] : [];
+  }), labelGeometry.insets), [positionedNodes, labelGeometry, metaballRendererState, compactStage, sizingSynthesisStage, synthesisGeometry]);
 
   const getGestureGeometry = useCallback((draggedId: string, viewport: { width: number; height: number }) => {
     const frame = trackRef.current && readSpatialFrame(trackRef.current);
@@ -1325,7 +1335,8 @@ export function BubbleStage({
                       "--synthesis-seed-diameter": synthesisSize ? `${synthesisSize.diameter}px` : undefined,
                       "--synthesis-hit-min": synthesisSize ? `${MIN_SYNTHESIS_TARGET}px` : undefined,
                       "--stage-label-offset-x": `${labelOffsets[node.id]?.x || 0}px`,
-                      "--stage-label-offset-y": `${labelOffsets[node.id]?.y || 0}px`
+                      "--stage-label-offset-y": `${labelOffsets[node.id]?.y || 0}px`,
+                      "--source-caption-width": labelOffsets[node.id]?.width === undefined ? undefined : `${labelOffsets[node.id].width}px`
                     } as CSSProperties
                   }
                   onClick={(event) => handleNodeClick(node, event.detail)}

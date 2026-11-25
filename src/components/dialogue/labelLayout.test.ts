@@ -1,6 +1,41 @@
 import { layoutSeedLabels, separateSeedLabels, seedLabelLeader, type SeedLabelBox } from "./labelLayout";
 
 const label = (id: string, x: number, y: number): SeedLabelBox => ({ id, x, y, width: 116, height: 64 });
+
+it.each([false, true])("keeps compact captions attached to actual source instance IDs (single: %s)", single => {
+  const surfaces = [
+    { id: "copy-left", x: 80, y: 134, radius: 30 },
+    { id: "right", x: 235, y: 131, radius: 31 },
+    { id: "result", x: 160, y: 214, radius: 45 },
+    { id: "shared-ancestor", x: 160, y: 72, radius: 21, hitRadius: 22 },
+    { id: "left-original", x: 41, y: 75, radius: 20, hitRadius: 22 },
+    { id: "near-left", x: 66, y: 190, radius: 22 },
+    { id: "near-right", x: 254, y: 196, radius: 22 },
+    { id: "distant", x: 284, y: 76, radius: 20, hitRadius: 22 },
+  ];
+  const labels = [
+    { id: "result", x: 160, y: 271, width: 105, height: 24 },
+    { id: "copy-left", x: 80, y: 190, width: 84, height: 44, followSource: true },
+    ...(!single ? [{ id: "right", x: 235, y: 182, width: 80, height: 24, followSource: true }] : []),
+  ];
+  const offsets = layoutSeedLabels(labels, 320, 350, surfaces, { top: 30, bottom: 33 });
+  const distance = (box: SeedLabelBox, surface: typeof surfaces[number]) => Math.hypot(
+    Math.max(0, Math.abs(box.x - surface.x) - box.width / 2),
+    Math.max(0, Math.abs(box.y - surface.y) - box.height / 2)
+  ) - surface.radius;
+  for (const caption of labels.filter(item => item.followSource)) {
+    const placed = { ...caption, width: offsets[caption.id].width || caption.width,
+      x: caption.x + offsets[caption.id].x, y: caption.y + offsets[caption.id].y };
+    const own = surfaces.find(surface => surface.id === caption.id)!;
+    const other = surfaces.find(surface => surface.id === (caption.id === "copy-left" ? "right" : "copy-left"))!;
+    expect(distance(placed, own)).toBeLessThanOrEqual(23);
+    if (!single) expect(distance(placed, own) + 3).toBeLessThan(distance(placed, other));
+    expect(surfaces.every(surface => distance(placed, surface) >= 3.99)).toBe(true);
+    expect(placed.y - placed.height / 2).toBeGreaterThanOrEqual(38);
+    expect(placed.y + placed.height / 2).toBeLessThanOrEqual(309);
+  }
+  expect(layoutSeedLabels([...labels].reverse(), 320, 350, surfaces, { top: 30, bottom: 33 })).toEqual(offsets);
+});
 it("connects displaced captions to their own surface and leaves clear nearby captions undecorated", () => {
   const surfaces = [{ id: "a", x: 80, y: 80, radius: 30 }, { id: "b", x: 230, y: 80, radius: 30 }];
   const caption = { id: "a", x: 80, y: 130, width: 60, height: 20 };

@@ -21,7 +21,11 @@ export function synthesisStageGeometry(
     Math.max(48, .77 * Math.sqrt(width * availableHeight / ids.length)));
   const focusY = Math.min(availableHeight * .68,
     Math.max(availableHeight * .52, availableHeight - diameter / 2 - 47));
-  const distantSlots = [[16, .11], [84, .11], [12, .61], [88, .61], [88, .87]];
+  // Extra distant seeds on the narrowest stage leave a strip directly under
+  // each source for its title. The two upper satellites and common parent
+  // keep their established anchors.
+  const lowerSatelliteY = width <= 360 ? .73 : .61;
+  const distantSlots = [[16, .11], [84, .11], [12, lowerSatelliteY], [88, lowerSatelliteY], [88, width <= 360 ? .92 : .87]];
   const directSources = sourceIds.slice(0, 2);
   let distant = 0;
   return Object.fromEntries(ids.map(id => {

@@ -7,7 +7,7 @@ import { waitForSeedLayout } from "./seeds.mjs";
 const viewport = { width: 320, height: 568 };
 const inkSelector = "[data-synthesis-marker], [data-common-parent-marker], [data-seed-caption] strong";
 
-function fixtureFor(pair) {
+export function synthesisColorFixture(pair) {
   if (pair === "same-role-cross-topic") return crossTopicFixture;
   const snapshot = structuredClone(crossTopicFixture);
   const { nodes } = snapshot.graph;
@@ -71,7 +71,7 @@ async function pixels(page, original, bare, geometry) {
 
 async function capture(browser, { baseUrl, outputDir, setActivePage }, renderer, theme, pair) {
   const context = await browser.newContext({ viewport, deviceScaleFactor: 1, hasTouch: true, isMobile: true, reducedMotion: "reduce" });
-  await loadSynthesisSnapshot(context, fixtureFor(pair));
+  await loadSynthesisSnapshot(context, synthesisColorFixture(pair));
   await context.addInitScript(({ renderer, theme }) => {
     localStorage.setItem("anicca.dialogue.appearance.v1", theme);
     localStorage.setItem("anicca.dialogue.renderer.v1", renderer === "webgpu" ? "tsl" : "original");

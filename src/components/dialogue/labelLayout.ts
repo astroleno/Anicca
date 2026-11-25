@@ -4,6 +4,9 @@ export type SeedLabelBox = {
   y: number;
   width: number;
   height: number;
+  followSource?: boolean;
+  titleHeight?: number;
+  titleOffsetY?: number;
 };
 
 /** Stable text-only packing. Liquid surfaces, hit targets and saved coordinates stay put. */
@@ -51,8 +54,117 @@ export function separateSeedLabels(
   return offsets;
 }
 
-export type SeedLabelOffset = { x: number; y: number };
-export type SeedLabelSurface = { id?: string; x: number; y: number; radius: number };
+export type SeedLabelOffset = { x: number; y: number; width?: number };
+export type SeedLabelSurface = { id?: string; x: number; y: number; radius: number; hitRadius?: number };
+
+const SOURCE_CAPTION_PADDING = 4;
+
+export function compactSourceCaptionWidth(caption: HTMLElement) {
+  // The one-line title keeps its full scroll width when packed to a smaller box.
+  const textWidth = caption.querySelector("strong")?.scrollWidth || 0;
+  return Math.min(84, Math.max(44, textWidth + SOURCE_CAPTION_PADDING));
+}
+
+function captionSurfaceDistance(label: SeedLabelBox, surface: SeedLabelSurface, radius = surface.radius) {
+  const dx = Math.max(0, Math.abs(label.x - surface.x) - label.width / 2);
+  const dy = Math.max(0, Math.abs(label.y - surface.y) - label.height / 2);
+  return Math.hypot(dx, dy) - radius;
+}
+
+/** Pack compact synthesis captions around their own liquid surface. */
+function layoutOwnedSeedLabels(
+  labels: readonly SeedLabelBox[], width: number, height: number, surfaces: readonly SeedLabelSurface[]
+): Record<string, SeedLabelOffset> {
+  const margin = 8, gap = 4;
+  const sourceIds = new Set(labels.filter(label => label.followSource).map(label => label.id));
+  const sourceSurfaces = surfaces.filter(surface => surface.id !== undefined && sourceIds.has(surface.id));
+  const order = [...labels].sort((a, b) => Number(Boolean(b.followSource)) - Number(Boolean(a.followSource))
+    || b.width - a.width || a.id.localeCompare(b.id));
+  const options = order.map(label => {
+    const owner = surfaces.find(surface => surface.id === label.id);
+    const peer = sourceSurfaces.find(surface => surface.id !== label.id);
+    const midpoint = owner && peer ? (owner.x + peer.x) / 2 : 0;
+    const side = owner && peer ? Math.sign(owner.x - peer.x) : 0;
+    const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+    const widths = label.followSource
+      ? new Set([label.width, Math.max(44, label.width - 12), Math.max(44, label.width - 24), 44])
+      : [label.width];
+    const ranked: { box: SeedLabelBox; score: number }[] = [];
+    for (const captionWidth of widths) {
+      const halfWidth = captionWidth / 2, halfHeight = label.height / 2;
+      const minX = margin + halfWidth, maxX = width - margin - halfWidth;
+      const minY = margin + halfHeight, maxY = height - margin - halfHeight;
+      const xs = new Set([minX, maxX, clamp(label.x, minX, maxX)]);
+      const ys = new Set([minY, maxY, clamp(label.y, minY, maxY)]);
+      for (const surface of surfaces) {
+        const radius = Math.max(surface.radius, surface.hitRadius || 0) + gap;
+        for (const direction of [-1, 1]) {
+          xs.add(clamp(surface.x + direction * (radius + halfWidth), minX, maxX));
+          ys.add(clamp(surface.y + direction * (radius + halfHeight), minY, maxY));
+        }
+      }
+      if (owner) {
+        // More than one sample on each edge lets a title round a neighboring drop.
+        for (const shift of [-56, -32, -16, 0, 16, 32, 56]) {
+          xs.add(clamp(owner.x + shift, minX, maxX));
+          ys.add(clamp(owner.y + shift, minY, maxY));
+        }
+      }
+      for (const x of xs) for (const y of ys) {
+        const box = { ...label, width: captionWidth, x, y };
+        if (surfaces.some(surface => captionSurfaceDistance(box, surface, Math.max(surface.radius, surface.hitRadius || 0)) < gap - .01)) continue;
+        const titleHeight = label.titleHeight || Math.min(24, label.height);
+        const title = { ...box, y: y + (label.titleOffsetY || 0),
+          width: captionWidth - SOURCE_CAPTION_PADDING, height: titleHeight };
+        const own = owner ? captionSurfaceDistance(title, owner) : 0;
+        const wrong = label.followSource && surfaces.some(surface =>
+          surface.id !== label.id && captionSurfaceDistance(title, surface) < own + gap);
+        if (wrong) continue;
+        const movement = Math.hypot(x - label.x, y - label.y);
+        // A tangent at the inner edge can be mathematically close to one seed
+        // but visually read as a title for the pair. Prefer a vertical anchor
+        // well inside the actual source's side of the stage.
+        const halfDistance = side ? (x - midpoint) * side : Infinity;
+        const lostWidth = label.width - captionWidth;
+        const score = label.followSource && owner
+          ? own * 3 + Math.abs(x - owner.x) * 2 + movement * .4
+            + Math.max(0, 16 - halfDistance) * 10 + Math.max(0, own - titleHeight) * 80 + (lostWidth ? 200 + lostWidth * 4 : 0)
+          : movement;
+        ranked.push({ box, score });
+      }
+    }
+    return ranked.sort((a, b) => a.score - b.score).slice(0, 36);
+  });
+  const overlaps = (a: SeedLabelBox, b: SeedLabelBox) =>
+    Math.abs(a.x - b.x) < (a.width + b.width) / 2 + gap - .01 &&
+    Math.abs(a.y - b.y) < (a.height + b.height) / 2 + gap - .01;
+  const placed: SeedLabelBox[] = [];
+  function place(index: number): boolean {
+    if (index === options.length) return true;
+    for (const { box } of options[index]) {
+      if (placed.some(other => overlaps(box, other))) continue;
+      placed.push(box);
+      if (place(index + 1)) return true;
+      placed.pop();
+    }
+    return false;
+  }
+  if (!place(0)) {
+    // When user positions leave no complete arrangement, keep any distinct
+    // source anchors we can place and let the existing packer handle the rest.
+    const fallback = layoutSeedLabels(labels.map(label => ({ ...label, followSource: false })), width, height, surfaces);
+    for (const [index, label] of order.entries()) {
+      const best = options[index].find(({ box }) => !placed.some(other => overlaps(box, other)));
+      const offset = fallback[label.id];
+      placed.push(best?.box || { ...label, x: label.x + (offset?.x || 0), y: label.y + (offset?.y || 0) });
+    }
+  }
+  return Object.fromEntries(placed.map((box, index) => {
+    const original = order[index];
+    return [box.id, { x: box.x - original.x, y: box.y - original.y,
+      ...(original.followSource ? { width: box.width } : {}) }];
+  }));
+}
 
 /** Connect a displaced or ambiguous caption using the exact frame used for its ink. */
 export function seedLabelLeader(label: SeedLabelBox, offset: SeedLabelOffset, surfaces: readonly SeedLabelSurface[]) {
@@ -83,6 +195,7 @@ export function layoutSeedLabels(
     labels.map(label => ({ ...label, y: label.y - top })), viewportWidth, viewportHeight - top - bottom,
     surfaces.map(surface => ({ ...surface, y: surface.y - top }))
   );
+  if (labels.some(label => label.followSource)) return layoutOwnedSeedLabels(labels, viewportWidth, viewportHeight, surfaces);
   const vertical = separateSeedLabels(labels, viewportHeight);
   const margin = 8, gap = 12;
   const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));

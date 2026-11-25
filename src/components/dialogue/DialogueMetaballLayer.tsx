@@ -11,7 +11,7 @@ import type { LiquidRendererMode, LiquidRendererStatus } from "./liquid/preferen
 import { LiquidQuality } from "./liquid/quality";
 import { LiquidSceneClock } from "./liquid/clock";
 import { DEFAULT_SEED_ORBIT, projectSpatialSeed, readSeedOrbit, readSeedZoom, publishSpatialFrame, clearSpatialFrame, fitSpatialSeed, fitSeedScene } from "./liquid/space";
-import { layoutSeedLabels, seedLabelLeader } from "./labelLayout";
+import { compactSourceCaptionWidth, layoutSeedLabels, seedLabelLeader } from "./labelLayout";
 import { isCompactStageWidth, MIN_SYNTHESIS_TARGET } from "./synthesisStageGeometry";
 import {
   computeFusedPairs,
@@ -163,7 +163,8 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
     let reportedReady = false;
     let geometryDirty = true;
     let labelsDirty = true;
-    let measuredCaptions: Array<{ id: string; width: number; height: number; inset: number; element: HTMLElement; caption: HTMLElement; leader: HTMLElement | null }> = [];
+    let measuredCaptions: Array<{ id: string; width: number; height: number; titleHeight?: number; titleOffsetY?: number;
+      inset: number; element: HTMLElement; caption: HTMLElement; leader: HTMLElement | null }> = [];
     let measuredPair: { element: HTMLElement; width: number; height: number } | null = null;
     let hostRect: DOMRect | null = null;
     let cachedNodes: ReturnType<typeof projectMetaballSurfaces> = [];
@@ -232,6 +233,7 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
         caption.style.removeProperty("transform");
         caption.style.removeProperty("--stage-label-offset-x");
         caption.style.removeProperty("--stage-label-offset-y");
+        caption.style.removeProperty("--source-caption-width");
       }
       for (const leader of host.querySelectorAll<HTMLElement>("[data-seed-leader]")) {
         leader.hidden = true; leader.style.removeProperty("width"); leader.style.removeProperty("transform");
@@ -316,7 +318,12 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
             if (reading && element.dataset.readingRole !== "satellite") return [];
             const caption = element.querySelector<HTMLElement>("[data-seed-caption]");
             if (!caption || !caption.offsetWidth || !caption.offsetHeight) return [];
-            return [{ id: element.dataset.metaballSurface!, width: caption.offsetWidth, height: caption.offsetHeight, inset: element.clientTop, element, caption,
+            const followsSource = host.dataset.compactSynthesis === "true" && element.dataset.sourceRole === "source";
+            const title = followsSource ? caption.querySelector("strong") : null;
+            return [{ id: element.dataset.metaballSurface!, width: followsSource ? compactSourceCaptionWidth(caption) : caption.offsetWidth, height: caption.offsetHeight,
+              titleHeight: title?.offsetHeight,
+              titleOffsetY: title ? title.offsetTop + (title.offsetHeight - caption.offsetHeight) / 2 : undefined,
+              inset: element.clientTop, element, caption,
               leader: element.querySelector<HTMLElement>("[data-seed-leader]") }];
           });
           const pair = host.querySelector<HTMLElement>('[data-testid="dialogue-synthesis-pair-label"]');
@@ -396,10 +403,12 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
             x: hostRect!.left + hostRect!.width/2 + node.center[0]*hostRect!.height - trackRect!.left,
             y: hostRect!.top + hostRect!.height/2 - node.center[1]*hostRect!.height - trackRect!.top,
             radiusPx: node.radius * hostRect!.height }));
+          const compactSynthesis = host.dataset.compactSynthesis === "true";
           const captions = measuredCaptions.flatMap(measured => {
             const node = localNodes.find(item => item.id === measured.id);
             if (!node || measured.element.dataset.labelHandoff === "true") return [];
-            return [{ ...measured, x: node.x, y: node.y + node.radiusPx + 10 + measured.height/2 }];
+            return [{ ...measured, x: node.x, y: node.y + node.radiusPx + 10 + measured.height/2,
+              followSource: compactSynthesis && measured.element.dataset.sourceRole === "source" }];
           });
           const pairCaption = measuredPair?.element;
           const source = localNodes.find(node => node.id === pressedId);
@@ -409,7 +418,10 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
             width: measuredPair!.width, height: measuredPair!.height }] : [];
           const labelSurfaces = localNodes.map(node => ({ id: node.id, x: node.x, y: node.y, radius: node.radiusPx * 1.08 }));
           const synthesisSizes = localNodes.some(node => surfaces.find(element => element.dataset.metaballSurface === node.id)?.dataset.synthesisTier);
-          const labelObstacles = synthesisSizes ? labelSurfaces.map(surface => ({
+          const labelObstacles = compactSynthesis ? localNodes.map(node => ({
+            id: node.id, x: node.x, y: node.y, radius: node.radiusPx,
+            hitRadius: Math.max(node.radiusPx * 1.08, MIN_SYNTHESIS_TARGET / 2)
+          })) : synthesisSizes ? labelSurfaces.map(surface => ({
             ...surface, radius: Math.max(surface.radius, MIN_SYNTHESIS_TARGET / 2)
           })) : labelSurfaces;
           const offsets = layoutSeedLabels([...captions, ...pairBox], trackRect.width, trackRect.height,
@@ -424,9 +436,12 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
             // React's flat fallback stays on the button and resumes on GL loss.
             const transform = `translate(calc(-50% + ${x}px), ${y}px) scale(${1 / scale})`;
             if (caption.caption.style.transform !== transform) caption.caption.style.transform = transform;
+            const width = offsets[caption.id]?.width;
+            if (width === undefined) caption.caption.style.removeProperty("--source-caption-width");
+            else caption.caption.style.setProperty("--source-caption-width", `${width}px`);
             ownStyles.set(caption.caption, caption.caption.getAttribute("style") || "");
             if (caption.leader) {
-              const leader = host.dataset.compactSynthesis === "true" ? null :
+              const leader = compactSynthesis ? null :
                 seedLabelLeader(caption, offsets[caption.id] || { x: 0, y: 0 }, labelSurfaces);
               caption.leader.hidden = !leader;
               if (leader) {

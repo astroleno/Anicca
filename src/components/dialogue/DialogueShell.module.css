@@ -3970,6 +3970,18 @@
 .stageTrack[data-compact-synthesis] .stageNode[data-synthesis-tier="distant"] [data-seed-caption],
 .stageTrack[data-compact-synthesis] .seedLabelLeader { display: none; }
 .stageTrack[data-compact-synthesis] .stageNode[data-synthesis-tier] .stageNodeInner { max-width: 108px; }
+.stageTrack[data-compact-synthesis] .stageNode[data-synthesis-tier="source"] .stageNodeInner {
+  width: var(--source-caption-width, max-content);
+  max-width: 84px;
+  padding-inline: 2px;
+}
+.stageTrack[data-compact-synthesis] .stageNode[data-synthesis-tier="source"] .stageNodeInner strong {
+  font-size: 13px;
+  line-height: 16px;
+}
+.stageTrack[data-compact-synthesis] .stageNode[data-synthesis-tier="source"] .seedInstanceMark {
+  line-height: 12px;
+}
 .synthesisRole {
   position: absolute;
   inset: 50% auto auto 50%;
