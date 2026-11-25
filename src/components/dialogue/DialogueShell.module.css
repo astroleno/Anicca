@@ -3947,6 +3947,20 @@
 .stageNodeInner small { order: -1; flex-shrink: 0; font: 12px/1.5 var(--anicca-font-literary); letter-spacing: .08em; color: inherit; opacity: .85; }
 .stageNode { display: flex; align-items: center; justify-content: center; overflow: visible; }
 .seedHitArea { position: absolute; left: 50%; top: 50%; width: max(44px,100%); height: max(44px,100%); transform: translate(-50%,-50%); border-radius: 50%; }
+.stageNode[data-synthesis-tier][data-metaball-surface] {
+  --stage-node-scale: 1;
+  width: var(--synthesis-seed-diameter);
+  height: var(--synthesis-seed-diameter);
+}
+.stageNode[data-synthesis-tier] .seedHitArea {
+  width: max(var(--projected-synthesis-hit-min, var(--synthesis-hit-min)), 100%);
+  height: max(var(--projected-synthesis-hit-min, var(--synthesis-hit-min)), 100%);
+}
+.stageNode[data-synthesis-tier]::before,
+.stageNode[data-synthesis-tier]::after { pointer-events: none; }
+.stageTrack[data-metaball-renderer="fallback"] .stageNode:is([data-synthesis-tier="focus"], [data-synthesis-tier="source"]) {
+  z-index: 2;
+}
 .seedSourceGlow { position: absolute; inset: -12%; border-radius: 50%; pointer-events: none; opacity: 0; background: radial-gradient(ellipse, color-mix(in srgb, var(--muted) 12%, transparent) 10%, transparent 70%); transition: opacity 260ms ease; }
 .seedLabelLeader { position: absolute; left: 50%; top: 50%; height: 1px; background: var(--muted); opacity: .4; transform-origin: 0 50%; pointer-events: none; }
 .seedLabelLeader[hidden], .shell[data-reading="true"] .seedLabelLeader, .stageNode[data-label-handoff="true"] .seedLabelLeader { display: none; }
@@ -4366,11 +4380,9 @@
 /* Sources of a 合 are kept, not erased: their captions settle back with the droplets. */
 .stageNode[data-sublated="true"] [data-seed-caption] { opacity: .62; transition: opacity 900ms ease; }
 .stageNode[data-sublated="true"]:is(:hover, :focus-visible) [data-seed-caption] { opacity: 1; }
-@media (max-width: 640px) {
-  /* The liquid renderer dims source bodies separately. Keep their smaller stage text legible. */
-  .shell:not([data-reading]) .stageTrack[data-metaball-renderer="ready"] .stageNode[data-source-role="source"][data-sublated="true"] { opacity: 1; }
-  .shell:not([data-reading]) .stageTrack[data-metaball-renderer="ready"] .stageNode[data-source-role="source"][data-sublated="true"] [data-seed-caption] { opacity: .92; }
-}
+/* The liquid renderer dims source bodies separately. Keep their smaller stage text legible. */
+.shell:not([data-reading]) .stageTrack[data-compact-stage][data-metaball-renderer="ready"] .stageNode[data-source-role="source"][data-sublated="true"] { opacity: 1; }
+.shell:not([data-reading]) .stageTrack[data-compact-stage][data-metaball-renderer="ready"] .stageNode[data-source-role="source"][data-sublated="true"] [data-seed-caption] { opacity: .92; }
 /* Read first, then continue: one breath after the passage, the ways forward sit together;
    the quieter bookkeeping (分身 · 继续写) follows them closely in a softer voice. */
 .seedInspector:not([data-mode="polarity"]) .seedBody + .seedContinuation { margin: 28px 0 0; }

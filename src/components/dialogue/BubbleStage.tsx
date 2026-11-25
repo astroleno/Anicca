@@ -24,6 +24,7 @@ import { readingInvitations, type ReadingOrbit } from "./readingOrbit";
 import type { ThinkingSpace } from "@/features/perspectives/model";
 import type { MetaballRole } from "./metaball/model";
 import { layoutSeedLabels, seedLabelLeader } from "./labelLayout";
+import { isCompactStageWidth, MIN_SYNTHESIS_TARGET, synthesisStageSeedSize } from "./synthesisStageGeometry";
 import type { DialogueTheme } from "./useDialogueTheme";
 import { DEFAULT_SEED_ORBIT, orbitSeedSpace, spatialStagePoint, dragSpatialStagePoint, SEED_VIEWS, wrapSeedYaw,
   readSpatialFrame, canCaptureSpatialPair, spatialPairInContact, SEED_CAMERA_DISTANCE, SEED_WORLD_CAMERA_DISTANCE,
@@ -394,6 +395,7 @@ export function BubbleStage({
     return () => resting.forEach((element, index) => { element.inert = previous[index]; });
   }, [readingOrbit, positionedNodes, invitations]);
 
+  const sizingSynthesisStage = !readingOrbit && !generationBusy && nodes.some(node => node.sourceRole === "result");
   const measureLabels = useCallback(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
@@ -422,7 +424,7 @@ export function BubbleStage({
       ? current : next);
   }, []);
 
-  useEffect(measureLabels, [measureLabels, nodes, stageLayoutMode]);
+  useEffect(measureLabels, [measureLabels, nodes, stageLayoutMode, sizingSynthesisStage]);
   useEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
@@ -454,8 +456,9 @@ export function BubbleStage({
   }), labelGeometry.width, labelGeometry.height, positionedNodes.flatMap(({ node, position }) => {
     const size = labelGeometry.labels[node.id];
     return size ? [{ id: node.id, x: position.x * labelGeometry.width / 100,
-      y: position.y * labelGeometry.height / 100, radius: size.surfaceRadius }] : [];
-  }), labelGeometry.insets), [positionedNodes, labelGeometry, metaballRendererState]);
+      y: position.y * labelGeometry.height / 100,
+      radius: Math.max(size.surfaceRadius, sizingSynthesisStage ? MIN_SYNTHESIS_TARGET / 2 : 0) }] : [];
+  }), labelGeometry.insets), [positionedNodes, labelGeometry, metaballRendererState, sizingSynthesisStage]);
 
   const getGestureGeometry = useCallback((draggedId: string, viewport: { width: number; height: number }) => {
     const frame = trackRef.current && readSpatialFrame(trackRef.current);
@@ -1032,6 +1035,7 @@ export function BubbleStage({
           <div
             ref={trackRef}
             data-space-paused={suspended ? "true" : undefined}
+            data-compact-stage={isCompactStageWidth(labelGeometry.width) ? "true" : undefined}
             data-atmosphere={atmosphereVisible ? "true" : "false"}
             data-theme={theme}
             data-space={metaballRendererState === "fallback" ? "flat" : "3d"}
@@ -1226,6 +1230,7 @@ export function BubbleStage({
                   : node.id === eventNodeId ? ["pending-synthesis", ...nodes.filter(source => source.sourceRole === "source").map(source => source.id), ...(node.originNodeIds || [])]
                     : node.originNodeIds);
               const orbitRole = readingOrbit?.places[node.id]?.role;
+              const synthesisSize = sizingSynthesisStage ? synthesisStageSeedSize(node.sourceRole, labelGeometry.width, nodes.length) : null;
               const size = labelGeometry.labels[node.id];
               const leader = metaballRendererState !== "ready" && size ? seedLabelLeader({ id: node.id, ...size,
                 x: position.x * labelGeometry.width / 100, y: position.y * labelGeometry.height / 100 + size.anchorOffsetY },
@@ -1263,6 +1268,7 @@ export function BubbleStage({
                   data-seed-concept={node.conceptId || node.id}
                   data-seed-instance={node.instanceNumber}
                   data-source-role={node.sourceRole}
+                  data-synthesis-tier={synthesisSize?.tier}
                   data-seed-focus={attended ? "related" : "background"}
                   data-seed-attention={orbitRole ? READING_ORBIT_ATTENTION[orbitRole] : attended ? sublated ? .7 : 1 : .3}
                   data-reading-role={orbitRole}
@@ -1288,6 +1294,8 @@ export function BubbleStage({
                       top: `${position.y}%`,
                       "--stage-node-drag-x": "0px",
                       "--stage-node-drag-y": "0px",
+                      "--synthesis-seed-diameter": synthesisSize ? `${synthesisSize.diameter}px` : undefined,
+                      "--synthesis-hit-min": synthesisSize ? `${MIN_SYNTHESIS_TARGET}px` : undefined,
                       "--stage-label-offset-x": `${labelOffsets[node.id]?.x || 0}px`,
                       "--stage-label-offset-y": `${labelOffsets[node.id]?.y || 0}px`
                     } as CSSProperties
@@ -1302,7 +1310,7 @@ export function BubbleStage({
                   onContextMenu={(event) => event.preventDefault()}
                 >
                   <span id={`${descriptionPrefix}-${node.id}`} hidden>{[node.preview, node.summary].filter(Boolean).join("；")}</span>
-                  <span className={styles.seedHitArea} aria-hidden="true" />
+                  <span className={styles.seedHitArea} data-seed-hit-area aria-hidden="true" />
                   <span className={styles.seedSourceGlow} aria-hidden="true" />
                   <span className={styles.seedLabelLeader} data-seed-leader aria-hidden="true" hidden={!leader}
                     style={leader ? { width: leader.length, transform: `translate(${leader.x}px, ${leader.y}px) rotate(${leader.angle}deg)` } : undefined} />
