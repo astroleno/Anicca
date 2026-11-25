@@ -422,10 +422,14 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
           for (const element of surfaces) ownStyles.set(element, element.getAttribute("style") || "");
         }
         publishSpatialFrame(host, { base: spatialNodes, rendered: displayNodes, pivot: spatialPivot, height: hostRect.height, scale: sceneFit });
+        const prioritizeSources = !reading && trackRect && trackRect.width <= 640;
         for (const element of surfaces) {
           const node=displayNodes.find(item=>item.id===element.dataset.metaballSurface);
           if (!node) continue;
-          const order=String(3+displayNodes.filter(other=>(other.depth || 0)>(node.depth || 0)).length);
+          const role = element.dataset.sourceRole;
+          // On a narrow synthesis stage, a projected background seed can sit over a source's centre.
+          const foreground = prioritizeSources && (role === "source" || role === "result") ? displayNodes.length : 0;
+          const order=String(3+foreground+displayNodes.filter(other=>(other.depth || 0)>(node.depth || 0)).length);
           if (element.style.zIndex!==order) {
             element.style.zIndex=order;
             ownStyles.set(element,element.getAttribute("style") || "");

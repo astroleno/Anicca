@@ -4108,7 +4108,7 @@
 .explorationContext:has(.seedResultReads) > span { grid-column: 1; grid-row: 1; max-width: none; }
 .explorationContext:has(.seedResultReads) > p { grid-column: 1 / -1; grid-row: 2; }
 .explorationContext:has(.seedResultReads) > .seedResultTrail { grid-column: 2; grid-row: 1; }
-.seedResultReads { grid-column: 1 / -1; grid-row: 3; display: flex; gap: 20px; min-width: 0; pointer-events: auto; }
+.seedResultReads { grid-column: 1 / -1; grid-row: 3; display: flex; gap: 20px; min-width: 0; }
 .seedResultReads button { display: flex; align-items: baseline; gap: 8px; min-width: 0; max-width: 220px; }
 .seedResultReads button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .seedResultReads small { flex-shrink: 0; color: var(--muted); font-size: 11px; }
@@ -4366,6 +4366,11 @@
 /* Sources of a 合 are kept, not erased: their captions settle back with the droplets. */
 .stageNode[data-sublated="true"] [data-seed-caption] { opacity: .62; transition: opacity 900ms ease; }
 .stageNode[data-sublated="true"]:is(:hover, :focus-visible) [data-seed-caption] { opacity: 1; }
+@media (max-width: 640px) {
+  /* The liquid renderer dims source bodies separately. Keep their smaller stage text legible. */
+  .shell:not([data-reading]) .stageTrack[data-metaball-renderer="ready"] .stageNode[data-source-role="source"][data-sublated="true"] { opacity: 1; }
+  .shell:not([data-reading]) .stageTrack[data-metaball-renderer="ready"] .stageNode[data-source-role="source"][data-sublated="true"] [data-seed-caption] { opacity: .92; }
+}
 /* Read first, then continue: one breath after the passage, the ways forward sit together;
    the quieter bookkeeping (分身 · 继续写) follows them closely in a softer voice. */
 .seedInspector:not([data-mode="polarity"]) .seedBody + .seedContinuation { margin: 28px 0 0; }

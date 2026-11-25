@@ -101,18 +101,72 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
       await reading.waitFor({ state: "hidden" });
       assert.equal(page.url(), url, "Closing reading keeps the current address");
     };
-    const openSeed = async id => {
+    const openSeed = async (id, { sourceTarget } = {}) => {
       await closeReading();
       await page.waitForFunction(() => document.querySelector('[data-testid="dialogue-stage-track"]')?.dataset.metaballRenderer === "ready");
       await page.evaluate(() => document.fonts.ready.then(() => {}));
       await waitForSeedLayout(page, { captions: true });
       const seed = page.getByTestId(`dialogue-stage-node-${id}`);
-      await activate(seed.locator("[data-seed-caption] strong"));
+      const caption = seed.locator("[data-seed-caption] strong");
+      if (sourceTarget) {
+        const point = await (sourceTarget === "surface" ? seed : caption).evaluate(element => {
+          const bounds = element.getBoundingClientRect();
+          const x = bounds.x + bounds.width / 2, y = bounds.y + bounds.height / 2;
+          const target = document.elementFromPoint(x, y)?.closest("[data-metaball-surface]");
+          return { x, y, hitId: target?.getAttribute("data-metaball-surface") };
+        });
+        assert.equal(point.hitId, id, `The ${sourceTarget} hits the requested source after returning to the stage`);
+        if (spec.width < 500) await page.touchscreen.tap(point.x, point.y);
+        else await page.mouse.click(point.x, point.y);
+      } else await activate(caption);
       // Observe the open reader and the selected seed after the single activation.
       // A repeat can land on the reader just as it opens on a slow renderer.
       await reading.getByTestId("dialogue-panel").waitFor();
       await seed.and(page.locator('[data-reading-role="main"]')).waitFor();
       await page.waitForFunction(() => getComputedStyle(document.getElementById("dialogue-reading-drawer")).opacity === "1");
+    };
+    const sourceGeometry = async (synthesisId, sourceIds) => {
+      await page.evaluate(() => document.fonts.ready.then(() => {}));
+      await waitForSeedLayout(page, { captions: true });
+      return page.evaluate(({ synthesisId, sourceIds }) => {
+        const rect = element => {
+          const { left, top, right, bottom } = element.getBoundingClientRect();
+          return { left, top, right, bottom };
+        };
+        return [synthesisId, ...sourceIds].map(id => {
+          const seed = document.querySelector(`[data-testid="dialogue-stage-node-${CSS.escape(id)}"]`);
+          const caption = seed.querySelector("[data-seed-caption]");
+          const title = caption.querySelector("strong");
+          const hit = seed.querySelector('[aria-hidden="true"]');
+          const bounds = rect(hit), label = rect(caption), style = getComputedStyle(caption);
+          const opacity = Number(style.opacity) * Number(getComputedStyle(seed).opacity);
+          const hits = bounds => document.elementFromPoint((bounds.left + bounds.right) / 2, (bounds.top + bounds.bottom) / 2)
+            ?.closest("[data-metaball-surface]") === seed;
+          return { id, role: seed.dataset.sourceRole, relation: seed.dataset.metaballRelation, text: title.textContent,
+            marker: caption.querySelector("small").textContent,
+            label, bounds, opacity, visible: style.visibility === "visible" && opacity > 0,
+            clipped: title.scrollWidth > title.clientWidth + 1, captionHit: hits(rect(title)), seedHit: hits(bounds) };
+        });
+      }, { synthesisId, sourceIds });
+    };
+    const assertSourceLayout = (sourceLayout, graph) => {
+      const fits = rect => rect.left >= -1 && rect.top >= -1 && rect.right <= spec.width + 1 && rect.bottom <= spec.height + 1;
+      const overlaps = (a, b) => Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1 &&
+        Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1;
+      assert.equal(sourceLayout[0].relation, "focus");
+      for (const [index, seed] of sourceLayout.entries()) {
+        assert.equal(seed.role, index === 0 ? "result" : "source");
+        const { branchType, meta } = graph.nodes[seed.id];
+        assert.equal(seed.text, meta.label);
+        assert.equal(seed.marker, index === 0 ? branchType : `来源 · ${branchType}`);
+        assert(seed.visible && !seed.clipped && seed.captionHit && seed.seedHit && fits(seed.label) && fits(seed.bounds),
+          `Synthesis and both sources have readable captions and unobstructed targets at ${spec.width}: ${JSON.stringify(sourceLayout)}`);
+        if (spec.width < 500) assert(seed.opacity >= .8, `The ${seed.role} caption should stay legible on a narrow stage`);
+        for (const other of sourceLayout.slice(index + 1)) {
+          assert(!overlaps(seed.label, other.label) && !overlaps(seed.label, other.bounds) && !overlaps(other.label, seed.bounds),
+            `Captions stay off the other seeds and captions: ${JSON.stringify(sourceLayout)}`);
+        }
+      }
     };
     try {
       await page.goto(`${baseUrl}${entryPath}`, { waitUntil: "networkidle" });
@@ -227,10 +281,44 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
       const synthesisSummary = synthesis.meta.change || synthesis.meta.summary;
       assert(synthesisSummary, "A synthesis must retain its explanation even without a verified change");
       assert((await page.getByTestId("dialogue-synthesis-context").innerText()).includes(synthesisSummary));
+      await page.waitForFunction(() => !document.querySelector('[data-event-state="synthesis-reveal"]'));
+      const synthesisLayout = await sourceGeometry(synthesis.id, synthesis.parents);
       await shot("synthesis");
-      await activate(page.getByRole("button", { name: "阅读合", exact: true }));
-      assert.equal(await panel.getByRole("group", { name: "种子基本操作" }).getByRole("button").count(), 3,
-        "A synthesis keeps all three basic continuation operations at the same level");
+      assertSourceLayout(synthesisLayout, graph);
+      await activate(page.getByRole("button", { name: "展开来源", exact: true }));
+      const sourceContext = page.getByTestId("dialogue-source-context");
+      await sourceContext.waitFor();
+      const sourceLayout = await sourceGeometry(synthesis.id, synthesis.parents);
+      await shot("synthesis-sources");
+      assertSourceLayout(sourceLayout, graph);
+      for (const [index, sourceId] of synthesis.parents.entries()) {
+        await openSeed(sourceId, { sourceTarget: index === 1 ? "surface" : "caption" });
+        assert.equal(await panel.getByRole("heading", { level: 2 }).innerText(), graph.nodes[sourceId].meta.label);
+        await closeReading();
+        await sourceContext.waitFor();
+      }
+      await activate(sourceContext.getByRole("button", { name: "阅读合", exact: true }));
+      await reading.getByTestId("dialogue-panel").waitFor();
+      assert.equal(await panel.getByRole("heading", { level: 2 }).innerText(), synthesis.meta.label);
+      const actions = panel.getByRole("group", { name: "种子基本操作" });
+      assert.equal(await actions.getByRole("button").count(), 3);
+      for (const name of ["推演正反", "组合", "沿极性展开"]) {
+        const action = actions.getByRole("button", { name, exact: true });
+        assert(await action.isVisible() && await action.isEnabled(), `${name} is available while reading a synthesis`);
+      }
+      const settledContent = await panel.evaluate(async element => {
+        await Promise.all(element.getAnimations().map(animation => animation.finished));
+        const { opacity, filter } = getComputedStyle(element);
+        return { opacity, filter };
+      });
+      assert.equal(settledContent.opacity, "1");
+      assert.match(settledContent.filter, /^(none|blur\(0px\))$/);
+      await shot("synthesis-reading");
+      await activate(actions.getByRole("button", { name: "组合", exact: true }));
+      await choices.waitFor();
+      await closeReading();
+      await activate(sourceContext.getByRole("button", { name: "收起来源", exact: true }));
+      await openSeed(synthesis.id);
       await activate(page.getByRole("button", { name: "推演正反", exact: true }));
       await waitCount(10); await waitForSeedLayout(page); await shot("after-fission");
       const lastSplit = calls.filter(call => call.endpoint === "/api/branches").at(-1);
@@ -258,7 +346,7 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
       assert(layout.scrollWidth <= layout.width + 1); assert.deepEqual(errors, []);
       assert(calls.every(call => call.status === 200));
       results.push({ ...spec, passed: true, live, renderer, requestCount: calls.length, nodeCount: Object.keys(graph.nodes).length,
-        inquiryId: response.id, synthesisId: synthesis.id, readingPosition, quoteStart: response.meta.inquiry.quoteStart, layout, errors, calls });
+        inquiryId: response.id, synthesisId: synthesis.id, synthesisLayout, sourceLayout, readingPosition, quoteStart: response.meta.inquiry.quoteStart, layout, errors, calls });
     } catch (error) {
       await shot("failure").catch(() => {});
       await writeFile(path.join(outputDir, `${prefix}-failure.json`), JSON.stringify({ error: String(error), calls, errors }, null, 2));
