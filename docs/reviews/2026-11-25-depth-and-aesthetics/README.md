@@ -6,6 +6,12 @@
 
 ## 体量实验后的复核
 
+### 下一轮：让合看得出从哪里来
+
+基于 `495a02c`，现有 320 宽路径中的“延续3”和“检视3”都从极性种子“试探2”长出。“试探2”是 assistant 节点，本例没有 `lineageParentId`。上轮画面的两个远景是根问题“社区花园”和一次追问；把根问题放到两来源正上方会误画一代关系。目前默认远景槽还会让第三颗远景占据顶轴。颜色也只按本颗的角色、代数、极性计算，因此固定的合成色不能表达实际选了哪两颗。[场景选择](https://github.com/astroleno/Anicca/blob/495a02c/src/features/dialectic/seedInstances.ts#L62) · [现有合流槽位](https://github.com/astroleno/Anicca/blob/495a02c/src/components/dialogue/synthesisStageGeometry.ts#L23) · [渲染取色](https://github.com/astroleno/Anicca/blob/495a02c/src/components/dialogue/metaball/model.ts#L76)
+
+本轮只处理这一段来源关系：有唯一、可核对的共同直接母题，才在默认合流构图的顶轴显示它，并可一次打开其正文；无此关系时，让顶轴留空。合的底色由两颗实际来源等量混合，即便两颗都是正，也保留各自的实例和角色。颜色提供线索，节点身份与打开的关系负责确认来源。[第四轮设计与验收](./plan.md#第四轮实施与验收)
+
 在 `a64972e` 复看已归档的 320×568 截图，刚合流时焦点中心横坐标约为 83 px，距屏幕中轴 77 px。五颗液滴聚在左侧，右下留白，标题挤向左边。上轮实测约 1∶0.68∶0.43 的体量层级仍成立。这是本轮重排默认位置、把角色贴回液滴的依据。[刚合流旧图](./evidence/tier-320-synthesis-color.png) · [展开来源旧图](./evidence/tier-320-sources-color.png) · [本轮设计](./plan.md#第三轮实施与验收)
 
 旧尺寸函数按 `count > 4` 切档，窄舞台焦点从 116 变为 84 CSS px，远景随之缩至约 38 px。这是投影前的尺寸；成图可见直径还受视角和舞台适配影响。旧版节点没有宽高渐变。[旧尺寸函数](https://github.com/astroleno/Anicca/blob/0ac64ac/src/components/dialogue/synthesisStageGeometry.ts#L12) · [旧节点样式](https://github.com/astroleno/Anicca/blob/0ac64ac/src/components/dialogue/DialogueShell.module.css#L3929)
