@@ -96,7 +96,10 @@ export async function createTslMetaballRenderer(canvas: HTMLCanvasElement, force
     canvas.removeEventListener("webglcontextlost", lost);
     renderer.onDeviceLost = () => {};
     for (const readback of readbacks) readback.dispose();
-    target?.dispose(); surfaceMaterial?.dispose(); presentMaterial?.dispose(); renderer.dispose();
+    target?.dispose(); surfaceMaterial?.dispose(); presentMaterial?.dispose();
+    // Three's dispose starts an async animation-loop shutdown that retries init
+    // if the renderer never initialized. Leave the original failure to the caller.
+    if (renderer.hasInitialized()) renderer.dispose();
   };
   try {
     await renderer.init();

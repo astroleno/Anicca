@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   DialogueShell,
@@ -1327,8 +1327,11 @@ describe("DialogueShell", () => {
       thesis: { text: label, summary: label, label, stance: "正" },
       antithesis: { text: "暂停", summary: "暂停重构", label: "暂停", stance: "反" }
     }));
-    first.resolve(response(firstRequestId, "已经取消的结果"));
-    await waitFor(() => expect(screen.getByTestId("dialogue-metaball-canvas")).toHaveAttribute("data-renderer-requested", "tsl-webgl"));
+    await act(async () => {
+      first.resolve(response(firstRequestId, "已经取消的结果"));
+      await first.promise;
+    });
+    expect(screen.getByTestId("dialogue-stage-pending-thesis")).toBeInTheDocument();
     expect(useDialogueUiStore.getState().pending.branches?.requestId).toBe(secondRequestId);
     expect(branchGraphStore.getGraph().entryIds).toHaveLength(0);
     second.resolve(response(secondRequestId, "重试结果"));

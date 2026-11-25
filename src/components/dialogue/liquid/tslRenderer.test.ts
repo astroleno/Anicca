@@ -1,5 +1,14 @@
 import { Material, RenderTarget, UniformArrayNode, Vector2, type WebGPURenderer } from "three/webgpu";
-import { TslPixelReadback } from "./tslRenderer";
+import { createTslMetaballRenderer, TslPixelReadback } from "./tslRenderer";
+
+it("rejects initialization without an additional rejection when WebGL2 is unavailable", async () => {
+  const canvas = document.createElement("canvas");
+  const getContext = vi.spyOn(canvas, "getContext").mockReturnValue(null);
+  const onLost = vi.fn();
+  await expect(createTslMetaballRenderer(canvas, true, onLost, new AbortController().signal)).rejects.toThrow();
+  expect(getContext).toHaveBeenCalledWith("webgl2", expect.any(Object));
+  expect(onLost).not.toHaveBeenCalled();
+});
 
 function harness() {
   let resolve!: (pixels: Uint8Array) => void;
