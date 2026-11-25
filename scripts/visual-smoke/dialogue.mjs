@@ -13,6 +13,7 @@ import { runCrossTopicSynthesis } from "./synthesis-common-parent.mjs";
 import { runSynthesisColors } from "./synthesis-colors.mjs";
 import { runSynthesisTitles } from "./synthesis-titles.mjs";
 import { runJohariSynthesis } from "./johari-synthesis.mjs";
+import { runSynthesisColorComparison } from "./synthesis-color-comparison.mjs";
 import { runAppExperience } from "./app-experience.mjs";
 import { runReadingContinuity } from "./reading-continuity.mjs";
 import { runSurfaceControls } from "./surface-controls.mjs";
@@ -1189,6 +1190,9 @@ async function main() {
       }
       if (scenarioNameFilter.has("johari-synthesis")) {
         interactionScenarios.push(await runStep("interaction:johari-synthesis", () => runJohariSynthesis(browser, { baseUrl, outputDir, setActivePage })));
+      }
+      if (scenarioNameFilter.has("synthesis-color-comparison")) {
+        interactionScenarios.push(await runStep("interaction:synthesis-color-comparison", () => runSynthesisColorComparison(browser, { baseUrl, outputDir, setActivePage })));
       }
 
       await runStep("teardown:close-browser", () => browser.close());

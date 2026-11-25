@@ -15,11 +15,15 @@ export function synthesisColorFixture(pair) {
   nodes.b.parents = ["branch-a"];
   nodes["branch-a"].children.push("b", "c");
   nodes.c = { ...nodes.a, id: "c", parents: ["branch-a", "branch-b"], text: "统筹土地", meta: { label: "统筹土地" } };
+  if (pair === "gray") {
+    delete nodes.c.branchType;
+    nodes.c.text = nodes.c.meta.label = "预留空白";
+  }
   nodes["branch-b"].children = ["c"];
   // Give the second positive source a different generation without changing the common parent.
   nodes["branch-b"].parents = ["root", "branch-a"];
   nodes["branch-a"].children.push("branch-b");
-  const sources = { ab: ["a", "b"], ac: ["a", "c"], ba: ["b", "a"] }[pair];
+  const sources = { ab: ["a", "b"], ac: ["a", "c"], gray: ["a", "c"], ba: ["b", "a"] }[pair];
   nodes.result.parents = sources;
   nodes.result.meta = { label: "共同改写约定", sourceNodeIds: sources, sourceInstanceIds: sources.map(id => id === "a" ? "a-copy" : id) };
   nodes.result.text = "共同改写约定";
@@ -69,7 +73,7 @@ async function pixels(page, original, bare, geometry) {
   }, { source: original.toString("base64"), clean: bare.toString("base64"), geometry });
 }
 
-async function capture(browser, { baseUrl, outputDir, setActivePage }, renderer, theme, pair) {
+export async function captureSynthesisColors(browser, { baseUrl, outputDir, setActivePage }, renderer, theme, pair, compareColor) {
   const context = await browser.newContext({ viewport, deviceScaleFactor: 1, hasTouch: true, isMobile: true, reducedMotion: "reduce" });
   await loadSynthesisSnapshot(context, synthesisColorFixture(pair));
   await context.addInitScript(({ renderer, theme }) => {
@@ -96,7 +100,11 @@ async function capture(browser, { baseUrl, outputDir, setActivePage }, renderer,
     const backend = await canvas.getAttribute("data-renderer-backend");
     const expected = renderer === "flat" ? "unavailable" : renderer;
     assert.equal(backend, expected);
-    const geometry = await page.evaluate(inkSelector => {
+    if (compareColor) {
+      // Keep the transient summary unchanged while capturing two colors in the same live scene.
+      await page.addStyleTag({ content: '[data-testid="dialogue-synthesis-context"] > :is(span, p) { animation: none !important; opacity: 1 !important; }' });
+    }
+    const readGeometry = () => page.evaluate(inkSelector => {
       const result = document.querySelector('[data-source-role="result"]');
       const rect = result.getBoundingClientRect(), x = rect.x + rect.width / 2, y = rect.y + rect.height / 2;
       const fillPoints = [[x, y - 23], [x - 24, y], [x + 24, y], [x, y + 23]];
@@ -118,6 +126,7 @@ async function capture(browser, { baseUrl, outputDir, setActivePage }, renderer,
         sources: sourceGeometry.map(item => item.id)
       };
     }, inkSelector);
+    const geometry = await readGeometry();
     assert.equal(geometry.sources.length, 2);
     const sourceColors = geometry.sourceGeometry.map(seed => seed.declared);
     geometry.declared.forEach((channel, index) => assert(Math.abs(channel - (sourceColors[0][index] + sourceColors[1][index]) / 2) < 1e-12));
@@ -126,15 +135,13 @@ async function capture(browser, { baseUrl, outputDir, setActivePage }, renderer,
       assert.deepEqual(rgb("result"), geometry.declared);
       for (const source of geometry.sourceGeometry) assert.deepEqual(rgb(source.id), source.declared);
     }
-    const prefix = `synthesis-colors-${renderer}-${theme}-${pair}`;
-    await page.evaluate(() => Object.defineProperty(document, "hidden", { configurable: true, get: () => true }));
-    const screenshot = await page.screenshot({ path: path.join(outputDir, `${prefix}.png`) });
-    const bare = await page.screenshot({ path: path.join(outputDir, `${prefix}-ink-hidden.png`), style: `${inkSelector} { visibility: hidden !important; }` });
-    const measurements = await pixels(page, screenshot, bare, geometry);
-    let projectedAttributeUpdate;
-    if (renderer !== "flat" && theme === "light" && pair === "ab") {
-      // The renderer must reread just this attribute on the same node without a remount.
-      const update = [0.8, 0.6, 0.7];
+    const record = async (prefix, geometry) => {
+      await page.evaluate(() => Object.defineProperty(document, "hidden", { configurable: true, get: () => true }));
+      const screenshot = await page.screenshot({ path: path.join(outputDir, `${prefix}.png`) });
+      const bare = await page.screenshot({ path: path.join(outputDir, `${prefix}-ink-hidden.png`), style: `${inkSelector} { visibility: hidden !important; }` });
+      return { renderer, backend, theme, pair, screenshot: `${prefix}.png`, ...geometry, ...(await pixels(page, screenshot, bare, geometry)) };
+    };
+    const updateProjectedColor = async update => {
       await page.evaluate(async channels => {
         delete document.hidden;
         document.dispatchEvent(new Event("visibilitychange"));
@@ -145,9 +152,26 @@ async function capture(browser, { baseUrl, outputDir, setActivePage }, renderer,
         const canvas = document.querySelector('[data-testid="dialogue-metaball-canvas"]');
         return JSON.parse(canvas.dataset.spaceNodes).some(node => node.id === "result" && node.color.every((value, i) => value === channels[i]));
       }, update);
-      projectedAttributeUpdate = update;
+    };
+    if (compareColor) {
+      assert.equal(renderer, "original");
+      const prefix = `synthesis-color-comparison-${theme}-${pair}`;
+      const current = await record(`${prefix}-rgb`, geometry);
+      const candidate = compareColor(...sourceColors);
+      await updateProjectedColor(candidate.rgb);
+      await waitForSeedLayout(page, { captions: true });
+      const alternative = await record(`${prefix}-oklch`, await readGeometry());
+      assert.deepEqual(alternative.declared, candidate.rgb);
+      return { current, alternative, candidate };
     }
-    return { renderer, backend, theme, pair, screenshot: `${prefix}.png`, projectedAttributeUpdate, ...geometry, ...measurements };
+    const current = await record(`synthesis-colors-${renderer}-${theme}-${pair}`, geometry);
+    if (renderer !== "flat" && theme === "light" && pair === "ab") {
+      // The renderer must reread just this attribute on the same node without a remount.
+      const update = [0.8, 0.6, 0.7];
+      await updateProjectedColor(update);
+      current.projectedAttributeUpdate = update;
+    }
+    return current;
   } finally {
     await context.close();
   }
@@ -157,10 +181,10 @@ export async function runSynthesisColors(browser, options) {
   const results = [];
   for (const renderer of ["original", "flat", "webgpu"]) {
     for (const theme of ["light", "dark"]) {
-      for (const pair of ["ab", "ac"]) results.push(await capture(browser, options, renderer, theme, pair));
+      for (const pair of ["ab", "ac"]) results.push(await captureSynthesisColors(browser, options, renderer, theme, pair));
     }
   }
-  for (const pair of ["ba", "same-role-cross-topic"]) results.push(await capture(browser, options, "original", "light", pair));
+  for (const pair of ["ba", "same-role-cross-topic"]) results.push(await captureSynthesisColors(browser, options, "original", "light", pair));
   await writeFile(path.join(options.outputDir, "synthesis-color-measurements.json"), JSON.stringify(results, null, 2));
   const find = (renderer, theme, pair) => results.find(row => row.renderer === renderer && row.theme === theme && row.pair === pair);
   const reference = find("original", "light", "ab");
