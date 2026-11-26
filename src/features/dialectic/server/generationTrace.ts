@@ -44,6 +44,7 @@ export function createGenerationTrace(endpoint: "branches" | "synthesis" | "pola
         return result;
       } catch (error) {
         call.outcome = callSignal.aborted ? "cancelled" : "failed";
+        callSignal.throwIfAborted();
         throw error;
       } finally {
         if (timer) clearTimeout(timer);

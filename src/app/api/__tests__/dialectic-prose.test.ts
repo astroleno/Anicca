@@ -18,7 +18,7 @@ const endpoint = (path: string, body: Record<string, unknown>) =>
   new NextRequest(`http://localhost/api/${path}`, { method: "POST", body: JSON.stringify({ requestId: "prose-test", meaningVersion: 1, ...body }) });
 
 beforeEach(() => { generate.mockReset(); vi.spyOn(console, "info").mockImplementation(() => {}); });
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); vi.useRealTimers(); });
 
 const thesis = {
   stance: "正", label: "固定接手", summary: "忙乱时固定由习惯记事的人负责衔接",
@@ -55,6 +55,21 @@ it("repairs an antithesis that addresses the topic but misses this thesis's load
     expect.stringContaining("没有检验熟悉厨房是否足够看见谁能接手"),
     expect.stringContaining(preciseAntithesis.text)
   ]);
+});
+
+it("reports a required branch review timeout without rewriting the candidate", async () => {
+  vi.stubEnv("OPENAI_API_KEY", "test-key");
+  vi.useFakeTimers();
+  generate.mockResolvedValueOnce(emit({ thesis, antithesis: preciseAntithesis }))
+    .mockImplementationOnce(({ signal }: { signal: AbortSignal }) => new Promise((_resolve, reject) => {
+      signal.addEventListener("abort", () => reject(new Error("SDK request aborted")), { once: true });
+    }));
+  const pending = branchesPost(endpoint("branches", { userText: "平日晚饭后家里经常临时找人接手，分工怎么更顺？" }));
+  await vi.advanceTimersByTimeAsync(10001);
+  const response = await pending;
+  expect(response.status).toBe(503);
+  expect(await response.json()).toMatchObject({ error: "branches_failed", details: "provider_unreachable" });
+  expect(generate).toHaveBeenCalledTimes(2);
 });
 
 const sources = [
@@ -103,6 +118,18 @@ it("repairs an invented connection into a verified deferral with a concrete reas
   const response = await synthesisPost(endpoint("synthesis", { rootInput: "看看这两个想法有没有联系", sources: [sources[0], unrelated] }));
   expect(response.status).toBe(200);
   expect(await response.json()).toEqual({ requestId: "prose-test", outcome: "deferred", deferred });
+});
+
+it.each(["synthesis", "deferred"])("preserves a provider rate limit while reviewing a %s candidate", async kind => {
+  vi.stubEnv("OPENAI_API_KEY", "test-key");
+  const candidate = kind === "synthesis" ? { synthesis: combined }
+    : { deferred: { reason: "待核对两侧是否讨论同一处场景，不能仅凭它们都是感官材料就连接。", question: "它们发生在同一段场景里吗？" } };
+  generate.mockResolvedValueOnce(emit(candidate)).mockResolvedValueOnce(emit(candidate))
+    .mockRejectedValueOnce(Object.assign(new Error("provider rate limit"), { status: 429 }));
+  const response = await synthesisPost(endpoint("synthesis", { rootInput: "共同创作一段祖屋故事", sources }));
+  expect(response.status).toBe(429);
+  expect(await response.json()).toMatchObject({ error: "synthesis_failed", details: "provider_rate_limited" });
+  expect(generate).toHaveBeenCalledTimes(3);
 });
 
 it("allows a one-sided conclusion that explains why the other source's claim fails", async () => {
@@ -159,7 +186,7 @@ it("rechecks the high-risk final prose and repairs a rewrite that loses the comp
     useB: "保留先恢复的顺序",
     consequence: "留住原数据并暂停删除"
   };
-  generate.mockResolvedValueOnce(emit({ synthesis: grounded, applicablePolicyCardIds: ["verified-recovery"] }))
+  generate.mockResolvedValueOnce(emit({ synthesis: grounded, applicablePolicyCards: [{ id: "verified-recovery", object: "生产数据", action: "验证恢复后删除", evidence: "先在隔离环境实际恢复并核对快照" }] }))
     .mockResolvedValueOnce(emit({ synthesis: grounded }))
     .mockResolvedValueOnce(synthesisAudit(valid(evidence)))
     .mockResolvedValueOnce(emit({ audit: { route: "choose_antithesis", checks: ["I1", "I2", "I3", "F1", "F2", "F3"].map(id => ({

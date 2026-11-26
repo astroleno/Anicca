@@ -7,37 +7,44 @@ import { defaultThinkingSpace } from "@/features/perspectives/model";
 const { generate } = vi.hoisted(() => ({ generate: vi.fn() }));
 vi.mock("@/lib/openai/generateText", () => ({ generateText: generate }));
 vi.mock("@/lib/openai/client", () => ({ getDialecticModel: () => "deepseek-flash", getDialecticOpenAiClient: () => ({}) }));
-const deferred = { reason: "邮编处理投递区域，薄荷画作探索逆光感受，当前来源没有给出共同过程。", question: "你想把区域的概念带进画面，还是先分别探索？" };
+const deferred = { reason: "邮编处理投递区域，薄荷画作探索逆光感受，当前来源没有给出共同过程。", question: "你想用邮编划出的边界组织逆光画面的构图吗？" };
 const text = "熟悉者靠转角、气味和身体习惯找路，行动不必先经过路名；外来者偏偏需要从明显起点出发、按顺序可辨认的连续标记。真正被混淆的不是知道与不知道，而是识路与传路：本地知识以身体记忆存在时，它默认环境在场，因而不必把转角命名、把气味排成先后。讲不清由此不是能力缺陷，而是这种知识缺少面向陌生视角的转述结构。假设一位居民只被要求说说怎么走，他很可能仍按自己习惯的节点说；若让他从外来者的起点重走并逐段指出可见标记，差距才会显现。";
 const synthesis = { text, summary: "识路不自动等于传路", label: "识路与传路", stance: "合", change: "把知识多少的差异改看成身体线索的转译。" };
 const sources = [{ id: "a", text: "熟悉地方的人凭转角找到路。", summary: "识路", label: "识路", stance: "想法" },
   { id: "b", text: "熟悉的人可能讲不清路。", summary: "传路", label: "传路", stance: "想法" }];
+const unrelated = [{ ...sources[0], text: "邮编用于划定投递区域。" }, { ...sources[1], text: "薄荷画作探索逆光感受。" }];
+const noLinkCheck = { pass: true, issues: [], evidence: { sourceA: unrelated[0].text, sourceB: unrelated[1].text,
+  gap: "当前来源没有给出共同过程", opening: deferred.question } };
 const respond = (value: unknown) => ({ text: JSON.stringify(value), transport: "chat_completions" });
 const meaningCheck = { label: synthesis.label, change: { text: synthesis.change, sourceId: "source-a",
-  sourceEvidence: sources[0].text, resultEvidence: "熟悉者靠转角、气味和身体习惯找路" }, hypothesesSafe: true, issues: [], novelty: { status: "new" } };
+  sourceEvidence: sources[0].text, resultEvidence: "熟悉者靠转角、气味和身体习惯找路" }, hypothesesSafe: true, issues: [], novelty: { status: "new" },
+  prose: { pass: true, issues: [], evidence: { sourceA: sources[0].text, sourceB: sources[1].text,
+    useA: "熟悉者靠转角、气味和身体习惯找路", useB: "不必把转角命名、把气味排成先后",
+    consequence: "若让他从外来者的起点重走并逐段指出可见标记" } } };
 const request = (body: object) => new NextRequest("http://localhost/api/synthesis", { method: "POST", body: JSON.stringify({ requestId: "request", meaningVersion: 1, rootInput: "识路与传路", sources, ...body }) });
 beforeEach(() => { generate.mockReset(); vi.spyOn(console, "info").mockImplementation(() => {}); });
 afterEach(() => vi.restoreAllMocks());
 
 it("reviews a weak connection then returns a valid deferred outcome without a false synthesis", async () => {
-  generate.mockResolvedValue(respond({ deferred }));
-  const response = await synthesisPost(request({ connectionInput: "我还没有决定它们怎样联系。", perspective: defaultThinkingSpace() }));
+  generate.mockResolvedValueOnce(respond({ deferred })).mockResolvedValueOnce(respond({ deferred })).mockResolvedValueOnce(respond(noLinkCheck));
+  const response = await synthesisPost(request({ rootInput: "邮编与薄荷画作", sources: unrelated, connectionInput: "我还没有决定它们怎样联系。", perspective: defaultThinkingSpace() }));
   expect(response.status).toBe(200);
   expect(await response.json()).toEqual({ requestId: "request", outcome: "deferred", deferred });
-  expect(generate).toHaveBeenCalledTimes(2);
+  expect(generate).toHaveBeenCalledTimes(3);
   expect(generate.mock.calls[1][0].input).toContain("我还没有决定它们怎样联系");
+  expect(generate.mock.calls[2][0].input).toContain(deferred.reason);
 });
 
 it.each([true, false])("lets review correct either an unnecessary refusal or a forced synthesis (%s)", async (startsDeferred) => {
   generate.mockResolvedValueOnce(respond(startsDeferred ? { deferred } : { synthesis }))
     .mockResolvedValueOnce(respond(startsDeferred ? { synthesis } : { deferred }))
-    .mockResolvedValueOnce(respond({ synthesis: meaningCheck }));
-  const response = await synthesisPost(request({}));
+    .mockResolvedValueOnce(respond(startsDeferred ? { synthesis: meaningCheck } : noLinkCheck));
+  const response = await synthesisPost(request(startsDeferred ? {} : { rootInput: "邮编与薄荷画作", sources: unrelated }));
   expect(response.status).toBe(200);
   const body = await response.json();
   if (startsDeferred) expect(body.synthesis.change).toBe(synthesis.change);
-  else expect(body.outcome).toBe("deferred");
-  expect(generate).toHaveBeenCalledTimes(startsDeferred ? 3 : 2);
+  else expect(body).toEqual({ requestId: "request", outcome: "deferred", deferred });
+  expect(generate).toHaveBeenCalledTimes(3);
 });
 
 it("rejects ambiguous or malformed outcomes after the bounded repair", async () => {
