@@ -1,0 +1,21 @@
+{
+  "id": "formal-04",
+  "route": "branches",
+  "attempts": [
+    {
+      "body": {
+        "meaningVersion": 1,
+        "userText": "线上偶发数据错乱但暂时无法稳定复现，应该冻结新功能彻查，还是继续发布并加强监控？",
+        "contextMessages": [],
+        "requestId": "quality-r7-candidate-formal-04-branches-1"
+      },
+      "startedAt": "2026-11-26T12:49:32.058Z",
+      "elapsedMs": 5284,
+      "status": 502,
+      "rawBody": "{\"requestId\":\"quality-r7-candidate-formal-04-branches-1\",\"error\":\"invalid_model_output\",\"details\":\"branch output failed contract after one repair\"}",
+      "reading": null,
+      "error": "invalid_model_output",
+      "retryable": false
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "id": "transfer-05",
+  "route": "synthesis",
+  "attempts": [
+    {
+      "body": {
+        "meaningVersion": 1,
+        "rootInput": "我可以事先告诉家人周六上午能陪他们去一趟，下午留给自己。如果临时再约，就重新商量。\n\n画面里的薄荷叶背着窗，亮边把卷曲的叶片勾出来。我想保留这个逆光效果，看看叶心的暗面是否还能分开。",
+        "sources": [
+          {
+            "id": "transfer-05-a",
+            "text": "我可以事先告诉家人周六上午能陪他们去一趟，下午留给自己。如果临时再约，就重新商量。",
+            "summary": "提前讲清能帮忙的时间",
+            "label": "周末边界",
+            "stance": "想法"
+          },
+          {
+            "id": "transfer-05-b",
+            "text": "画面里的薄荷叶背着窗，亮边把卷曲的叶片勾出来。我想保留这个逆光效果，看看叶心的暗面是否还能分开。",
+            "summary": "靠叶缘亮光描出薄荷",
+            "label": "保留逆光",
+            "stance": "想法"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 我选了两颗旧种子，一颗讲 · id=transfer-05-user · 来源=无] 我选了两颗旧种子，一颗讲怎样拒绝周末替家人跑腿，另一颗讲画窗边薄荷时要不要保留逆光。我目前说不出两件事要解决的共同问题。它们能合在一起吗？"
+          },
+          {
+            "role": "assistant",
+            "content": "[想法 · 保留逆光 · id=transfer-05-b · 来源=transfer-05-user] 画面里的薄荷叶背着窗，亮边把卷曲的叶片勾出来。我想保留这个逆光效果，看看叶心的暗面是否还能分开。"
+          },
+          {
+            "role": "assistant",
+            "content": "[想法 · 周末边界 · id=transfer-05-a · 来源=transfer-05-user] 我可以事先告诉家人周六上午能陪他们去一趟，下午留给自己。如果临时再约，就重新商量。"
+          }
+        ],
+        "requestId": "quality-r7-candidate-transfer-05-synthesis-1"
+      },
+      "startedAt": "2026-11-26T12:50:25.070Z",
+      "elapsedMs": 3080,
+      "status": 200,
+      "rawBody": "{\"requestId\":\"quality-r7-candidate-transfer-05-synthesis-1\",\"outcome\":\"deferred\",\"deferred\":{\"reason\":\"甲在回答如何用提前约定和临时重议划分周末陪家人的时段，乙在回答逆光下叶缘亮边已成形、叶心暗面能否分开；两者缺共同对象或可验证的结构对应，只剩各自取舍的泛泛相似。\",\"question\":\"这两件事，你是想找共同的处理方式，还是只分别停在这里？\"}}",
+      "reading": {
+        "outcome": "deferred",
+        "reason": "甲在回答如何用提前约定和临时重议划分周末陪家人的时段，乙在回答逆光下叶缘亮边已成形、叶心暗面能否分开；两者缺共同对象或可验证的结构对应，只剩各自取舍的泛泛相似。",
+        "question": "这两件事，你是想找共同的处理方式，还是只分别停在这里？"
+      },
+      "error": null,
+      "retryable": false
+    }
+  ]
+}

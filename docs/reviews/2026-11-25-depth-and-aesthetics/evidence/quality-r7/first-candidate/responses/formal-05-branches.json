@@ -1,0 +1,21 @@
+{
+  "id": "formal-05",
+  "route": "branches",
+  "attempts": [
+    {
+      "body": {
+        "meaningVersion": 1,
+        "userText": "读取接口的 p95 延迟过高，应该增加缓存并接受短期不一致，还是保持强一致并接受更慢响应？",
+        "contextMessages": [],
+        "requestId": "quality-r7-candidate-formal-05-branches-1"
+      },
+      "startedAt": "2026-11-26T12:49:36.309Z",
+      "elapsedMs": 6111,
+      "status": 502,
+      "rawBody": "{\"requestId\":\"quality-r7-candidate-formal-05-branches-1\",\"error\":\"invalid_model_output\",\"details\":\"branch output failed contract after one repair\"}",
+      "reading": null,
+      "error": "invalid_model_output",
+      "retryable": false
+    }
+  ]
+}

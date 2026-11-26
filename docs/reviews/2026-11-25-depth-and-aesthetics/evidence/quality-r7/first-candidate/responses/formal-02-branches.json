@@ -1,0 +1,21 @@
+{
+  "id": "formal-02",
+  "route": "branches",
+  "attempts": [
+    {
+      "body": {
+        "meaningVersion": 1,
+        "userText": "三个早期客户分别要求不同的集成，应该先做通用插件平台，还是只做最大客户需要的单一集成？",
+        "contextMessages": [],
+        "requestId": "quality-r7-candidate-formal-02-branches-1"
+      },
+      "startedAt": "2026-11-26T12:49:26.008Z",
+      "elapsedMs": 7957,
+      "status": 502,
+      "rawBody": "{\"requestId\":\"quality-r7-candidate-formal-02-branches-1\",\"error\":\"invalid_model_output\",\"details\":\"branch prose could not be verified\"}",
+      "reading": null,
+      "error": "invalid_model_output",
+      "retryable": false
+    }
+  ]
+}
