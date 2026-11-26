@@ -6,43 +6,45 @@ import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { checkRecord, loadExam, metrics, readJson, sha256 } from "./dialectic-quality-r8.mjs";
 
-export async function loadRuns(dirs, { cases, examSha256, manifestSha256 }) {
-  const runs = await Promise.all(dirs.map(async (dir) => {
-    const [config, archive] = await Promise.all([
-      readJson(join(dir, "settings.json")), readJson(join(dir, "traces.json"))
-    ]);
-    assert.equal(config.examSha256, examSha256);
-    assert.equal(config.manifestSha256, manifestSha256);
-    assert.equal(config.route, "synthesis");
-    assert.equal(config.concurrency, 4);
-    assert.deepEqual(archive.mismatches, []);
-    const traces = new Map(archive.traces.map((trace) => [trace.evalRequestId, trace]));
-    assert.equal(traces.size, archive.traces.length);
-    const records = await Promise.all(cases.map(async (item) => {
-      const record = await readJson(join(dir, "responses", `${item.id}-synthesis.json`));
-      checkRecord(record, item, config.run);
-      for (const { body, reading, pending } of record.attempts) {
-        assert.ok(!pending);
-        const trace = traces.get(body.requestId);
-        if (reading) assert.ok(trace, `Missing trace for ${body.requestId}`);
-        if (trace) {
-          assert.equal(trace.model, config.settings.model);
-          assert.equal(trace.endpoint, config.route);
-        }
+export async function loadRun(dir, { cases, examSha256, manifestSha256 }, prefix = "r8") {
+  const [config, archive] = await Promise.all([
+    readJson(join(dir, "settings.json")), readJson(join(dir, "traces.json"))
+  ]);
+  assert.equal(config.examSha256, examSha256);
+  assert.equal(config.manifestSha256, manifestSha256);
+  assert.equal(config.route, "synthesis");
+  assert.equal(config.concurrency, 4);
+  assert.deepEqual(archive.mismatches, []);
+  const traces = new Map(archive.traces.map((trace) => [trace.evalRequestId, trace]));
+  assert.equal(traces.size, archive.traces.length);
+  const records = await Promise.all(cases.map(async (item) => {
+    const record = await readJson(join(dir, "responses", `${item.id}-synthesis.json`));
+    checkRecord(record, item, config.run, prefix);
+    for (const { body, reading, pending } of record.attempts) {
+      assert.ok(!pending);
+      const trace = traces.get(body.requestId);
+      if (reading) assert.ok(trace, `Missing trace for ${body.requestId}`);
+      if (trace) {
+        assert.equal(trace.model, config.settings.model);
+        assert.equal(trace.endpoint, config.route);
       }
-      return record;
-    }));
-    const attemptIds = records.flatMap(({ attempts }) => attempts.map(({ body }) => body.requestId));
-    const attemptIdSet = new Set(attemptIds);
-    assert.ok([...traces.keys()].every((id) => attemptIdSet.has(id)));
-    assert.deepEqual(archive.missingRequestIds, attemptIds.filter((id) => !traces.has(id)));
-    const summary = await readJson(join(dir, "summary.json"));
-    assert.deepEqual(summary.all, metrics(records, traces));
-    for (const set of new Set(cases.map(({ set }) => set))) {
-      assert.deepEqual(summary.bySet[set], metrics(records.filter((_, i) => cases[i].set === set), traces));
     }
-    return { config, traces, summary, records: new Map(records.map((record) => [record.id, record])) };
+    return record;
   }));
+  const attemptIds = records.flatMap(({ attempts }) => attempts.map(({ body }) => body.requestId));
+  const attemptIdSet = new Set(attemptIds);
+  assert.ok([...traces.keys()].every((id) => attemptIdSet.has(id)));
+  assert.deepEqual(archive.missingRequestIds, attemptIds.filter((id) => !traces.has(id)));
+  const summary = await readJson(join(dir, "summary.json"));
+  assert.deepEqual(summary.all, metrics(records, traces));
+  for (const set of new Set(cases.map(({ set }) => set))) {
+    assert.deepEqual(summary.bySet[set], metrics(records.filter((_, i) => cases[i].set === set), traces));
+  }
+  return { config, traces, summary, records: new Map(records.map((record) => [record.id, record])) };
+}
+
+export async function loadRuns(dirs, exam) {
+  const runs = await Promise.all(dirs.map((dir) => loadRun(dir, exam)));
   assert.deepEqual(runs.map(({ config }) => config.run), ["before", "after"]);
   assert.notEqual(runs[0].config.revision, runs[1].config.revision);
   assert.deepEqual(runs[0].config.settings, runs[1].config.settings);
@@ -85,9 +87,9 @@ export function packetRow(id, item, readings) {
   };
 }
 
-const finalReading = (run, item) => run.records.get(item.id).attempts.at(-1).reading ?? { outcome: "unavailable" };
+export const finalReading = (run, item) => run.records.get(item.id).attempts.at(-1).reading ?? { outcome: "unavailable" };
 
-function makePacket(cases, runs) {
+export function makePacket(cases, runs, buildRow = packetRow) {
   const shuffled = [...cases];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = randomInt(i + 1);
@@ -98,12 +100,12 @@ function makePacket(cases, runs) {
     const id = "q" + String(index + 1).padStart(2, "0");
     const sideA = randomInt(2);
     mapping[id] = { caseId: item.id, A: sideA, B: 1 - sideA };
-    return packetRow(id, item, [sideA, 1 - sideA].map((side) => finalReading(runs[side], item)));
+    return buildRow(id, item, [sideA, 1 - sideA].map((side) => finalReading(runs[side], item)));
   });
   return { packet, mapping };
 }
 
-async function privateTarget(file) {
+export async function privateTarget(file) {
   const temp = await realpath("/tmp");
   const dir = await realpath(dirname(resolve(file)));
   assert.ok(dir.startsWith(`${temp}${sep}`) && ((await lstat(dir)).mode & 0o077) === 0,
