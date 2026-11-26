@@ -1,0 +1,174 @@
+{
+  "revision": "ee26984",
+  "scope": "Synthetic oral-history development contrast pair, ninth draw. Includes rejected intermediate model answers. Only API deliverables count for scoring.",
+  "requests": {
+    "diag-r9-oral-granted": [
+      {
+        "stage": "draft",
+        "repair": false,
+        "check": {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        "answer": "{\"synthesis\":{\"text\":\"受访者更新后，两侧关系变清楚：首页要留的是一句话而非录音，原声仍限于馆内。文字引语能保留第一人称证言，且标明出自馆内口述即可；但开放网站一旦提供音频，家人担心可识别与副本扩散就成立，因为下架收不回。故公开版首页只放经准许的那句文字引语并注明来源，音频不进入网页；两侧诉求由此各得其所，代价是首页失去声音质地，换取不越过播放范围。\",\"summary\":\"首页仅用获准的文字引语并标注展厅口述来源，原声仍只在馆内播放，避免下载扩散。\",\"label\":\"引语替代原声\",\"stance\":\"合\",\"change\":\"把首页留住证言与守住播放范围分开：用获准文字引语保留第一人称，不必把展厅原声搬上开放网站。\"}}"
+      },
+      {
+        "stage": "critic",
+        "repair": false,
+        "check": {
+          "stage": "critic",
+          "repair": false,
+          "valid": false,
+          "contractIssues": [
+            "synthesis_text_underlength"
+          ]
+        },
+        "answer": "{\"synthesis\":{\"text\":\"她说“拔钉子、捏钥匙”那句，正好补上会议简报之外的搬迁现场；她要的只是这句话出现在首页，且标明摘自展厅口述。原声的许可仍停在馆内播放，开放网页会生成可下载副本，熟人能认出声音，下架也追不回转载，因此原声不进公开版。首页放获准引语、标注出处，录音留在展厅，第一人称仍在。代价是网页读不到声音。\",\"summary\":\"首页只放她获准并注明出自展厅口述的那句文字引语，原声继续限于馆内播放；公开版会损失声音质地。\",\"label\":\"引语留声不传声\",\"stance\":\"合\",\"change\":\"把首页证言与原声公开拆开：她获准的是标注出处的文字引语，原声许可仍只覆盖馆内播放，在线副本的扩散风险不由引语许可覆盖。\"},\"authorizationFocus\":[{\"action\":\"在开放网站首页发布那句文字引语\",\"nonGrants\":[\"此前馆内播放原声的同意不覆盖网页发布\",\"团队想在首页留住证言不构成许可\"]},{\"action\":\"将原声上开放网站供访客下载转发\",\"nonGrants\":[\"受访者仍只允许在馆内播放原声\",\"家人担心可识别与副本扩散不构成授权\"]}]}"
+      },
+      {
+        "stage": "critic",
+        "repair": true,
+        "check": {
+          "stage": "critic",
+          "repair": true,
+          "valid": true
+        },
+        "answer": "{\"addition\":\"她亲自更新后，这句引语的用途、形式和受众都落在许可覆盖内，但原声仍受馆内播放范围约束；两侧据此分行处理，既留住第一人称，也不越过她尚未放开的渠道。\"}"
+      },
+      {
+        "stage": "audit",
+        "repair": false,
+        "check": {
+          "stage": "audit",
+          "repair": false,
+          "valid": false,
+          "reason": "reviewer_protocol_error",
+          "reviewIssues": [
+            {
+              "code": "missing_authorization_gate",
+              "field": "authorization"
+            },
+            {
+              "code": "authorization_action_too_broad",
+              "field": "authorization"
+            }
+          ]
+        },
+        "answer": "{\"label\":\"引语留声不传声\",\"change\":{\"text\":\"把首页证言与原声公开拆开：她获准的是标注出处的文字引语，原声许可仍只覆盖馆内播放，在线副本的扩散风险不由引语许可覆盖。\",\"sourceId\":\"source-b\",\"sourceEvidence\":\"她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。\",\"resultEvidence\":\"原声的许可仍停在馆内播放，开放网页会生成可下载副本，熟人能认出声音，下架也追不回转载，因此原声不进公开版。\"},\"hypothesesSafe\":true,\"issues\":[],\"personalEvidence\":[],\"novelty\":{\"status\":\"new\"},\"prose\":{\"pass\":true,\"issues\":[],\"evidence\":{\"sourceA\":\"她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。\",\"sourceB\":\"她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。\",\"useA\":\"她说“拔钉子、捏钥匙”那句，正好补上会议简报之外的搬迁现场；\",\"useB\":\"原声的许可仍停在馆内播放，开放网页会生成可下载副本，熟人能认出声音，下架也追不回转载，因此原声不进公开版。\",\"consequence\":\"首页放获准引语、标注出处，录音留在展厅，第一人称仍在。代价是网页读不到声音。\"},\"authorization\":[{\"focus\":\"F1\",\"action\":{\"unit\":\"R4\"},\"decision\":\"proceed\",\"use\":\"在开放网站首页介绍旧市场搬迁时使用那句拔钉子捏钥匙的文字引语，并标明是她在展厅口述的原话\",\"basis\":{\"unit\":\"U6\"},\"gaps\":[]},{\"focus\":\"F2\",\"action\":{\"unit\":\"R3\"},\"decision\":\"hold\",\"use\":\"将原声上开放网站供访客下载转发\",\"basis\":{\"unit\":\"U7\"},\"gaps\":[\"permission\"]}]}}"
+      },
+      {
+        "stage": "audit",
+        "repair": true,
+        "check": {
+          "stage": "audit",
+          "repair": true,
+          "valid": false,
+          "reason": "reviewer_protocol_error",
+          "reviewIssues": [
+            {
+              "code": "missing_authorization_gate",
+              "field": "authorization"
+            },
+            {
+              "code": "authorization_action_too_broad",
+              "field": "authorization"
+            }
+          ]
+        },
+        "answer": "{\"label\":\"引语留声不传声\",\"change\":null,\"hypothesesSafe\":true,\"issues\":[],\"personalEvidence\":[],\"novelty\":{\"status\":\"new\"},\"prose\":{\"pass\":true,\"issues\":[],\"evidence\":{\"sourceA\":\"她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。\",\"sourceB\":\"她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。\",\"useA\":\"她说“拔钉子、捏钥匙”那句，正好补上会议简报之外的搬迁现场；\",\"useB\":\"原声的许可仍停在馆内播放，开放网页会生成可下载副本，熟人能认出声音，下架也追不回转载，因此原声不进公开版。\",\"consequence\":\"首页放获准引语、标注出处，录音留在展厅，第一人称仍在。代价是网页读不到声音。\"},\"authorization\":[{\"focus\":\"F1\",\"action\":{\"unit\":\"R4\"},\"decision\":\"proceed\",\"use\":\"在开放网站首页介绍旧市场搬迁时使用那句拔钉子捏钥匙的文字引语，并标明摘自她在展厅的口述原话\",\"basis\":{\"unit\":\"U6\"},\"gaps\":[]},{\"focus\":\"F2\",\"action\":{\"unit\":\"R3\"},\"decision\":\"permission_hold\",\"use\":\"将原声上开放网站供访客下载转发\",\"basis\":{\"unit\":\"U7\"},\"gaps\":[\"permission\"]}]}}"
+      }
+    ],
+    "diag-r9-oral-limited": [
+      {
+        "stage": "draft",
+        "repair": false,
+        "check": {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        "answer": "{\"synthesis\":{\"text\":\"她那句话之所以有力，正在于拔钉与攥钥匙都是可辨认的生活细节；但搬迁叙述的第一手分量可以脱离原声来保留。她签的只是馆内播放原声，家人已能从声音认人，网页下载后馆方无法收回副本，因此开放网站放原声超出许可。首页可放经家属确认的摘引或转述并标明出处，原声仍限展厅；这不减少证言位置，却让可识别声音不进入不可撤回的渠道。\",\"summary\":\"原声限展厅，首页以经家属确认的摘引或转述保留第一手证言位置。\",\"label\":\"声不外传\",\"stance\":\"合\",\"change\":\"把声音可识别性与叙述第一手性分开：守住展厅播放，同时用摘引或转述在首页留住证言位置。\"}}"
+      },
+      {
+        "stage": "critic",
+        "repair": false,
+        "check": {
+          "stage": "critic",
+          "repair": false,
+          "valid": true
+        },
+        "answer": "{\"synthesis\":{\"text\":\"那句拔钉、攥钥匙的话之所以能在首页立住，靠的是搬迁者自己的口吻，而非声音本身的可辨认度。她只签了馆内播放原声，家人又能从声音认人，网页文件可被下载转发，开放上线就超出了许可，下架也收不回副本。故今晚公开版不把原声放上网站：原声仍限展厅，首页改用经家属确认的摘引或转述，并标明出自她的口述。这样留住的是第一手叙述的位置，舍弃的是原声在网页上的传播；证言不因换形式而失去分量，可识别声音也不必进入无法撤回的渠道。\",\"summary\":\"原声仍限展厅，今晚网页公开版以经家属确认的摘引或转述保留她的第一手叙述位置。\",\"label\":\"声守展厅\",\"stance\":\"合\",\"change\":\"把叙述的第一手分量与声音的可辨认性分开：守住馆内播放许可，首页以摘引或转述承接证言位置。\"},\"authorizationFocus\":[{\"action\":\"把原声放上开放网站\",\"nonGrants\":[\"她签的只是馆内播放原声\",\"她已经失联\"]},{\"action\":\"首页放经家属确认的摘引或转述\",\"nonGrants\":[\"她签的只是馆内播放原声\"]}]}"
+      },
+      {
+        "stage": "audit",
+        "repair": false,
+        "check": {
+          "stage": "audit",
+          "repair": false,
+          "valid": false
+        },
+        "answer": "{\"label\":\"声守展厅\",\"change\":null,\"hypothesesSafe\":true,\"issues\":[],\"personalEvidence\":[],\"novelty\":{\"status\":\"new\"},\"prose\":{\"pass\":false,\"issues\":[\"R3 提出“首页改用经家属确认的摘引或转述”，但现有材料只说明家人从展厅照片里认出她的声音，并未说明家属有权代表失联受访者同意摘引或转述；正文把“经家属确认”当作可立即执行的替代方案，缺少对家属代理资格或相应许可的核对。应改为：在查明家属是否有权同意文字摘引或转述之前，首页暂不采用该替代形式，只保留展厅原声，或先以不涉及她原话的说明性文字占位。\",\"R3 的“首页改用经家属确认的摘引或转述”属于新的使用形式与渠道（网页公开、文字摘引/转述），而 B1 只覆盖“馆内播放原声”，U2 也只说受访者同意馆内展厅播放原声；正文虽正确指出原声上线超出许可，却未同样核对摘引或转述这一新形式是否在许可范围内，存在把“不用原声”当成“文字形式已获许可”的跳跃。\",\"R5“证言不因换形式而失去分量”是评价性断言，正文未给出依据说明摘引或转述为何能保留第一手叙述的分量；可保留为待验证的预期，但不宜作为已成立结论支撑今晚方案。\"],\"evidence\":{\"sourceA\":\"我们很想在首页留住一个摊贩的叙述。\",\"sourceB\":\"她签的只是馆内播放原声。\",\"useA\":\"那句拔钉、攥钥匙的话之所以能在首页立住，靠的是搬迁者自己的口吻，而非声音本身的可辨认度。\",\"useB\":\"她只签了馆内播放原声，家人又能从声音认人，网页文件可被下载转发，开放上线就超出了许可，下架也收不回副本。\",\"consequence\":\"故今晚公开版不把原声放上网站：原声仍限展厅，首页改用经家属确认的摘引或转述，并标明出自她的口述。\"},\"authorization\":[{\"focus\":\"F1\",\"action\":{\"unit\":\"R3\"},\"decision\":\"permission_hold\",\"use\":\"把受访者原声放上开放网站供访客下载、转发\",\"basis\":{\"unit\":\"B1\"},\"gaps\":[\"permission\",\"channel\",\"audience\",\"form\"]},{\"focus\":\"F2\",\"action\":{\"unit\":\"R3\"},\"decision\":\"permission_hold\",\"use\":\"在首页公开经家属确认的摘引或转述，标明出自她的口述\",\"basis\":{\"unit\":\"B1\"},\"gaps\":[\"permission\",\"channel\",\"audience\",\"form\"]}]}}"
+      },
+      {
+        "stage": "critic",
+        "repair": true,
+        "check": {
+          "stage": "critic",
+          "repair": true,
+          "valid": true
+        },
+        "answer": "{\"synthesis\":{\"text\":\"她的原声今晚不进网页公开版：她只签了馆内展厅播放原声，家人能凭声音认出她，而网页文件一旦可下载转发，下架也收不回副本。首页要留住搬迁者自己的口吻，也须先守住这一范围，展厅原声照常播放。至于首页改放她的文字摘引或转述，与放原声一样是新的公开渠道和内容形式，现有材料没有说明失联的她或有权代理的家属已同意；在查明这层授权前，今晚不采用该形式，首页可先用不涉她原话的说明文字占位，交代这段口述存于展厅。这样舍弃的是网页上的原声传播和今晚的首页原话，保留的是第一手声音的展厅位置与后续核清授权再议的余地。\",\"summary\":\"原声仍限展厅播放；首页不用原声，文字摘引或转述须先核清她或有权家属的授权，今晚先以不涉原话的说明文字占位。\",\"label\":\"原声守展厅\",\"stance\":\"合\",\"change\":\"把“留住证言”与“网页可用其原话”分开：原声守展厅，文字摘引或转述同属新用途，未核清授权前不当作现成替代。\"},\"authorizationFocus\":[{\"action\":\"把原声放上开放网站\",\"nonGrants\":[\"她只签了馆内展厅播放原声\",\"网页发布后文件可被访客下载、转发\"]},{\"action\":\"首页改用经家属确认的摘引或转述\",\"nonGrants\":[\"家人只在展厅照片里认出她的声音，材料未说明家属有权代失联的她同意文字摘引或转述\"]}]}"
+      },
+      {
+        "stage": "audit",
+        "repair": false,
+        "check": {
+          "stage": "audit",
+          "repair": false,
+          "valid": false,
+          "reason": "reviewer_protocol_error",
+          "reviewIssues": [
+            {
+              "code": "missing_authorization_gate",
+              "field": "authorization"
+            },
+            {
+              "code": "missing_authorization_gate",
+              "field": "authorization"
+            },
+            {
+              "code": "unverified_authorization_basis",
+              "field": "authorization"
+            }
+          ]
+        },
+        "answer": "{\"label\":\"原声守展厅\",\"change\":{\"text\":\"把留住证言与网页可用其原话分开：原声限展厅，文字摘引或转述同属新用途，未核清授权前不当作现成替代。\",\"sourceId\":\"source-b\",\"sourceEvidence\":\"她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。\",\"resultEvidence\":\"至于首页改放她的文字摘引或转述，与放原声一样是新的公开渠道和内容形式，现有材料没有说明失联的她或有权代理的家属已同意；\"},\"hypothesesSafe\":true,\"issues\":[],\"personalEvidence\":[],\"novelty\":{\"status\":\"new\"},\"prose\":{\"pass\":true,\"issues\":[],\"evidence\":{\"sourceA\":\"她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。\",\"sourceB\":\"她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。\",\"useA\":\"首页要留住搬迁者自己的口吻，也须先守住这一范围，展厅原声照常播放。\",\"useB\":\"她的原声今晚不进网页公开版：她只签了馆内展厅播放原声，家人能凭声音认出她，而网页文件一旦可下载转发，下架也收不回副本。\",\"consequence\":\"在查明这层授权前，今晚不采用该形式，首页可先用不涉她原话的说明文字占位，交代这段口述存于展厅。\"},\"authorization\":[{\"focus\":\"F1\",\"action\":{\"unit\":\"R1\"},\"decision\":\"permission_hold\",\"use\":\"把受访者原声放上开放网站供访客下载、转发\",\"basis\":{\"unit\":\"B1\"},\"gaps\":[\"permission\",\"form\",\"channel\",\"audience\"]},{\"focus\":\"F2\",\"action\":{\"unit\":\"R4\"},\"decision\":\"conditional\",\"use\":\"首页改用经家属确认的摘引或转述，公开给网页访客\",\"basis\":{\"unit\":\"R3\"},\"gaps\":[\"permission\",\"form\"]}]}}"
+      },
+      {
+        "stage": "audit",
+        "repair": true,
+        "check": {
+          "stage": "audit",
+          "repair": true,
+          "valid": false,
+          "reviewIssues": [
+            {
+              "code": "missing_authorization_gate",
+              "field": "authorization"
+            },
+            {
+              "code": "missing_authorization_gate",
+              "field": "authorization"
+            },
+            {
+              "code": "authorization_scope_violation",
+              "field": "authorization"
+            }
+          ]
+        },
+        "answer": "{\"label\":\"原声守展厅\",\"change\":{\"text\":\"把留住证言与网页可用其原话分开：原声守展厅，文字摘引或转述同属新用途，未核清授权前不当作现成替代。\",\"sourceId\":\"source-b\",\"sourceEvidence\":\"她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。\",\"resultEvidence\":\"至于首页改放她的文字摘引或转述，与放原声一样是新的公开渠道和内容形式，现有材料没有说明失联的她或有权代理的家属已同意；\"},\"hypothesesSafe\":true,\"issues\":[],\"personalEvidence\":[],\"novelty\":{\"status\":\"new\"},\"prose\":{\"pass\":true,\"issues\":[],\"evidence\":{\"sourceA\":\"她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。\",\"sourceB\":\"她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。\",\"useA\":\"首页要留住搬迁者自己的口吻，也须先守住这一范围，展厅原声照常播放。\",\"useB\":\"她的原声今晚不进网页公开版：她只签了馆内展厅播放原声，家人能凭声音认出她，而网页文件一旦可下载转发，下架也收不回副本。\",\"consequence\":\"在查明这层授权前，今晚不采用该形式，首页可先用不涉她原话的说明文字占位，交代这段口述存于展厅。\"},\"authorization\":[{\"focus\":\"F1\",\"action\":{\"unit\":\"R1\"},\"decision\":\"permission_hold\",\"use\":\"把受访者原声放上开放网站，供访客在线收听并下载、转发\",\"basis\":{\"unit\":\"B1\"},\"gaps\":[\"permission\",\"form\",\"channel\",\"audience\"]},{\"focus\":\"F2\",\"action\":{\"unit\":\"R3\"},\"decision\":\"permission_hold\",\"use\":\"在首页公开使用经家属确认的文字摘引或转述，面向网页访客\",\"basis\":{\"unit\":\"B1\"},\"gaps\":[\"permission\",\"form\",\"channel\",\"audience\"]}]}}"
+      }
+    ]
+  }
+}
