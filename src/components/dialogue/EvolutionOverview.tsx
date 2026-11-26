@@ -3,8 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import type { Graph } from "@/types/anicca";
 import { compactEvolution, evolutionPath, projectEvolution, searchEvolution, type EvolutionNode } from "@/features/dialectic/evolution";
-import { annotatePerspective } from "@/features/perspectives/model";
-import { semanticSeedColor, seedColorPolarity } from "./liquid/color";
+import { seedColorResolver } from "@/features/dialectic/seedInstances";
 import styles from "./EvolutionOverview.module.css";
 import { layoutEvolutionLabels, type EvolutionLabelBox } from "./evolutionLabels";
 import { UnderstandingChange } from "./SeedMeaning";
@@ -62,9 +61,10 @@ export function EvolutionOverview({ graph, initialNodeId, theme, returnFocus, on
     // branch cannot push the two sources of a replay off opposite horizons.
     return projectEvolution({ ...graph, nodes: Object.fromEntries(replay.filter(id => graph.nodes[id]).map(id => [id, graph.nodes[id]])), edges: {} });
   }, [graph, panoramaModel, replay]);
-  const colors = useMemo(() => new Map(model.nodes.map(node => [node.id,
-    semanticSeedColor(node.role, node.generation, seedColorPolarity(node.source.perspective || (node.source.polarity ? annotatePerspective(node.source.polarity.frame) : undefined))).map(value => Math.round(value * 255)).join(",")
-  ])), [model]);
+  const colors = useMemo(() => {
+    const resolveColor = seedColorResolver(graph);
+    return new Map(model.nodes.map(node => [node.id, resolveColor(node.id).map(value => value * 255).join(",")]));
+  }, [graph, model]);
   const state = useRef({ model: mapModel, activeId, replay, step, colors, theme });
   state.current = { model: mapModel, activeId, replay, step, colors, theme };
 
@@ -127,7 +127,7 @@ export function EvolutionOverview({ graph, initialNodeId, theme, returnFocus, on
 
   useEffect(() => { if (replay.length) view.current.focus(activeId); }, [activeId, replay.length]);
   useEffect(() => { if (detailRef.current) detailRef.current.scrollTop = 0; }, [activeId, replay.length, query, kind, members]);
-  useEffect(() => { redraw.current(); }, [mapModel, activeId, replay, step, theme]);
+  useEffect(() => { redraw.current(); }, [mapModel, activeId, replay, step, colors, theme]);
   useEffect(() => { if (!camera.current.scale && model.nodes.length) view.current.fit(); }, [model]);
   useEffect(() => { if (!replay.length) view.current.fit(); }, [mapModel, replay.length]);
 

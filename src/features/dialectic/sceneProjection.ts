@@ -39,6 +39,16 @@ export function stageSeedRole(node: Pick<DialogueStageNode, "kind" | "branchType
   return "neutral";
 }
 
+export function isSynthesisSeed(graph: Graph, node: AniccaNode | undefined) {
+  if (node?.branchType === "合" || node?.kind === "merge") return true;
+  const sources = node?.meta?.sourceNodeIds;
+  if (node?.kind !== "assistant" || node.branchType || !Array.isArray(sources) || sources.length !== 2) return false;
+  const [left, right] = sources;
+  const valid = (id: unknown) => typeof id === "string" && id.length > 0 && id !== node.id &&
+    Object.prototype.hasOwnProperty.call(graph.nodes, id);
+  return left !== right && valid(left) && valid(right);
+}
+
 export type DialogueSceneProjection = {
   nodes: DialogueStageNode[];
   visibleNodeIds: string[];
@@ -83,7 +93,7 @@ export function projectDialogueScene(
         summary: graphNode.meta?.summary
       } : {}),
       kind: graphNode.kind,
-      branchType: graphNode.branchType,
+      branchType: graphNode.branchType ?? (graphNode.kind === "assistant" && isSynthesisSeed(graph, graphNode) ? "合" : undefined),
       perspective: graphNode.meta?.perspective,
       polarity: graphNode.meta?.polarity,
       seedX: clamp(stageNode.seedX, MIN_X, MAX_X),

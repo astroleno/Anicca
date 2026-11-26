@@ -42,6 +42,12 @@ export function mixRgb(
 }
 
 export type SeedColorPolarity = { hueShift: number; strength: number };
+type Rgb = [number, number, number];
+
+const NEAR_GRAY_CHROMA = .02;
+const normalizeHue = (hue: number) => (hue % 360 + 360) % 360;
+const encodeSrgb = (value: number) => value <= .0031308 ? 12.92 * value : 1.055 * value ** (1 / 2.4) - .055;
+const clampSrgb = (value: number) => Math.min(1, Math.max(0, value));
 
 /** Use the saved reading, never the camera or the current framework. Opposite
  * ends rotate the hue in opposite directions within the original role family. */
@@ -69,14 +75,17 @@ function seedPaletteColor(role: string, generation: number): [number, number, nu
   };
   const [base, chroma, hue] = palettes[role] || palettes.neutral;
   const lightness = base + Math.min(5, Math.max(0, Number.isFinite(generation) ? generation : 0)) * .009;
+  return oklchToRgb(lightness, chroma, hue).map(clampSrgb) as Rgb;
+}
+
+function oklchToRgb(lightness: number, chroma: number, hue: number): Rgb {
   const a = chroma * Math.cos(hue * Math.PI / 180), b = chroma * Math.sin(hue * Math.PI / 180);
   const l = (lightness + .3963377774 * a + .2158037573 * b) ** 3;
   const m = (lightness - .1055613458 * a - .0638541728 * b) ** 3;
   const s = (lightness - .0894841775 * a - 1.291485548 * b) ** 3;
-  const srgb = (v: number) => Math.min(1, Math.max(0, v <= .0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - .055));
-  return [srgb(4.0767416621*l - 3.3077115913*m + .2309699292*s),
-    srgb(-1.2684380046*l + 2.6097574011*m - .3413193965*s),
-    srgb(-.0041960863*l - .7034186147*m + 1.707614701*s)];
+  return [encodeSrgb(4.0767416621*l - 3.3077115913*m + .2309699292*s),
+    encodeSrgb(-1.2684380046*l + 2.6097574011*m - .3413193965*s),
+    encodeSrgb(-.0041960863*l - .7034186147*m + 1.707614701*s)];
 }
 
 export function rgbToHsl([r,g,b]: readonly number[]): [number,number,number] {
@@ -86,12 +95,49 @@ export function rgbToHsl([r,g,b]: readonly number[]): [number,number,number] {
   return [hue*60, delta/(1-Math.abs(2*lightness-1)), lightness];
 }
 
-export function perceptualChroma(rgb: readonly number[]): number {
+export function rgbToOklch(rgb: readonly number[]) {
   const [r,g,b] = rgb.map(v => v <= .04045 ? v/12.92 : ((v+.055)/1.055)**2.4);
   const l = Math.cbrt(.4122214708*r+.5363325363*g+.0514459929*b);
   const m = Math.cbrt(.2119034982*r+.6806995451*g+.1073969566*b);
   const s = Math.cbrt(.0883024619*r+.2817188376*g+.6299787005*b);
-  return Math.hypot(1.9779984951*l-2.428592205*m+.4505937099*s, .0259040371*l+.7827717662*m-.808675766*s);
+  const a = 1.9779984951*l-2.428592205*m+.4505937099*s;
+  const beta = .0259040371*l+.7827717662*m-.808675766*s;
+  return {
+    lightness: .2104542553*l+.793617785*m-.0040720468*s,
+    chroma: Math.hypot(a, beta),
+    hue: normalizeHue(Math.atan2(beta, a) * 180 / Math.PI)
+  };
+}
+
+export function perceptualChroma(rgb: readonly number[]): number {
+  return rgbToOklch(rgb).chroma;
+}
+
+/** Chromatic inputs take the shorter hue arc. Opposites use the increasing
+ * arc from the smaller hue, and two near gray inputs use hue zero. */
+export function mixSemanticSeedColors(left: Rgb, right: Rgb): Rgb {
+  const a = rgbToOklch(left), b = rgbToOklch(right);
+  const aGray = a.chroma < NEAR_GRAY_CHROMA, bGray = b.chroma < NEAR_GRAY_CHROMA;
+  if (!aGray && left.every((channel, index) => channel === right[index])) return [...left];
+  const first = Math.min(a.hue, b.hue), second = Math.max(a.hue, b.hue);
+  const delta = second - first;
+  // The sRGB round trip can move mathematically opposite hues by a tiny amount.
+  const midpoint = normalizeHue(first + (delta > 180.0001 ? delta - 360 : delta) / 2);
+  const hue = aGray ? (bGray ? 0 : b.hue) : bGray ? a.hue : midpoint;
+  const lightness = (a.lightness + b.lightness) / 2;
+  const chroma = (a.chroma + b.chroma) / 2;
+  const inGamut = (rgb: Rgb) => rgb.every(value => value >= -1e-8 && value <= 1 + 1e-8);
+  const mixed = oklchToRgb(lightness, chroma, hue);
+  if (inGamut(mixed)) return mixed.map(clampSrgb) as Rgb;
+
+  // Reduce chroma along the same lightness and hue to the sRGB boundary.
+  let low = 0, high = chroma;
+  for (let step = 0; step < 24; step++) {
+    const middle = (low + high) / 2;
+    if (inGamut(oklchToRgb(lightness, middle, hue))) low = middle;
+    else high = middle;
+  }
+  return oklchToRgb(lightness, low, hue).map(clampSrgb) as Rgb;
 }
 
 export function semanticSeedHsl(role: string, generation = 0, polarity?: SeedColorPolarity): [number,number,number] {

@@ -1,4 +1,4 @@
-// Test-only comparison. The app continues to mix source RGB directly.
+// Historical max-chroma candidate for the visual comparison.
 const NEAR_GRAY_CHROMA = .02;
 const normalizeHue = angle => (angle % 360 + 360) % 360;
 const linear = value => value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4;

@@ -29,7 +29,7 @@ async function renderBoard(browser, outputDir, theme, rows) {
      .heading {font-weight:600} small {font-size:12px;font-weight:400;margin-left:10px}
     </style></head><body>
     <h1>${theme === "dark" ? "暗色" : "亮色"}场景的合流底色</h1>
-    <header class="columns heading"><span>当前等量 RGB</span><span>OKLCH 候选</span></header>
+    <header class="columns heading"><span>默认 OKLCH · 平均彩度</span><span>旧 OKLCH 候选 · 最大彩度</span></header>
     ${images.map(row => `<h2>${row.name}</h2><div class="columns">
        ${row.entries.map(entry => `<div><small>底色 RGB (${entry.rgb.join(", ")})</small><figure><img src="data:image/png;base64,${entry.source}"></figure></div>`).join("")}
     </div>`).join("")}
@@ -65,6 +65,7 @@ export async function runSynthesisColorComparison(browser, options) {
       checkIdenticalScenes(current, alternative);
       const [a, b] = current.sourceGeometry.map(seed => seed.declared);
       assert.deepEqual(oklchPreview(b, a), candidate);
+      if (pair !== "ac") assert(rgbToOklch(alternative.declared).chroma > rgbToOklch(current.declared).chroma + .005);
       const contrast = ({ text }) => Math.min(...text.map(item => item.strongest?.actualContrast ?? 0));
       rows.push({ theme, pair, name, current, alternative, candidate,
         sourceOklch: [rgbToOklch(a), rgbToOklch(b)],

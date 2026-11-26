@@ -1,9 +1,9 @@
 import type { Graph, SeedInstances, StagePoint } from "@/types/anicca";
 import { graphGenerations, type ThinkingSpace } from "@/features/perspectives/model";
-import { mixRgb, seedColorPolarity, semanticSeedColor } from "@/components/dialogue/liquid/color";
+import { mixSemanticSeedColors, seedColorPolarity, semanticSeedColor } from "@/components/dialogue/liquid/color";
 import { buildSeedScene, seedPairAction } from "./seeds";
 import { placeSeeds } from "./seedPlacement";
-import { stageSeedRole, type DialogueStageNode } from "./sceneProjection";
+import { isSynthesisSeed, stageSeedRole, type DialogueStageNode } from "./sceneProjection";
 
 const hasOwn = (value: object, key: string) => Object.prototype.hasOwnProperty.call(value, key);
 
@@ -38,7 +38,8 @@ export function conceptInstances(instances: SeedInstances, conceptId: string) {
 
 function synthesisSourceSlots(graph: Graph, instances: SeedInstances, resultId: string) {
   const node = graph.nodes[seedConceptId(graph, instances, resultId) || ""];
-  const sourceIds = node?.meta?.sourceNodeIds || (node?.branchType === "合" || node?.kind === "merge" ? node.parents : []);
+  if (!node || !isSynthesisSeed(graph, node)) return [];
+  const sourceIds = node.meta?.sourceNodeIds ?? node.parents;
   if (!Array.isArray(sourceIds)) return [];
   return sourceIds.map((conceptId, index) => {
     if (typeof conceptId !== "string" || !hasOwn(graph.nodes, conceptId)) return null;
@@ -51,7 +52,6 @@ export function sourceInstances(graph: Graph, instances: SeedInstances, resultId
   return synthesisSourceSlots(graph, instances, resultId).slice(0, 2).flatMap(source => source ? [source.instanceId] : []);
 }
 
-function distinctSourceConcepts(slots: ReturnType<typeof synthesisSourceSlots>): [string, string] | undefined {
 function directInstanceNeighbors(graph: Graph, instances: SeedInstances, active: string | null) {
   const conceptId = seedConceptId(graph, instances, active);
   const neighbors = new Set<string>();
@@ -76,6 +76,7 @@ function directInstanceNeighbors(graph: Graph, instances: SeedInstances, active:
   return neighbors;
 }
 
+function distinctSourceConcepts(slots: ReturnType<typeof synthesisSourceSlots>): [string, string] | undefined {
   if (slots.length !== 2) return undefined;
   const left = slots[0]?.conceptId, right = slots[1]?.conceptId;
   return left && right && left !== right ? [left, right] : undefined;
@@ -95,15 +96,18 @@ function commonDirectParent(graph: Graph, instances: SeedInstances, result: stri
 
 type SeedColor = NonNullable<DialogueStageNode["semanticColor"]>;
 
-function seedColorResolver(graph: Graph, instances: SeedInstances, generations: ReturnType<typeof graphGenerations>) {
+export function seedColorResolver(graph: Graph, instances: SeedInstances = {}, generations = graphGenerations(graph)) {
   // Null identifies a cyclic dependency. It propagates to any synthesis using
   // that cycle, so the visible subset and its traversal order cannot change the hue.
   const resolved = new Map<string, SeedColor | null>();
   const base = (id: string) => {
     const node = graph.nodes[id];
-    return semanticSeedColor(stageSeedRole(node), generations.get(id), seedColorPolarity(node.meta?.perspective));
+    const role = isSynthesisSeed(graph, node) ? "synthesis" : stageSeedRole(node);
+    return semanticSeedColor(role, generations.get(id), seedColorPolarity(node.meta?.perspective));
   };
-  return (id: string): SeedColor => {
+  return (instanceId: string): SeedColor => {
+    const id = seedConceptId(graph, instances, instanceId);
+    if (!id) return semanticSeedColor("neutral");
     const stack: { id: string; sources?: [string, string]; next: number }[] = [{ id, next: 0 }];
     const active = new Set<string>();
     while (stack.length) {
@@ -115,11 +119,8 @@ function seedColorResolver(graph: Graph, instances: SeedInstances, generations: 
       }
       if (!active.has(frame.id)) {
         active.add(frame.id);
-        const node = graph.nodes[frame.id];
-        const isSynthesis = node.branchType === "合" || node.kind === "merge";
-        frame.sources = isSynthesis ? distinctSourceConcepts(synthesisSourceSlots(graph, instances, frame.id)) : undefined;
-        // Canonical order keeps the floating point result bit-for-bit invariant.
-        frame.sources?.sort();
+        const slots = synthesisSourceSlots(graph, instances, frame.id);
+        frame.sources = distinctSourceConcepts(slots);
       }
       if (!frame.sources) {
         resolved.set(frame.id, base(frame.id));
@@ -133,7 +134,7 @@ function seedColorResolver(graph: Graph, instances: SeedInstances, generations: 
         continue;
       }
       const left = resolved.get(frame.sources[0]), right = resolved.get(frame.sources[1]);
-      resolved.set(frame.id, left && right ? mixRgb(left, right, .5) : null);
+      resolved.set(frame.id, left && right ? mixSemanticSeedColors(left, right) : null);
     }
     return resolved.get(id) ?? base(id);
   };
@@ -153,14 +154,14 @@ export function buildSeedInstanceScene(input: {
 } & { reserveCommonParent?: boolean }): DialogueStageNode[] {
   const { graph, instances, focusId, thinkingSpace } = input;
   const active = seedConceptId(graph, instances, input.activeInstanceId) === focusId ? input.activeInstanceId : focusId;
-  const result = input.expandedResultId || active;
   const directNeighbors = directInstanceNeighbors(graph, instances, active);
+  const result = input.expandedResultId || active;
   const sources = result ? sourceInstances(graph, instances, result) : [];
   const commonParentId = result ? commonDirectParent(graph, instances, result, synthesisSourceSlots(graph, instances, result)) : undefined;
   const focusCopies = focusId ? conceptInstances(instances, focusId).map(instance => instance.id).reverse() : [];
   const relatedResults = Array.from(new Set([focusId, ...sources].flatMap(id => {
     const conceptId = seedConceptId(graph, instances, id);
-    return (conceptId ? graph.nodes[conceptId].children : []).filter(child => graph.nodes[child]?.branchType === "合");
+    return (conceptId ? graph.nodes[conceptId].children : []).filter(child => isSynthesisSeed(graph, graph.nodes[child]));
   }))).reverse();
   const required = [input.expandedResultId, ...sources,
     ...(input.reserveCommonParent === false ? [] : [sources.length ? result : null, commonParentId]),
@@ -172,7 +173,11 @@ export function buildSeedInstanceScene(input: {
   const base = buildSeedScene(graph, focusId, null, thinkingSpace, 8,
     required.flatMap(id => seedConceptId(graph, instances, id) || []), generations);
   const templates = new Map(base.map(node => [node.id, node]));
-  for (const node of base) if (node.branchType === "合" || node.kind === "merge") node.semanticColor = resolveColor(node.id);
+  for (const node of base) {
+    if (!isSynthesisSeed(graph, graph.nodes[node.id])) continue;
+    if (node.kind === "assistant" && !node.branchType) node.branchType = "合";
+    node.semanticColor = resolveColor(node.id);
+  }
   const sourceConcepts = new Set(sources.map(id => seedConceptId(graph, instances, id)));
   const selected = new Set<string>();
   for (const id of [...required, ...Object.keys(instances).reverse(), ...base.map(node => node.id)]) {
@@ -189,12 +194,12 @@ export function buildSeedInstanceScene(input: {
         : !sources.length && conceptId === focusId && copies.length ? "shared"
           : sources.length ? "other" : undefined;
     return { ...template, id, conceptId,
+      ordinaryTier: id === active ? "focus" : directNeighbors.has(id) ? "direct" : "distant",
       relation: id === active ? "focus" : sources.includes(id) ? "source" : "child",
       ...(copies.length ? { instanceNumber: id === conceptId ? 0 : instances[id].ordinal } : {}),
       sourceRole,
-      ...(sourceRole === "source" ? { semanticColor: resolveColor(conceptId) } : {}),
+      ...(sourceRole === "source" ? { semanticColor: resolveColor(id) } : {}),
       ...(id === result && commonParentId ? { commonParentId } : {}),
-      ordinaryTier: id === active ? "focus" : directNeighbors.has(id) ? "direct" : "distant",
       originNodeIds: id !== conceptId ? [conceptId] : template.originNodeIds };
   });
 }

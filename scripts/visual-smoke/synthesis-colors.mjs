@@ -3,9 +3,77 @@ import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { crossTopicFixture, loadSynthesisSnapshot } from "./synthesis-common-parent.mjs";
 import { waitForSeedLayout } from "./seeds.mjs";
+import { rgbToOklch } from "./oklch-preview.mjs";
 
 const viewport = { width: 320, height: 568 };
 const inkSelector = "[data-synthesis-marker], [data-common-parent-marker], [data-seed-caption] strong";
+
+function checkDefaultColor(declared, sourceColors, pair) {
+  const [a, b] = sourceColors.map(rgbToOklch);
+  const color = rgbToOklch(declared);
+  const colorful = [a, b].filter(source => source.chroma >= .02);
+  const [first, second] = colorful.map(source => source.hue).sort((x, y) => x - y);
+  const span = second - first;
+  const hue = colorful.length === 2 ? (first + (span > 180 ? span - 360 : span) / 2 + 360) % 360 : first ?? 0;
+  const hueError = Math.abs(color.hue - hue);
+  assert(Math.min(hueError, 360 - hueError) < .001, `Unexpected hue for ${pair}`);
+  assert(Math.abs(color.lightness - (a.lightness + b.lightness) / 2) < 1e-6, `Unexpected lightness for ${pair}`);
+  // These actual semantic tints are already in gamut.
+  assert(Math.abs(color.chroma - (a.chroma + b.chroma) / 2) < 1e-6, `Unexpected chroma for ${pair}`);
+  if (pair === "gray") assert.equal(colorful.length, 1);
+  if (pair === "ab") assert(Math.abs(a.chroma - b.chroma) > .005);
+}
+
+async function captureOverview(page, outputDir, theme, pair, geometry) {
+  await page.evaluate(() => {
+    const { createRadialGradient, clearRect } = CanvasRenderingContext2D.prototype;
+    CanvasRenderingContext2D.prototype.clearRect = function (...args) {
+      if (this.canvas.closest('[data-testid="evolution-overview"]')) this.canvas.measuredGradients = [];
+      return clearRect.apply(this, args);
+    };
+    CanvasRenderingContext2D.prototype.createRadialGradient = function (...args) {
+      const gradient = createRadialGradient.apply(this, args);
+      const rows = this.canvas.measuredGradients;
+      if (rows) {
+        const { addColorStop } = gradient;
+        gradient.addColorStop = (offset, color) => {
+          if (offset === 0) rows.push({ point: [args[0], args[1]], rgb: color.slice(5, -1).split(",").slice(0, 3).map(value => Number(value) / 255) });
+          return addColorStop.call(gradient, offset, color);
+        };
+      }
+      return gradient;
+    };
+  });
+  // The color recording runs with stage animation suspended. Resume it so
+  // the overview can open and paint its ordinary canvas.
+  await page.evaluate(() => {
+    delete document.hidden;
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await page.getByRole("button", { name: "演化全景", exact: true }).click();
+  const overview = page.getByTestId("evolution-overview");
+  await overview.getByRole("heading", { name: "共同改写约定", exact: true }).waitFor();
+  const canvas = overview.locator("canvas");
+  const matches = (actual, expected) => actual.every((channel, index) => Math.abs(channel - expected[index]) < 1e-12);
+  const desired = [geometry.declared, ...geometry.sourceGeometry.map(node => node.declared)];
+  await page.waitForFunction(colors => {
+    const gradients = document.querySelector('[data-testid="evolution-overview"] canvas')?.measuredGradients;
+    return colors.every(rgb => gradients?.some(row => row.rgb.every((value, i) => Math.abs(value - rgb[i]) < 1e-12)));
+  }, desired);
+  const samples = await canvas.evaluate(element => {
+    const context = element.getContext("2d"), rect = element.getBoundingClientRect();
+    return element.measuredGradients.map(({ point: [x, y], rgb }) => ({
+      point: [x, y], screenshotPoint: [Math.round(rect.x + x), Math.round(rect.y + y)], declared: rgb,
+      rgba: [...context.getImageData(Math.round(x), Math.round(y), 1, 1).data]
+    }));
+  });
+  const result = samples.find(row => matches(row.declared, geometry.declared));
+  const sources = geometry.sourceGeometry.map(node => ({ id: node.id, ...samples.find(row => matches(row.declared, node.declared)) }));
+  assert(result.rgba[3] > 0);
+  const screenshot = `synthesis-overview-${theme}-${pair}.png`;
+  await page.screenshot({ path: path.join(outputDir, screenshot) });
+  return { screenshot, result, sources };
+}
 
 export function synthesisColorFixture(pair) {
   if (pair === "same-role-cross-topic") return crossTopicFixture;
@@ -23,10 +91,11 @@ export function synthesisColorFixture(pair) {
   // Give the second positive source a different generation without changing the common parent.
   nodes["branch-b"].parents = ["root", "branch-a"];
   nodes["branch-a"].children.push("branch-b");
-  const sources = { ab: ["a", "b"], ac: ["a", "c"], gray: ["a", "c"], ba: ["b", "a"] }[pair];
+  const sources = { ab: ["a", "b"], ac: ["a", "c"], gray: ["a", "c"], ba: ["b", "a"], "legacy-ab": ["a", "b"] }[pair];
   nodes.result.parents = sources;
   nodes.result.meta = { label: "共同改写约定", sourceNodeIds: sources, sourceInstanceIds: sources.map(id => id === "a" ? "a-copy" : id) };
   nodes.result.text = "共同改写约定";
+  if (pair === "legacy-ab") delete nodes.result.branchType;
   return snapshot;
 }
 
@@ -117,11 +186,14 @@ export async function captureSynthesisColors(browser, { baseUrl, outputDir, setA
       }).filter(item => item.visible);
       const sourceGeometry = Array.from(document.querySelectorAll('[data-source-role="source"]'), item => {
         const box = item.getBoundingClientRect();
+        const flatFill = getComputedStyle(item).getPropertyValue("--seed-fill").trim();
         return { id: item.dataset.metaballSurface, concept: item.dataset.seedConcept, role: item.dataset.metaballRole,
-          declared: item.dataset.seedSemanticColor.split(" ").map(Number), point: [box.x + box.width / 2, box.y + box.height / 2 - 12] };
+          declared: item.dataset.seedSemanticColor.split(" ").map(Number), flatFill,
+          point: [box.x + box.width / 2, box.y + box.height / 2 - 12] };
       });
       return {
         fillPoints, text, sourceGeometry, declared: result.dataset.seedSemanticColor.split(" ").map(Number),
+        flatFill: getComputedStyle(result).getPropertyValue("--seed-fill").trim(),
         projected: JSON.parse(document.querySelector('[data-testid="dialogue-metaball-canvas"]').dataset.spaceNodes || "[]"),
         sources: sourceGeometry.map(item => item.id)
       };
@@ -129,11 +201,17 @@ export async function captureSynthesisColors(browser, { baseUrl, outputDir, setA
     const geometry = await readGeometry();
     assert.equal(geometry.sources.length, 2);
     const sourceColors = geometry.sourceGeometry.map(seed => seed.declared);
-    geometry.declared.forEach((channel, index) => assert(Math.abs(channel - (sourceColors[0][index] + sourceColors[1][index]) / 2) < 1e-12));
+    checkDefaultColor(geometry.declared, sourceColors, pair);
     if (renderer !== "flat") {
       const rgb = id => geometry.projected.find(seed => seed.id === id).color;
       assert.deepEqual(rgb("result"), geometry.declared);
       for (const source of geometry.sourceGeometry) assert.deepEqual(rgb(source.id), source.declared);
+    } else {
+      for (const { id, declared, flatFill } of [{ id: "result", ...geometry }, ...geometry.sourceGeometry]) {
+        const fill = flatFill.match(/^rgb\((.+)\)$/)?.[1].split(/\s+/).map(value => parseFloat(value) / 100);
+        assert(fill?.length === 3 && fill.every((value, i) => Math.abs(value - declared[i]) < 1e-12),
+          `Unexpected flat fill for ${pair} (${id}): ${flatFill}`);
+      }
     }
     const record = async (prefix, geometry) => {
       await page.evaluate(() => Object.defineProperty(document, "hidden", { configurable: true, get: () => true }));
@@ -156,11 +234,11 @@ export async function captureSynthesisColors(browser, { baseUrl, outputDir, setA
     if (compareColor) {
       assert.equal(renderer, "original");
       const prefix = `synthesis-color-comparison-${theme}-${pair}`;
-      const current = await record(`${prefix}-rgb`, geometry);
+      const current = await record(`${prefix}-oklch-mean`, geometry);
       const candidate = compareColor(...sourceColors);
       await updateProjectedColor(candidate.rgb);
       await waitForSeedLayout(page, { captions: true });
-      const alternative = await record(`${prefix}-oklch`, await readGeometry());
+      const alternative = await record(`${prefix}-oklch-max`, await readGeometry());
       assert.deepEqual(alternative.declared, candidate.rgb);
       return { current, alternative, candidate };
     }
@@ -169,7 +247,11 @@ export async function captureSynthesisColors(browser, { baseUrl, outputDir, setA
       // The renderer must reread just this attribute on the same node without a remount.
       const update = [0.8, 0.6, 0.7];
       await updateProjectedColor(update);
+      await updateProjectedColor(geometry.declared);
       current.projectedAttributeUpdate = update;
+    }
+    if (renderer === "original" && ["ab", "ac", "gray", "legacy-ab"].includes(pair)) {
+      current.overview = await captureOverview(page, outputDir, theme, pair, geometry);
     }
     return current;
   } finally {
@@ -181,10 +263,13 @@ export async function runSynthesisColors(browser, options) {
   const results = [];
   for (const renderer of ["original", "flat", "webgpu"]) {
     for (const theme of ["light", "dark"]) {
-      for (const pair of ["ab", "ac"]) results.push(await captureSynthesisColors(browser, options, renderer, theme, pair));
+      for (const pair of ["ab", "ac", "gray"]) results.push(await captureSynthesisColors(browser, options, renderer, theme, pair));
     }
   }
   for (const pair of ["ba", "same-role-cross-topic"]) results.push(await captureSynthesisColors(browser, options, "original", "light", pair));
+  for (const renderer of ["original", "flat", "webgpu"]) {
+    results.push(await captureSynthesisColors(browser, options, renderer, "light", "legacy-ab"));
+  }
   await writeFile(path.join(options.outputDir, "synthesis-color-measurements.json"), JSON.stringify(results, null, 2));
   const find = (renderer, theme, pair) => results.find(row => row.renderer === renderer && row.theme === theme && row.pair === pair);
   const reference = find("original", "light", "ab");
@@ -193,11 +278,14 @@ export async function runSynthesisColors(browser, options) {
   const warmth = row => row.fill.reduce((sum, { rgb }) => sum + rgb[0] - rgb[2], 0) / row.fill.length;
   assert(Math.abs(warmth(reference) - warmth(swapped)) <= 2, "Swapping the same sources should preserve the apparent focus color");
   for (const renderer of ["original", "flat", "webgpu"]) {
+    assert.deepEqual(find(renderer, "light", "legacy-ab").declared, reference.declared);
     for (const theme of ["light", "dark"]) {
-      const ab = find(renderer, theme, "ab"), ac = find(renderer, theme, "ac");
+      const ab = find(renderer, theme, "ab"), ac = find(renderer, theme, "ac"), gray = find(renderer, theme, "gray");
       assert.deepEqual(ab.declared, reference.declared);
       assert.deepEqual(ac.declared, find("original", "light", "ac").declared);
       assert.notDeepEqual(ab.declared, ac.declared);
+      assert.deepEqual(gray.declared, find("original", "light", "gray").declared);
+      assert.notDeepEqual(gray.declared, ac.declared);
       assert(warmth(ac) - warmth(ab) >= 5, `${renderer} ${theme} did not visibly respond to the warmer source`);
     }
   }

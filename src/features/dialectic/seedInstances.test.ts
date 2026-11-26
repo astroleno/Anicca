@@ -1,8 +1,8 @@
 import { BranchGraphStore } from "@/store/branchGraph";
 import { useDialogueUiStore } from "./store";
 import { annotatePerspective, defaultThinkingSpace, graphGenerations } from "@/features/perspectives/model";
-import { seedColorPolarity, semanticSeedColor } from "@/components/dialogue/liquid/color";
-import { buildSeedInstanceScene, normalizeSeedInstances, seedConceptId, seedInstancePairAction, sourceInstances, unfoldedSourcePositions } from "./seedInstances";
+import { mixSemanticSeedColors, seedColorPolarity, semanticSeedColor } from "@/components/dialogue/liquid/color";
+import { buildSeedInstanceScene, normalizeSeedInstances, seedColorResolver, seedConceptId, seedInstancePairAction, sourceInstances, unfoldedSourcePositions } from "./seedInstances";
 import { findSynthesisGestureCandidate } from "./gestures";
 import { commitSynthesisResult } from "./controller";
 import { projectDialogueScene } from "./sceneProjection";
@@ -33,23 +33,24 @@ describe("shared concept instances", () => {
     const graph = structuredClone(store.getGraph()), instances = useDialogueUiStore.getState().seedInstances;
     const color = () => buildSeedInstanceScene({ graph, instances, focusId: result, activeInstanceId: result,
       expandedResultId: result, thinkingSpace: defaultThinkingSpace() }).find(node => node.id === result)!.semanticColor!;
-    const mean = (left: number[], right: number[]) => left.map((channel, i) => (channel + right[i]) / 2);
-    const matches = (left: number[], right: number[]) => left.forEach((channel, i) => expect(channel).toBeCloseTo(right[i], 14));
     const ab = color();
-    matches(ab, mean(semanticSeedColor("antithesis", 1), semanticSeedColor("thesis", 1)));
+    expect(ab).toEqual(mixSemanticSeedColors(semanticSeedColor("antithesis", 1), semanticSeedColor("thesis", 1)));
+    const overviewColor = seedColorResolver(graph);
+    expect(overviewColor(result)).toEqual(ab);
+    expect(seedColorResolver(graph, instances)(x)).toEqual(overviewColor(a));
     graph.nodes[result].meta!.sourceNodeIds = [b, a];
     graph.nodes[result].meta!.sourceInstanceIds = [b, x];
     expect(color()).toEqual(ab);
     graph.nodes[result].meta!.sourceNodeIds = [a, c];
-    matches(color(), mean(semanticSeedColor("antithesis", 1), semanticSeedColor("user", 0)));
+    expect(color()).toEqual(mixSemanticSeedColors(semanticSeedColor("antithesis", 1), semanticSeedColor("user", 0)));
     expect(color()).not.toEqual(ab);
     graph.nodes[c] = { ...graph.nodes[c], kind: "assistant", branchType: "反", parents: [root] };
     expect(color()).toEqual(semanticSeedColor("antithesis", 1));
     graph.nodes[c].parents = [b];
-    matches(color(), mean(semanticSeedColor("antithesis", 1), semanticSeedColor("antithesis", 2)));
+    expect(color()).toEqual(mixSemanticSeedColors(semanticSeedColor("antithesis", 1), semanticSeedColor("antithesis", 2)));
     const perspective = annotatePerspective(defaultThinkingSpace(), { scale: -1 });
     graph.nodes[c].meta = { label: "换个标题", perspective };
-    matches(color(), mean(semanticSeedColor("antithesis", 1), semanticSeedColor("antithesis", 2, seedColorPolarity(perspective))));
+    expect(color()).toEqual(mixSemanticSeedColors(semanticSeedColor("antithesis", 1), semanticSeedColor("antithesis", 2, seedColorPolarity(perspective))));
     delete graph.nodes[result].meta;
     expect(color()).toEqual(ab);
     for (const malformed of [[a], [a, "missing"], [a, a], [a, b, "missing"]]) {
@@ -72,8 +73,28 @@ describe("shared concept instances", () => {
     const scene = (focusId: string) => buildSeedInstanceScene({ graph, instances: {}, focusId, activeInstanceId: focusId,
       expandedResultId: null, pinnedInstanceIds, thinkingSpace: defaultThinkingSpace() });
     expect(scene(outer).some(node => node.id === a || node.id === b)).toBe(false);
-    scene(outer).find(node => node.id === outer)!.semanticColor!.forEach((channel, i) => expect(channel).toBeCloseTo(
-      (semanticSeedColor("antithesis", 1)[i] + semanticSeedColor("thesis", 1)[i]) / 4 + semanticSeedColor("user")[i] / 2, 14));
+    const innerColor = mixSemanticSeedColors(semanticSeedColor("antithesis", 1), semanticSeedColor("thesis", 1));
+    const outerColor = mixSemanticSeedColors(innerColor, semanticSeedColor("user", 0));
+    expect(scene(outer).find(node => node.id === outer)?.semanticColor).toEqual(outerColor);
+    const overviewColor = seedColorResolver(graph);
+    expect(overviewColor(outer)).toEqual(outerColor);
+    expect(overviewColor(inner)).toEqual(innerColor);
+    // Persisted older assistants can carry the complete sources without a branch type.
+    delete graph.nodes[inner].branchType;
+    delete graph.nodes[outer].branchType;
+    const legacyScene = scene(outer);
+    expect(legacyScene.find(node => node.id === outer)).toMatchObject({ branchType: "合", semanticColor: outerColor });
+    expect(projectDialogueScene(graph, legacyScene).nodes.find(node => node.id === outer))
+      .toMatchObject({ branchType: "合", semanticColor: outerColor });
+    expect(seedColorResolver(graph)(inner)).toEqual(innerColor);
+    expect(seedColorResolver(graph)(outer)).toEqual(outerColor);
+    for (const sources of [[], [a], [a, a], [a, "missing"], [inner, a]]) {
+      graph.nodes[inner].meta!.sourceNodeIds = sources;
+      expect(projectDialogueScene(graph, scene(inner)).nodes.find(node => node.id === inner)?.branchType).toBeUndefined();
+      expect(seedColorResolver(graph)(inner)).toEqual(semanticSeedColor("neutral", graphGenerations(graph).get(inner)));
+    }
+    graph.nodes[inner].branchType = "合";
+    graph.nodes[outer].branchType = "合";
     graph.nodes[inner].meta!.sourceNodeIds = [outer, a];
     const generations = graphGenerations(graph);
     for (const focus of [inner, outer]) {
