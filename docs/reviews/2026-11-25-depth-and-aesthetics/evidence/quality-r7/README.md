@@ -46,7 +46,7 @@ node scripts/evals/blind-dialectic-quality-r7.mjs \
 
 `first-candidate/` 留存过程版实测，最终盲评使用 `baseline/` 和 `candidate/`。[语义门控校准](gate-calibration.json)保留了五道卷外题的输入、预期与首轮响应，统计正文胜平负和成本时使用原 17 题。
 
-### 揭盲后复算
+### 首次盲评复算
 
 使用[封存判断](judgments.json)、[原匿名题卷](packet.json)和[揭盲映射](key.json)重算[技术附表](results.md)与[逐题明细](revealed.json)。输出目录需已存在且为空。汇总器核对封存判断、匿名题卷、冻结请求、两版模型设置及逐题正文的一致性。
 
@@ -56,4 +56,17 @@ node scripts/evals/summarize-dialectic-quality-r7.mjs \
   --judgments "$evidence/judgments.json" --judge-sha 2f504f9b20b22d33e3b1036ad8770102dce67e532e37a0b063ffef2cd9547556 \
   --packet "$evidence/packet.json" --key "$evidence/key.json" \
   --evidence "$evidence" --out "$results_dir"
+```
+
+
+### 第二次盲评复算
+
+第二次测试保留同一卷、基线和传输配置。修订版原始响应与结构化跟踪归档在 `revised/`。新匿名题卷从 `baseline/` 与 `revised/` 重新独立交换每题的 A/B，另行封存判断。复算使用 `retest/` 的题卷、判断及揭盲映射。首次盲评的封存判断和结果保留在本目录。
+
+```sh
+results_dir=$(mktemp -d /tmp/anicca-r7-retest.XXXXXX)
+node scripts/evals/summarize-dialectic-quality-r7.mjs \
+  --judgments "$evidence/retest/judgments.json" --judge-sha SEALED_RETEST_SHA256 \
+  --packet "$evidence/retest/packet.json" --key "$evidence/retest/key.json" \
+  --evidence "$evidence" --out "$results_dir" --second-run revised
 ```

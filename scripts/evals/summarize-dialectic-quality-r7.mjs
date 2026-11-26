@@ -66,7 +66,22 @@ function tokenTotals(calls, key) {
   return { tokens: sum(reported), reported: reported.length, calls: calls.length };
 }
 
-function metrics(run, route, cases) {
+function repairBreakdown(traces, calls) {
+  const repairs = calls.filter(({ repair }) => repair);
+  const reviewerProtocol = repairs.filter((call) => call.repairKind === "reviewer_protocol" ||
+    (call.repairKind === undefined && call.stage === "audit")).length;
+  const prose = repairs.filter((call) => call.repairKind === "prose").length;
+  const contract = repairs.filter((call) => call.repairKind === "contract").length;
+  return {
+    reviewerProtocol, prose, contract,
+    unclassified: repairs.length - reviewerProtocol - prose - contract,
+    invalidReviewerReplies: sum(traces.map((trace) =>
+      (trace.checks ?? []).filter(({ reason }) => reason === "reviewer_protocol_error").length)),
+    exhaustedReviewerProtocol: traces.filter(({ outcome }) => outcome === "reviewer_protocol_error").length
+  };
+}
+
+function metrics(run, route, cases, classifyRepairs) {
   const records = cases.map(({ id }) => run.records.get(`${id}/${route}`));
   const attempts = records.flatMap((record) => record.attempts);
   const finals = records.map((record) => record.attempts.at(-1));
@@ -83,6 +98,7 @@ function metrics(run, route, cases) {
     p95Ms: latencies[Math.ceil(latencies.length * .95) - 1] ?? null,
     modelCalls: calls.length,
     repairCalls: sum(traces.map((trace) => trace.repairCalls)),
+    ...(classifyRepairs ? { repairBreakdown: repairBreakdown(traces, calls) } : {}),
     providerCalls: sum(traces.map((trace) => trace.providerCalls)),
     inputTokens: tokenTotals(calls, "inputTokens"),
     cachedInputTokens: tokenTotals(calls, "cachedInputTokens"),
@@ -158,13 +174,26 @@ function generateTable(result) {
     }),
     ""
   ];
+  const classified = result.metrics.filter(({ value }) => value.repairBreakdown);
+  if (classified.length) lines.push(
+    "## 修订版修复调用",
+    "",
+    "协议校正重新审阅原正文。正文修复由新审校判定触发，生成协议修复由路由输出格式检查触发。无标记的生成修复列入未分类。审校回包协议错误次数包含初次错误和用尽校正后的错误。",
+    "",
+    "| 路由 | 审校协议校正 | 正文修复 | 生成协议修复 | 未分类 | 审校回包协议错误 | 协议校正用尽的请求 |",
+    "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+    ...classified.map(({ route, value: { repairBreakdown: counts } }) =>
+      `| ${routeNames[route]} | ${counts.reviewerProtocol} | ${counts.prose} | ${counts.contract} | ${counts.unclassified} | ${counts.invalidReviewerReplies} | ${counts.exhaustedReviewerProtocol} |`),
+    ""
+  );
   return lines.join("\n").trimEnd() + "\n";
 }
 
 async function main(values) {
-  const { judgments: judgmentFile, "judge-sha": judgeSha, packet: packetFile, key: keyFile, evidence, out } = values;
+  const { judgments: judgmentFile, "judge-sha": judgeSha, packet: packetFile, key: keyFile, evidence, out, "second-run": secondRun = "candidate" } = values;
   assert.ok(judgmentFile && judgeSha && packetFile && keyFile && evidence && out,
-    "Use --judgments FILE --judge-sha SHA256 --packet FILE --key FILE --evidence DIR --out DIR");
+    "Use --judgments FILE --judge-sha SHA256 --packet FILE --key FILE --evidence DIR --out DIR [--second-run revised]");
+  assert.ok(["candidate", "revised"].includes(secondRun), "Second run must be candidate or revised");
   const rawJudgments = await read(judgmentFile);
   assert.equal(sha(rawJudgments), judgeSha, "Judgments must match sealed SHA-256");
   const judgments = JSON.parse(rawJudgments);
@@ -173,7 +202,7 @@ async function main(values) {
   const packet = JSON.parse(packetRaw);
   const { cases } = JSON.parse(examRaw);
   assert.equal(key.versions.length, 2);
-  assert.deepEqual(key.versions.map(({ run }) => run), ["baseline", "candidate"]);
+  assert.deepEqual(key.versions.map(({ run }) => run), ["baseline", secondRun]);
   assert.equal(cases.length, 17);
   for (const entries of [packet, judgments]) {
     assert.equal(entries.length, cases.length);
@@ -227,7 +256,7 @@ async function main(values) {
     gates: Object.entries(gateCards).map(([id, expectedCandidate]) => ({
       id, expectedCandidate, baseline: gate(runs[0], id), candidate: gate(runs[1], id)
     })),
-    metrics: runs.flatMap((run, version) => routes.map((route) => ({ version, route, value: metrics(run, route, cases) })))
+    metrics: runs.flatMap((run, version) => routes.map((route) => ({ version, route, value: metrics(run, route, cases, version === 1 && secondRun === "revised") })))
   };
   await Promise.all([
     writeFile(join(out, "revealed.json"), JSON.stringify(result, null, 2) + "\n", { flag: "wx" }),
@@ -236,6 +265,6 @@ async function main(values) {
 }
 
 const { values } = parseArgs({ options: Object.fromEntries(
-  ["judgments", "judge-sha", "packet", "key", "evidence", "out"].map((name) => [name, { type: "string" }])
+  ["judgments", "judge-sha", "packet", "key", "evidence", "out", "second-run"].map((name) => [name, { type: "string" }])
 ) });
 await main(values);
