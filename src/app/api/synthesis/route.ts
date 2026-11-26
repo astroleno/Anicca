@@ -22,6 +22,7 @@ import {
   SynthesisSource
 } from "@/features/dialectic/server/synthesisQuality";
 import {
+  getDialecticRuleChecks,
   isHighRiskDialectic,
   retrieveDialecticPolicyCards,
   selectDialecticPolicyCards,
@@ -254,6 +255,7 @@ export async function POST(req: NextRequest) {
     const meaningInput = {
       sources: [{ id: "source-a", ...context.thesis }, { id: "source-b", ...context.antithesis }],
       userMaterial: [rootInput, connectionInput, userHistory].join("\n"),
+      synthesisPolicyChecks: getDialecticRuleChecks(cards),
       context: context.contextMessages, perspective, meaning: Boolean(context.meaning), trace, client, signal: req.signal
     };
     function deferredResponse(deferred: DeferredDraft) {

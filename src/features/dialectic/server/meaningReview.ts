@@ -5,6 +5,7 @@ import { normalizeDialecticLabel } from "../outputContract";
 import { readUnderstandingChange, type DeferredDraft } from "../meaning";
 import { validateNovelty, type ComparisonSeed, type NoveltyAssessment } from "../novelty";
 import type { GenerationTrace, ReviewEvidenceField, ReviewProtocolIssue } from "./generationTrace";
+import type { DialecticRuleCheck } from "./policyCards";
 
 type Draft = { text: string; summary: string; label: string; change?: string };
 type Reviewed<T> = Omit<T, "change"> & { change?: string; novelty?: NoveltyAssessment };
@@ -13,6 +14,7 @@ type ReviewContext = {
   sources: ComparisonSeed[]; comparisons?: ComparisonSeed[];
   userMaterial: string; context: string; perspective?: ThinkingSpace; meaning: boolean;
   trace: GenerationTrace; client: OpenAI; signal: AbortSignal;
+  synthesisPolicyChecks?: readonly DialecticRuleCheck[];
 };
 type ReviewInput<T> = ReviewContext & { results: T; prose?: "branches" | "synthesis" };
 const record = (value: unknown): Record<string, unknown> | null =>
@@ -223,6 +225,7 @@ async function review<T extends Record<string, Draft>>(input: ReviewInput<T>) {
   const keys = Object.keys(results);
   const branchReview = input.prose === "branches";
   const synthesisReview = input.prose === "synthesis";
+  const rules = synthesisReview ? input.synthesisPolicyChecks ?? [] : [];
   const proseSchema = branchReview
     ? { pass: true, issues: [], evidence: { thesis: "", target: "", premise: "", consequence: "" } }
     : synthesisReview ? { pass: true, issues: [], evidence: { sourceA: "", sourceB: "", useA: "", useB: "", consequence: "" } } : null;
@@ -241,7 +244,11 @@ async function review<T extends Record<string, Draft>>(input: ReviewInput<T>) {
       "逐段独立核对正、反各自从原题条件得出的判断，特别比较每段末句与前文。若某段在前文指出必要条件未满足，后文却据此支持立即越过约束，即使反准确挑战了正，也应将该段具体句子、推理错误和修复方向列入 antithesis.prose.issues。",
       "独立检查这对正反的实际 text。核对反所检验的前提确实承载本次正的判断，改掉它时正文推导出什么不同结果；共享话题还需论证关联。正若没有明确可检验的判断，也应报告。将结论放在 antithesis.prose 中。pass 时 evidence.thesis 引正的 text。target、premise 和 consequence 分别引反的 text 点名正的具体判断、指出其前提和描述改变后果的片段，允许前两项位于同一句。"] : []),
     ...(synthesisReview ? [SYNTHESIS_PROSE_RULE, DEFERRED_PROSE_RULE, CONDITION_DIRECTION_RULE,
+      "区分来源原话和新推论。核查正文是否用两侧的具体前提、各自的取舍及其依据推出新判断；新判断无需在任一来源中逐字出现。若把推论说成来源本来同意，或用了来源和题设不支持的前提，须指出具体缺陷。",
       "独立检查是否有具体联系及此连结是否被充分写出。将结论放在 synthesis.prose 中。pass 时 evidence.sourceA 和 sourceB 必须分别引用当前第一、第二份来源的原文。useA 和 useB 引正文表明各自取舍的片段（允许同一句）；consequence 引正文可改变选择、解释、预期或创作表达的片段。遇到题设硬约束不能用新愿望替代，遇到感受与创意以实际解释或表达为后果。若没有可用关系，issues 指示改为 deferred。"] : []),
+    ...(rules.length ? [
+      "已适用规则约束正文实际提出的行动。正文可据此写出该行动仍须满足的前提或禁止越过的边界，即使两份来源没有逐字提出这些护栏。规则不能当作题设事实、来源证据或已获授权，也不能证明某项前提已经满足。只检查与当前判断有关的约束，勿为覆盖规则新增行动或无关步骤，也勿让规则清单代替两侧的取舍与推理。复述规则本身不算理解增量。"
+    ] : []),
     ...(proseSchema ? [`正文核验字段格式：prose=${JSON.stringify(proseSchema)}。依据语义作决定，不要求任何关键词。各 evidence 项引用 6–220 字连续原文，原材料更短时引用完整原文。pass=false 时 issues 逐条写清缺失的推理或有问题的句子及修复方向，可省略 evidence。${synthesisReview ? '引证填错不算正文的问题。' : ''}只有能从正文定位完整的语义关系时才可 pass。以下结果结构中仅所指定的结果额外包含 prose。`] : []),
     "change 的比较对象只能是当前来源。逐条检查所称的新区别是否已在来源或此前讨论里出现；不把来源已说过的区分称为新增，不虚构用户或来源曾持有的错误观点。正文有真实细化时，改写 change 只说这一步的具体细化；找不到实质增量则 change=null。不得写‘从原以为…’之类未经原文支持的前史。",
     "内部审校和假设化措辞本身不算理解增量；不要把‘把断言改成假设’‘修正语气’当作 change。若正文还有新的观察对象、边界或关系，只写这一实质细化；否则 change=null。",
@@ -260,6 +267,7 @@ async function review<T extends Record<string, Draft>>(input: ReviewInput<T>) {
     `最外层必须且只能包含结果键${JSON.stringify(keys)}，不要把审校字段提升到最外层或遗漏任一结果。完整结构示意（值须据材料填写）：${JSON.stringify(Object.fromEntries(keys.map(key => [key, { label: "完整短标题", change: null, hypothesesSafe: true, issues: [], personalEvidence: [], novelty: { status: "unchecked" }, ...(proseSchema && (key === "antithesis" || key === "synthesis") ? { prose: proseSchema } : {}) }])))}。`,
     `当前来源=${JSON.stringify(sources)}`, `此前种子=${JSON.stringify(comparisons)}`,
     `用户实际材料=${JSON.stringify(userMaterial)}`, `带角色的讨论=${JSON.stringify(context)}`,
+    ...(rules.length ? [`已适用规则=${JSON.stringify(rules)}`] : []),
     `待确认的观察框架=${JSON.stringify(perspective || null)}`, `待核对结果=${JSON.stringify(results)}`, ...evidenceGuide(targets)
   ].join("\n");
   let parsed: Record<string, unknown> | null = null;

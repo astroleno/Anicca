@@ -128,6 +128,8 @@ it("repairs false deferral into synthesis using the ordered sources even when bo
   expect(generate.mock.calls[2][0].input).toContain("缺少实施参数、未验证具体结果都不能证明两侧没有关系");
   expect(generate.mock.calls[3][0].input).toContain("感官不同不是证据缺口");
   expect(generate.mock.calls[4][0].input).toContain("分别引用当前第一、第二份来源");
+  expect(generate.mock.calls[4][0].input).toContain("新判断无需在任一来源中逐字出现");
+  expect(generate.mock.calls[4][0].input).not.toContain("已适用规则=");
 });
 
 it("repairs an invented connection into a verified deferral with a concrete reason and question", async () => {
@@ -263,6 +265,17 @@ it("rechecks the high-risk final prose and repairs a rewrite that loses the comp
   const response = await synthesisPost(endpoint("synthesis", { rootInput, sources: requestSources }));
   expect(response.status).toBe(200);
   expect(await response.json()).toMatchObject({ synthesis: { text: grounded.text } });
+  expect(generate).toHaveBeenCalledTimes(8);
+  for (const index of [2, 5, 7]) {
+    const prompt = generate.mock.calls[index][0].input as string;
+    const rulesLine = prompt.split("\n").find(line => line.startsWith("已适用规则="));
+    expect(rulesLine).toBeDefined();
+    expect(JSON.parse(rulesLine!.slice("已适用规则=".length))).toEqual(
+      ["I1", "I2", "I3", "F1", "F2", "F3"].map(id => expect.objectContaining({ id: `verified-recovery:${id}` }))
+    );
+    expect(prompt).toContain("规则不能当作题设事实、来源证据或已获授权");
+    expect(prompt).toContain("勿为覆盖规则新增行动或无关步骤");
+  }
   expect(generate.mock.calls[5][0].input).toContain(lostComparison.text);
   expect(generate.mock.calls[6][0].input).toContain("终审改写遗漏了先删方案的空间前提与先恢复的取舍");
   expect(generate.mock.calls[6][0].input).toContain("规则卡【");
