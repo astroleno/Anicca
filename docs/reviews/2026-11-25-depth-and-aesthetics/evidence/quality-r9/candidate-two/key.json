@@ -1,0 +1,241 @@
+{
+  "packetSha256": "5fb79e661c4cd0d562d0f9b5a2be16f1a291942eab9dec15b9b5d51f32551a49",
+  "versions": {
+    "before": [
+      {
+        "revision": "c7888fa",
+        "sets": [
+          "formal",
+          "transfer",
+          "holdout",
+          "confirmation"
+        ]
+      },
+      {
+        "revision": "34a47e4",
+        "sets": [
+          "r9-new"
+        ]
+      }
+    ],
+    "after": [
+      {
+        "revision": "a7c1b8f",
+        "sets": [
+          "formal",
+          "transfer",
+          "holdout",
+          "confirmation",
+          "r9-new"
+        ]
+      }
+    ]
+  },
+  "mapping": {
+    "q01": {
+      "caseId": "confirmation-05",
+      "A": 1,
+      "B": 0
+    },
+    "q02": {
+      "caseId": "r9-new-02",
+      "A": 1,
+      "B": 0
+    },
+    "q03": {
+      "caseId": "formal-10",
+      "A": 0,
+      "B": 1
+    },
+    "q04": {
+      "caseId": "holdout-01",
+      "A": 0,
+      "B": 1
+    },
+    "q05": {
+      "caseId": "confirmation-01",
+      "A": 1,
+      "B": 0
+    },
+    "q06": {
+      "caseId": "r9-new-05",
+      "A": 1,
+      "B": 0
+    },
+    "q07": {
+      "caseId": "holdout-05",
+      "A": 1,
+      "B": 0
+    },
+    "q08": {
+      "caseId": "r9-new-07",
+      "A": 1,
+      "B": 0
+    },
+    "q09": {
+      "caseId": "holdout-08",
+      "A": 1,
+      "B": 0
+    },
+    "q10": {
+      "caseId": "holdout-02",
+      "A": 0,
+      "B": 1
+    },
+    "q11": {
+      "caseId": "formal-04",
+      "A": 1,
+      "B": 0
+    },
+    "q12": {
+      "caseId": "confirmation-06",
+      "A": 1,
+      "B": 0
+    },
+    "q13": {
+      "caseId": "confirmation-03",
+      "A": 1,
+      "B": 0
+    },
+    "q14": {
+      "caseId": "transfer-02",
+      "A": 0,
+      "B": 1
+    },
+    "q15": {
+      "caseId": "formal-07",
+      "A": 1,
+      "B": 0
+    },
+    "q16": {
+      "caseId": "transfer-03",
+      "A": 0,
+      "B": 1
+    },
+    "q17": {
+      "caseId": "holdout-04",
+      "A": 0,
+      "B": 1
+    },
+    "q18": {
+      "caseId": "confirmation-02",
+      "A": 0,
+      "B": 1
+    },
+    "q19": {
+      "caseId": "r9-new-03",
+      "A": 0,
+      "B": 1
+    },
+    "q20": {
+      "caseId": "formal-08",
+      "A": 1,
+      "B": 0
+    },
+    "q21": {
+      "caseId": "formal-01",
+      "A": 0,
+      "B": 1
+    },
+    "q22": {
+      "caseId": "confirmation-07",
+      "A": 0,
+      "B": 1
+    },
+    "q23": {
+      "caseId": "r9-new-01",
+      "A": 1,
+      "B": 0
+    },
+    "q24": {
+      "caseId": "r9-new-08",
+      "A": 0,
+      "B": 1
+    },
+    "q25": {
+      "caseId": "transfer-04",
+      "A": 0,
+      "B": 1
+    },
+    "q26": {
+      "caseId": "holdout-06",
+      "A": 1,
+      "B": 0
+    },
+    "q27": {
+      "caseId": "formal-12",
+      "A": 0,
+      "B": 1
+    },
+    "q28": {
+      "caseId": "confirmation-04",
+      "A": 1,
+      "B": 0
+    },
+    "q29": {
+      "caseId": "holdout-03",
+      "A": 0,
+      "B": 1
+    },
+    "q30": {
+      "caseId": "holdout-07",
+      "A": 1,
+      "B": 0
+    },
+    "q31": {
+      "caseId": "confirmation-08",
+      "A": 0,
+      "B": 1
+    },
+    "q32": {
+      "caseId": "formal-11",
+      "A": 1,
+      "B": 0
+    },
+    "q33": {
+      "caseId": "formal-03",
+      "A": 1,
+      "B": 0
+    },
+    "q34": {
+      "caseId": "formal-09",
+      "A": 0,
+      "B": 1
+    },
+    "q35": {
+      "caseId": "transfer-05",
+      "A": 0,
+      "B": 1
+    },
+    "q36": {
+      "caseId": "formal-06",
+      "A": 0,
+      "B": 1
+    },
+    "q37": {
+      "caseId": "r9-new-04",
+      "A": 0,
+      "B": 1
+    },
+    "q38": {
+      "caseId": "formal-05",
+      "A": 0,
+      "B": 1
+    },
+    "q39": {
+      "caseId": "formal-02",
+      "A": 1,
+      "B": 0
+    },
+    "q40": {
+      "caseId": "transfer-01",
+      "A": 0,
+      "B": 1
+    },
+    "q41": {
+      "caseId": "r9-new-06",
+      "A": 0,
+      "B": 1
+    }
+  }
+}
