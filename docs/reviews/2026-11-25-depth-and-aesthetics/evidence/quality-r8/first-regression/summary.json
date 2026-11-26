@@ -1,0 +1,161 @@
+{
+  "all": {
+    "cases": 17,
+    "readable": 17,
+    "deferred": 1,
+    "failed": 0,
+    "retried": 0,
+    "attempts": 17,
+    "traced": 17,
+    "p50FinalAttemptMs": 6346,
+    "p95FinalAttemptMs": 13852,
+    "modelCalls": 81,
+    "providerCalls": 81,
+    "repairCalls": 6,
+    "stages": {
+      "draft": 17,
+      "critic": 22,
+      "audit": 34,
+      "final": 8
+    },
+    "repairKinds": {
+      "contract": 5,
+      "reviewer_protocol": 1
+    },
+    "traceOutcomes": {
+      "success": 17
+    },
+    "inputTokens": {
+      "tokens": 205917,
+      "reported": 81,
+      "calls": 81
+    },
+    "cachedInputTokens": {
+      "tokens": 131584,
+      "reported": 81,
+      "calls": 81
+    },
+    "outputTokens": {
+      "tokens": 18786,
+      "reported": 81,
+      "calls": 81
+    }
+  },
+  "bySet": {
+    "formal": {
+      "cases": 12,
+      "readable": 12,
+      "deferred": 0,
+      "failed": 0,
+      "retried": 0,
+      "attempts": 12,
+      "traced": 12,
+      "p50FinalAttemptMs": 10130,
+      "p95FinalAttemptMs": 13852,
+      "modelCalls": 62,
+      "providerCalls": 62,
+      "repairCalls": 5,
+      "stages": {
+        "draft": 12,
+        "critic": 16,
+        "audit": 27,
+        "final": 7
+      },
+      "repairKinds": {
+        "contract": 4,
+        "reviewer_protocol": 1
+      },
+      "traceOutcomes": {
+        "success": 12
+      },
+      "inputTokens": {
+        "tokens": 158710,
+        "reported": 62,
+        "calls": 62
+      },
+      "cachedInputTokens": {
+        "tokens": 100352,
+        "reported": 62,
+        "calls": 62
+      },
+      "outputTokens": {
+        "tokens": 15166,
+        "reported": 62,
+        "calls": 62
+      }
+    },
+    "transfer": {
+      "cases": 5,
+      "readable": 5,
+      "deferred": 1,
+      "failed": 0,
+      "retried": 0,
+      "attempts": 5,
+      "traced": 5,
+      "p50FinalAttemptMs": 5750,
+      "p95FinalAttemptMs": 10079,
+      "modelCalls": 19,
+      "providerCalls": 19,
+      "repairCalls": 1,
+      "stages": {
+        "draft": 5,
+        "critic": 6,
+        "audit": 7,
+        "final": 1
+      },
+      "repairKinds": {
+        "contract": 1
+      },
+      "traceOutcomes": {
+        "success": 5
+      },
+      "inputTokens": {
+        "tokens": 47207,
+        "reported": 19,
+        "calls": 19
+      },
+      "cachedInputTokens": {
+        "tokens": 31232,
+        "reported": 19,
+        "calls": 19
+      },
+      "outputTokens": {
+        "tokens": 3620,
+        "reported": 19,
+        "calls": 19
+      }
+    },
+    "holdout": {
+      "cases": 0,
+      "readable": 0,
+      "deferred": 0,
+      "failed": 0,
+      "retried": 0,
+      "attempts": 0,
+      "traced": 0,
+      "p50FinalAttemptMs": null,
+      "p95FinalAttemptMs": null,
+      "modelCalls": 0,
+      "providerCalls": 0,
+      "repairCalls": 0,
+      "stages": {},
+      "repairKinds": {},
+      "traceOutcomes": {},
+      "inputTokens": {
+        "tokens": 0,
+        "reported": 0,
+        "calls": 0
+      },
+      "cachedInputTokens": {
+        "tokens": 0,
+        "reported": 0,
+        "calls": 0
+      },
+      "outputTokens": {
+        "tokens": 0,
+        "reported": 0,
+        "calls": 0
+      }
+    }
+  }
+}
