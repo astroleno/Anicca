@@ -794,7 +794,9 @@ describe("DialogueShell", () => {
     const { rootUserId } = seedPair();
     useDialogueUiStore.setState({ focusedNodeId: rootUserId, thinkingSpace: johariThinkingSpace() });
     seedActiveWorkspaceFromCurrentGraph();
+    localStorage.setItem(LIQUID_RENDERER_KEY, "original");
     render(<DialogueShell />);
+    await waitFor(() => expect(screen.getByTestId("dialogue-stage-track")).toHaveAttribute("data-metaball-renderer", "fallback"));
     fireEvent.click(await screen.findByRole("button", { name: "下一个想法从「盲区」展开" }));
     expect(useDialogueUiStore.getState().thinkingSpace.focus).toEqual({ "johari-self": -1, "johari-others": 1 });
     await waitFor(() => expect(screen.getByTestId("dialogue-composer")).toHaveAttribute("data-perspective", "true"));

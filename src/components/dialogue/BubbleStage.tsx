@@ -20,6 +20,7 @@ import type { DialogueMetaballRendererState } from "./DialogueMetaballLayer";
 import type { LiquidRendererMode, LiquidRendererStatus } from "./liquid/preference";
 import styles from "./DialogueShell.module.css";
 import { StageField } from "./StageField";
+import { isJohari } from "./thinkingField";
 import { readingInvitations, type ReadingOrbit } from "./readingOrbit";
 import type { ThinkingSpace } from "@/features/perspectives/model";
 import { stageSeedRole } from "@/features/dialectic/sceneProjection";
@@ -1126,7 +1127,7 @@ export function BubbleStage({
           >
             {thinkingSpace && onAimThinking && nodes.length ? <StageField space={thinkingSpace} nodes={nodes}
               carrying={gesture?.kind === "node"}
-              hidden={viewRotated || Boolean(readingOrbit) || suspended || metaballRendererState === "fallback"}
+              hidden={viewRotated || Boolean(readingOrbit) || suspended || (metaballRendererState === "fallback" && !isJohari(thinkingSpace))}
               synthesisActive={synthesisActive || Boolean(synthesisResultId)}
               onFocus={onAimThinking} /> : null}
             {pendingBranchNodes ? (

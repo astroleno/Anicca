@@ -48,11 +48,19 @@ function fixture() {
   return snapshot;
 }
 
-async function exercise(browser, { baseUrl, outputDir, setActivePage, onOrdinaryExit }, outcome) {
+async function exercise(browser, { baseUrl, outputDir, setActivePage, onOrdinaryExit }, outcome, fallback = false) {
   const context = await browser.newContext({ viewport: { width: 320, height: 568 }, deviceScaleFactor: 1,
     hasTouch: true, isMobile: true, reducedMotion: "no-preference" });
   await loadSynthesisSnapshot(context, fixture());
-  await context.addInitScript(() => localStorage.setItem("anicca.dialogue.renderer.v1", "original"));
+  await context.addInitScript(fallback => {
+    localStorage.setItem("anicca.dialogue.renderer.v1", "original");
+    if (fallback) {
+      const getContext = HTMLCanvasElement.prototype.getContext;
+      HTMLCanvasElement.prototype.getContext = function (kind, ...options) {
+        return /^(?:experimental-)?webgl2?$/.test(kind) ? null : getContext.call(this, kind, ...options);
+      };
+    }
+  }, fallback);
   const page = await context.newPage();
   setActivePage?.(page);
   const errors = [], steps = [];
@@ -64,7 +72,7 @@ async function exercise(browser, { baseUrl, outputDir, setActivePage, onOrdinary
   const capture = async name => {
     if (outcome !== "success") return;
     await waitForSeedLayout(page, { captions: true });
-    await page.screenshot({ path: path.join(outputDir, `johari-synthesis-${name}.png`) });
+    await page.screenshot({ path: path.join(outputDir, `johari-${fallback ? "flat-" : ""}synthesis-${name}.png`) });
   };
   const visible = async (name, selected) => {
     await field.and(page.locator(":not([data-hidden])")).waitFor();
@@ -116,7 +124,7 @@ async function exercise(browser, { baseUrl, outputDir, setActivePage, onOrdinary
     await page.goto(`${baseUrl}/dialogue`, { waitUntil: "networkidle" });
     const guide = page.getByRole("button", { name: "关闭提示", exact: true });
     if (await guide.isVisible()) await guide.tap();
-    await page.locator('[data-metaball-renderer="ready"]').waitFor();
+    await page.locator(`[data-metaball-renderer="${fallback ? "fallback" : "ready"}"]`).waitFor();
     const selections = outcome === "success" ? ["盲区", "公开区", "隐藏区", "未知区"]
       : outcome === "failure" ? [] : ["盲区"];
     const pressed = [];
@@ -178,7 +186,7 @@ async function exercise(browser, { baseUrl, outputDir, setActivePage, onOrdinary
     }
     await visible("exit", selected);
     if (outcome === "success") {
-      await onOrdinaryExit?.(page);
+      if (!fallback) await onOrdinaryExit?.(page);
       const nextRegion = "公开区";
       const keyboardOrder = await pressTabThrough(regionName(nextRegion));
       await page.keyboard.press("Enter");
@@ -186,10 +194,13 @@ async function exercise(browser, { baseUrl, outputDir, setActivePage, onOrdinary
       const spaceOrder = await pressTabThrough(regionName("隐藏区"));
       await page.keyboard.press("Space");
       await visible("space-selected", "隐藏区");
+      await pressTabThrough(regionName("隐藏区"));
+      await page.keyboard.press("Space");
+      await visible("space-reset");
       steps.push({ name: "ordinary-tab-order", labels: keyboardOrder, spaceLabels: spaceOrder });
     }
     assert.deepEqual(errors, []);
-    return { outcome, steps, errors };
+    return { outcome: fallback ? `flat-${outcome}` : outcome, steps, errors };
   } finally {
     release();
     await context.close();
@@ -202,6 +213,7 @@ export async function runJohariSynthesis(browser, options) {
     results.push(await exercise(browser, options, outcome));
     await writeFile(path.join(options.outputDir, "johari-synthesis-measurements.json"), JSON.stringify(results, null, 2));
   }
+  results.push(await exercise(browser, options, "success", true));
   const context = await browser.newContext({ viewport: { width: 320, height: 568 }, deviceScaleFactor: 1, hasTouch: true, isMobile: true });
   try {
     const snapshot = synthesisColorFixture("ab");

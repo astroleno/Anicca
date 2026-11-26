@@ -141,14 +141,17 @@ export async function runThoughtFlow(browser, { baseUrl, outputDir, setActivePag
       await waitForSeedLayout(page, { captions: true });
       const seed = page.getByTestId(`dialogue-stage-node-${id}`);
       const caption = seed.locator("[data-seed-caption] strong");
-      if (sourceTarget) {
-        const point = await (sourceTarget === "surface" ? seed : caption).evaluate(element => {
+      const hiddenFlatTitle = !sourceTarget && fallback && !(await caption.isVisible())
+        && Boolean(await seed.getAttribute("data-ordinary-tier"));
+      const target = sourceTarget || (hiddenFlatTitle ? "surface" : null);
+      if (target) {
+        const point = await (target === "surface" ? seed : caption).evaluate(element => {
           const bounds = element.getBoundingClientRect();
           const x = bounds.x + bounds.width / 2, y = bounds.y + bounds.height / 2;
           const target = document.elementFromPoint(x, y)?.closest("[data-metaball-surface]");
           return { x, y, hitId: target?.getAttribute("data-metaball-surface") };
         });
-        assert.equal(point.hitId, id, `The ${sourceTarget} hits the requested source after returning to the stage`);
+        assert.equal(point.hitId, id, `The ${target} hits the requested seed after returning to the stage`);
         if (spec.width < 500) await page.touchscreen.tap(point.x, point.y);
         else await page.mouse.click(point.x, point.y);
       } else await activate(caption);

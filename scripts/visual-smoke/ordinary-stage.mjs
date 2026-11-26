@@ -6,7 +6,6 @@ import { runJohariSynthesis } from "./johari-synthesis.mjs";
 import { loadSynthesisSnapshot } from "./synthesis-common-parent.mjs";
 import { waitForSeedLayout } from "./seeds.mjs";
 
-const viewport = { width: 320, height: 568 };
 const stage = '[data-testid="dialogue-stage-track"]';
 const backend = { original: "original", tsl: "webgpu", flat: "unavailable" };
 const gap = (rect, drop) => Math.hypot(Math.max(0, rect.left - drop.x, drop.x - rect.right),
