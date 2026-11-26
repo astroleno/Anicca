@@ -359,8 +359,7 @@ export function buildSynthesisContractRepairPrompt(
     "errors 中的 unsupported quantities 必须逐项从正文移除，改为不含该数量的定性表述，不用另一种数字写法替换。保留输入已明确的硬约束，不增加新事实、动机、能力或期限。",
     "关联薄弱仍保留联系不足的判断；新解释仍保留条件。不能为补字数强造机制，也不把观点、感受或创意改成执行计划，不强制五句。",
     `必须修复：${errors.join("；")}`,
-    `原始输入：${context.rootInput}`,
-    `来源甲：${JSON.stringify(context.thesis)}\n来源乙：${JSON.stringify(context.antithesis)}`,
+    ...promptContext(context),
     `待修复原始输出：${candidateText}`,
     lengthAdvice,
     ...(unsupportedQuantities.length ? [

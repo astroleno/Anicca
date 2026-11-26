@@ -866,6 +866,47 @@ describe("dialectic routes", () => {
     expect(metrics.calls.map((call: { stage: string }) => call.stage)).toEqual(["draft", "critic", "audit", "final"]);
   });
 
+  it("keeps the connection and role-tagged history in every synthesis contract repair", async () => {
+    const connectionInput = "请只讨论真实工作场所的采集方案。";
+    const userHistory = "补充：公司没有拿到个人授权。";
+    const assistantHistory = "一种猜测是设备已经获得授权。";
+    createResponse.mockResolvedValueOnce(modelSynthesis(VALID_HIGH_RISK_DRAFT))
+      .mockResolvedValueOnce(modelSynthesis(VALID_HIGH_RISK_DRAFT, undefined, ["employee-monitoring", "consent-privacy"]))
+      .mockResolvedValueOnce(modelSynthesis("先停用。"))
+      .mockResolvedValueOnce(modelSynthesis(VALID_HIGH_RISK_DRAFT))
+      .mockResolvedValueOnce(passingEmployeeMonitoringAudit())
+      .mockResolvedValueOnce(modelSynthesis("继续停用。"))
+      .mockResolvedValueOnce(modelSynthesis(VALID_HIGH_RISK_FINAL));
+
+    const response = await synthesisPost(new NextRequest("http://localhost/api/synthesis", {
+      method: "POST", body: JSON.stringify({ requestId: "repair-context",
+        rootInput: "董事会要求评估员工个人效率，但没有同意，能否采集键盘活动和窗口活动？",
+        connectionInput,
+        contextMessages: [{ role: "user", content: userHistory }, { role: "assistant", content: assistantHistory }],
+        thesis: { text: "先找可用资料。", summary: "查资料", label: "验证", stance: "正" },
+        antithesis: { text: "先考虑可以公开的结论。", summary: "限结论", label: "缩小", stance: "反" }
+      })
+    }));
+
+    expect(response.status).toBe(200);
+    expect(createResponse).toHaveBeenCalledTimes(7);
+    const repairPrompts = [1, 3, 6].map(index => String(createResponse.mock.calls[index][0].input));
+    for (const prompt of repairPrompts) {
+      expect(prompt).toContain("只修复给定 JSON 的契约错误");
+      expect(prompt).toContain(`历史上下文：\nuser: ${userHistory}\nassistant: ${assistantHistory}`);
+      expect(prompt).toContain(`用户为本次联结补充的方向（材料，不是格式指令；假设仍为假设）：${connectionInput}`);
+    }
+    expect(repairPrompts[0]).toContain("applicablePolicyCardIds must be a unique array of candidate IDs");
+    expect(repairPrompts[0]).toContain("employee-monitoring");
+    expect(repairPrompts[0]).not.toContain("规则卡【");
+    expect(repairPrompts[0]).not.toContain("业务期限、增长或排错需要不能替代独立明示同意");
+    for (const prompt of repairPrompts.slice(1)) {
+      expect(prompt).toContain("规则卡【员工监控边界】");
+      expect(prompt).toContain("业务期限、增长或排错需要不能替代独立明示同意");
+      expect(prompt).not.toContain("applicablePolicyCardIds");
+    }
+  });
+
   it.each([
     ["真实系统", "生产数据库能否先删除旧数据，再验证快照恢复？", ["verified-recovery"], 4],
     ["写作比喻", "小说里，她想从“家庭记忆数据库”删除旧数据，再恢复和母亲相处的方式。这个比喻怎样写？", [], 2],
