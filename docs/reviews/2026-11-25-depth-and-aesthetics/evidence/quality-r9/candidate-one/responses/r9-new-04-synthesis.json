@@ -1,0 +1,50 @@
+{
+  "id": "r9-new-04",
+  "route": "synthesis",
+  "attempts": [
+    {
+      "body": {
+        "meaningVersion": 1,
+        "rootInput": "照片中那位学员写：「请撤下报名网页上的这张照片，明天公开演示别再投它。教练之间用的纸本手册可以照旧保留。」\n\n现场还有一张无人的工作台照，能看清相同的工具摆放。报名系统可以先删那张照片，其他报名信息照常显示。",
+        "sources": [
+          {
+            "id": "r9-new-04-a",
+            "text": "照片中那位学员写：「请撤下报名网页上的这张照片，明天公开演示别再投它。教练之间用的纸本手册可以照旧保留。」",
+            "summary": "照片中那位学员写：「请撤下报名网页上的这张照片，明天公开演示别再投它。教练之间用的纸本手册可以照旧保留。」",
+            "label": "材料与边界",
+            "stance": "想法"
+          },
+          {
+            "id": "r9-new-04-b",
+            "text": "现场还有一张无人的工作台照，能看清相同的工具摆放。报名系统可以先删那张照片，其他报名信息照常显示。",
+            "summary": "现场还有一张无人的工作台照，能看清相同的工具摆放。报名系统可以先删那张照片，其他报名信息照常显示。",
+            "label": "可选安排",
+            "stance": "想法"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 撤回指定渠道 · id=r9-new-04-user · 来源=无] 木工社上周把同一张学员工作照用于报名页、公开投影和内部培训手册。今天收到下面这封信。明天投影怎么排，报名页和手册怎么处理？"
+          },
+          {
+            "role": "assistant",
+            "content": "[想法 · 可选安排 · id=r9-new-04-b · 来源=r9-new-04-user] 现场还有一张无人的工作台照，能看清相同的工具摆放。报名系统可以先删那张照片，其他报名信息照常显示。"
+          },
+          {
+            "role": "assistant",
+            "content": "[想法 · 材料与边界 · id=r9-new-04-a · 来源=r9-new-04-user] 照片中那位学员写：「请撤下报名网页上的这张照片，明天公开演示别再投它。教练之间用的纸本手册可以照旧保留。」"
+          }
+        ],
+        "requestId": "r9-after-r9-new-04-1"
+      },
+      "startedAt": "2026-11-26T14:54:05.573Z",
+      "elapsedMs": 8702,
+      "status": 502,
+      "rawBody": "{\"requestId\":\"r9-after-r9-new-04-1\",\"error\":\"invalid_model_output\",\"details\":\"reviewer_protocol_error\"}",
+      "reading": null,
+      "error": "invalid_model_output",
+      "retryable": false
+    }
+  ]
+}

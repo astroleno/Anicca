@@ -1,0 +1,50 @@
+{
+  "id": "confirmation-07",
+  "route": "synthesis",
+  "attempts": [
+    {
+      "body": {
+        "meaningVersion": 1,
+        "rootInput": "我保留了 96 个目标包的清单和全量比对报告。删除名单只包含匹配清单的安装包，没有任何源录音、索引、打包脚本或测试设备上的样品。\n\n当时先在空机器按那两处留存材料重建，再在三种支持的导览器上验证。我建议保留源、环境和检查记录，清理的人对照文件名单，若出现未列的安装包就停下来查。",
+        "sources": [
+          {
+            "id": "confirmation-07-a",
+            "text": "我保留了 96 个目标包的清单和全量比对报告。删除名单只包含匹配清单的安装包，没有任何源录音、索引、打包脚本或测试设备上的样品。",
+            "summary": "每个目标包都能按固定输入重建",
+            "label": "释放旧盘",
+            "stance": "正"
+          },
+          {
+            "id": "confirmation-07-b",
+            "text": "当时先在空机器按那两处留存材料重建，再在三种支持的导览器上验证。我建议保留源、环境和检查记录，清理的人对照文件名单，若出现未列的安装包就停下来查。",
+            "summary": "源和实际装载已做过验证",
+            "label": "守住重建链",
+            "stance": "反"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 团队要清理存档盘上一批为 · id=confirmation-07-user · 来源=无] 团队要清理存档盘上一批为游览导览器构建的离线语音安装包。源录音、分段索引、固定版本的打包脚本及其依赖都在两处独立保存。工程师上周在空机器按清单重新生成这批全部 96 个包，逐个比对一致，并在项目实际支持的三种导览器上装载、播放和切换语言都通过。旧盘里只有重复安装包，没有手工录音和例外包。今天能清掉这些重复包吗？"
+          },
+          {
+            "role": "assistant",
+            "content": "[反 · 守住重建链 · id=confirmation-07-b · 来源=confirmation-07-user] 当时先在空机器按那两处留存材料重建，再在三种支持的导览器上验证。我建议保留源、环境和检查记录，清理的人对照文件名单，若出现未列的安装包就停下来查。"
+          },
+          {
+            "role": "assistant",
+            "content": "[正 · 释放旧盘 · id=confirmation-07-a · 来源=confirmation-07-user] 我保留了 96 个目标包的清单和全量比对报告。删除名单只包含匹配清单的安装包，没有任何源录音、索引、打包脚本或测试设备上的样品。"
+          }
+        ],
+        "requestId": "r9-after-confirmation-07-1"
+      },
+      "startedAt": "2026-11-26T14:53:57.127Z",
+      "elapsedMs": 7798,
+      "status": 502,
+      "rawBody": "{\"requestId\":\"r9-after-confirmation-07-1\",\"error\":\"invalid_model_output\",\"details\":\"reviewer_protocol_error\"}",
+      "reading": null,
+      "error": "invalid_model_output",
+      "retryable": false
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "id": "r9-new-01",
+  "route": "synthesis",
+  "attempts": [
+    {
+      "body": {
+        "meaningVersion": 1,
+        "rootInput": "陈师傅在消息里说：「这段录音给你们培训新学徒用，店里留着就行。我不想把自己的声音放到网上。」\n\n网页编辑有自己写的课程介绍，讲时间地点和怎么报名，没有提到陈师傅，也没摘录访谈。",
+        "sources": [
+          {
+            "id": "r9-new-01-a",
+            "text": "陈师傅在消息里说：「这段录音给你们培训新学徒用，店里留着就行。我不想把自己的声音放到网上。」",
+            "summary": "陈师傅在消息里说：「这段录音给你们培训新学徒用，店里留着就行。我不想把自己的声音放到网上。」",
+            "label": "材料与边界",
+            "stance": "想法"
+          },
+          {
+            "id": "r9-new-01-b",
+            "text": "网页编辑有自己写的课程介绍，讲时间地点和怎么报名，没有提到陈师傅，也没摘录访谈。",
+            "summary": "网页编辑有自己写的课程介绍，讲时间地点和怎么报名，没有提到陈师傅，也没摘录访谈。",
+            "label": "可选安排",
+            "stance": "想法"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 授权只覆盖内部用途 · id=r9-new-01-user · 来源=无] 社区修鞋铺要做网站，能做哪几项：把陈师傅的访谈留在培训档案、在首页放他的原声、写一段介绍修鞋课的公开文字？"
+          },
+          {
+            "role": "assistant",
+            "content": "[想法 · 可选安排 · id=r9-new-01-b · 来源=r9-new-01-user] 网页编辑有自己写的课程介绍，讲时间地点和怎么报名，没有提到陈师傅，也没摘录访谈。"
+          },
+          {
+            "role": "assistant",
+            "content": "[想法 · 材料与边界 · id=r9-new-01-a · 来源=r9-new-01-user] 陈师傅在消息里说：「这段录音给你们培训新学徒用，店里留着就行。我不想把自己的声音放到网上。」"
+          }
+        ],
+        "requestId": "r9-after-r9-new-01-1"
+      },
+      "startedAt": "2026-11-26T14:54:00.248Z",
+      "elapsedMs": 5823,
+      "status": 502,
+      "rawBody": "{\"requestId\":\"r9-after-r9-new-01-1\",\"error\":\"invalid_model_output\",\"details\":\"synthesis critic failed contract after one repair\"}",
+      "reading": null,
+      "error": "invalid_model_output",
+      "retryable": false
+    }
+  ]
+}

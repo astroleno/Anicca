@@ -1,0 +1,50 @@
+{
+  "id": "r9-new-02",
+  "route": "synthesis",
+  "attempts": [
+    {
+      "body": {
+        "meaningVersion": 1,
+        "rootInput": "策展笔记说录音里主要是两个人的声音，原本只准备了一张节目单。\n\n线上团队希望现场和在线导览有共同开头，播同一段可以少剪一次。",
+        "sources": [
+          {
+            "id": "r9-new-02-a",
+            "text": "策展笔记说录音里主要是两个人的声音，原本只准备了一张节目单。",
+            "summary": "策展笔记说录音里主要是两个人的声音，原本只准备了一张节目单。",
+            "label": "材料与边界",
+            "stance": "想法"
+          },
+          {
+            "id": "r9-new-02-b",
+            "text": "线上团队希望现场和在线导览有共同开头，播同一段可以少剪一次。",
+            "summary": "线上团队希望现场和在线导览有共同开头，播同一段可以少剪一次。",
+            "label": "可选安排",
+            "stance": "想法"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 用户消息里的具体授权 · id=r9-new-02-user · 来源=无] 校史馆周六开放日要给到场来宾播三十秒旧广播片段。刚收到录音里两位发言人的回复，两人都写了「可以在本周六校史馆开放日现场播这三十秒，活动结束就下架」。我们可以现场播放吗？活动后可否把同一段放进长期在线导览？"
+          },
+          {
+            "role": "assistant",
+            "content": "[想法 · 可选安排 · id=r9-new-02-b · 来源=r9-new-02-user] 线上团队希望现场和在线导览有共同开头，播同一段可以少剪一次。"
+          },
+          {
+            "role": "assistant",
+            "content": "[想法 · 材料与边界 · id=r9-new-02-a · 来源=r9-new-02-user] 策展笔记说录音里主要是两个人的声音，原本只准备了一张节目单。"
+          }
+        ],
+        "requestId": "r9-after-r9-new-02-1"
+      },
+      "startedAt": "2026-11-26T14:54:00.330Z",
+      "elapsedMs": 15285,
+      "status": 502,
+      "rawBody": "{\"requestId\":\"r9-after-r9-new-02-1\",\"error\":\"invalid_model_output\",\"details\":\"synthesis prose could not be verified\"}",
+      "reading": null,
+      "error": "invalid_model_output",
+      "retryable": false
+    }
+  ]
+}
