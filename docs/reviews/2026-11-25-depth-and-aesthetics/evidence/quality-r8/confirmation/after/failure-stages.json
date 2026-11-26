@@ -1,0 +1,53 @@
+{
+  "revision": "c7888fa",
+  "cases": [
+    {
+      "id": "confirmation-02",
+      "requestId": "r8-after-confirmation-02-1",
+      "httpStatus": 502,
+      "details": "synthesis critic failed contract after one repair",
+      "calls": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "check": {
+            "stage": "draft",
+            "repair": false,
+            "valid": true
+          },
+          "finish": "stop",
+          "output": "{\"synthesis\":{\"text\":\"关键不在先收齐诉求再统一，也不在只求一份共同文本，而在把两者串成有先后依赖的两步：甲式的“各自例外”只有在乙式的同一句里被逐字复述，才算真正进入约定；乙式的“同句”若不先容纳周三近十一点加热晚饭这类具体例外，三人点头的仍只是“夜深慢一点”的模糊感。可试行这样的顺序：各人写出能做到的开始时间和一项例外，合成一句时段加例外，三人看同一句并各自复述自己的例外是否被覆盖，再定开始日；复述不吻合就改句而非改日。\",\"summary\":\"例外先上桌，再用同一句让每个人复述自己的例外被覆盖，之后才定开始日。\",\"label\":\"复述验例外\",\"stance\":\"合\",\"change\":\"把甲的先提例外与乙的共读同一句接成“复述验证”环节，使定开始日取决于例外是否被逐字覆盖。\"}}"
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "check": {
+            "stage": "critic",
+            "repair": false,
+            "valid": false,
+            "contractIssues": [
+              "synthesis_unsupported_quantity"
+            ]
+          },
+          "finish": "stop",
+          "output": "{\"synthesis\":{\"text\":\"甲乙分别指出了同一约定成形的两个先后无法互相替代的环节：甲要让各人的实际限制先在桌上出现，周三打完球近十一点回来、需在厨房加热晚饭就是不能省略的例子；乙则指出，点头只落在“夜深慢一点”，必须落成三人共看的一句条文并再定开始日。二者相扣后，关键不只是把例外写进同一句，还要在定开始日前让每个人对着该句说出自己的例外如何被覆盖；若覆盖不上，先改句，开始日随之顺延，而不是按原计划开跑。\",\"summary\":\"例外先具体提出，再由三人共看同一句并各自确认例外被覆盖，覆盖不了就改句并顺延开始日。\",\"label\":\"例外入句再定日\",\"stance\":\"合\",\"change\":\"把甲的具体例外设为乙同一句的必检内容，并让覆盖结果直接决定开始日是否顺延。\"}}"
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "check": {
+            "stage": "critic",
+            "repair": true,
+            "valid": false,
+            "contractIssues": [
+              "synthesis_text_underlength",
+              "synthesis_unsupported_quantity"
+            ]
+          },
+          "finish": "stop",
+          "output": "{\"synthesis\":{\"text\":\"甲乙分别指出同一约定成形的两个先后环节：甲要让各人的实际限制先摆上桌，周三打完球近十一点回来、需在厨房加热晚饭就是不能省略的例子；乙则指出，点头只落在“夜深慢一点”，必须落成室友共看的一句条文并再定开始日。相扣后，关键不只是把例外写进同一句，还要在定开始日前让每个人对着该句确认自己的例外已被覆盖；覆盖不上，先改句，开始日顺延，而不是照原样开跑。\",\"summary\":\"例外先具体提出，再由室友共看同一句并各自确认例外被覆盖，覆盖不了就改句并顺延开始日。\",\"label\":\"例外入句再定日\",\"stance\":\"合\",\"change\":\"把甲的具体例外设为乙同一句的必检内容，并让覆盖结果直接决定开始日是否顺延。\"}}"
+        }
+      ]
+    }
+  ]
+}
