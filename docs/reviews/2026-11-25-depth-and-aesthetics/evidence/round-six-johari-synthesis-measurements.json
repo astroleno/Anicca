@@ -1,0 +1,644 @@
+[
+  {
+    "outcome": "success",
+    "steps": [
+      {
+        "name": "real-text-centers",
+        "pressed": [
+          {
+            "name": "盲区",
+            "x": 41.1796875,
+            "y": 143.25,
+            "firstHit": true
+          },
+          {
+            "name": "公开区",
+            "x": 273.9921875,
+            "y": 136.5,
+            "firstHit": true
+          },
+          {
+            "name": "隐藏区",
+            "x": 273.9921875,
+            "y": 252.328125,
+            "firstHit": true
+          },
+          {
+            "name": "未知区",
+            "x": 46.0078125,
+            "y": 253.09375,
+            "firstHit": true
+          }
+        ]
+      },
+      {
+        "name": "before",
+        "regions": [
+          {
+            "text": "盲区",
+            "pressed": false
+          },
+          {
+            "text": "公开区",
+            "pressed": false
+          },
+          {
+            "text": "未知区",
+            "pressed": true
+          },
+          {
+            "text": "隐藏区",
+            "pressed": false
+          }
+        ]
+      },
+      {
+        "name": "pending",
+        "regions": []
+      },
+      {
+        "name": "result",
+        "regions": []
+      },
+      {
+        "name": "after-summary",
+        "regions": []
+      },
+      {
+        "name": "result-tab-order",
+        "labels": [
+          "调整水边，正方，当前合的来源，合流来源",
+          "照料土地，反方，当前合的来源，合流来源",
+          "共同改写约定，合方，当前焦点",
+          "共同起点，水边活动，正方，下游节点",
+          "早期共同问题，下游节点",
+          null,
+          null,
+          null,
+          null,
+          null,
+          "输入",
+          null,
+          null,
+          "演化全景",
+          null,
+          "换个角度",
+          "三维种子舞台：单指拖空白平移，拖动球体合成；双指或方向键转动视角，双指开合缩放，Home 复位",
+          "调整水边，正方，当前合的来源，合流来源",
+          "照料土地，反方，当前合的来源，合流来源",
+          "共同改写约定，合方，当前焦点",
+          "共同起点，水边活动，正方，下游节点",
+          "早期共同问题，下游节点",
+          null,
+          null,
+          null,
+          null,
+          null,
+          "输入",
+          null,
+          null,
+          "演化全景",
+          null,
+          "换个角度",
+          "三维种子舞台：单指拖空白平移，拖动球体合成；双指或方向键转动视角，双指开合缩放，Home 复位",
+          "调整水边，正方，当前合的来源，合流来源",
+          "照料土地，反方，当前合的来源，合流来源"
+        ]
+      },
+      {
+        "name": "expanded",
+        "regions": []
+      },
+      {
+        "name": "collapsed",
+        "regions": []
+      },
+      {
+        "name": "exit",
+        "regions": [
+          {
+            "text": "盲区",
+            "pressed": false
+          },
+          {
+            "text": "公开区",
+            "pressed": false
+          },
+          {
+            "text": "未知区",
+            "pressed": true
+          },
+          {
+            "text": "隐藏区",
+            "pressed": false
+          }
+        ]
+      },
+      {
+        "name": "keyboard-selected",
+        "regions": [
+          {
+            "text": "盲区",
+            "pressed": false
+          },
+          {
+            "text": "公开区",
+            "pressed": true
+          },
+          {
+            "text": "未知区",
+            "pressed": false
+          },
+          {
+            "text": "隐藏区",
+            "pressed": false
+          }
+        ]
+      },
+      {
+        "name": "space-selected",
+        "regions": [
+          {
+            "text": "盲区",
+            "pressed": false
+          },
+          {
+            "text": "公开区",
+            "pressed": false
+          },
+          {
+            "text": "未知区",
+            "pressed": false
+          },
+          {
+            "text": "隐藏区",
+            "pressed": true
+          }
+        ]
+      },
+      {
+        "name": "space-reset",
+        "regions": [
+          {
+            "text": "盲区",
+            "pressed": false
+          },
+          {
+            "text": "公开区",
+            "pressed": false
+          },
+          {
+            "text": "未知区",
+            "pressed": false
+          },
+          {
+            "text": "隐藏区",
+            "pressed": false
+          }
+        ]
+      },
+      {
+        "name": "ordinary-tab-order",
+        "labels": [
+          "下一个想法从「盲区」展开",
+          "下一个想法从「公开区」展开"
+        ],
+        "spaceLabels": [
+          "下一个想法从「盲区」展开",
+          "下一个想法从「公开区」展开",
+          "下一个想法从「未知区」展开",
+          "下一个想法从「隐藏区」展开"
+        ]
+      }
+    ],
+    "errors": []
+  },
+  {
+    "outcome": "failure",
+    "steps": [
+      {
+        "name": "before",
+        "regions": [
+          {
+            "text": "盲区",
+            "pressed": false
+          },
+          {
+            "text": "公开区",
+            "pressed": false
+          },
+          {
+            "text": "未知区",
+            "pressed": false
+          },
+          {
+            "text": "隐藏区",
+            "pressed": false
+          }
+        ]
+      },
+      {
+        "name": "pending",
+        "regions": []
+      },
+      {
+        "name": "exit",
+        "regions": [
+          {
+            "text": "盲区",
+            "pressed": false
+          },
+          {
+            "text": "公开区",
+            "pressed": false
+          },
+          {
+            "text": "未知区",
+            "pressed": false
+          },
+          {
+            "text": "隐藏区",
+            "pressed": false
+          }
+        ]
+      }
+    ],
+    "errors": []
+  },
+  {
+    "outcome": "cancel",
+    "steps": [
+      {
+        "name": "real-text-centers",
+        "pressed": [
+          {
+            "name": "盲区",
+            "x": 41.1796875,
+            "y": 143.25,
+            "firstHit": true
+          }
+        ]
+      },
+      {
+        "name": "before",
+        "regions": [
+          {
+            "text": "盲区",
+            "pressed": true
+          },
+          {
+            "text": "公开区",
+            "pressed": false
+          },
+          {
+            "text": "未知区",
+            "pressed": false
+          },
+          {
+            "text": "隐藏区",
+            "pressed": false
+          }
+        ]
+      },
+      {
+        "name": "pending",
+        "regions": []
+      },
+      {
+        "name": "exit",
+        "regions": [
+          {
+            "text": "盲区",
+            "pressed": true
+          },
+          {
+            "text": "公开区",
+            "pressed": false
+          },
+          {
+            "text": "未知区",
+            "pressed": false
+          },
+          {
+            "text": "隐藏区",
+            "pressed": false
+          }
+        ]
+      }
+    ],
+    "errors": []
+  },
+  {
+    "outcome": "deferred",
+    "steps": [
+      {
+        "name": "real-text-centers",
+        "pressed": [
+          {
+            "name": "盲区",
+            "x": 41.1796875,
+            "y": 143.25,
+            "firstHit": true
+          }
+        ]
+      },
+      {
+        "name": "before",
+        "regions": [
+          {
+            "text": "盲区",
+            "pressed": true
+          },
+          {
+            "text": "公开区",
+            "pressed": false
+          },
+          {
+            "text": "未知区",
+            "pressed": false
+          },
+          {
+            "text": "隐藏区",
+            "pressed": false
+          }
+        ]
+      },
+      {
+        "name": "pending",
+        "regions": []
+      },
+      {
+        "name": "exit",
+        "regions": [
+          {
+            "text": "盲区",
+            "pressed": true
+          },
+          {
+            "text": "公开区",
+            "pressed": false
+          },
+          {
+            "text": "未知区",
+            "pressed": false
+          },
+          {
+            "text": "隐藏区",
+            "pressed": false
+          }
+        ]
+      }
+    ],
+    "errors": []
+  },
+  {
+    "outcome": "flat-success",
+    "steps": [
+      {
+        "name": "real-text-centers",
+        "pressed": [
+          {
+            "name": "盲区",
+            "x": 41.1796875,
+            "y": 143.25,
+            "firstHit": true
+          },
+          {
+            "name": "公开区",
+            "x": 273.9921875,
+            "y": 143.25,
+            "firstHit": true
+          },
+          {
+            "name": "隐藏区",
+            "x": 273.9921875,
+            "y": 252.328125,
+            "firstHit": true
+          },
+          {
+            "name": "未知区",
+            "x": 46.0078125,
+            "y": 252.328125,
+            "firstHit": true
+          }
+        ]
+      },
+      {
+        "name": "before",
+        "regions": [
+          {
+            "text": "盲区",
+            "pressed": false
+          },
+          {
+            "text": "公开区",
+            "pressed": false
+          },
+          {
+            "text": "未知区",
+            "pressed": true
+          },
+          {
+            "text": "隐藏区",
+            "pressed": false
+          }
+        ]
+      },
+      {
+        "name": "pending",
+        "regions": []
+      },
+      {
+        "name": "result",
+        "regions": []
+      },
+      {
+        "name": "after-summary",
+        "regions": []
+      },
+      {
+        "name": "result-tab-order",
+        "labels": [
+          "调整水边，正方，当前合的来源，合流来源",
+          "照料土地，反方，当前合的来源，合流来源",
+          "共同改写约定，合方，当前焦点",
+          "共同起点，水边活动，正方，下游节点",
+          "早期共同问题，下游节点",
+          null,
+          null,
+          null,
+          null,
+          null,
+          "输入",
+          null,
+          null,
+          "演化全景",
+          null,
+          "换个角度",
+          "三维种子舞台：单指拖空白平移，拖动球体合成；双指或方向键转动视角，双指开合缩放，Home 复位",
+          "调整水边，正方，当前合的来源，合流来源",
+          "照料土地，反方，当前合的来源，合流来源",
+          "共同改写约定，合方，当前焦点",
+          "共同起点，水边活动，正方，下游节点",
+          "早期共同问题，下游节点",
+          null,
+          null,
+          null,
+          null,
+          null,
+          "输入",
+          null,
+          null,
+          "演化全景",
+          null,
+          "换个角度",
+          "三维种子舞台：单指拖空白平移，拖动球体合成；双指或方向键转动视角，双指开合缩放，Home 复位",
+          "调整水边，正方，当前合的来源，合流来源",
+          "照料土地，反方，当前合的来源，合流来源"
+        ]
+      },
+      {
+        "name": "expanded",
+        "regions": []
+      },
+      {
+        "name": "collapsed",
+        "regions": []
+      },
+      {
+        "name": "exit",
+        "regions": [
+          {
+            "text": "盲区",
+            "pressed": false
+          },
+          {
+            "text": "公开区",
+            "pressed": false
+          },
+          {
+            "text": "未知区",
+            "pressed": true
+          },
+          {
+            "text": "隐藏区",
+            "pressed": false
+          }
+        ]
+      },
+      {
+        "name": "keyboard-selected",
+        "regions": [
+          {
+            "text": "盲区",
+            "pressed": false
+          },
+          {
+            "text": "公开区",
+            "pressed": true
+          },
+          {
+            "text": "未知区",
+            "pressed": false
+          },
+          {
+            "text": "隐藏区",
+            "pressed": false
+          }
+        ]
+      },
+      {
+        "name": "space-selected",
+        "regions": [
+          {
+            "text": "盲区",
+            "pressed": false
+          },
+          {
+            "text": "公开区",
+            "pressed": false
+          },
+          {
+            "text": "未知区",
+            "pressed": false
+          },
+          {
+            "text": "隐藏区",
+            "pressed": true
+          }
+        ]
+      },
+      {
+        "name": "space-reset",
+        "regions": [
+          {
+            "text": "盲区",
+            "pressed": false
+          },
+          {
+            "text": "公开区",
+            "pressed": false
+          },
+          {
+            "text": "未知区",
+            "pressed": false
+          },
+          {
+            "text": "隐藏区",
+            "pressed": false
+          }
+        ]
+      },
+      {
+        "name": "ordinary-tab-order",
+        "labels": [
+          "下一个想法从「盲区」展开",
+          "下一个想法从「公开区」展开"
+        ],
+        "spaceLabels": [
+          "下一个想法从「盲区」展开",
+          "下一个想法从「公开区」展开",
+          "下一个想法从「未知区」展开",
+          "下一个想法从「隐藏区」展开"
+        ]
+      }
+    ],
+    "errors": []
+  },
+  {
+    "outcome": "legacy",
+    "steps": [
+      {
+        "name": "result",
+        "regions": []
+      },
+      {
+        "name": "reading-result",
+        "regions": []
+      }
+    ]
+  },
+  {
+    "outcome": "overlap",
+    "steps": [
+      {
+        "name": "real-unknown-tap",
+        "target": {
+          "name": "未知区",
+          "x": 46.0078125,
+          "y": 286.53125,
+          "firstHit": true,
+          "behind": "root"
+        }
+      },
+      {
+        "name": "nearby-seed-tap",
+        "nearby": {
+          "x": 82.87582244873047,
+          "y": 221.62274932861328,
+          "firstHit": true
+        }
+      }
+    ]
+  }
+]

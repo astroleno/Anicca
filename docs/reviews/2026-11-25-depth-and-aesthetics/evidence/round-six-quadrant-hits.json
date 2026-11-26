@@ -1,0 +1,213 @@
+{
+  "initial": {
+    "regions": [
+      {
+        "text": "盲区",
+        "pressed": false,
+        "rect": {
+          "x": 26.296875,
+          "y": 126.640625,
+          "w": 29.765625,
+          "h": 20
+        },
+        "hits": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "text": "公开区",
+        "pressed": false,
+        "rect": {
+          "x": 253.171875,
+          "y": 126.640625,
+          "w": 41.640625,
+          "h": 20
+        },
+        "hits": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "text": "未知区",
+        "pressed": true,
+        "rect": {
+          "x": 25.1875,
+          "y": 243.09375,
+          "w": 41.640625,
+          "h": 20
+        },
+        "hits": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "text": "隐藏区",
+        "pressed": false,
+        "rect": {
+          "x": 253.171875,
+          "y": 243.09375,
+          "w": 41.640625,
+          "h": 20
+        },
+        "hits": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      }
+    ],
+    "nodes": [
+      {
+        "id": "branch-a",
+        "title": "水边活动",
+        "x": 224.44761657714844,
+        "y": 147.30099487304688,
+        "d": 84.23233032226562,
+        "caption": {
+          "x": 133.61187744140625,
+          "y": 179.18231201171875,
+          "w": 52.53125,
+          "h": 20
+        },
+        "centerHit": "branch-a"
+      },
+      {
+        "id": "root",
+        "title": "早期共同问题",
+        "x": 95.69274520874023,
+        "y": 128.22212600708008,
+        "d": 59.36907196044922,
+        "caption": {
+          "x": 123.08700561523438,
+          "y": 82.18534851074219,
+          "w": 67,
+          "h": 20
+        },
+        "centerHit": "root"
+      },
+      {
+        "id": "a",
+        "title": "调整水边",
+        "x": 89.15050506591797,
+        "y": 195.36475372314453,
+        "d": 59.95408630371094,
+        "caption": {
+          "x": 62.88488006591797,
+          "y": 228.341796875,
+          "w": 52.53125,
+          "h": 20
+        },
+        "centerHit": "a"
+      },
+      {
+        "id": "b",
+        "title": "照料土地",
+        "x": 228.20875549316406,
+        "y": 212.36600494384766,
+        "d": 60.244171142578125,
+        "caption": {
+          "x": 201.94313049316406,
+          "y": 245.4880828857422,
+          "w": 52.53125,
+          "h": 19.999984741210938
+        },
+        "centerHit": "b"
+      },
+      {
+        "id": "asst_mwx58ea4_3fvl66",
+        "title": "共同改写约定",
+        "x": 162.93150329589844,
+        "y": 252.23261260986328,
+        "d": 38.625244140625,
+        "caption": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "centerHit": "asst_mwx58ea4_3fvl66"
+      }
+    ]
+  },
+  "actions": [
+    {
+      "name": "盲区",
+      "hits": 15,
+      "selected": true,
+      "reader": false
+    },
+    {
+      "name": "公开区",
+      "hits": 15,
+      "selected": true,
+      "reader": false
+    },
+    {
+      "name": "隐藏区",
+      "hits": 15,
+      "selected": true,
+      "reader": false
+    },
+    {
+      "name": "未知区",
+      "hits": 15,
+      "selected": true,
+      "reader": false
+    }
+  ],
+  "read": "早期共同问题"
+}

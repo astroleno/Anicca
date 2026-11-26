@@ -1,0 +1,140 @@
+[
+  {
+    "tag": "0ef9e5",
+    "geometry": [
+      {
+        "id": "f",
+        "reported": "focus",
+        "x": 217,
+        "y": 170,
+        "d": 74,
+        "label": "走访"
+      },
+      {
+        "id": "r",
+        "reported": "distant",
+        "x": 220,
+        "y": 257,
+        "d": 34,
+        "label": null
+      },
+      {
+        "id": "p",
+        "reported": "direct",
+        "x": 93,
+        "y": 160,
+        "d": 53,
+        "label": "桥下"
+      },
+      {
+        "id": "s",
+        "reported": "direct",
+        "x": 100,
+        "y": 269,
+        "d": 53,
+        "label": "绕行"
+      },
+      {
+        "id": "t",
+        "reported": "distant",
+        "x": 163,
+        "y": 314,
+        "d": 34,
+        "label": null
+      }
+    ],
+    "flat": false
+  },
+  {
+    "tag": "ed343f",
+    "geometry": [
+      {
+        "id": "f",
+        "reported": "focus",
+        "x": 99,
+        "y": 272,
+        "d": 92,
+        "label": "走访"
+      },
+      {
+        "id": "r",
+        "reported": "distant",
+        "x": 234,
+        "y": 306,
+        "d": 42,
+        "label": null
+      },
+      {
+        "id": "p",
+        "reported": "direct",
+        "x": 202,
+        "y": 134,
+        "d": 65,
+        "label": "桥下"
+      },
+      {
+        "id": "s",
+        "reported": "direct",
+        "x": 80,
+        "y": 134,
+        "d": 65,
+        "label": "绕行"
+      },
+      {
+        "id": "t",
+        "reported": "distant",
+        "x": 237,
+        "y": 205,
+        "d": 42,
+        "label": null
+      }
+    ],
+    "flat": false
+  },
+  {
+    "tag": "616548",
+    "geometry": [
+      {
+        "id": "f",
+        "reported": "focus",
+        "x": 230,
+        "y": 226,
+        "d": 92,
+        "label": "走访"
+      },
+      {
+        "id": "r",
+        "reported": "distant",
+        "x": 160,
+        "y": 128,
+        "d": 42,
+        "label": null
+      },
+      {
+        "id": "p",
+        "reported": "direct",
+        "x": 83,
+        "y": 303,
+        "d": 65,
+        "label": "桥下"
+      },
+      {
+        "id": "s",
+        "reported": "direct",
+        "x": 86,
+        "y": 150,
+        "d": 65,
+        "label": "绕行"
+      },
+      {
+        "id": "t",
+        "reported": "distant",
+        "x": 230,
+        "y": 322,
+        "d": 42,
+        "label": null
+      }
+    ],
+    "flat": true
+  }
+]
