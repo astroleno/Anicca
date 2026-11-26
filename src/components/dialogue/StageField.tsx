@@ -30,6 +30,7 @@ export function StageField({ space, nodes, carrying = false, hidden = false, syn
   const chosenSpace = isChosenSpace(space);
   const asleep = hidden || (!chosenSpace && !carrying);
   const field = (content: ReactNode) => <div className={styles.stageField} data-testid="dialogue-stage-field"
+    data-johari={johari ? "true" : undefined}
     data-carrying={carrying ? "true" : undefined} data-hidden={asleep ? "true" : undefined}
     inert={asleep ? true : undefined}>
     {xAxis ? <span className={styles.stageFieldAxis} data-axis="x" aria-hidden="true" /> : null}
@@ -47,7 +48,7 @@ export function StageField({ space, nodes, carrying = false, hidden = false, syn
         data-unexplored={directed.length && !visited ? "true" : undefined}
         aria-pressed={chosen} aria-label={`下一个想法从「${region.label}」展开`}
         onClick={() => onFocus(chosen ? { "johari-self": 0, "johari-others": 0 } : { "johari-self": region.self, "johari-others": region.others })}>
-        {region.label}
+        <span>{region.label}</span>
       </button>;
     }));
   }

@@ -4489,8 +4489,20 @@
 .stageFieldRegion[data-self="1"] { right: 6%; }
 .stageFieldRegion[data-others="1"] { top: 15%; }
 .stageFieldRegion[data-others="-1"] { bottom: 15%; }
+/* The axes remain behind the seeds. The named buttons stand above the
+   projected hit areas wherever their actual targets cross. */
+.stageField[data-johari] { z-index: auto; opacity: 1; transition: none; }
+.stageField[data-johari] .stageFieldAxis { opacity: .5; }
+.stageField[data-johari][data-carrying] .stageFieldAxis { opacity: 1; }
+.stageField[data-johari][data-hidden] { visibility: hidden; }
+.stageFieldRegion { z-index: 18; opacity: 1; }
+.stageFieldRegion > span {
+  padding: 2px 3px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--stage-ground) 92%, transparent);
+}
 /* An unexplored region breathes: a soft wash around its name, never a badge or a count. */
-.stageFieldRegion::before { content: ""; position: absolute; inset: -60px; z-index: -1; border-radius: 50%;
+.stageFieldRegion::before { content: ""; position: absolute; inset: -60px; z-index: -1; pointer-events: none; border-radius: 50%;
   background: radial-gradient(closest-side, rgba(165, 140, 205, .2), transparent); opacity: 0; transition: opacity 600ms ease; }
 .stageFieldRegion[data-unexplored="true"]::before { animation: fieldBreath 5.6s ease-in-out infinite; }
 .stageFieldRegion[aria-pressed="true"]::before { opacity: .8; animation: none; }
