@@ -1,0 +1,50 @@
+{
+  "id": "confirmation-08",
+  "route": "synthesis",
+  "attempts": [
+    {
+      "body": {
+        "meaningVersion": 1,
+        "rootInput": "不少人在门外以为还要先进左侧房间。我想让一块牌先告诉读者「你在这里」，第二块放在上楼方向，让馆员只数问路方向写错的次数，不记人名。\n\n门口的灯与地毯之间最容易拥挤，轮椅从那里转弯。地上的馆内统一通行线和现有楼层图会留着。有人需要绕过指示牌或转不过来就先推开。",
+        "sources": [
+          {
+            "id": "confirmation-08-a",
+            "text": "不少人在门外以为还要先进左侧房间。我想让一块牌先告诉读者「你在这里」，第二块放在上楼方向，让馆员只数问路方向写错的次数，不记人名。",
+            "summary": "用短时间辨别入口是否还会被误认",
+            "label": "先给第一次来的路标",
+            "stance": "正"
+          },
+          {
+            "id": "confirmation-08-b",
+            "text": "门口的灯与地毯之间最容易拥挤，轮椅从那里转弯。地上的馆内统一通行线和现有楼层图会留着。有人需要绕过指示牌或转不过来就先推开。",
+            "summary": "任何值班人都能撤牌",
+            "label": "留出不断的通道",
+            "stance": "反"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 一家图书馆要让新来的读者 · id=confirmation-08-user · 来源=无] 一家图书馆要让新来的读者少走错楼层。门口现有固定楼层图，馆员另做了两块带轮子的指示牌，只打算周六上午摆一小时，遮住通道时任何馆员能直接推到角落，旧图也一直在。周五值班前我们该怎么定摆法和结束条件？"
+          },
+          {
+            "role": "assistant",
+            "content": "[反 · 留出不断的通道 · id=confirmation-08-b · 来源=confirmation-08-user] 门口的灯与地毯之间最容易拥挤，轮椅从那里转弯。地上的馆内统一通行线和现有楼层图会留着。有人需要绕过指示牌或转不过来就先推开。"
+          },
+          {
+            "role": "assistant",
+            "content": "[正 · 先给第一次来的路标 · id=confirmation-08-a · 来源=confirmation-08-user] 不少人在门外以为还要先进左侧房间。我想让一块牌先告诉读者「你在这里」，第二块放在上楼方向，让馆员只数问路方向写错的次数，不记人名。"
+          }
+        ],
+        "requestId": "r8-before-confirmation-08-1"
+      },
+      "startedAt": "2026-11-26T14:19:36.883Z",
+      "elapsedMs": 7365,
+      "status": 502,
+      "rawBody": "{\"requestId\":\"r8-before-confirmation-08-1\",\"error\":\"invalid_model_output\",\"details\":\"reviewer_protocol_error\"}",
+      "reading": null,
+      "error": "invalid_model_output",
+      "retryable": false
+    }
+  ]
+}

@@ -38,7 +38,7 @@ export async function loadRuns(dirs, { cases, examSha256, manifestSha256 }) {
     assert.deepEqual(archive.missingRequestIds, attemptIds.filter((id) => !traces.has(id)));
     const summary = await readJson(join(dir, "summary.json"));
     assert.deepEqual(summary.all, metrics(records, traces));
-    for (const set of ["formal", "transfer", "holdout"]) {
+    for (const set of new Set(cases.map(({ set }) => set))) {
       assert.deepEqual(summary.bySet[set], metrics(records.filter((_, i) => cases[i].set === set), traces));
     }
     return { config, traces, summary, records: new Map(records.map((record) => [record.id, record])) };
@@ -48,6 +48,31 @@ export async function loadRuns(dirs, { cases, examSha256, manifestSha256 }) {
   assert.deepEqual(runs[0].config.settings, runs[1].config.settings);
   assert.deepEqual(runs[0].config.transport, runs[1].config.transport);
   return runs;
+}
+
+export async function loadComparison(dirs, confirmationDirs) {
+  const exam = await loadExam();
+  if (!confirmationDirs) return { exam, runs: await loadRuns(dirs, exam) };
+
+  const confirmation = await loadExam("confirmation");
+  const [originalRuns, confirmationRuns] = await Promise.all([loadRuns(dirs, exam), loadRuns(confirmationDirs, confirmation)]);
+  const runs = originalRuns.map((run, index) => {
+    const counterpart = confirmationRuns[index];
+    assert.equal(run.config.revision, counterpart.config.revision, "Use the same revision for both exams");
+    assert.deepEqual(run.config.settings, counterpart.config.settings);
+    assert.deepEqual(run.config.transport, counterpart.config.transport);
+    return {
+      ...run,
+      records: new Map([...run.records, ...counterpart.records]),
+      traces: new Map([...run.traces, ...counterpart.traces])
+    };
+  });
+  const cases = [...exam.cases, ...confirmation.cases];
+  assert.equal(new Set(cases.map(({ id }) => id)).size, cases.length);
+  return {
+    exam: { ...exam, cases, confirmationExamSha256: confirmation.examSha256, confirmationManifestSha256: confirmation.manifestSha256 },
+    runs
+  };
 }
 
 export function packetRow(id, item, readings) {
@@ -88,14 +113,17 @@ async function privateTarget(file) {
 
 async function main() {
   const { values } = parseArgs({ options: {
-    before: { type: "string" }, after: { type: "string" }, packet: { type: "string" }, key: { type: "string" }
+    before: { type: "string" }, after: { type: "string" }, packet: { type: "string" }, key: { type: "string" },
+    "confirmation-before": { type: "string" }, "confirmation-after": { type: "string" }
   } });
-  assert.ok(values.before && values.after && values.packet && values.key,
-    "Use --before RUN_DIR --after RUN_DIR --packet PRIVATE_TMP/PACKET.json --key OTHER_PRIVATE_TMP/KEY.json");
+  const { before, after, "confirmation-before": confirmationBefore, "confirmation-after": confirmationAfter } = values;
+  assert.ok(before && after && values.packet && values.key,
+    "Use --before RUN_DIR --after RUN_DIR --packet PRIVATE_TMP/PACKET.json --key OTHER_PRIVATE_TMP/KEY.json " +
+    "[--confirmation-before RUN_DIR --confirmation-after RUN_DIR]");
+  assert.equal(Boolean(confirmationBefore), Boolean(confirmationAfter), "Provide both confirmation runs");
   const [packetFile, keyFile] = await Promise.all([privateTarget(values.packet), privateTarget(values.key)]);
   assert.notEqual(dirname(packetFile), dirname(keyFile), "Keep packet and mapping in distinct private directories");
-  const exam = await loadExam();
-  const runs = await loadRuns([values.before, values.after], exam);
+  const { exam, runs } = await loadComparison([before, after], confirmationBefore ? [confirmationBefore, confirmationAfter] : undefined);
   const { packet, mapping } = makePacket(exam.cases, runs);
   const packetBytes = JSON.stringify(packet, null, 2) + "\n";
   const versions = runs.map(({ config: { run, revision } }) => ({ run, revision }));

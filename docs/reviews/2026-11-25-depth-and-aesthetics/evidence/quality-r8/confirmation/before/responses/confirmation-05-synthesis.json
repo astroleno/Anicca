@@ -1,0 +1,50 @@
+{
+  "id": "confirmation-05",
+  "route": "synthesis",
+  "attempts": [
+    {
+      "body": {
+        "meaningVersion": 1,
+        "rootInput": "矢量外框和正视图对得上。若今天把模具改出来，下周能开新款；另做新模具要等采购。\n\n当初不削会把厚皮卡住。我能指出两个削过的位置，但看外框恢复不了深度，也没有用文件加工出一副能跑完裁切的成品。",
+        "sources": [
+          {
+            "id": "confirmation-05-a",
+            "text": "矢量外框和正视图对得上。若今天把模具改出来，下周能开新款；另做新模具要等采购。",
+            "summary": "新款工期紧且放不下两副",
+            "label": "用文件留住名义外形",
+            "stance": "正"
+          },
+          {
+            "id": "confirmation-05-b",
+            "text": "当初不削会把厚皮卡住。我能指出两个削过的位置，但看外框恢复不了深度，也没有用文件加工出一副能跑完裁切的成品。",
+            "summary": "改过的接触面藏在正视图里",
+            "label": "验证实际接触几何",
+            "stance": "反"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 织造工作室要把一副裁皮的 · id=confirmation-05-user · 来源=无] 织造工作室要把一副裁皮的手修旧模具锯开改作另一款。锯开就再也放不回原来的曲线。我们有原设计的矢量文件，也有旧模具正视图；三年前皮料换厚后，有人在两处接触面手工削过，但没人把削过多少录进设计文件。仓里今天只够留下这一副模具，怎么决定锯不锯？"
+          },
+          {
+            "role": "assistant",
+            "content": "[反 · 验证实际接触几何 · id=confirmation-05-b · 来源=confirmation-05-user] 当初不削会把厚皮卡住。我能指出两个削过的位置，但看外框恢复不了深度，也没有用文件加工出一副能跑完裁切的成品。"
+          },
+          {
+            "role": "assistant",
+            "content": "[正 · 用文件留住名义外形 · id=confirmation-05-a · 来源=confirmation-05-user] 矢量外框和正视图对得上。若今天把模具改出来，下周能开新款；另做新模具要等采购。"
+          }
+        ],
+        "requestId": "r8-before-confirmation-05-1"
+      },
+      "startedAt": "2026-11-26T14:19:32.496Z",
+      "elapsedMs": 7248,
+      "status": 502,
+      "rawBody": "{\"requestId\":\"r8-before-confirmation-05-1\",\"error\":\"invalid_model_output\",\"details\":\"reviewer_protocol_error\"}",
+      "reading": null,
+      "error": "invalid_model_output",
+      "retryable": false
+    }
+  ]
+}

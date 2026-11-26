@@ -17,28 +17,34 @@ const transport = {
 const concurrency = 4;
 const route = "synthesis";
 
-export async function loadExam() {
-  const manifest = await readFile(join(evidence, "frozen.sha256"));
+export async function loadExam(kind = "original") {
+  assert.ok(["original", "confirmation"].includes(kind), "Unknown exam");
+  const confirmation = kind === "confirmation";
+  const directory = confirmation ? join(evidence, "confirmation") : evidence;
+  const referenceName = confirmation ? "reference.json" : "holdout-reference.json";
+  const manifest = await readFile(join(directory, "frozen.sha256"));
   const hashes = Object.fromEntries(manifest.toString().trim().split("\n").map((line) => line.split("  ").reverse()));
   const [bytes, reference] = await Promise.all([
-    readFile(join(evidence, "requests.json")), readFile(join(evidence, "holdout-reference.json"))
+    readFile(join(directory, "requests.json")), readFile(join(directory, referenceName))
   ]);
   assert.equal(sha256(bytes), hashes["requests.json"]);
-  assert.equal(sha256(reference), hashes["holdout-reference.json"]);
+  assert.equal(sha256(reference), hashes[referenceName]);
   const { cases, previousRequestsSha256 } = JSON.parse(bytes);
-  const r7 = await loadR7();
-  assert.equal(previousRequestsSha256, r7.examSha256);
-  assert.equal(cases.length, 25);
-  assert.equal(new Set(cases.map(({ id }) => id)).size, 25);
-  for (const [index, old] of r7.cases.entries()) {
-    const item = cases[index];
-    assert.deepEqual([item.id, item.set, item.group, item.question], [old.id, old.set, old.group, old.question]);
-    assert.equal(JSON.stringify(item.requests.synthesis), JSON.stringify(old.requests.synthesis), item.id);
+  if (!confirmation) {
+    const r7 = await loadR7();
+    assert.equal(previousRequestsSha256, r7.examSha256);
+    for (const [index, old] of r7.cases.entries()) {
+      const item = cases[index];
+      assert.deepEqual([item.id, item.set, item.group, item.question], [old.id, old.set, old.group, old.question]);
+      assert.equal(JSON.stringify(item.requests.synthesis), JSON.stringify(old.requests.synthesis), item.id);
+    }
   }
-  const holdout = cases.slice(r7.cases.length);
+  assert.equal(cases.length, confirmation ? 8 : 25);
+  assert.equal(new Set(cases.map(({ id }) => id)).size, cases.length);
+  const holdout = cases.slice(-8);
   assert.deepEqual(holdout.map(({ id }) => id), JSON.parse(reference).cases.map(({ id }) => id));
   for (const { id, set, question, requests: { synthesis } } of holdout) {
-    assert.equal(set, "holdout");
+    assert.equal(set, confirmation ? "confirmation" : "holdout");
     assert.equal(synthesis.meaningVersion, 1);
     assert.equal(synthesis.sources.length, 2);
     assert.notEqual(synthesis.sources[0].id, synthesis.sources[1].id);
@@ -187,19 +193,22 @@ export function metrics(records, traceById) {
 async function main() {
   const { values } = parseArgs({ options: {
     base: { type: "string" }, output: { type: "string" }, run: { type: "string" },
-    revision: { type: "string" }, "server-log": { type: "string" }, group: { type: "string", default: "all" }
+    revision: { type: "string" }, "server-log": { type: "string" },
+    exam: { type: "string", default: "original" }, group: { type: "string", default: "all" }
   } });
-  const { base: rawBase, output: rawOutput, run, revision, "server-log": serverLog, group } = values;
+  const { base: rawBase, output: rawOutput, run, revision, "server-log": serverLog, group, exam } = values;
   assert.ok(rawBase && rawOutput && ["before", "after"].includes(run) && /^[a-f0-9]{7,40}$/u.test(revision ?? "") && serverLog,
-    "Use --base URL --output DIR --run before|after --revision GIT_SHA --server-log FILE [--group all|r7|holdout]");
+    "Use --base URL --output DIR --run before|after --revision GIT_SHA --server-log FILE [--exam original|confirmation] [--group all|r7|holdout]");
   assert.ok(["all", "r7", "holdout"].includes(group));
+  assert.ok(exam !== "confirmation" || group === "all", "Run the full confirmation exam");
   const base = new URL(rawBase.endsWith("/") ? rawBase : `${rawBase}/`);
   assert.ok(/^https?:$/.test(base.protocol) && !base.username && !base.password && !base.search && !base.hash,
     "Use an HTTP(S) base URL without credentials, query or fragment");
   const output = resolve(rawOutput);
   const settings = await readJson(join(r7Evidence, "provider.json"));
-  const { cases, examSha256, manifestSha256 } = await loadExam();
-  const config = { schemaVersion: 1, run, revision, examSha256, manifestSha256, base: base.href, route, settings, concurrency, transport };
+  const { cases, examSha256, manifestSha256 } = await loadExam(exam);
+  const config = { schemaVersion: 1, run, revision, examSha256, manifestSha256, base: base.href, route, settings, concurrency, transport,
+    ...(exam === "confirmation" ? { exam } : {}) };
   await mkdir(join(output, "responses"), { recursive: true });
   const configFile = join(output, "settings.json");
   const existing = await readOptional(configFile);
@@ -232,7 +241,7 @@ async function main() {
   const mismatches = traces.filter((trace) => trace.model !== settings.model || trace.endpoint !== route)
     .map(({ evalRequestId, model, endpoint }) => ({ evalRequestId, model, endpoint }));
   await writeJson(join(output, "traces.json"), { traces, missingRequestIds, mismatches });
-  const bySet = Object.fromEntries(["formal", "transfer", "holdout"].map((set) => [
+  const bySet = Object.fromEntries([...new Set(cases.map(({ set }) => set))].map((set) => [
     set, metrics(completed.filter(({ item }) => item.set === set).map(({ record }) => record), traceById)
   ]));
   const summary = { all: metrics(records, traceById), bySet };

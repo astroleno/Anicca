@@ -3,8 +3,8 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
-import { loadRuns, packetRow } from "./blind-dialectic-quality-r8.mjs";
-import { evidence, loadExam, metrics, readJson, sha256 } from "./dialectic-quality-r8.mjs";
+import { loadComparison, packetRow } from "./blind-dialectic-quality-r8.mjs";
+import { evidence, metrics, readJson, sha256 } from "./dialectic-quality-r8.mjs";
 
 const sides = ["A", "B"];
 const winners = [...sides, "tie", "unavailable"];
@@ -101,30 +101,42 @@ function comparison(exam, runs, packet, key, judgments) {
 
 function buildResult(exam, runs, packet, key, judgments, judgeSha) {
   const rows = comparison(exam, runs, packet, key, judgments);
-  const summaries = groups.map(({ label, sets }) => {
+  const confirmation = exam.confirmationExamSha256;
+  const reportGroups = confirmation ? [
+    ...groups.slice(0, -1), { label: "已揭卷回归", sets: ["holdout"] }, { label: "独立确认卷", sets: ["confirmation"] }
+  ] : groups;
+  const summaries = reportGroups.map(({ label, sets }) => {
     const selected = rows.filter(({ set }) => sets.includes(set));
     const cases = exam.cases.filter(({ set }) => sets.includes(set));
     const tally = Object.fromEntries(["win", "tie", "loss", "unavailable"]
       .map((result) => [result, selected.filter(({ comparison }) => comparison === result).length]));
     return { label, tally, stats: runs.map((run) => groupedMetrics(run, cases)) };
   });
-  const baselineHoldout = summaries.find(({ label }) => label === "独立新卷").stats[0].readable;
+  const [baselineHoldout, candidateHoldout] = summaries[3].stats.map(({ readable }) => readable);
   const candidateRegression = summaries[0].stats[1].readable;
-  const candidateHoldout = summaries.find(({ label }) => label === "独立新卷").stats[1].readable;
+  const confirmationReadability = confirmation ? {
+    before: summaries[4].stats[0].readable, after: summaries[4].stats[1].readable, cases: summaries[4].stats[1].cases
+  } : null;
   const seriousBefore = rows.filter(({ before }) => before.judgment.serious).map(({ id }) => id);
   const seriousAfter = rows.filter(({ after }) => after.judgment.serious).map(({ id }) => id);
   return {
     examSha256: exam.examSha256, manifestSha256: exam.manifestSha256,
+    ...(confirmation ? { confirmationExamSha256: confirmation, confirmationManifestSha256: exam.confirmationManifestSha256 } : {}),
     packetSha256: key.packetSha256, judgmentsSha256: judgeSha,
     versions: key.versions, summaries, rows,
     gates: { candidateRegression, candidateHoldout, baselineHoldout,
       readablePass: candidateRegression >= 16 && candidateHoldout >= Math.max(7, baselineHoldout),
+      ...(confirmationReadability ? { confirmationReadability } : {}),
       seriousBefore, seriousAfter, newSerious: seriousAfter.filter((id) => !seriousBefore.includes(id)) }
   };
 }
 
 function render(result) {
   const { summaries, versions, gates, rows } = result;
+  const confirmation = gates.confirmationReadability;
+  const readability = confirmation
+    ? `改后旧卷 ${gates.candidateRegression}/17，已揭卷 ${gates.candidateHoldout}/8。同批已揭卷改前 ${gates.baselineHoldout}/8。独立确认卷改前 ${confirmation.before}/${confirmation.cases}，改后 ${confirmation.after}/${confirmation.cases}。原两卷的可读率门槛${gates.readablePass ? "达到" : "未达到"}。`
+    : `改后旧卷 ${gates.candidateRegression}/17，新卷 ${gates.candidateHoldout}/8。改前同批新卷 ${gates.baselineHoldout}/8。可读率门槛${gates.readablePass ? "达到" : "未达到"}。`;
   const output = [
     "# 第八轮合流实测",
     "",
@@ -132,7 +144,7 @@ function render(result) {
     "",
     "## 可读率与盲判",
     "",
-    `改后旧卷 ${gates.candidateRegression}/17，新卷 ${gates.candidateHoldout}/8。改前同批新卷 ${gates.baselineHoldout}/8。可读率门槛${gates.readablePass ? "达到" : "未达到"}。改前严重误导 ${gates.seriousBefore.length} 题，改后 ${gates.seriousAfter.length} 题。`,
+    `${readability}改前严重误导 ${gates.seriousBefore.length} 题，改后 ${gates.seriousAfter.length} 题。`,
     "",
     "| 题组 | 改前可读 | 改后可读 | 改后胜 | 平 | 改后负 | 无法比较 |",
     "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
@@ -197,17 +209,23 @@ function render(result) {
 async function main() {
   const { values } = parseArgs({ options: {
     judgments: { type: "string" }, "judge-sha": { type: "string" }, packet: { type: "string" },
-    key: { type: "string" }, evidence: { type: "string", default: evidence }, out: { type: "string" }
+    key: { type: "string" }, evidence: { type: "string", default: evidence }, out: { type: "string" },
+    before: { type: "string" }, after: { type: "string" },
+    "confirmation-before": { type: "string" }, "confirmation-after": { type: "string" }
   } });
-  const { judgments: judgmentFile, "judge-sha": judgeSha, packet: packetFile, key: keyFile, evidence: folder, out } = values;
+  const { judgments: judgmentFile, "judge-sha": judgeSha, packet: packetFile, key: keyFile, evidence: folder, out,
+    before = join(folder, "before"), after = join(folder, "after"),
+    "confirmation-before": confirmationBefore, "confirmation-after": confirmationAfter } = values;
   assert.ok(judgmentFile && /^[a-f0-9]{64}$/u.test(judgeSha ?? "") && packetFile && keyFile && out,
-    "Use --judgments FILE --judge-sha SHA256 --packet FILE --key FILE [--evidence DIR] --out DIR");
-  const [judgmentBytes, packetBytes, key, exam] = await Promise.all([
-    readFile(judgmentFile), readFile(packetFile), readJson(keyFile), loadExam()
+    "Use --judgments FILE --judge-sha SHA256 --packet FILE --key FILE [--evidence DIR] --out DIR " +
+    "[--before RUN_DIR --after RUN_DIR] [--confirmation-before RUN_DIR --confirmation-after RUN_DIR]");
+  assert.equal(Boolean(confirmationBefore), Boolean(confirmationAfter), "Provide both confirmation runs");
+  const [judgmentBytes, packetBytes, key] = await Promise.all([
+    readFile(judgmentFile), readFile(packetFile), readJson(keyFile)
   ]);
   assert.equal(sha256(judgmentBytes), judgeSha, "Judgments must match sealed SHA-256");
   assert.equal(sha256(packetBytes), key.packetSha256, "Wrong packet and key pairing");
-  const runs = await loadRuns([join(folder, "before"), join(folder, "after")], exam);
+  const { exam, runs } = await loadComparison([before, after], confirmationBefore ? [confirmationBefore, confirmationAfter] : undefined);
   assert.deepEqual(key.versions, runs.map(({ config: { run, revision } }) => ({ run, revision })));
   const result = buildResult(exam, runs, JSON.parse(packetBytes), key, JSON.parse(judgmentBytes), judgeSha);
   await writeFile(join(out, "revealed.json"), JSON.stringify(result, null, 2) + "\n", { flag: "wx" });
