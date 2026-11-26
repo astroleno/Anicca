@@ -1,0 +1,9 @@
+{
+  "provider": "DeepSeek",
+  "model": "deepseek-v4-flash",
+  "providerModelObservedDuringCalibration": "deepseek-flash",
+  "transport": "chat_completions",
+  "thinking": "disabled",
+  "temperature": "provider default",
+  "sampling": "one formal draw per endpoint and edition; record transport retries and failed outputs"
+}
