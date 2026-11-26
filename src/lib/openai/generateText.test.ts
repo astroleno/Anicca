@@ -182,3 +182,17 @@ describe("generateText", () => {
     expect(create).not.toHaveBeenCalled();
   });
 });
+
+it.each([
+  { model: "deepseek-v4-flash", transport: "chat_completions",
+    chat: { choices: [{ finish_reason: "length", message: { content: "partial" } }] }, responses: null },
+  { model: "gpt-4o-mini", transport: "responses", chat: null,
+    responses: { status: "incomplete", incomplete_details: { reason: "max_output_tokens" }, output_text: "partial" } }
+])("preserves explicit output truncation for $transport", async ({ model, transport, chat, responses }) => {
+  const client = {
+    responses: { create: vi.fn().mockResolvedValue(responses) },
+    chat: { completions: { create: vi.fn().mockResolvedValue(chat) } }
+  } as unknown as OpenAI;
+  await expect(generateText({ model, client, input: "hello", maxOutputTokens: 32 }))
+    .resolves.toEqual({ transport, text: "partial", truncated: true });
+});

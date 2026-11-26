@@ -1,4 +1,4 @@
-import { finalizeMeaning, userReportedMaterial } from "./meaningReview";
+import { ReviewerProtocolError, finalizeMeaning, finalizeSynthesisMeaning, userReportedMaterial } from "./meaningReview";
 import { createGenerationTrace } from "./generationTrace";
 import { johariThinkingSpace } from "@/features/perspectives/model";
 import type OpenAI from "openai";
@@ -164,4 +164,123 @@ it("does not infer an inner experience from genuine colleague feedback", async (
   const hypothetical = "假如你感到自己在补充观点，且对方确实感到话被接走，才值得核对两份体验。";
   expect((await finalizeMeaning({ ...value, results: { thesis: { ...draft, text: hypothetical } } }))?.thesis.text).toBe(hypothetical);
   expect((await finalizeMeaning({ ...value, results: { thesis: { ...draft, text: "你感到自己在补充观点吗？" } } }))?.thesis.text).toBe("你感到自己在补充观点吗？");
+});
+
+const orderedSources = [
+  { id: "a", label: "先听现场", text: "先听院子里的人怎么说。这样才能知道他们在等什么。" },
+  { id: "b", label: "留下停顿", text: "用人物走到门边时的停顿写出离别。" }
+];
+const synthesis = {
+  ...draft,
+  text: "听见院里的人说“还没到该走的时候。”\n这份等待可以留下。人物走到门边时停了停，但不再把等待写成还能留下。读者会从那个停顿里知道不可回头。"
+};
+const synthesisInput = () => ({ ...input(), sources: orderedSources, comparisons: [] });
+const candidate = { synthesis, outputText: "draft" };
+const passEvidence = {
+  sourceA: { unit: "A1", through: "A2" }, sourceB: { unit: "B1" },
+  useA: { unit: "R1", through: "R2" }, useB: { unit: "R3" }, consequence: { unit: "R4" }
+};
+const prose = (evidence: object) => ({ pass: true, issues: [], evidence });
+const synthesisReview = (value: unknown) => respond({ synthesis: { ...verified, change: null, prose: value } });
+const lastTrace = () => JSON.parse(String(vi.mocked(console.info).mock.calls.at(-1)?.[0]).slice("anicca.generation ".length));
+
+it("accepts only consecutive source and result units, preserving Unicode quotes and intervening newlines", async () => {
+  generate.mockResolvedValueOnce(synthesisReview(prose(passEvidence)));
+  const result = await finalizeSynthesisMeaning(synthesisInput(), candidate);
+  expect(result).toMatchObject({ synthesis: { text: synthesis.text } });
+  expect(generate).toHaveBeenCalledOnce();
+  const prompt = generate.mock.calls[0][0].input as string;
+  const evidenceUnits = JSON.parse(prompt.split("\n").find(line => line.startsWith("可选原文编号="))!.split("=")[1]);
+  expect(evidenceUnits).toMatchObject({
+    A1: "先听院子里的人怎么说。", A2: "这样才能知道他们在等什么。",
+    R1: "听见院里的人说“还没到该走的时候。”", R2: "这份等待可以留下。", R4: "读者会从那个停顿里知道不可回头。"
+  });
+  expect(synthesis.text).toContain(evidenceUnits.R1 + "\n" + evidenceUnits.R2);
+});
+
+it("targets multiple defective references without rewriting the text or re-copying accepted evidence", async () => {
+  const short = "停顿";
+  const inventedJoined = "听见院里的人说“还没到该走的时候。”读者会从那个停顿里知道不可回头。";
+  const value = synthesisInput();
+  generate.mockResolvedValueOnce(synthesisReview(prose({
+    ...passEvidence, useA: orderedSources[0].text, useB: short, consequence: inventedJoined,
+    sourceA: { unit: "A1", through: "B1" }
+  }))).mockResolvedValueOnce(respond({ pass: true, issues: [], evidence: {
+    ...passEvidence, useA: "听见院里的人说“还没到该走的时候。”\n这份等待可以留下。"
+  } }));
+  const repair = vi.fn();
+  expect(await finalizeSynthesisMeaning(value, candidate, repair)).toMatchObject({ synthesis: { text: synthesis.text } });
+  expect(repair).not.toHaveBeenCalled();
+  expect(generate).toHaveBeenCalledTimes(2);
+  const correction = generate.mock.calls[1][0].input.slice(generate.mock.calls[0][0].input.length);
+  expect(correction).toContain(JSON.stringify({ sourceA: "A", useA: "R", useB: "R", consequence: "R" }));
+  expect(correction).not.toContain(inventedJoined);
+  value.trace.finish("success");
+  expect(lastTrace().checks[0]).toMatchObject({ reviewIssues: [
+    { code: "wrong_evidence_owner", field: "sourceA" },
+    { code: "wrong_evidence_owner", field: "useA" },
+    { code: "evidence_too_short", field: "useB" },
+    { code: "unmatched_evidence", field: "consequence" }
+  ] });
+});
+
+it("rejects altered punctuation, reversed ranges, nonexistent units, and malformed pointers", async () => {
+  const value = synthesisInput();
+  generate.mockResolvedValue(synthesisReview(prose({
+    ...passEvidence, sourceA: { unit: "A2", through: "A1" }, sourceB: { unit: "B9" },
+    useA: '听见院里的人说「还没到该走的时候。」', useB: { unit: "R3", through: null }
+  })));
+  await expect(finalizeSynthesisMeaning(value, candidate)).rejects.toBeInstanceOf(ReviewerProtocolError);
+  expect(generate).toHaveBeenCalledTimes(2);
+  value.trace.finish("reviewer_protocol_error");
+  expect(lastTrace().checks[1]).toMatchObject({ repair: true, reviewIssues: [
+    { code: "invalid_evidence_range", field: "sourceA" },
+    { code: "unknown_evidence_unit", field: "sourceB" },
+    { code: "unmatched_evidence", field: "useA" },
+    { code: "invalid_evidence", field: "useB" }
+  ] });
+});
+
+it("requires a full verdict after explicit provider truncation, even if the partial JSON parses", async () => {
+  const value = synthesisInput();
+  generate.mockResolvedValueOnce({ ...synthesisReview(prose(passEvidence)), truncated: true })
+    .mockResolvedValueOnce(synthesisReview(prose(passEvidence)));
+  expect(await finalizeSynthesisMeaning(value, candidate)).toMatchObject({ synthesis: { text: synthesis.text } });
+  expect(generate.mock.calls[1][0].input).toContain("按原结构返回完整审校结果");
+  value.trace.finish("success");
+  expect(lastTrace().checks[0]).toMatchObject({ reviewIssues: [{ code: "output_truncated" }] });
+});
+
+it("routes a substantive rejection with multiple defects to prose repair and rechecks the changed text", async () => {
+  const issues = ["第二段没有说明等待为何还能成立。", "最后一句把离别的后果写成相反方向。"];
+  const updated = { synthesis: { ...synthesis, text: synthesis.text.replace("不可回头", "暂时不能回头") }, outputText: "updated" };
+  const repair = vi.fn().mockResolvedValue(updated);
+  generate.mockResolvedValueOnce(synthesisReview({ pass: false, issues }))
+    .mockResolvedValueOnce(synthesisReview(prose(passEvidence)));
+  expect(await finalizeSynthesisMeaning(synthesisInput(), candidate, repair)).toMatchObject({ outputText: updated.outputText, synthesis: { text: updated.synthesis.text } });
+  expect(repair).toHaveBeenCalledExactlyOnceWith(issues, candidate);
+  expect(generate).toHaveBeenCalledTimes(2);
+  expect(generate.mock.calls[1][0].input).toContain(updated.synthesis.text.replace("\n", "\\n"));
+  expect(generate.mock.calls[1][0].input).not.toContain("上次审校回包未通过核验");
+});
+
+it("lets a targeted correction uncover a substantive rejection without releasing unsupported prose", async () => {
+  const value = synthesisInput();
+  const repair = vi.fn().mockResolvedValue(null);
+  const issue = "正文提出停顿，却没有说明它怎样改变人物对离别的理解。";
+  generate.mockResolvedValueOnce(synthesisReview(prose({ ...passEvidence, useB: { unit: "B1" } })))
+    .mockResolvedValueOnce(respond({ pass: false, issues: [issue] }));
+  expect(await finalizeSynthesisMeaning(value, candidate, repair)).toBeNull();
+  expect(repair).toHaveBeenCalledExactlyOnceWith([issue], candidate);
+  expect(generate).toHaveBeenCalledTimes(2);
+});
+
+it("does not accept a numbered range that exceeds the exact quote limit", async () => {
+  const value = synthesisInput();
+  const source = { ...orderedSources[0], text: "听院里的人说".repeat(20) + "。" + "他们在等待消息".repeat(18) + "。" };
+  value.sources = [source, orderedSources[1]];
+  generate.mockResolvedValue(synthesisReview(prose(passEvidence)));
+  await expect(finalizeSynthesisMeaning(value, candidate)).rejects.toBeInstanceOf(ReviewerProtocolError);
+  value.trace.finish("reviewer_protocol_error");
+  expect(lastTrace().checks[0]).toMatchObject({ reviewIssues: [{ code: "evidence_too_long", field: "sourceA" }] });
 });

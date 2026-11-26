@@ -2,13 +2,34 @@ import { randomUUID } from "node:crypto";
 import { generateText, type GenerateTextOptions, type TokenUsage } from "@/lib/openai/generateText";
 import { DIALECTIC_POLICY_CARD_VERSION, type DialecticPolicyCard } from "./policyCards";
 
-export const DIALECTIC_PROMPT_VERSION = "seed-flow-2026-11-26-source-grounded-prose";
+export const DIALECTIC_PROMPT_VERSION = "seed-flow-2026-11-26-evidence-units";
+
+const synthesisContractIssues = [
+  "synthesis_json", "synthesis_root_keys", "synthesis_keys", "synthesis_field_types", "synthesis_text_empty",
+  "synthesis_text_underlength", "synthesis_text_overlength", "synthesis_summary", "synthesis_label", "synthesis_change",
+  "synthesis_unsupported_quantity", "synthesis_deferred", "synthesis_applicable_cards", "synthesis_semantic_audit", "synthesis_expansion"
+] as const;
+export type SynthesisContractIssueCode = typeof synthesisContractIssues[number];
+
+const reviewProtocolCodes = [
+  "output_truncated", "invalid_json", "invalid_verdict", "missing_evidence", "invalid_evidence",
+  "evidence_too_short", "evidence_too_long", "wrong_evidence_owner", "unmatched_evidence",
+  "unknown_evidence_unit", "invalid_evidence_range"
+] as const;
+const reviewEvidenceFields = ["sourceA", "sourceB", "useA", "useB", "consequence", "gap", "opening", "thesis", "target", "premise"] as const;
+export type ReviewEvidenceField = typeof reviewEvidenceFields[number];
+export type ReviewProtocolIssue = { code: typeof reviewProtocolCodes[number]; field?: ReviewEvidenceField };
+
+type CheckDetails = {
+  contractIssues?: readonly SynthesisContractIssueCode[];
+  reviewIssues?: readonly ReviewProtocolIssue[];
+};
 type Stage = "branches" | "polarities" | "draft" | "critic" | "audit" | "final";
 type Outcome = "success" | "invalid_output" | "reviewer_protocol_error" | "failed" | "cancelled";
 type Call = {
   stage: Stage;
   repair: boolean;
-  repairKind?: "reviewer_protocol" | "prose";
+  repairKind?: "contract" | "reviewer_protocol" | "prose";
   elapsedMs: number;
   outcome: "success" | "failed" | "cancelled";
   transport?: string;
@@ -21,7 +42,7 @@ export function createGenerationTrace(endpoint: "branches" | "synthesis" | "pola
   const started = performance.now();
   const traceId = randomUUID();
   const calls: Call[] = [];
-  const checks: { stage: Stage; repair: boolean; valid: boolean; reason?: "reviewer_protocol_error" }[] = [];
+  const checks: ({ stage: Stage; repair: boolean; valid: boolean; reason?: "reviewer_protocol_error" } & CheckDetails)[] = [];
   let finished = false;
   let policyCards: { candidateIds: string[]; applicableIds?: string[] } | undefined;
   return {
@@ -59,8 +80,12 @@ export function createGenerationTrace(endpoint: "branches" | "synthesis" | "pola
         ...(applicable ? { applicableIds: applicable.map(card => card.id) } : {})
       };
     },
-    check(stage: Stage, valid: boolean, repair = false, reason?: "reviewer_protocol_error") {
-      checks.push({ stage, repair, valid, ...(reason ? { reason } : {}) });
+    check(stage: Stage, valid: boolean, repair = false, reason?: "reviewer_protocol_error", details?: CheckDetails) {
+      const contractIssues = details?.contractIssues?.filter(code => synthesisContractIssues.includes(code));
+      const reviewIssues = details?.reviewIssues?.flatMap(({ code, field }) =>
+        reviewProtocolCodes.includes(code) ? [{ code, ...(field && reviewEvidenceFields.includes(field) ? { field } : {}) }] : []);
+      checks.push({ stage, repair, valid, ...(reason ? { reason } : {}),
+        ...(contractIssues?.length ? { contractIssues } : {}), ...(reviewIssues?.length ? { reviewIssues } : {}) });
     },
     finish(outcome: Outcome) {
       if (finished) return;

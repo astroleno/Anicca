@@ -95,6 +95,7 @@ async function generateViaResponses(
   return {
     text: readOutputText(response),
     transport: "responses" as const,
+    ...(response.status === "incomplete" && response.incomplete_details?.reason === "max_output_tokens" ? { truncated: true } : {}),
     ...readUsage(response.usage, "responses")
   };
 }
@@ -129,6 +130,7 @@ async function generateViaChatCompletions(
   return {
     text: readChatCompletionText(response),
     transport: "chat_completions" as const,
+    ...(response.choices?.[0]?.finish_reason === "length" ? { truncated: true } : {}),
     ...readUsage(response.usage, "chat_completions")
   };
 }

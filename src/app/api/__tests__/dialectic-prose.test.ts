@@ -12,7 +12,7 @@ vi.mock("@/lib/openai/client", () => ({
 
 const emit = (value: unknown) => ({ text: JSON.stringify(value) });
 const audited = { label: "轮流协调", change: null, hypothesesSafe: true, issues: [], personalEvidence: [], novelty: { status: "unchecked" } };
-const valid = (evidence: Record<string, string>) => ({ pass: true, issues: [], evidence });
+const valid = (evidence: Record<string, string | { unit: string; through?: string }>) => ({ pass: true, issues: [], evidence });
 const invalid = (issue: string) => ({ pass: false, issues: [issue] });
 const endpoint = (path: string, body: Record<string, unknown>) =>
   new NextRequest(`http://localhost/api/${path}`, { method: "POST", body: JSON.stringify({ requestId: "prose-test", meaningVersion: 1, ...body }) });
@@ -185,13 +185,16 @@ it("allows a one-sided conclusion that explains why the other source's claim fai
 it("corrects invalid pass evidence on the exact same synthesis without a content rewrite", async () => {
   generate.mockResolvedValueOnce(emit({ synthesis: combined })).mockResolvedValueOnce(emit({ synthesis: combined }))
     .mockResolvedValueOnce(synthesisAudit(valid({ ...combinedEvidence, sourceA: combinedEvidence.sourceB })))
-    .mockResolvedValueOnce(synthesisAudit(valid(combinedEvidence)));
+    .mockResolvedValueOnce(emit({ pass: true, issues: [], evidence: { sourceA: { unit: "A1" } } }));
   const response = await synthesisPost(endpoint("synthesis", { rootInput: "共同创作一段祖屋故事", sources }));
   expect(response.status).toBe(200);
   expect(await response.json()).toMatchObject({ synthesis: { text: combined.text } });
   expect(generate).toHaveBeenCalledTimes(4);
   expect(generate.mock.calls[3][0].input.startsWith(generate.mock.calls[2][0].input)).toBe(true);
-  expect(generate.mock.calls[3][0].input).toContain("这些引证字段缺失或不匹配对应原文：sourceA");
+  const correction = generate.mock.calls[3][0].input.slice(generate.mock.calls[2][0].input.length);
+  expect(correction).toContain("sourceA：引证属于另一份材料");
+  expect(correction).toContain(JSON.stringify({ pass: true, issues: [], evidence: { sourceA: {} } }));
+  expect(correction).not.toContain("sourceB");
 });
 
 it("reports exhausted reviewer protocol failure separately from a semantic rejection", async () => {
@@ -209,15 +212,15 @@ it("reports exhausted reviewer protocol failure separately from a semantic rejec
   expect(trace.outcome).toBe("reviewer_protocol_error");
   expect(trace.calls.at(-1)).toMatchObject({ stage: "audit", repair: true, repairKind: "reviewer_protocol" });
   expect(trace.checks.slice(-2)).toEqual([
-    { stage: "audit", valid: false, repair: false, reason: "reviewer_protocol_error" },
-    { stage: "audit", valid: false, repair: true, reason: "reviewer_protocol_error" }
+    { stage: "audit", valid: false, repair: false, reason: "reviewer_protocol_error", reviewIssues: [{ code: "unmatched_evidence", field: "useB" }] },
+    { stage: "audit", valid: false, repair: true, reason: "reviewer_protocol_error", reviewIssues: [{ code: "invalid_json" }] }
   ]);
 });
 
 it("corrects a missing deferred evidence field while preserving short sources and the verified explanation", async () => {
   const shortSources = [{ ...sources[0], text: "台灯" }, { ...sources[1], text: "潮汐" }];
   const deferred = { reason: "台灯与潮汐尚未各自指向一个明确的问题，也没有提出它们之间的联系。", question: "你想在同一段作品里安排台灯和潮汐吗？" };
-  const evidence = { sourceA: "台灯", sourceB: "潮汐", gap: "没有提出它们之间的联系", opening: deferred.question };
+  const evidence = { sourceA: { unit: "A1" }, sourceB: "潮汐", gap: "没有提出它们之间的联系", opening: { unit: "Q1" } };
   const { gap, ...missingGap } = evidence;
   generate.mockResolvedValueOnce(emit({ deferred })).mockResolvedValueOnce(emit({ deferred }))
     .mockResolvedValueOnce(emit(valid(missingGap))).mockResolvedValueOnce(emit(valid({ ...missingGap, gap })));

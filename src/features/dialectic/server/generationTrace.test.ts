@@ -64,3 +64,22 @@ it("does not leak provider errors or turn a logging failure into a generation fa
   expect(() => trace.finish("failed")).not.toThrow();
   expect(JSON.stringify(log.mock.calls)).not.toContain("PRIVATE");
 });
+
+it("records allowlisted contract and review issue codes without accepting arbitrary strings", () => {
+  const log = vi.spyOn(console, "info").mockImplementation(() => {});
+  const trace = createGenerationTrace("synthesis", "gpt-test", new AbortController().signal);
+  trace.check("final", false, false, undefined, { contractIssues: ["synthesis_text_underlength", "PRIVATE" as never] });
+  trace.check("audit", false, true, "reviewer_protocol_error", { reviewIssues: [
+    { code: "wrong_evidence_owner", field: "useA" }, { code: "invalid_json", field: "PRIVATE" as never }, { code: "PRIVATE" as never }
+  ] });
+  trace.finish("reviewer_protocol_error");
+  const message = String(log.mock.calls[0][0]);
+  const recorded = JSON.parse(message.slice("anicca.generation ".length));
+  expect(message).not.toContain("PRIVATE");
+  expect(recorded.checks).toEqual([
+    { stage: "final", valid: false, repair: false, contractIssues: ["synthesis_text_underlength"] },
+    { stage: "audit", valid: false, repair: true, reason: "reviewer_protocol_error", reviewIssues: [
+      { code: "wrong_evidence_owner", field: "useA" }, { code: "invalid_json" }
+    ] }
+  ]);
+});
