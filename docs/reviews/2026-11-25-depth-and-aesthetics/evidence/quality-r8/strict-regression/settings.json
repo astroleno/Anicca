@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "run": "after",
+  "revision": "36421b1",
+  "examSha256": "f4758f3c3cb2346d830e2be660e16a41ccae8ff72726b925fab897eabe6fcb7e",
+  "manifestSha256": "7ab89e00b065322fe063df5f1133005ca4f9448673fd3db99b4de780067e3c91",
+  "base": "http://127.0.0.1:3279/",
+  "route": "synthesis",
+  "settings": {
+    "provider": "DeepSeek",
+    "model": "deepseek-v4-flash",
+    "providerModelObservedDuringCalibration": "deepseek-flash",
+    "transport": "chat_completions",
+    "thinking": "disabled",
+    "temperature": "provider default",
+    "sampling": "one formal draw per endpoint and edition; record transport retries and failed outputs"
+  },
+  "concurrency": 4,
+  "transport": {
+    "timeoutMs": 180000,
+    "maxAttempts": 2,
+    "retryDelayMs": 2000,
+    "retryStatuses": [
+      408,
+      429,
+      500,
+      502,
+      503,
+      504
+    ],
+    "retryOn": [
+      "network error",
+      "interrupted runner",
+      "listed HTTP statuses except invalid_model_output"
+    ]
+  }
+}
