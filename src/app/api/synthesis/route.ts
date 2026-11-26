@@ -154,7 +154,7 @@ async function generateSynthesisStage(
   const withLens = (stagePrompt: string) => (draftCandidates?.length ? [lensPrompt, stagePrompt, focusRule] : [stagePrompt, lensPrompt, focusRule])
     .filter(Boolean).join("\n\n");
   const maxOutputTokens = context.perspective ? 1800 : 1400;
-  const first = await trace.generate(stage, { client, input: withLens(prompt), maxOutputTokens });
+  const first = await trace.generate(stage, { client, input: withLens(prompt), maxOutputTokens, jsonObject: true });
   const analysis = analyze(first.text);
   trace.check(stage, Boolean(analysis.synthesis || analysis.deferred), false, undefined, { contractIssues: analysis.contractIssues });
   if (analysis.synthesis || analysis.deferred) {
@@ -166,7 +166,7 @@ async function generateSynthesisStage(
   const repair = await trace.generate(stage, {
     client,
     input: expansion ?? withLens(buildSynthesisContractRepairPrompt(context, first.text, analysis.errors, draftCandidates)),
-    maxOutputTokens
+    maxOutputTokens, jsonObject: true
   }, true, undefined, "contract");
   const outputText = expansion ? applySynthesisExpansion(first.text, repair.text) : repair.text;
   if (outputText === null) {
@@ -287,7 +287,7 @@ export async function POST(req: NextRequest) {
           const prompt = finalContext
             ? `${buildSynthesisFinalPrompt(context, "synthesis" in previous ? previous.synthesis : finalContext.original, finalContext.audit)}\n待修正输出：${JSON.stringify(previousDraft)}`
             : buildSynthesisCriticPrompt(context, previousDraft);
-          const repairedOutput = await trace!.generate(stage, { client, maxOutputTokens: perspective ? 1800 : 1400,
+          const repairedOutput = await trace!.generate(stage, { client, maxOutputTokens: perspective ? 1800 : 1400, jsonObject: true,
             input: [prompt, thinkingSpacePrompt(perspective, "synthesis", context.meaning),
               `必须修复以下审校问题：${issues.join("；")}`,
               "如果返回 synthesis，保留已成立的联结、保留部分及实际代价，按 230–260 字完整成稿；不要缩写为仅交代修复点的一段。",
@@ -316,6 +316,7 @@ export async function POST(req: NextRequest) {
     if (isHighRiskDialectic(cards)) {
       const auditResponse = await trace.generate("audit", {
         client,
+        jsonObject: true,
         input: buildSynthesisAuditPrompt(context, synthesis),
         maxOutputTokens: 1800
       });

@@ -95,7 +95,8 @@ export function createGenerationTrace(endpoint: "branches" | "synthesis" | "pola
       const modelId = /^[a-zA-Z0-9_.:/-]{1,100}$/.test(model) ? model : "unrecognized";
       const record = {
         schemaVersion: 1, traceId, endpoint, model: modelId,
-        promptVersion: DIALECTIC_PROMPT_VERSION, policyVersion: DIALECTIC_POLICY_CARD_VERSION,
+        promptVersion: endpoint === "synthesis" ? "seed-flow-2026-11-26-authorization-json" : DIALECTIC_PROMPT_VERSION,
+        policyVersion: DIALECTIC_POLICY_CARD_VERSION,
         outcome: signal.aborted ? "cancelled" : outcome,
         elapsedMs: Math.round(performance.now() - started),
         modelCalls: calls.length, repairCalls: calls.filter(call => call.repair).length,

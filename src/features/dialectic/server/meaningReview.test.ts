@@ -180,7 +180,7 @@ const passEvidence = {
   sourceA: { unit: "A1", through: "A2" }, sourceB: { unit: "B1" },
   useA: { unit: "R1", through: "R2" }, useB: { unit: "R3" }, consequence: { unit: "R4" }
 };
-const prose = (evidence: object) => ({ pass: true, issues: [], evidence, authorization: "none" });
+const prose = (evidence: object) => ({ pass: true, issues: [], evidence });
 const synthesisReview = (value: unknown) => respond({ synthesis: { ...verified, change: null, prose: value } });
 const lastTrace = () => JSON.parse(String(vi.mocked(console.info).mock.calls.at(-1)?.[0]).slice("anicca.generation ".length));
 
@@ -190,6 +190,8 @@ it("accepts only consecutive source and result units, preserving Unicode quotes 
   expect(result).toMatchObject({ synthesis: { text: synthesis.text } });
   expect(generate).toHaveBeenCalledOnce();
   const prompt = generate.mock.calls[0][0].input as string;
+  expect(prompt).not.toContain("prose.authorization");
+  expect(generate.mock.calls[0][0]).toHaveProperty("jsonObject", true);
   const evidenceUnits = JSON.parse(prompt.split("\n").find(line => line.startsWith("可选原文编号="))!.split("=")[1]);
   expect(evidenceUnits).toMatchObject({
     A1: "先听院子里的人怎么说。", A2: "这样才能知道他们在等什么。",
@@ -297,9 +299,9 @@ const disclosureInput = () => ({ ...synthesisInput(), sources: [
   { ...orderedSources[0], text: permissionA }, { ...orderedSources[1], text: permissionB }
 ] });
 const allowedPhoto = { at: "R", action: proposalA, decision: "proceed", use: "活动照片发布到公开新闻页",
-  basis: { owner: "A", quote: permissionA, scope: "公开新闻页可刊照片" }, gaps: [] };
+  basis: { owner: "A", quote: permissionA, scope: "把活动照片发布到公开新闻页" }, gaps: [] };
 const unsupportedInterview = { at: "R", action: proposalB, decision: "proceed", use: "合作方收到采访稿",
-  basis: { owner: "B", quote: permissionB, scope: "采访稿仅限组内阅读" }, gaps: ["audience"] };
+  basis: { owner: "B", quote: permissionB, scope: "在组内复盘中阅读采访稿" }, gaps: ["audience"] };
 
 it.each(["none", [], [allowedPhoto], [{ ...allowedPhoto, action: { unit: "R1" } }]])(
   "does not let an empty or incomplete action review pass (%j)", async authorization => {
@@ -392,7 +394,7 @@ it.each(["none", "wish", "grant", "revoked"])(
       action, decision: "proceed", use: "首页刊出谈话供外部读者浏览",
       basis: verdict === "wish"
         ? { owner: "A", quote: wish, scope: "网页编辑希望首页出现这段谈话" }
-        : { owner: "U", quote: { unit: "U1" }, scope: "讲述者批准首页刊出谈话" },
+        : { owner: "U", quote: { unit: "U1" }, scope: "这段谈话可刊在首页，供任何读者浏览" },
       gaps: []
     }];
     const repair = vi.fn().mockResolvedValue(null);
@@ -412,3 +414,73 @@ it.each(["none", "wish", "grant", "revoked"])(
     }
   }
 );
+
+it("keeps backup and restore verification in the ordinary evidence protocol", async () => {
+  const action = "先取得异地副本再验证可恢复";
+  const body = { ...candidate, synthesis: { ...synthesis, text: action + "。" },
+    authorizationFocus: [{ action, nonGrants: [orderedSources[0].text] }] };
+  const evidence = { sourceA: orderedSources[0].text, sourceB: orderedSources[1].text,
+    useA: action, useB: action, consequence: action };
+  generate.mockResolvedValueOnce(synthesisReview(prose(evidence)));
+  expect(await finalizeSynthesisMeaning(synthesisInput(), body)).toMatchObject({ synthesis: { text: body.synthesis.text } });
+  expect(generate).toHaveBeenCalledOnce();
+  expect(generate.mock.calls[0][0].input).not.toContain("复核下列动作");
+});
+
+it.each(["none", "confirmed"])("honors independent audit discovery on its same-text retry (%s)", async correction => {
+  const action = "今晚把她的谈话挂到网站上";
+  const grant = "讲述者已亲自确认网站可以刊出谈话。";
+  const value = { ...synthesisInput(), authorizationUserMaterial: grant };
+  const body = { ...candidate, synthesis: { ...synthesis, text: action + "。" } };
+  const evidence = { sourceA: orderedSources[0].text, sourceB: orderedSources[1].text,
+    useA: action, useB: action, consequence: action };
+  generate.mockResolvedValueOnce(synthesisReview({ ...prose(evidence), authorization: "review" }))
+    .mockResolvedValueOnce(respond({ pass: true, issues: [], authorization: correction === "none" ? "none" : [{
+      action, decision: "proceed", use: "刊出谈话供网站读者浏览",
+      basis: { owner: "U", quote: grant, scope: "网站可以刊出谈话" }, gaps: []
+    }] }));
+  if (correction === "none") {
+    await expect(finalizeSynthesisMeaning(value, body)).rejects.toBeInstanceOf(ReviewerProtocolError);
+  } else {
+    expect(await finalizeSynthesisMeaning(value, body)).toMatchObject({ synthesis: { text: body.synthesis.text } });
+  }
+  expect(generate).toHaveBeenCalledTimes(2);
+  expect(generate.mock.calls[1][0].input).toContain("授权核对使用的用户原文U=");
+});
+
+it.each([false, true])("checks changed publication separately from continued authorized playback (%s)", async allowed => {
+  const published = "首页可改为书面摘引或转述";
+  const local = "原声仍只在馆内展厅播放";
+  const oldGrant = "她签的只是馆内播放原声。";
+  const newGrant = "她书面同意在首页刊出这段谈话的摘引或转述。";
+  const reason = "这里要区分的是“保留叙述”与“公开原声”";
+  const text = `${reason}：${published}，保留她的搬迁经验，${local}。`;
+  const sources = [{ ...orderedSources[0], text: "第一人称细节让人记住搬迁当天。" },
+    { ...orderedSources[1], text: allowed ? oldGrant + newGrant : oldGrant }];
+  const value = { ...synthesisInput(), sources };
+  const candidate = { synthesis: { ...synthesis, text }, outputText: "publication" };
+  const review = {
+    ...prose({ sourceA: sources[0].text, sourceB: { unit: "B1" }, useA: "保留她的搬迁经验", useB: local, consequence: text }),
+    authorization: allowed ? [{
+      action: published, decision: "proceed", use: "首页以书面摘引或转述保留搬迁叙述",
+      basis: { owner: "B", quote: { unit: "B2" }, scope: "在首页刊出这段谈话的摘引或转述" }, gaps: []
+    }, {
+      action: local, decision: "proceed", use: "仅馆内播放原声",
+      basis: { owner: "B", quote: { unit: "B1" }, scope: "只是馆内播放原声" }, gaps: []
+    }] : [{
+      action: { unit: "R1" }, decision: "proceed", use: "首页以书面摘引或转述保留搬迁叙述，原声仍只在馆内展厅播放",
+      basis: { owner: "B", quote: { unit: "B1" }, scope: "馆内播放原声的授权范围内；书面摘引或转述不涉及原声公开" }, gaps: []
+    }]
+  };
+  generate.mockResolvedValueOnce(synthesisReview(review));
+  const repair = vi.fn().mockResolvedValue(null);
+  const result = await finalizeSynthesisMeaning(value, candidate, repair);
+  if (allowed) {
+    expect(result).toMatchObject({ synthesis: { text } });
+    expect(repair).not.toHaveBeenCalled();
+  } else {
+    expect(result).toBeNull();
+    expect(repair).toHaveBeenCalledWith([expect.stringContaining("保留已获准的原用法，新形式在另获许可前先暂缓")], candidate);
+  }
+  expect(generate).toHaveBeenCalledOnce();
+});
