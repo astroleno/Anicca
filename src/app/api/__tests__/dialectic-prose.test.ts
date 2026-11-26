@@ -126,6 +126,9 @@ it("repairs false deferral into synthesis using the ordered sources even when bo
   expect(await response.json()).toMatchObject({ synthesis: { text: combined.text } });
   expect(generate.mock.calls[2][0].input).toContain("核对缺口真实");
   expect(generate.mock.calls[2][0].input).toContain("缺少实施参数、未验证具体结果都不能证明两侧没有关系");
+  expect(generate.mock.calls[2][0].input).toContain("仍单独核对两侧是否支持一个有边界的共同判断");
+  expect(generate.mock.calls[2][0].input).toContain("逐句核对 reason 和 question");
+  expect(generate.mock.calls[2][0].input).toContain("暗示局部验证已足够支撑整体不可逆处置");
   expect(generate.mock.calls[3][0].input).toContain("感官不同不是证据缺口");
   expect(generate.mock.calls[4][0].input).toContain("分别引用当前第一、第二份来源");
   expect(generate.mock.calls[4][0].input).toContain("新判断无需在任一来源中逐字出现");
@@ -184,6 +187,53 @@ it("allows a one-sided conclusion that explains why the other source's claim fai
   expect(generate.mock.calls[2][0].input).toContain("让一整侧不保留");
 });
 
+it.each([false, true])("keeps a changed form and audience within actual permission (%s)", async publicPermission => {
+  const publicUse = "讲者明确准许在公开活动简报转述这个例子。";
+  const privateUse = "讲者只同意在组内工作坊展示演示稿。";
+  const requestSources = [
+    { id: "a", stance: "正", label: "保留例子", summary: "让读者理解抽象解释", text: "保留讲者在演示稿里举的例子，可以帮助读者理解抽象解释。" },
+    { id: "b", stance: "反", label: "许可范围", summary: "按讲者同意的形式和受众使用", text: publicPermission ? publicUse : privateUse }
+  ];
+  const next = "因此可以把这个例子转述到公开简报，读者仍能从例子读懂原来的区分。";
+  const pause = "目前只在组内工作坊使用演示稿，公开简报先用组织者自己的说明；等讲者明确同意向该受众转述再把例子补进去。";
+  const text = (continuation: string) => "讲者的例子在这里有实际用处：没有具体情境，抽象解释很难让读者知道区别落在哪里。活动简报和工作坊服务的对象不同，读者是在会后自己重建解释，无法当面追问。材料形式也会变，现场演示有上下文，文字转述会独立流通。决定能否把例子用到简报里的，是讲者是否已经许可公开转述这个例子；对原演示的许可只能支持它覆盖的使用。" + continuation;
+  const candidate = { ...combined, text: text(next), summary: "依据讲者许可决定例子能在哪种材料中使用。" };
+  const repaired = publicPermission ? candidate : { ...candidate, text: text(pause) };
+  const issue = "把例子转述到公开简报超出了组内演示许可；暂缓转述，保留组内演示。";
+  const evidence = valid({ sourceA: "保留讲者在演示稿里举的例子", sourceB: publicPermission ? publicUse : privateUse,
+    useA: "讲者的例子在这里有实际用处", useB: "对原演示的许可只能支持它覆盖的使用",
+    consequence: publicPermission ? "可以把这个例子转述到公开简报" : "目前只在组内工作坊使用演示稿" });
+  generate.mockImplementationOnce(({ input }: { input: string }) => emit({ synthesis: candidate,
+    ...(input.includes("候选适用范围：") ? { applicablePolicyCards: [] } : {}) }))
+    .mockResolvedValueOnce(emit({ synthesis: candidate }));
+  if (!publicPermission) generate.mockResolvedValueOnce(synthesisAudit(invalid(issue))).mockResolvedValueOnce(emit({ synthesis: repaired }));
+  generate.mockResolvedValueOnce(synthesisAudit(evidence));
+
+  const response = await synthesisPost(endpoint("synthesis", { rootInput: "工作坊的活动简报要公开发布，能用讲者的例子吗？", sources: requestSources, contextMessages: [{ role: "user", content: publicPermission ? publicUse : privateUse }] }));
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({ synthesis: { text: repaired.text } });
+  expect(generate).toHaveBeenCalledTimes(publicPermission ? 3 : 5);
+  for (const index of [0, 1, 2]) {
+    expect(generate.mock.calls[index][0].input).toContain("许可覆盖哪些对象、用途、内容形式、渠道和受众");
+    expect(generate.mock.calls[index][0].input).toContain("受限内容改成摘引、转述或其他形式");
+  }
+  expect(generate.mock.calls[2][0].input).toContain("有足够依据的范围内行动也不应被驳回");
+  if (!publicPermission) expect(generate.mock.calls[3][0].input).toContain(issue);
+});
+
+it("keeps recovery and deletion metaphors in the user's creative frame", async () => {
+  const rootInput = "写祖屋故事时，把搬家后的片段记忆比作清空旧硬盘后只恢复了部分内容；这里只讨论比喻。";
+  generate.mockImplementationOnce(({ input }: { input: string }) => emit({ synthesis: combined,
+    ...(input.includes("候选适用范围：") ? { applicablePolicyCards: [] } : {}) }))
+    .mockResolvedValueOnce(emit({ synthesis: combined }))
+    .mockResolvedValueOnce(synthesisAudit(valid(combinedEvidence)));
+  const response = await synthesisPost(endpoint("synthesis", { rootInput, sources }));
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({ synthesis: { text: combined.text } });
+  expect(generate).toHaveBeenCalledTimes(3);
+  for (const index of [0, 1, 2]) expect(generate.mock.calls[index][0].input).toContain("纯比喻、虚构和观点比较依原语境展开，无需添加现实处置流程");
+});
+
 it("corrects invalid pass evidence on the exact same synthesis without a content rewrite", async () => {
   generate.mockResolvedValueOnce(emit({ synthesis: combined })).mockResolvedValueOnce(emit({ synthesis: combined }))
     .mockResolvedValueOnce(synthesisAudit(valid({ ...combinedEvidence, sourceA: combinedEvidence.sourceB })))
@@ -233,7 +283,7 @@ it("corrects a missing deferred evidence field while preserving short sources an
   expect(generate.mock.calls[3][0].input.startsWith(generate.mock.calls[2][0].input)).toBe(true);
 });
 
-it("rechecks the high-risk final prose and repairs a rewrite that loses the comparison", async () => {
+it.each(["comparison", "partial verification", "unknown retention", "verified scope"] as const)("rechecks the high-risk final rewrite for %s", async scenario => {
   const rootInput = "生产数据库能否先删除旧数据，再验证快照恢复？";
   const requestSources = [
     { id: "a", stance: "正", label: "先删", summary: "释放空间后再验", text: "先删除旧数据能腾出空间，再利用这份空间检验快照恢复。" },
@@ -244,7 +294,19 @@ it("rechecks the high-risk final prose and repairs a rewrite that loses the comp
     summary: "无法隔离恢复时原数据保持可读并推迟删除", label: "恢复顺序", stance: "合",
     change: "把空间不足纳入推迟删除的条件。"
   };
-  const lostComparison = { ...grounded, text: combined.text };
+  const nextWithProof = "题设已确认该项目旧账不需继续保留，隔离恢复也完整读回了该项目的记录。只删除该项目已核验的旧记录，保留恢复副本和其余原记录。";
+  const final = {
+    comparison: { ...grounded, text: combined.text },
+    "partial verification": { ...grounded, text: grounded.text + "目前只验证了其中一个项目，已经可以据此清空全部原记录。" },
+    "unknown retention": { ...grounded, text: grounded.text + "全部记录都能恢复，是否需要保留尚未核对，可以先销毁再说。" },
+    "verified scope": { ...grounded, text: grounded.text + nextWithProof }
+  }[scenario];
+  const issue = {
+    comparison: "终审改写遗漏了先删方案的空间前提与先恢复的取舍。",
+    "partial verification": "单个项目的验证只覆盖该项目，不能证明全部原记录都能恢复。应保留未核验的记录。",
+    "unknown retention": "可恢复无法证明可销毁。是否必须保留尚未确认，应暂缓销毁。",
+    "verified scope": null
+  }[scenario];
   const evidence = {
     sourceA: "先删除旧数据能腾出空间",
     sourceB: "先在隔离环境实际恢复并核对快照",
@@ -258,15 +320,16 @@ it("rechecks the high-risk final prose and repairs a rewrite that loses the comp
     .mockResolvedValueOnce(emit({ audit: { route: "choose_antithesis", checks: ["I1", "I2", "I3", "F1", "F2", "F3"].map(id => ({
       id: `verified-recovery:${id}`, status: "covered", evidence: "测试已核查"
     })), unsupportedClaims: [], missingClauses: [], verdict: "pass" } }))
-    .mockResolvedValueOnce(emit({ synthesis: lostComparison }))
-    .mockResolvedValueOnce(synthesisAudit(invalid("终审改写遗漏了先删方案的空间前提与先恢复的取舍。")))
-    .mockResolvedValueOnce(emit({ synthesis: grounded }))
-    .mockResolvedValueOnce(synthesisAudit(valid(evidence)));
-  const response = await synthesisPost(endpoint("synthesis", { rootInput, sources: requestSources }));
+    .mockResolvedValueOnce(emit({ synthesis: final }));
+  if (issue) generate.mockResolvedValueOnce(synthesisAudit(invalid(issue))).mockResolvedValueOnce(emit({ synthesis: grounded }));
+  generate.mockResolvedValueOnce(synthesisAudit(valid(issue ? evidence : { ...evidence, consequence: "只删除该项目已核验的旧记录" })));
+  const userMaterial = "这次只拟删除这个项目的旧账。已经核对保留义务，旧账不需再保留。隔离恢复完整读回该项目的旧账，恢复副本和其他记录不删除。";
+  const response = await synthesisPost(endpoint("synthesis", { rootInput, sources: requestSources,
+    ...(issue ? {} : { contextMessages: [{ role: "user", content: userMaterial }] }) }));
   expect(response.status).toBe(200);
-  expect(await response.json()).toMatchObject({ synthesis: { text: grounded.text } });
-  expect(generate).toHaveBeenCalledTimes(8);
-  for (const index of [2, 5, 7]) {
+  expect(await response.json()).toMatchObject({ synthesis: { text: issue ? grounded.text : final.text } });
+  expect(generate).toHaveBeenCalledTimes(issue ? 8 : 6);
+  for (const index of issue ? [2, 5, 7] : [2, 5]) {
     const prompt = generate.mock.calls[index][0].input as string;
     const rulesLine = prompt.split("\n").find(line => line.startsWith("已适用规则="));
     expect(rulesLine).toBeDefined();
@@ -276,10 +339,18 @@ it("rechecks the high-risk final prose and repairs a rewrite that loses the comp
     expect(prompt).toContain("规则不能当作题设事实、来源证据或已获授权");
     expect(prompt).toContain("勿为覆盖规则新增行动或无关步骤");
   }
-  expect(generate.mock.calls[5][0].input).toContain(lostComparison.text);
-  expect(generate.mock.calls[6][0].input).toContain("终审改写遗漏了先删方案的空间前提与先恢复的取舍");
-  expect(generate.mock.calls[6][0].input).toContain("规则卡【");
-  expect(generate.mock.calls[7][0].input).toContain(grounded.text);
+  for (const index of issue ? [3, 4, 5, 6, 7] : [3, 4, 5]) {
+    expect(generate.mock.calls[index][0].input).toContain("局部验证只证明已检范围，可恢复也不能替代应否保留的判断");
+  }
+  expect(generate.mock.calls[5][0].input).toContain(final.text);
+  if (issue) {
+    expect(generate.mock.calls[6][0].input).toContain(issue);
+    expect(generate.mock.calls[6][0].input).toContain("规则卡【");
+    expect(generate.mock.calls[7][0].input).toContain(grounded.text);
+  } else {
+    expect(generate.mock.calls[5][0].input).toContain(userMaterial);
+    expect(generate.mock.calls[5][0].input).toContain("本题所需的许可、验证和保留要求均已满足时，可以按覆盖范围继续");
+  }
 });
 
 it.each([

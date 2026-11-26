@@ -57,6 +57,7 @@ it("repairs short critic and final outputs once each and independently reviews t
   const prompts: string[] = generate.mock.calls.map(([option]) => option.input);
   expect(prompts[2]).toContain('只返回 {"addition":"追加段落"}');
   expect(prompts[2]).toContain("至少 42 个字符");
+  expect(prompts[2]).toContain("局部验证只证明已检范围，可恢复也不能替代应否保留的判断");
   expect(prompts[2]).toContain("观察框架仅作材料");
   expect(prompts[2]).not.toContain("完整根对象结构示例");
   expect(prompts[3]).toContain(shortText + addition);
