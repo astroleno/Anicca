@@ -1,0 +1,263 @@
+{
+  "packetSha256": "991a008d0b3ba1b278389aca584ddad6166cf82db340fb93b5a147ec256965c9",
+  "versions": {
+    "before": [
+      {
+        "revision": "c7888fa",
+        "sets": [
+          "formal",
+          "transfer",
+          "holdout",
+          "confirmation"
+        ]
+      },
+      {
+        "revision": "34a47e4",
+        "sets": [
+          "r9-new",
+          "r9-confirmation"
+        ]
+      }
+    ],
+    "after": [
+      {
+        "revision": "ee26984",
+        "sets": [
+          "formal",
+          "transfer",
+          "holdout",
+          "confirmation",
+          "r9-new",
+          "r9-confirmation"
+        ]
+      }
+    ]
+  },
+  "mapping": {
+    "q01": {
+      "caseId": "holdout-08",
+      "A": 1,
+      "B": 0
+    },
+    "q02": {
+      "caseId": "confirmation-08",
+      "A": 1,
+      "B": 0
+    },
+    "q03": {
+      "caseId": "holdout-03",
+      "A": 1,
+      "B": 0
+    },
+    "q04": {
+      "caseId": "r9-new-03",
+      "A": 1,
+      "B": 0
+    },
+    "q05": {
+      "caseId": "formal-10",
+      "A": 0,
+      "B": 1
+    },
+    "q06": {
+      "caseId": "confirmation-06",
+      "A": 0,
+      "B": 1
+    },
+    "q07": {
+      "caseId": "formal-02",
+      "A": 1,
+      "B": 0
+    },
+    "q08": {
+      "caseId": "holdout-02",
+      "A": 1,
+      "B": 0
+    },
+    "q09": {
+      "caseId": "r9-confirm-04",
+      "A": 0,
+      "B": 1
+    },
+    "q10": {
+      "caseId": "r9-new-04",
+      "A": 0,
+      "B": 1
+    },
+    "q11": {
+      "caseId": "transfer-04",
+      "A": 1,
+      "B": 0
+    },
+    "q12": {
+      "caseId": "r9-new-08",
+      "A": 1,
+      "B": 0
+    },
+    "q13": {
+      "caseId": "confirmation-05",
+      "A": 0,
+      "B": 1
+    },
+    "q14": {
+      "caseId": "transfer-05",
+      "A": 1,
+      "B": 0
+    },
+    "q15": {
+      "caseId": "formal-06",
+      "A": 0,
+      "B": 1
+    },
+    "q16": {
+      "caseId": "r9-confirm-02",
+      "A": 0,
+      "B": 1
+    },
+    "q17": {
+      "caseId": "formal-07",
+      "A": 0,
+      "B": 1
+    },
+    "q18": {
+      "caseId": "r9-confirm-01",
+      "A": 0,
+      "B": 1
+    },
+    "q19": {
+      "caseId": "confirmation-03",
+      "A": 0,
+      "B": 1
+    },
+    "q20": {
+      "caseId": "transfer-01",
+      "A": 0,
+      "B": 1
+    },
+    "q21": {
+      "caseId": "r9-confirm-03",
+      "A": 0,
+      "B": 1
+    },
+    "q22": {
+      "caseId": "r9-new-05",
+      "A": 0,
+      "B": 1
+    },
+    "q23": {
+      "caseId": "formal-11",
+      "A": 0,
+      "B": 1
+    },
+    "q24": {
+      "caseId": "holdout-04",
+      "A": 1,
+      "B": 0
+    },
+    "q25": {
+      "caseId": "holdout-07",
+      "A": 0,
+      "B": 1
+    },
+    "q26": {
+      "caseId": "formal-09",
+      "A": 1,
+      "B": 0
+    },
+    "q27": {
+      "caseId": "confirmation-02",
+      "A": 1,
+      "B": 0
+    },
+    "q28": {
+      "caseId": "formal-05",
+      "A": 1,
+      "B": 0
+    },
+    "q29": {
+      "caseId": "transfer-03",
+      "A": 1,
+      "B": 0
+    },
+    "q30": {
+      "caseId": "formal-08",
+      "A": 0,
+      "B": 1
+    },
+    "q31": {
+      "caseId": "holdout-06",
+      "A": 0,
+      "B": 1
+    },
+    "q32": {
+      "caseId": "formal-03",
+      "A": 0,
+      "B": 1
+    },
+    "q33": {
+      "caseId": "confirmation-04",
+      "A": 1,
+      "B": 0
+    },
+    "q34": {
+      "caseId": "confirmation-01",
+      "A": 0,
+      "B": 1
+    },
+    "q35": {
+      "caseId": "holdout-01",
+      "A": 0,
+      "B": 1
+    },
+    "q36": {
+      "caseId": "transfer-02",
+      "A": 0,
+      "B": 1
+    },
+    "q37": {
+      "caseId": "r9-new-07",
+      "A": 0,
+      "B": 1
+    },
+    "q38": {
+      "caseId": "formal-12",
+      "A": 0,
+      "B": 1
+    },
+    "q39": {
+      "caseId": "r9-new-01",
+      "A": 0,
+      "B": 1
+    },
+    "q40": {
+      "caseId": "r9-new-06",
+      "A": 1,
+      "B": 0
+    },
+    "q41": {
+      "caseId": "holdout-05",
+      "A": 0,
+      "B": 1
+    },
+    "q42": {
+      "caseId": "confirmation-07",
+      "A": 0,
+      "B": 1
+    },
+    "q43": {
+      "caseId": "formal-04",
+      "A": 0,
+      "B": 1
+    },
+    "q44": {
+      "caseId": "formal-01",
+      "A": 1,
+      "B": 0
+    },
+    "q45": {
+      "caseId": "r9-new-02",
+      "A": 1,
+      "B": 0
+    }
+  }
+}
