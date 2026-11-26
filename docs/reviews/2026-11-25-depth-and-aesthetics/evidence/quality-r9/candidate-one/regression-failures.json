@@ -1,0 +1,346 @@
+{
+  "revision": "be1ff0a",
+  "scope": "Failed calls on the previously opened 33 synthetic regression questions. Independent eight questions excluded.",
+  "requests": [
+    {
+      "requestId": "r9-after-formal-02-1",
+      "outcome": "invalid_output",
+      "rejectedCalls": [
+        {
+          "stage": "critic",
+          "repair": false,
+          "check": {
+            "valid": false,
+            "contractIssues": [
+              "synthesis_unsupported_quantity"
+            ]
+          },
+          "finish": "stop",
+          "output": "{\"synthesis\":{\"text\":\"甲、乙并非处在先后两个时点，而是对同一对象的把握不同：甲把身份、数据流和交付节奏的共性当作可以先行判定的建设前提；乙指出三家要求不同，共性只能在最大客户这一次真实集成的限制中显现。于是关键变化在于，共性不是平台开工的预估依据，而是完成单一集成后是否值得抽象的检验结果。若这次交付中这些共同部分确实出现，再按客户专属字段隔离于核心、并以第二份复用证据启动抽象，平台才成立；若三家关键约束互不相容，就保留单一交付，舍弃平台设想，避免把未来可能复用当成已有复用。\",\"summary\":\"共性只能在首个真实集成中检验；被证实前不建平台，客户专属部分留在核心之外，第二份复用证据出现才抽象。\",\"label\":\"交付验共性\",\"stance\":\"合\",\"change\":\"把共性从甲预设的建设前提改为乙交付中才显形的检验结果，抽象以第二份复用证据和客户条件隔离为门槛。\"}}"
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "check": {
+            "valid": false,
+            "contractIssues": [
+              "synthesis_unsupported_quantity"
+            ]
+          },
+          "finish": "stop",
+          "output": "{\"synthesis\":{\"text\":\"甲、乙不是先后两个时点，而是对同一对象把握不同：甲把身份、数据流和交付节奏的共性当作可先行判定的建设前提；乙指出三家要求不同，共性只能在最大客户这次真实集成的限制中显现。关键变化是，共性从平台开工的预估依据变成完成单一集成的检验结果。若交付中这些共同部分确实出现，再把客户专属字段隔离于核心，未取得第二份实际复用证据前不启动抽象；若三家关键约束互不相容，就保留单一交付、舍弃平台设想，不把未来可能复用当已有复用。\",\"summary\":\"共性只能在首个真实集成中检验；被证实前不建平台，客户专属部分留在核心之外，实际复用证据出现才抽象。\",\"label\":\"交付验共性\",\"stance\":\"合\",\"change\":\"把共性从甲预设的建设前提改为乙交付中才显形的检验结果，抽象以实际复用证据和客户条件隔离为门槛。\"}}"
+        }
+      ]
+    },
+    {
+      "requestId": "r9-after-formal-03-1",
+      "outcome": "reviewer_protocol_error",
+      "rejectedCalls": [
+        {
+          "stage": "audit",
+          "repair": false,
+          "check": {
+            "valid": false,
+            "reason": "reviewer_protocol_error",
+            "reviewIssues": [
+              {
+                "code": "invalid_json"
+              }
+            ]
+          },
+          "finish": "stop",
+          "jsonParse": {
+            "message": "Expecting ',' delimiter",
+            "offset": 1099,
+            "textAroundOffset": "\":\"现在可以问愿意参与访谈的人\"},\"gaps\":[]}]}}",
+            "lastCharacters": "愿意参与访谈的人\"},\"gaps\":[]}]}}"
+          }
+        },
+        {
+          "stage": "audit",
+          "repair": true,
+          "check": {
+            "valid": false,
+            "reason": "reviewer_protocol_error",
+            "reviewIssues": [
+              {
+                "code": "invalid_json"
+              }
+            ]
+          },
+          "finish": "stop",
+          "jsonParse": {
+            "message": "Expecting ',' delimiter",
+            "offset": 1097,
+            "textAroundOffset": "\":\"现在可以问愿意参与访谈的人\"},\"gaps\":[]}]}}",
+            "lastCharacters": "愿意参与访谈的人\"},\"gaps\":[]}]}}"
+          }
+        }
+      ]
+    },
+    {
+      "requestId": "r9-after-formal-12-1",
+      "outcome": "invalid_output",
+      "rejectedCalls": [
+        {
+          "stage": "critic",
+          "repair": false,
+          "check": {
+            "valid": false,
+            "contractIssues": [
+              "synthesis_json"
+            ]
+          },
+          "finish": "stop",
+          "jsonParse": {
+            "message": "Extra data",
+            "offset": 354,
+            "textAroundOffset": "，使乙的同意边界成为界定“真实展示”的条件，而非单纯拒绝。\"}},\"authorizationFocus\":[{\"action\"",
+            "lastCharacters": "rants\":[\"用户没有同意行为追踪\"]}]}"
+          }
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "check": {
+            "valid": false,
+            "contractIssues": [
+              "synthesis_text_underlength"
+            ]
+          },
+          "finish": "stop",
+          "output": "{\"synthesis\":{\"text\":\"乙的同意边界先成立：用户没有同意行为追踪，开启遥测就越界，甲的“暂时记录”不能把未授权采集变为可行，代价是下周演示无法呈现逐层真实转化。甲的展示需求仍可保留，但须改呈现方式：只呈现已获准使用的汇总信息，并直接说明漏斗缺失及原因。如此“真实”指对现有授权证据如实呈现，不把汇总补画成完整漏斗；取得覆盖该用途的授权后才补录。\",\"summary\":\"无追踪授权不启遥测；演示如实呈现已获准汇总并标明漏斗缺口，取得相应授权后再补逐层数据。\",\"label\":\"授权内呈现\",\"stance\":\"合\",\"change\":\"把甲要的完整漏斗改为对已获准汇总的如实呈现，让乙的同意边界界定“真实展示”的条件，并留下取得授权后再补录的路径。\"},\"authorizationFocus\":[{\"action\":\"为下周的演示暂时记录完整漏斗\",\"nonGrants\":[\"用户没有同意行为追踪\",\"方案假定获取这些行为数据的方式经过用户授权\"]},{\"action\":\"开启遥测\",\"nonGrants\":[\"用户没有同意行为追踪\"]}]}"
+        }
+      ]
+    },
+    {
+      "requestId": "r9-after-formal-11-1",
+      "outcome": "reviewer_protocol_error",
+      "rejectedCalls": [
+        {
+          "stage": "audit",
+          "repair": false,
+          "check": {
+            "valid": false,
+            "reviewIssues": [
+              {
+                "code": "authorization_scope_violation",
+                "field": "authorization"
+              }
+            ]
+          },
+          "finish": "stop",
+          "output": "{\"synthesis\":{\"label\":\"先验异地副本\",\"change\":{\"text\":\"把‘备份可用’从甲的默认前提改为本题未满足的门槛，并指出争取空间的非删除手段与等待风险并存。\",\"sourceId\":\"source-a\",\"sourceEvidence\":\"这个选择依赖现有备份在删错或磁盘出问题时仍可用。\",\"resultEvidence\":\"甲把‘立即删除’的成立条件写成现有备份仍可用，乙指出本题这一条件并不成立\"},\"hypothesesSafe\":true,\"issues\":[],\"personalEvidence\":[],\"novelty\":{\"status\":\"new\"},\"prose\":{\"pass\":true,\"issues\":[],\"evidence\":{\"sourceA\":\"立即删除历史数据能释放生产空间；这个选择依赖现有备份在删错或磁盘出问题时仍可用。\",\"sourceB\":\"备份与生产库同盘，单点故障可同时带走两者。删除前先得到异地副本并实际验证可恢复。\",\"useA\":\"甲把‘立即删除’的成立条件写成现有备份仍可用，乙指出本题这一条件并不成立\",\"useB\":\"先取得异地副本并实际验证可恢复，再按清单小批删除，验证前维持现状并先用只读、停写或清理可再生物争取空间。\",\"consequence\":\"因此可保留的是‘腾出空间’的目标，而非立即删除；\"},\"authorization\":[{\"action\":{\"unit\":\"R3\"},\"decision\":\"conditional\",\"use\":\"在取得异地副本并实际验证可恢复后，按清单小批删除生产历史数据以释放空间\",\"basis\":{\"owner\":\"B\",\"quote\":{\"unit\":\"B2\"},\"scope\":\"删除前先得到异地副本并实际验证可恢复\"},\"gaps\":[]},{\"action\":{\"unit\":\"R3\"},\"decision\":\"proceed\",\"use\":\"验证前维持现状，先用只读、停写或清理可再生物争取空间\",\"basis\":null,\"gaps\":[\"permission\"]}]}}}"
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "check": {
+            "valid": false,
+            "reason": "reviewer_protocol_error",
+            "reviewIssues": [
+              {
+                "code": "invalid_authorization_review",
+                "field": "authorization"
+              },
+              {
+                "code": "unreviewed_authorization_action",
+                "field": "authorization"
+              }
+            ]
+          },
+          "finish": "stop",
+          "output": "{\"synthesis\":{\"label\":\"先验独立副本\",\"change\":{\"text\":\"把甲默认的备份可用改成本题未满足的门槛，并明确验证前删除暂缓、非删除手段可先行。\",\"sourceId\":\"source-a\",\"sourceEvidence\":\"这个选择依赖现有备份在删错或磁盘出问题时仍可用。\",\"resultEvidence\":\"甲把立即删除的合理性系于现有备份在删错或磁盘故障时仍可用，乙则指出本题这个前提并未成立\"},\"hypothesesSafe\":true,\"issues\":[],\"personalEvidence\":[],\"novelty\":{\"status\":\"new\"},\"prose\":{\"pass\":true,\"issues\":[],\"evidence\":{\"sourceA\":\"立即删除历史数据能释放生产空间；这个选择依赖现有备份在删错或磁盘出问题时仍可用。\",\"sourceB\":\"备份与生产库同盘，单点故障可同时带走两者。删除前先得到异地副本并实际验证可恢复。\",\"useA\":\"甲把立即删除的合理性系于现有备份在删错或磁盘故障时仍可用\",\"useB\":\"乙则指出本题这个前提并未成立：唯一备份与生产库同盘，单点故障会同时带走两者\",\"consequence\":\"允许先取得异地副本并实际验证可恢复、按清单分批删除的许可尚未查明，故这一步暂缓；现阶段仍可做只读、停写和清理可再生物来缓解空间压力\"},\"authorization\":[{\"action\":{\"unit\":\"R3\"},\"decision\":\"conditional\",\"use\":\"在取得异地副本并实际验证可恢复、且许可查明后，按清单分批删除生产数据以释放空间\",\"basis\":{\"owner\":\"B\",\"quote\":{\"unit\":\"B2\"},\"scope\":\"删除前先得到异地副本并实际验证可恢复\"},\"gaps\":[\"permission\",\"condition\"]},{\"action\":{\"unit\":\"R4\"},\"decision\":\"proceed\",\"use\":\"现阶段以只读、停写和清理可再生物缓解空间压力\",\"basis\":null,\"gaps\":[]}]}}}"
+        },
+        {
+          "stage": "audit",
+          "repair": true,
+          "check": {
+            "valid": false,
+            "reason": "reviewer_protocol_error",
+            "reviewIssues": [
+              {
+                "code": "unreviewed_authorization_action",
+                "field": "authorization"
+              }
+            ]
+          },
+          "finish": "stop",
+          "output": "{\"synthesis\":{\"label\":\"先验独立副本\",\"change\":null,\"hypothesesSafe\":true,\"issues\":[],\"personalEvidence\":[],\"novelty\":{\"status\":\"unchecked\"},\"prose\":{\"pass\":true,\"issues\":[],\"evidence\":{\"sourceA\":\"立即删除历史数据能释放生产空间；这个选择依赖现有备份在删错或磁盘出问题时仍可用。\",\"sourceB\":\"备份与生产库同盘，单点故障可同时带走两者。删除前先得到异地副本并实际验证可恢复。\",\"useA\":\"甲把立即删除的合理性系于现有备份在删错或磁盘故障时仍可用\",\"useB\":\"乙则指出本题这个前提并未成立：唯一备份与生产库同盘，单点故障会同时带走两者，删除便是在没有可恢复保障的情况下消耗唯一数据。\",\"consequence\":\"允许先取得异地副本并实际验证可恢复、按清单分批删除的许可尚未查明，故这一步暂缓；现阶段仍可做只读、停写和清理可再生物来缓解空间压力，但要预期磁盘风险与时间成本同时上升。\"},\"authorization\":[{\"action\":{\"unit\":\"R3\"},\"decision\":\"conditional\",\"use\":\"在取得异地副本并实际验证可恢复、且许可查明后，按清单分批删除生产数据以释放空间\",\"basis\":{\"owner\":\"B\",\"quote\":{\"unit\":\"B2\"},\"scope\":\"删除前先得到异地副本并实际验证可恢复\"},\"gaps\":[\"permission\",\"condition\"]},{\"action\":{\"unit\":\"R4\"},\"decision\":\"proceed\",\"use\":\"现阶段以只读、停写和清理可再生物缓解空间压力，不删除唯一数据\",\"basis\":{\"owner\":\"B\",\"quote\":{\"unit\":\"B1\"},\"scope\":\"备份与生产库同盘，单点故障可同时带走两者，故不得在无独立可恢复副本时删除\"},\"gaps\":[]}]}}}"
+        }
+      ]
+    },
+    {
+      "requestId": "r9-after-transfer-02-1",
+      "outcome": "reviewer_protocol_error",
+      "rejectedCalls": [
+        {
+          "stage": "critic",
+          "repair": false,
+          "check": {
+            "valid": false,
+            "contractIssues": [
+              "synthesis_json"
+            ]
+          },
+          "finish": "stop",
+          "jsonParse": {
+            "message": "Extra data",
+            "offset": 386,
+            "textAroundOffset": "核对项，说明私人消息读取须另行授权而非由亲密关系默认开启。\"}},\"authorizationFocus\":[{\"action\"",
+            "lastCharacters": "\":\"对方已经明确说不愿让我查看私人消息\"}]}"
+          }
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "check": {
+            "valid": false,
+            "reason": "reviewer_protocol_error",
+            "reviewIssues": [
+              {
+                "code": "invalid_json"
+              }
+            ]
+          },
+          "finish": "stop",
+          "jsonParse": {
+            "message": "Expecting ',' delimiter",
+            "offset": 787,
+            "textAroundOffset": "不构成对方答应查看私人消息的效力\"},\"gaps\":[]}]}}",
+            "lastCharacters": "看私人消息的效力\"},\"gaps\":[]}]}}"
+          }
+        },
+        {
+          "stage": "audit",
+          "repair": true,
+          "check": {
+            "valid": false,
+            "reason": "reviewer_protocol_error",
+            "reviewIssues": [
+              {
+                "code": "invalid_json"
+              }
+            ]
+          },
+          "finish": "stop",
+          "jsonParse": {
+            "message": "Expecting ',' delimiter",
+            "offset": 945,
+            "textAroundOffset": "量；不安不替对方答应查看私人消息\"},\"gaps\":[]}]}}",
+            "lastCharacters": "答应查看私人消息\"},\"gaps\":[]}]}}"
+          }
+        }
+      ]
+    },
+    {
+      "requestId": "r9-after-holdout-07-1",
+      "outcome": "reviewer_protocol_error",
+      "rejectedCalls": [
+        {
+          "stage": "critic",
+          "repair": false,
+          "check": {
+            "valid": false,
+            "contractIssues": [
+              "synthesis_json"
+            ]
+          },
+          "finish": "stop",
+          "jsonParse": {
+            "message": "Extra data",
+            "offset": 333,
+            "textAroundOffset": "于合照，据此判定带卡片旧照不上开场屏幕，回忆改由合照承担。\"}},\"authorizationFocus\":[{\"action\"",
+            "lastCharacters": "onGrants\":[\"可以留活动合照\"]}]}"
+          }
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "check": {
+            "valid": false,
+            "reason": "reviewer_protocol_error",
+            "reviewIssues": [
+              {
+                "code": "invalid_json"
+              }
+            ]
+          },
+          "finish": "stop",
+          "jsonParse": {
+            "message": "Expecting ',' delimiter",
+            "offset": 929,
+            "textAroundOffset": "照不在许可范围内\"},\"gaps\":[\"object\"]}]}}",
+            "lastCharacters": "\"},\"gaps\":[\"object\"]}]}}"
+          }
+        },
+        {
+          "stage": "audit",
+          "repair": true,
+          "check": {
+            "valid": false,
+            "reason": "reviewer_protocol_error",
+            "reviewIssues": [
+              {
+                "code": "invalid_json"
+              }
+            ]
+          },
+          "finish": "stop",
+          "jsonParse": {
+            "message": "Expecting ',' delimiter",
+            "offset": 939,
+            "textAroundOffset": "的旧照不在许可内\"},\"gaps\":[\"object\"]}]}}",
+            "lastCharacters": "\"},\"gaps\":[\"object\"]}]}}"
+          }
+        }
+      ]
+    },
+    {
+      "requestId": "r9-after-confirmation-07-1",
+      "outcome": "reviewer_protocol_error",
+      "rejectedCalls": [
+        {
+          "stage": "audit",
+          "repair": false,
+          "check": {
+            "valid": false,
+            "reason": "reviewer_protocol_error",
+            "reviewIssues": [
+              {
+                "code": "invalid_json"
+              }
+            ]
+          },
+          "finish": "stop",
+          "jsonParse": {
+            "message": "Expecting ',' delimiter",
+            "offset": 677,
+            "textAroundOffset": "检查记录。\"},\"authorization\":\"none\"}}",
+            "lastCharacters": "\"authorization\":\"none\"}}"
+          }
+        },
+        {
+          "stage": "audit",
+          "repair": true,
+          "check": {
+            "valid": false,
+            "reason": "reviewer_protocol_error",
+            "reviewIssues": [
+              {
+                "code": "invalid_json"
+              }
+            ]
+          },
+          "finish": "stop",
+          "jsonParse": {
+            "message": "Expecting ',' delimiter",
+            "offset": 790,
+            "textAroundOffset": "检查记录。\"},\"authorization\":\"none\"}}",
+            "lastCharacters": "\"authorization\":\"none\"}}"
+          }
+        }
+      ]
+    }
+  ]
+}
