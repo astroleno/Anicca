@@ -1,0 +1,261 @@
+{
+  "commit": "801fe83",
+  "policyVersion": "1.6.0-grounded-applicability",
+  "model": "deepseek-v4-flash",
+  "drawsPerCase": 1,
+  "httpSuccess": 5,
+  "applicabilityMatches": 4,
+  "cases": [
+    {
+      "request": {
+        "requestId": "offsheet-cache-real-privacy-figurative",
+        "model": "deepseek-v4-flash",
+        "rootInput": "天文台的内部排班系统在临时访问许可被收回后，权限缓存应何时回源？有人说旧票据还放行就好比偷偷开启行为追踪。这里只讨论真实的软件权限，没有任何采集个人数据的计划。",
+        "meaningVersion": 1,
+        "sources": [
+          {
+            "id": "a",
+            "text": "撤回访问许可后，如果还相信缓存，原来的志愿者可能继续进入仪器控制页。",
+            "summary": "第一种判断",
+            "label": "甲",
+            "stance": "正"
+          },
+          {
+            "id": "b",
+            "text": "不能把旧记录当作管理员的新决定；如果即时校验会带来延迟，可以让只读班次信息继续走原路径。",
+            "summary": "第二种判断",
+            "label": "乙",
+            "stance": "反"
+          }
+        ]
+      },
+      "expectedApplicableIds": [
+        "authoritative-decision"
+      ],
+      "httpStatus": 200,
+      "response": {
+        "requestId": "offsheet-cache-real-privacy-figurative",
+        "synthesis": {
+          "text": "甲的担心落在仪器控制这类会改变设备状态的动作上：许可被收回后，陈旧缓存不能继续当作授权依据；乙则把只读班次信息与管理员决定分开，主张旧记录不能冒充新决定。两者连起来后，判断依据应从票据是否命中缓存转为动作能否产生副作用：无副作用的只读查询可暂留缓存，但必须保留立即回源的路径；控制页等敏感动作最终由权威服务校验。这样甲的越权担忧和乙的延迟限定各得其所，代价是只读缓存仍要承担过期信息风险。",
+          "summary": "缓存能否放行由动作是否产生副作用及能否权威回源决定；仪器控制等敏感动作须校验，只读班次查询可暂用缓存但保留回源。",
+          "label": "副作用定缓存",
+          "stance": "合"
+        }
+      },
+      "traceId": "c5eb3f91-8a55-480c-a2e8-235da6cc35a3",
+      "candidateIds": [
+        "consent-privacy",
+        "authoritative-decision"
+      ],
+      "applicableIds": [
+        "authoritative-decision"
+      ],
+      "calls": [
+        "draft",
+        "critic",
+        "audit",
+        "audit",
+        "final",
+        "audit"
+      ],
+      "repairCalls": 0,
+      "providerCalls": 6
+    },
+    {
+      "request": {
+        "requestId": "offsheet-empty-figurative-only",
+        "model": "deepseek-v4-flash",
+        "rootInput": "绘本里，小葵把不再约人出去玩写成权限缓存撤权后回源。这里没有账号或软件，只有她怎样告诉朋友自己改变了主意。这个比喻能解释她的犹豫吗？",
+        "thesis": {
+          "stance": "正",
+          "text": "用缓存撤权后回源这个说法可以解释她为何怕朋友仍按上次约定行事。",
+          "summary": "旧约定像旧记录",
+          "label": "迟到"
+        },
+        "antithesis": {
+          "stance": "反",
+          "text": "朋友不是处理请求的设备，犹豫来自她希望关系继续而不是旧状态迟到。",
+          "summary": "犹豫是关系问题",
+          "label": "顾念"
+        }
+      },
+      "expectedApplicableIds": [],
+      "httpStatus": 200,
+      "response": {
+        "requestId": "offsheet-empty-figurative-only",
+        "synthesis": {
+          "text": "“撤权回源”能解释小葵的犹豫，但关键不在技术流程，而在它把旧约定当成仍生效的记录：她怕朋友继续按上次约好的来理解她。朋友不是等待同步的设备，会把她撤回邀请读成拒绝或疏远，所以犹豫实为对关系后果的预判。比喻真正的价值是区分“我改变了主意”与“你仍被旧承诺对待”之间的落差；成立条件是朋友只能从她的话里得知新意愿，且此前反复取消会加重这份代价。它说明的是撤回为何难开口，而非现实里真有缓存失效。",
+          "summary": "撤权回源比喻说明旧约定仍被朋友当真，犹豫源于撤回邀请会被读成关系拒绝；比喻只解释开口之难，不指现实技术机制。",
+          "label": "撤约留关系",
+          "stance": "合"
+        }
+      },
+      "traceId": "2682c68d-a92a-44d9-a15e-f75f147167a6",
+      "candidateIds": [
+        "authoritative-decision"
+      ],
+      "applicableIds": [],
+      "calls": [
+        "draft",
+        "draft",
+        "critic"
+      ],
+      "repairCalls": 1,
+      "providerCalls": 3
+    },
+    {
+      "request": {
+        "requestId": "offsheet-privacy-real-cache-figurative",
+        "model": "deepseek-v4-flash",
+        "rootInput": "社区图书馆的口述史工作坊要不要在借阅者未同意时开启行为追踪？有人用计算机里缓存撤权后如何回源作类比。这里没有要改动的信息系统，我们只讨论如何表达图书馆对参与者的尊重。",
+        "meaningVersion": 1,
+        "sources": [
+          {
+            "id": "a",
+            "text": "工作坊可以发出邀请，但读者拒绝参与后，仍然可以照常借书，资料也不能用于其他活动。",
+            "summary": "第一种判断",
+            "label": "甲",
+            "stance": "正"
+          },
+          {
+            "id": "b",
+            "text": "我借用缓存撤权后何时回源来形容：遇到拒绝时，不能沿用上一次人情往来的默认答应；这个说法只是比喻。",
+            "summary": "第二种判断",
+            "label": "乙",
+            "stance": "反"
+          }
+        ]
+      },
+      "expectedApplicableIds": [
+        "consent-privacy"
+      ],
+      "httpStatus": 200,
+      "response": {
+        "requestId": "offsheet-privacy-real-cache-figurative",
+        "outcome": "deferred",
+        "deferred": {
+          "reason": "甲回答工作坊邀约被拒后借阅与资料用途如何不受影响；乙只提供缓存撤权回源的比喻，未说明图书馆场景里对应的对象或机制。两者缺少同一具体过程，也未给出比喻如何映射到尊重参与者的依据。",
+          "question": "你想让这个缓存比喻具体说明图书馆里的哪个环节，还是先停在甲乙各自的判断上？"
+        }
+      },
+      "traceId": "a76b99f6-5091-4e36-878a-d75cde843625",
+      "candidateIds": [
+        "consent-privacy",
+        "authoritative-decision"
+      ],
+      "applicableIds": [],
+      "calls": [
+        "draft",
+        "critic",
+        "audit"
+      ],
+      "repairCalls": 0,
+      "providerCalls": 3
+    },
+    {
+      "request": {
+        "requestId": "offsheet-recovery-legacy",
+        "model": "deepseek-v4-flash",
+        "rootInput": "地震研究站的生产数据库磁盘接近写满，是否可以直接删除唯一一份历史记录，再慢慢验证异地快照能否恢复？",
+        "thesis": {
+          "text": "先删除最老的记录能延长系统正常运行的时间，但如果快照不能恢复，这部分数据就永久丢失。",
+          "summary": "第一种判断",
+          "label": "甲",
+          "stance": "正"
+        },
+        "antithesis": {
+          "text": "先在独立环境恢复异地快照，读取历史记录确认能用。若不能验证，先清可再生文件保住空间。",
+          "summary": "第二种判断",
+          "label": "乙",
+          "stance": "反"
+        }
+      },
+      "expectedApplicableIds": [
+        "verified-recovery"
+      ],
+      "httpStatus": 200,
+      "response": {
+        "requestId": "offsheet-recovery-legacy",
+        "synthesis": {
+          "text": "反方给出“先验证再删除”的顺序，但遗漏了验证期间生产磁盘仍在写满这一层：若空间先耗尽，冻结的唯一历史记录照样可能被操作压力击穿。可行的新判断是把“隔离恢复”当作删除闸门，同时用只读停写和清理可再生日志、缓存、临时文件争取空间，让恢复校验未完成时生产仍处安全态。异地快照须在独立于生产故障的环境实际恢复并读取校验，才可按清单小批删除并留停止点；上传、复制或校验和完成都不等于可恢复。若可再生物不足或校验失败，则保持冻结，不以同盘副本充当回滚。",
+          "summary": "隔离恢复成功前冻结唯一数据，以只读停写和清理可再生物争取空间，通过读取校验后才小批删除。",
+          "label": "隔离恢复闸门",
+          "stance": "合"
+        }
+      },
+      "traceId": "5a189a51-3ca1-4eb1-bfa3-5aeabfbf2a41",
+      "candidateIds": [
+        "verified-recovery"
+      ],
+      "applicableIds": [
+        "verified-recovery"
+      ],
+      "calls": [
+        "draft",
+        "critic",
+        "audit",
+        "final"
+      ],
+      "repairCalls": 0,
+      "providerCalls": 4
+    },
+    {
+      "request": {
+        "requestId": "offsheet-two-real-scopes",
+        "model": "deepseek-v4-flash",
+        "rootInput": "社区工坊要同时决定访客页面能否开启行为追踪，还要决定工坊门禁的权限缓存撤权后何时回源。这是两个真实系统的决定，共同问题是如何让用户授权从当下决定而非旧状态产生。",
+        "meaningVersion": 1,
+        "sources": [
+          {
+            "id": "a",
+            "text": "访客使用页面时必须能拒绝追加的行为追踪，拒绝也不应让原有服务变差。",
+            "summary": "第一种判断",
+            "label": "甲",
+            "stance": "正"
+          },
+          {
+            "id": "b",
+            "text": "工坊门禁的权限缓存撤权后应校验当前授权，旧记录只能用于界面展示。",
+            "summary": "第二种判断",
+            "label": "乙",
+            "stance": "反"
+          }
+        ]
+      },
+      "expectedApplicableIds": [
+        "consent-privacy",
+        "authoritative-decision"
+      ],
+      "httpStatus": 200,
+      "response": {
+        "requestId": "offsheet-two-real-scopes",
+        "synthesis": {
+          "text": "访客追踪与门禁撤权的共同点不在“都涉及权限”，而在授权结论从哪一刻起算：访客默认关闭追加追踪、仅在当次同意后开启并随撤回停止，原有服务与评价不因此变差；门禁撤权后旧记录只供界面展示，敏感通行须回源权威服务校验。二者合起来说明，可陈旧展示与可授权是两类读取。由此还需补上被原判断略过的条件：新追踪须目的绑定、可拒绝可退出；数据来源、用途、最短保留期和删除路径可审计，研究前查重识别风险并留远程停用删除路径；门禁只从一个慢端点小范围验证并保留立即回源。未验证前，回源延迟对通行的影响只能标为待测风险，不能当作既成代价。",
+          "summary": "授权以当次有效状态为准：旧值仅供展示，敏感动作回源权威服务；追踪与门禁各须补齐同意、可审计和回源验证条件。",
+          "label": "当次授权",
+          "stance": "合",
+          "change": "把旧状态不能授权细化为可展示与可授权的读取之分，并补出追踪同意与门禁回源验证的成立条件。"
+        }
+      },
+      "traceId": "8d1a798f-36f3-46a8-8b7d-97cf276e6841",
+      "candidateIds": [
+        "consent-privacy",
+        "authoritative-decision"
+      ],
+      "applicableIds": [
+        "consent-privacy",
+        "authoritative-decision"
+      ],
+      "calls": [
+        "draft",
+        "critic",
+        "audit",
+        "audit",
+        "final",
+        "audit"
+      ],
+      "repairCalls": 0,
+      "providerCalls": 6
+    }
+  ]
+}
