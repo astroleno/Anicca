@@ -1,0 +1,50 @@
+{
+  "id": "formal-10",
+  "route": "synthesis",
+  "attempts": [
+    {
+      "body": {
+        "meaningVersion": 1,
+        "rootInput": "按原日期发布可保住已安排的交付，随后补键盘支持。此方案以当前可用人群和短期修复能够兑现为前提。\n\n目前有一批键盘用户无法完成核心流程；这是无法使用的门槛。延期到能完整操作，再向所有用户开放。",
+        "sources": [
+          {
+            "id": "formal-10-a",
+            "text": "按原日期发布可保住已安排的交付，随后补键盘支持。此方案以当前可用人群和短期修复能够兑现为前提。",
+            "summary": "先交付可用流程",
+            "label": "准时发布",
+            "stance": "正"
+          },
+          {
+            "id": "formal-10-b",
+            "text": "目前有一批键盘用户无法完成核心流程；这是无法使用的门槛。延期到能完整操作，再向所有用户开放。",
+            "summary": "键盘可完成才发布",
+            "label": "延后修复",
+            "stance": "反"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 距离发布只剩三天，但键盘 · id=formal-10-user · 来源=无] 距离发布只剩三天，但键盘用户仍无法完成核心流程，应该按期上线后再补无障碍，还是延期修复？"
+          },
+          {
+            "role": "assistant",
+            "content": "[反 · 延后修复 · id=formal-10-b · 来源=formal-10-user] 目前有一批键盘用户无法完成核心流程；这是无法使用的门槛。延期到能完整操作，再向所有用户开放。"
+          },
+          {
+            "role": "assistant",
+            "content": "[正 · 准时发布 · id=formal-10-a · 来源=formal-10-user] 按原日期发布可保住已安排的交付，随后补键盘支持。此方案以当前可用人群和短期修复能够兑现为前提。"
+          }
+        ],
+        "requestId": "r9-after-formal-10-1"
+      },
+      "startedAt": "2026-11-26T15:41:16.525Z",
+      "elapsedMs": 8560,
+      "status": 502,
+      "rawBody": "{\"requestId\":\"r9-after-formal-10-1\",\"error\":\"invalid_model_output\",\"details\":\"high-risk semantic audit failed\"}",
+      "reading": null,
+      "error": "invalid_model_output",
+      "retryable": false
+    }
+  ]
+}

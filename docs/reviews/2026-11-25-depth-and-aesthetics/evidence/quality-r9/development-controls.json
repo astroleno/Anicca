@@ -1,0 +1,1674 @@
+{
+  "scope": "All development draws on two synthetic contrast pairs. These snapshots diagnose implementation defects and are excluded from formal blind results.",
+  "cases": [
+    {
+      "draw": 1,
+      "patchSha256": "16981d333931235a42e0fec75fa94c34eb0ef0fc38a98ae0ae34306218c7cb3e",
+      "fixture": "development",
+      "variant": "limited",
+      "requestId": "diag-r9-limited",
+      "httpStatus": 502,
+      "request": {
+        "requestId": "diag-r9-limited",
+        "meaningVersion": 1,
+        "rootInput": "调香师手记里有一句「我等的是雨停后石头边冒出来的气息」。比起只列香调，更能向来访者解释作品为什么叫雨后。我们想在会场贴出来，也想把当日介绍寄进对外通讯。\n\n调香师在回函里写明，这句话只准在本周试香会的桌卡上向到场来宾展示。通讯不在许可里，电子版可以被继续转发。",
+        "sources": [
+          {
+            "id": "brief",
+            "label": "解释原名",
+            "summary": "调香师的一句手记说出了名字的来历。",
+            "stance": "正",
+            "text": "调香师手记里有一句「我等的是雨停后石头边冒出来的气息」。比起只列香调，更能向来访者解释作品为什么叫雨后。我们想在会场贴出来，也想把当日介绍寄进对外通讯。"
+          },
+          {
+            "id": "terms",
+            "label": "核对回函",
+            "summary": "按调香师的回函决定每种用法。",
+            "stance": "反",
+            "text": "调香师在回函里写明，这句话只准在本周试香会的桌卡上向到场来宾展示。通讯不在许可里，电子版可以被继续转发。"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "试香会怎样向来访者解释这款气味为何叫雨后？我们现在可把手记里的原话用在哪里？"
+          }
+        ]
+      },
+      "response": {
+        "requestId": "diag-r9-limited",
+        "error": "invalid_model_output",
+        "details": "synthesis prose could not be verified"
+      },
+      "checkHistory": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": false
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "valid": false,
+          "contractIssues": [
+            "synthesis_text_underlength"
+          ]
+        }
+      ]
+    },
+    {
+      "draw": 1,
+      "patchSha256": "16981d333931235a42e0fec75fa94c34eb0ef0fc38a98ae0ae34306218c7cb3e",
+      "fixture": "development",
+      "variant": "granted",
+      "requestId": "diag-r9-granted",
+      "httpStatus": 502,
+      "request": {
+        "requestId": "diag-r9-granted",
+        "meaningVersion": 1,
+        "rootInput": "调香师手记里有一句「我等的是雨停后石头边冒出来的气息」。比起只列香调，更能向来访者解释作品为什么叫雨后。我们想在会场贴出来，也想把当日介绍寄进对外通讯。\n\n调香师在回函里写明，主办方可在本周试香会的桌卡、以及寄给订户介绍本次命名来历的通讯中原句引用这段手记。两处署她的名字即可。",
+        "sources": [
+          {
+            "id": "brief",
+            "label": "解释原名",
+            "summary": "调香师的一句手记说出了名字的来历。",
+            "stance": "正",
+            "text": "调香师手记里有一句「我等的是雨停后石头边冒出来的气息」。比起只列香调，更能向来访者解释作品为什么叫雨后。我们想在会场贴出来，也想把当日介绍寄进对外通讯。"
+          },
+          {
+            "id": "terms",
+            "label": "核对回函",
+            "summary": "按调香师的回函决定每种用法。",
+            "stance": "反",
+            "text": "调香师在回函里写明，主办方可在本周试香会的桌卡、以及寄给订户介绍本次命名来历的通讯中原句引用这段手记。两处署她的名字即可。"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "试香会怎样向来访者解释这款气味为何叫雨后？我们现在可把手记里的原话用在哪里？"
+          }
+        ]
+      },
+      "response": {
+        "requestId": "diag-r9-granted",
+        "error": "invalid_model_output",
+        "details": "reviewer_protocol_error"
+      },
+      "checkHistory": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": false,
+          "contractIssues": [
+            "synthesis_text_underlength"
+          ]
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": false,
+          "reason": "reviewer_protocol_error",
+          "reviewIssues": [
+            {
+              "code": "invalid_authorization_review",
+              "field": "authorization"
+            }
+          ]
+        },
+        {
+          "stage": "audit",
+          "repair": true,
+          "valid": false
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": false,
+          "reason": "reviewer_protocol_error",
+          "reviewIssues": [
+            {
+              "code": "invalid_json"
+            }
+          ]
+        },
+        {
+          "stage": "audit",
+          "repair": true,
+          "valid": false,
+          "reason": "reviewer_protocol_error",
+          "reviewIssues": [
+            {
+              "code": "invalid_authorization_review",
+              "field": "authorization"
+            },
+            {
+              "code": "invalid_authorization_review",
+              "field": "authorization"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "draw": 2,
+      "patchSha256": "1f811b273d5e591825188cde554dc2c5e00ed4493d3353308c893cb823221fa8",
+      "fixture": "development",
+      "variant": "limited",
+      "requestId": "diag-r9-limited",
+      "httpStatus": 502,
+      "request": {
+        "requestId": "diag-r9-limited",
+        "meaningVersion": 1,
+        "rootInput": "调香师手记里有一句「我等的是雨停后石头边冒出来的气息」。比起只列香调，更能向来访者解释作品为什么叫雨后。我们想在会场贴出来，也想把当日介绍寄进对外通讯。\n\n调香师在回函里写明，这句话只准在本周试香会的桌卡上向到场来宾展示。通讯不在许可里，电子版可以被继续转发。",
+        "sources": [
+          {
+            "id": "brief",
+            "label": "解释原名",
+            "summary": "调香师的一句手记说出了名字的来历。",
+            "stance": "正",
+            "text": "调香师手记里有一句「我等的是雨停后石头边冒出来的气息」。比起只列香调，更能向来访者解释作品为什么叫雨后。我们想在会场贴出来，也想把当日介绍寄进对外通讯。"
+          },
+          {
+            "id": "terms",
+            "label": "核对回函",
+            "summary": "按调香师的回函决定每种用法。",
+            "stance": "反",
+            "text": "调香师在回函里写明，这句话只准在本周试香会的桌卡上向到场来宾展示。通讯不在许可里，电子版可以被继续转发。"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "试香会怎样向来访者解释这款气味为何叫雨后？我们现在可把手记里的原话用在哪里？"
+          }
+        ]
+      },
+      "response": {
+        "requestId": "diag-r9-limited",
+        "error": "invalid_model_output",
+        "details": "synthesis prose could not be verified"
+      },
+      "checkHistory": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": false
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": false
+        }
+      ]
+    },
+    {
+      "draw": 2,
+      "patchSha256": "1f811b273d5e591825188cde554dc2c5e00ed4493d3353308c893cb823221fa8",
+      "fixture": "development",
+      "variant": "granted",
+      "requestId": "diag-r9-granted",
+      "httpStatus": 502,
+      "request": {
+        "requestId": "diag-r9-granted",
+        "meaningVersion": 1,
+        "rootInput": "调香师手记里有一句「我等的是雨停后石头边冒出来的气息」。比起只列香调，更能向来访者解释作品为什么叫雨后。我们想在会场贴出来，也想把当日介绍寄进对外通讯。\n\n调香师在回函里写明，主办方可在本周试香会的桌卡、以及寄给订户介绍本次命名来历的通讯中原句引用这段手记。两处署她的名字即可。",
+        "sources": [
+          {
+            "id": "brief",
+            "label": "解释原名",
+            "summary": "调香师的一句手记说出了名字的来历。",
+            "stance": "正",
+            "text": "调香师手记里有一句「我等的是雨停后石头边冒出来的气息」。比起只列香调，更能向来访者解释作品为什么叫雨后。我们想在会场贴出来，也想把当日介绍寄进对外通讯。"
+          },
+          {
+            "id": "terms",
+            "label": "核对回函",
+            "summary": "按调香师的回函决定每种用法。",
+            "stance": "反",
+            "text": "调香师在回函里写明，主办方可在本周试香会的桌卡、以及寄给订户介绍本次命名来历的通讯中原句引用这段手记。两处署她的名字即可。"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "试香会怎样向来访者解释这款气味为何叫雨后？我们现在可把手记里的原话用在哪里？"
+          }
+        ]
+      },
+      "response": {
+        "requestId": "diag-r9-granted",
+        "error": "invalid_model_output",
+        "details": "synthesis critic failed contract after one repair"
+      },
+      "checkHistory": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": false,
+          "contractIssues": [
+            "synthesis_text_underlength",
+            "synthesis_unsupported_quantity"
+          ]
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "valid": false,
+          "contractIssues": [
+            "synthesis_unsupported_quantity"
+          ]
+        }
+      ]
+    },
+    {
+      "draw": 3,
+      "patchSha256": "411008f3c200d5945947d0c25f78dcabda6389027c09e784f4a77c95bf390c6e",
+      "fixture": "oral",
+      "variant": "limited",
+      "requestId": "diag-r9-oral-limited",
+      "httpStatus": 502,
+      "request": {
+        "meaningVersion": 1,
+        "rootInput": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。\n\n她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+        "sources": [
+          {
+            "id": "holdout-06-a",
+            "text": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。",
+            "summary": "如果完全拿掉会失去第一人称",
+            "label": "留住证言位置",
+            "stance": "正"
+          },
+          {
+            "id": "holdout-06-b",
+            "text": "她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+            "summary": "展厅同意不能覆盖可下载发布",
+            "label": "守住播放范围",
+            "stance": "反"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 街区博物馆今晚锁定口述史 · id=holdout-06-user · 来源=无] 街区博物馆今晚锁定口述史展的网页。受访者同意馆内展厅播放原声，馆方希望把原声放上开放网站。她已经失联，家人在展厅照片里认出了她的声音，网页发布后文件可被访客下载、转发。团队觉得取消这段会让旧市场搬迁失去第一手声音。应该怎么定今晚的公开版？"
+          },
+          {
+            "role": "assistant",
+            "content": "[反 · 守住播放范围 · id=holdout-06-b · 来源=holdout-06-user] 她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。"
+          },
+          {
+            "role": "assistant",
+            "content": "[正 · 留住证言位置 · id=holdout-06-a · 来源=holdout-06-user] 她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。"
+          }
+        ]
+      },
+      "response": {
+        "requestId": "diag-r9-oral-limited",
+        "error": "invalid_model_output",
+        "details": "reviewer_protocol_error"
+      },
+      "checkHistory": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": false,
+          "reason": "reviewer_protocol_error",
+          "reviewIssues": [
+            {
+              "code": "invalid_authorization_review",
+              "field": "authorization"
+            },
+            {
+              "code": "unreviewed_authorization_action",
+              "field": "authorization"
+            }
+          ]
+        },
+        {
+          "stage": "audit",
+          "repair": true,
+          "valid": false
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": false,
+          "reason": "reviewer_protocol_error",
+          "reviewIssues": [
+            {
+              "code": "invalid_json"
+            }
+          ]
+        },
+        {
+          "stage": "audit",
+          "repair": true,
+          "valid": false,
+          "reason": "reviewer_protocol_error",
+          "reviewIssues": [
+            {
+              "code": "invalid_json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "draw": 3,
+      "patchSha256": "411008f3c200d5945947d0c25f78dcabda6389027c09e784f4a77c95bf390c6e",
+      "fixture": "oral",
+      "variant": "granted",
+      "requestId": "diag-r9-oral-granted",
+      "httpStatus": 502,
+      "request": {
+        "meaningVersion": 1,
+        "rootInput": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。\n\n她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+        "sources": [
+          {
+            "id": "holdout-06-a",
+            "text": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。",
+            "summary": "如果完全拿掉会失去第一人称",
+            "label": "留住证言位置",
+            "stance": "正"
+          },
+          {
+            "id": "holdout-06-b",
+            "text": "她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+            "summary": "展厅同意不能覆盖可下载发布",
+            "label": "守住播放范围",
+            "stance": "反"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 街区博物馆今晚锁定口述史 · id=holdout-06-user · 来源=无] 街区博物馆今晚锁定口述史展的网页。受访者同意馆内展厅播放原声，馆方希望把原声放上开放网站。她已经失联，家人在展厅照片里认出了她的声音，网页发布后文件可被访客下载、转发。团队觉得取消这段会让旧市场搬迁失去第一手声音。应该怎么定今晚的公开版？"
+          },
+          {
+            "role": "assistant",
+            "content": "[反 · 守住播放范围 · id=holdout-06-b · 来源=holdout-06-user] 她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。"
+          },
+          {
+            "role": "assistant",
+            "content": "[正 · 留住证言位置 · id=holdout-06-a · 来源=holdout-06-user] 她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。"
+          },
+          {
+            "role": "user",
+            "content": "受访者刚亲自发来了更新，明确同意博物馆在开放网站首页介绍旧市场搬迁时用那句拔钉子捏钥匙的文字引语，只要标明是她在展厅口述的原话。她仍只允许在馆内播放原声。今晚的公开版按这个更新怎么定？"
+          }
+        ]
+      },
+      "response": {
+        "requestId": "diag-r9-oral-granted",
+        "error": "invalid_model_output",
+        "details": "synthesis prose could not be verified"
+      },
+      "checkHistory": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": false,
+          "contractIssues": [
+            "synthesis_text_underlength"
+          ]
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": false,
+          "reason": "reviewer_protocol_error",
+          "reviewIssues": [
+            {
+              "code": "invalid_json"
+            }
+          ]
+        },
+        {
+          "stage": "audit",
+          "repair": true,
+          "valid": false,
+          "reviewIssues": [
+            {
+              "code": "authorization_scope_violation",
+              "field": "authorization"
+            }
+          ]
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "valid": false,
+          "contractIssues": [
+            "synthesis_unsupported_quantity"
+          ]
+        }
+      ]
+    },
+    {
+      "draw": 4,
+      "patchSha256": "3e523dd8bc61224e9f27ec3ad97866f8c475b00dbab3043f193223cff65eeb99",
+      "fixture": "oral",
+      "variant": "limited",
+      "requestId": "diag-r9-oral-limited",
+      "httpStatus": 502,
+      "request": {
+        "meaningVersion": 1,
+        "rootInput": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。\n\n她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+        "sources": [
+          {
+            "id": "holdout-06-a",
+            "text": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。",
+            "summary": "如果完全拿掉会失去第一人称",
+            "label": "留住证言位置",
+            "stance": "正"
+          },
+          {
+            "id": "holdout-06-b",
+            "text": "她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+            "summary": "展厅同意不能覆盖可下载发布",
+            "label": "守住播放范围",
+            "stance": "反"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 街区博物馆今晚锁定口述史 · id=holdout-06-user · 来源=无] 街区博物馆今晚锁定口述史展的网页。受访者同意馆内展厅播放原声，馆方希望把原声放上开放网站。她已经失联，家人在展厅照片里认出了她的声音，网页发布后文件可被访客下载、转发。团队觉得取消这段会让旧市场搬迁失去第一手声音。应该怎么定今晚的公开版？"
+          },
+          {
+            "role": "assistant",
+            "content": "[反 · 守住播放范围 · id=holdout-06-b · 来源=holdout-06-user] 她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。"
+          },
+          {
+            "role": "assistant",
+            "content": "[正 · 留住证言位置 · id=holdout-06-a · 来源=holdout-06-user] 她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。"
+          }
+        ]
+      },
+      "response": {
+        "requestId": "diag-r9-oral-limited",
+        "error": "invalid_model_output",
+        "details": "synthesis prose could not be verified"
+      },
+      "checkHistory": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": false,
+          "contractIssues": [
+            "synthesis_text_underlength"
+          ]
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": false,
+          "reason": "reviewer_protocol_error",
+          "reviewIssues": [
+            {
+              "code": "invalid_authorization_review",
+              "field": "authorization"
+            }
+          ]
+        },
+        {
+          "stage": "audit",
+          "repair": true,
+          "valid": false
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "valid": false,
+          "contractIssues": [
+            "synthesis_unsupported_quantity"
+          ]
+        }
+      ]
+    },
+    {
+      "draw": 4,
+      "patchSha256": "3e523dd8bc61224e9f27ec3ad97866f8c475b00dbab3043f193223cff65eeb99",
+      "fixture": "oral",
+      "variant": "granted",
+      "requestId": "diag-r9-oral-granted",
+      "httpStatus": 502,
+      "request": {
+        "meaningVersion": 1,
+        "rootInput": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。\n\n她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+        "sources": [
+          {
+            "id": "holdout-06-a",
+            "text": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。",
+            "summary": "如果完全拿掉会失去第一人称",
+            "label": "留住证言位置",
+            "stance": "正"
+          },
+          {
+            "id": "holdout-06-b",
+            "text": "她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+            "summary": "展厅同意不能覆盖可下载发布",
+            "label": "守住播放范围",
+            "stance": "反"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 街区博物馆今晚锁定口述史 · id=holdout-06-user · 来源=无] 街区博物馆今晚锁定口述史展的网页。受访者同意馆内展厅播放原声，馆方希望把原声放上开放网站。她已经失联，家人在展厅照片里认出了她的声音，网页发布后文件可被访客下载、转发。团队觉得取消这段会让旧市场搬迁失去第一手声音。应该怎么定今晚的公开版？"
+          },
+          {
+            "role": "assistant",
+            "content": "[反 · 守住播放范围 · id=holdout-06-b · 来源=holdout-06-user] 她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。"
+          },
+          {
+            "role": "assistant",
+            "content": "[正 · 留住证言位置 · id=holdout-06-a · 来源=holdout-06-user] 她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。"
+          },
+          {
+            "role": "user",
+            "content": "受访者刚亲自发来了更新，明确同意博物馆在开放网站首页介绍旧市场搬迁时用那句拔钉子捏钥匙的文字引语，只要标明是她在展厅口述的原话。她仍只允许在馆内播放原声。今晚的公开版按这个更新怎么定？"
+          }
+        ]
+      },
+      "response": {
+        "requestId": "diag-r9-oral-granted",
+        "error": "invalid_model_output",
+        "details": "reviewer_protocol_error"
+      },
+      "checkHistory": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": false,
+          "reason": "reviewer_protocol_error",
+          "reviewIssues": [
+            {
+              "code": "authorization_action_too_broad",
+              "field": "authorization"
+            },
+            {
+              "code": "invalid_authorization_review",
+              "field": "authorization"
+            }
+          ]
+        },
+        {
+          "stage": "audit",
+          "repair": true,
+          "valid": false,
+          "reason": "reviewer_protocol_error",
+          "reviewIssues": [
+            {
+              "code": "authorization_action_too_broad",
+              "field": "authorization"
+            },
+            {
+              "code": "invalid_authorization_review",
+              "field": "authorization"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "draw": 5,
+      "patchSha256": "4a081b325515060b7d03379f2d4d3c40c91f165cf56b4ccafc8e732b7e9f9d67",
+      "fixture": "oral",
+      "variant": "limited",
+      "requestId": "diag-r9-oral-limited",
+      "httpStatus": 200,
+      "request": {
+        "meaningVersion": 1,
+        "rootInput": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。\n\n她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+        "sources": [
+          {
+            "id": "holdout-06-a",
+            "text": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。",
+            "summary": "如果完全拿掉会失去第一人称",
+            "label": "留住证言位置",
+            "stance": "正"
+          },
+          {
+            "id": "holdout-06-b",
+            "text": "她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+            "summary": "展厅同意不能覆盖可下载发布",
+            "label": "守住播放范围",
+            "stance": "反"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 街区博物馆今晚锁定口述史 · id=holdout-06-user · 来源=无] 街区博物馆今晚锁定口述史展的网页。受访者同意馆内展厅播放原声，馆方希望把原声放上开放网站。她已经失联，家人在展厅照片里认出了她的声音，网页发布后文件可被访客下载、转发。团队觉得取消这段会让旧市场搬迁失去第一手声音。应该怎么定今晚的公开版？"
+          },
+          {
+            "role": "assistant",
+            "content": "[反 · 守住播放范围 · id=holdout-06-b · 来源=holdout-06-user] 她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。"
+          },
+          {
+            "role": "assistant",
+            "content": "[正 · 留住证言位置 · id=holdout-06-a · 来源=holdout-06-user] 她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。"
+          }
+        ]
+      },
+      "response": {
+        "requestId": "diag-r9-oral-limited",
+        "synthesis": {
+          "text": "甲抓住的是证言不可替代：钉子、钥匙那句让搬迁有了第一人称，若只留会议简报，旧市场的日常经验会被抽成概述。乙抓住的是同一声音的传播后果：展厅原声许可不覆盖开放网站，而可下载文件一旦流出，下架不能收回副本。两侧并非一方要公开、一方要封存，而是同一个‘留位’可落在不同载体的不同许可上。网页若以摘引文字保留那句搬迁细节，证言位置仍在，却不把可辨认原声交给未知受众；原声继续限于馆内。需注意，摘引、转述改变形式后，也应先核对其相应许可，不能把‘非原声’自动当成免检。",
+          "summary": "网页以摘引保留搬迁证言，原声仍限馆内播放，形式变更须另核许可。",
+          "label": "摘引留位",
+          "stance": "合"
+        }
+      },
+      "checkHistory": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": false,
+          "reason": "reviewer_protocol_error",
+          "reviewIssues": [
+            {
+              "code": "invalid_authorization_review",
+              "field": "authorization"
+            },
+            {
+              "code": "unreviewed_authorization_action",
+              "field": "authorization"
+            }
+          ]
+        },
+        {
+          "stage": "audit",
+          "repair": true,
+          "valid": true
+        }
+      ]
+    },
+    {
+      "draw": 5,
+      "patchSha256": "4a081b325515060b7d03379f2d4d3c40c91f165cf56b4ccafc8e732b7e9f9d67",
+      "fixture": "oral",
+      "variant": "granted",
+      "requestId": "diag-r9-oral-granted",
+      "httpStatus": 502,
+      "request": {
+        "meaningVersion": 1,
+        "rootInput": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。\n\n她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+        "sources": [
+          {
+            "id": "holdout-06-a",
+            "text": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。",
+            "summary": "如果完全拿掉会失去第一人称",
+            "label": "留住证言位置",
+            "stance": "正"
+          },
+          {
+            "id": "holdout-06-b",
+            "text": "她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+            "summary": "展厅同意不能覆盖可下载发布",
+            "label": "守住播放范围",
+            "stance": "反"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 街区博物馆今晚锁定口述史 · id=holdout-06-user · 来源=无] 街区博物馆今晚锁定口述史展的网页。受访者同意馆内展厅播放原声，馆方希望把原声放上开放网站。她已经失联，家人在展厅照片里认出了她的声音，网页发布后文件可被访客下载、转发。团队觉得取消这段会让旧市场搬迁失去第一手声音。应该怎么定今晚的公开版？"
+          },
+          {
+            "role": "assistant",
+            "content": "[反 · 守住播放范围 · id=holdout-06-b · 来源=holdout-06-user] 她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。"
+          },
+          {
+            "role": "assistant",
+            "content": "[正 · 留住证言位置 · id=holdout-06-a · 来源=holdout-06-user] 她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。"
+          },
+          {
+            "role": "user",
+            "content": "受访者刚亲自发来了更新，明确同意博物馆在开放网站首页介绍旧市场搬迁时用那句拔钉子捏钥匙的文字引语，只要标明是她在展厅口述的原话。她仍只允许在馆内播放原声。今晚的公开版按这个更新怎么定？"
+          }
+        ]
+      },
+      "response": {
+        "requestId": "diag-r9-oral-granted",
+        "error": "invalid_model_output",
+        "details": "reviewer_protocol_error"
+      },
+      "checkHistory": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": false,
+          "contractIssues": [
+            "synthesis_text_underlength"
+          ]
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": false,
+          "reason": "reviewer_protocol_error",
+          "reviewIssues": [
+            {
+              "code": "invalid_authorization_review",
+              "field": "authorization"
+            },
+            {
+              "code": "invalid_authorization_review",
+              "field": "authorization"
+            },
+            {
+              "code": "unreviewed_authorization_action",
+              "field": "authorization"
+            }
+          ]
+        },
+        {
+          "stage": "audit",
+          "repair": true,
+          "valid": false,
+          "reason": "reviewer_protocol_error",
+          "reviewIssues": [
+            {
+              "code": "invalid_authorization_review",
+              "field": "authorization"
+            },
+            {
+              "code": "authorization_action_too_broad",
+              "field": "authorization"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "draw": 6,
+      "patchSha256": "d02177df224f5c114177c465be44e1e55fd2b1bd90feeb9cd874608211196110",
+      "fixture": "oral",
+      "variant": "limited",
+      "requestId": "diag-r9-oral-limited",
+      "httpStatus": 200,
+      "request": {
+        "meaningVersion": 1,
+        "rootInput": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。\n\n她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+        "sources": [
+          {
+            "id": "holdout-06-a",
+            "text": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。",
+            "summary": "如果完全拿掉会失去第一人称",
+            "label": "留住证言位置",
+            "stance": "正"
+          },
+          {
+            "id": "holdout-06-b",
+            "text": "她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+            "summary": "展厅同意不能覆盖可下载发布",
+            "label": "守住播放范围",
+            "stance": "反"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 街区博物馆今晚锁定口述史 · id=holdout-06-user · 来源=无] 街区博物馆今晚锁定口述史展的网页。受访者同意馆内展厅播放原声，馆方希望把原声放上开放网站。她已经失联，家人在展厅照片里认出了她的声音，网页发布后文件可被访客下载、转发。团队觉得取消这段会让旧市场搬迁失去第一手声音。应该怎么定今晚的公开版？"
+          },
+          {
+            "role": "assistant",
+            "content": "[反 · 守住播放范围 · id=holdout-06-b · 来源=holdout-06-user] 她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。"
+          },
+          {
+            "role": "assistant",
+            "content": "[正 · 留住证言位置 · id=holdout-06-a · 来源=holdout-06-user] 她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。"
+          }
+        ]
+      },
+      "response": {
+        "requestId": "diag-r9-oral-limited",
+        "synthesis": {
+          "text": "甲珍视的是那句拔钉子、捏钥匙的第一人称经验，它让搬迁不只停在会议简报里；乙则指出，受访者只签了馆内播放原声，而熟悉的人能认出声音，下载副本又无法收回。两者的连接点不是声音珍贵与否，而是公开版换了渠道、扩大了受众，原授权不能随之延伸。今晚可先在公开版保留文字摘引或转述，让首页仍有摊贩的搬迁叙述，原声仍限于展厅播放；这样舍弃的是嗓音质感，却不让可识别声音进入不可撤回的下载传播。",
+          "summary": "公开版以文字摘引保留第一人称经验，原声限于馆内播放，因授权未覆盖开放网页且下载不可收回。",
+          "label": "换形式守范围",
+          "stance": "合",
+          "change": "把留住证言与公开原声分开：首页可留文字叙述，可识别声音不随网页外扩。"
+        }
+      },
+      "checkHistory": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": true
+        }
+      ]
+    },
+    {
+      "draw": 6,
+      "patchSha256": "d02177df224f5c114177c465be44e1e55fd2b1bd90feeb9cd874608211196110",
+      "fixture": "oral",
+      "variant": "granted",
+      "requestId": "diag-r9-oral-granted",
+      "httpStatus": 200,
+      "request": {
+        "meaningVersion": 1,
+        "rootInput": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。\n\n她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+        "sources": [
+          {
+            "id": "holdout-06-a",
+            "text": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。",
+            "summary": "如果完全拿掉会失去第一人称",
+            "label": "留住证言位置",
+            "stance": "正"
+          },
+          {
+            "id": "holdout-06-b",
+            "text": "她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+            "summary": "展厅同意不能覆盖可下载发布",
+            "label": "守住播放范围",
+            "stance": "反"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 街区博物馆今晚锁定口述史 · id=holdout-06-user · 来源=无] 街区博物馆今晚锁定口述史展的网页。受访者同意馆内展厅播放原声，馆方希望把原声放上开放网站。她已经失联，家人在展厅照片里认出了她的声音，网页发布后文件可被访客下载、转发。团队觉得取消这段会让旧市场搬迁失去第一手声音。应该怎么定今晚的公开版？"
+          },
+          {
+            "role": "assistant",
+            "content": "[反 · 守住播放范围 · id=holdout-06-b · 来源=holdout-06-user] 她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。"
+          },
+          {
+            "role": "assistant",
+            "content": "[正 · 留住证言位置 · id=holdout-06-a · 来源=holdout-06-user] 她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。"
+          },
+          {
+            "role": "user",
+            "content": "受访者刚亲自发来了更新，明确同意博物馆在开放网站首页介绍旧市场搬迁时用那句拔钉子捏钥匙的文字引语，只要标明是她在展厅口述的原话。她仍只允许在馆内播放原声。今晚的公开版按这个更新怎么定？"
+          }
+        ]
+      },
+      "response": {
+        "requestId": "diag-r9-oral-granted",
+        "synthesis": {
+          "text": "更新把许可按用途和载体拆开：首页可放那句文字引语并标明是她在展厅口述的原话，原声仍只限馆内播放。甲要留住的第一人称不必靠音频实现，那句拔钉子捏钥匙的话本身就能让搬迁日有具体声音；乙担心的下载转发针对的是原声文件，文字引语并不落入该风险。今晚公开版应只放这段标明出处的文字引语，不嵌原声，也不提供可下载音频。日后若要公开原声，因现有许可不覆盖，仍须另取同意。许可既未覆盖原声的任何公开形式，两侧的区分就落在载体上：文字引语可留，音频渠道则暂缓，直到另获对应同意。",
+          "summary": "按更新，首页只放标明展厅口述出处的文字引语，原声仍限馆内，不得扩为网页可下载音频。",
+          "label": "按载体分许",
+          "stance": "合",
+          "change": "把首页留住证言与原声不外传由对立改为按载体分别许可，文字引语可行而音频仍限馆内。"
+        }
+      },
+      "checkHistory": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": false,
+          "contractIssues": [
+            "synthesis_text_underlength"
+          ]
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": true
+        }
+      ]
+    },
+    {
+      "draw": 7,
+      "patchSha256": "1f7ddd35b88aca8f714fef435525c07135980b80c48c0a0cab8d862e7402f158",
+      "fixture": "oral",
+      "variant": "limited",
+      "requestId": "diag-r9-oral-limited",
+      "httpStatus": 502,
+      "request": {
+        "meaningVersion": 1,
+        "rootInput": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。\n\n她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+        "sources": [
+          {
+            "id": "holdout-06-a",
+            "text": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。",
+            "summary": "如果完全拿掉会失去第一人称",
+            "label": "留住证言位置",
+            "stance": "正"
+          },
+          {
+            "id": "holdout-06-b",
+            "text": "她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+            "summary": "展厅同意不能覆盖可下载发布",
+            "label": "守住播放范围",
+            "stance": "反"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 街区博物馆今晚锁定口述史 · id=holdout-06-user · 来源=无] 街区博物馆今晚锁定口述史展的网页。受访者同意馆内展厅播放原声，馆方希望把原声放上开放网站。她已经失联，家人在展厅照片里认出了她的声音，网页发布后文件可被访客下载、转发。团队觉得取消这段会让旧市场搬迁失去第一手声音。应该怎么定今晚的公开版？"
+          },
+          {
+            "role": "assistant",
+            "content": "[反 · 守住播放范围 · id=holdout-06-b · 来源=holdout-06-user] 她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。"
+          },
+          {
+            "role": "assistant",
+            "content": "[正 · 留住证言位置 · id=holdout-06-a · 来源=holdout-06-user] 她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。"
+          }
+        ]
+      },
+      "response": {
+        "requestId": "diag-r9-oral-limited",
+        "error": "invalid_model_output",
+        "details": "reviewer_protocol_error"
+      },
+      "checkHistory": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": false,
+          "reviewIssues": [
+            {
+              "code": "authorization_scope_violation",
+              "field": "authorization"
+            }
+          ]
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": false,
+          "reason": "reviewer_protocol_error",
+          "reviewIssues": [
+            {
+              "code": "invalid_authorization_review",
+              "field": "authorization"
+            },
+            {
+              "code": "invalid_authorization_review",
+              "field": "authorization"
+            },
+            {
+              "code": "invalid_authorization_review",
+              "field": "authorization"
+            }
+          ]
+        },
+        {
+          "stage": "audit",
+          "repair": true,
+          "valid": false,
+          "reason": "reviewer_protocol_error",
+          "reviewIssues": [
+            {
+              "code": "invalid_authorization_review",
+              "field": "authorization"
+            },
+            {
+              "code": "invalid_authorization_review",
+              "field": "authorization"
+            },
+            {
+              "code": "invalid_authorization_review",
+              "field": "authorization"
+            },
+            {
+              "code": "evidence_too_short",
+              "field": "sourceA"
+            },
+            {
+              "code": "evidence_too_short",
+              "field": "sourceB"
+            },
+            {
+              "code": "evidence_too_short",
+              "field": "useA"
+            },
+            {
+              "code": "evidence_too_short",
+              "field": "useB"
+            },
+            {
+              "code": "evidence_too_short",
+              "field": "consequence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "draw": 7,
+      "patchSha256": "1f7ddd35b88aca8f714fef435525c07135980b80c48c0a0cab8d862e7402f158",
+      "fixture": "oral",
+      "variant": "granted",
+      "requestId": "diag-r9-oral-granted",
+      "httpStatus": 502,
+      "request": {
+        "meaningVersion": 1,
+        "rootInput": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。\n\n她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+        "sources": [
+          {
+            "id": "holdout-06-a",
+            "text": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。",
+            "summary": "如果完全拿掉会失去第一人称",
+            "label": "留住证言位置",
+            "stance": "正"
+          },
+          {
+            "id": "holdout-06-b",
+            "text": "她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+            "summary": "展厅同意不能覆盖可下载发布",
+            "label": "守住播放范围",
+            "stance": "反"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 街区博物馆今晚锁定口述史 · id=holdout-06-user · 来源=无] 街区博物馆今晚锁定口述史展的网页。受访者同意馆内展厅播放原声，馆方希望把原声放上开放网站。她已经失联，家人在展厅照片里认出了她的声音，网页发布后文件可被访客下载、转发。团队觉得取消这段会让旧市场搬迁失去第一手声音。应该怎么定今晚的公开版？"
+          },
+          {
+            "role": "assistant",
+            "content": "[反 · 守住播放范围 · id=holdout-06-b · 来源=holdout-06-user] 她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。"
+          },
+          {
+            "role": "assistant",
+            "content": "[正 · 留住证言位置 · id=holdout-06-a · 来源=holdout-06-user] 她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。"
+          },
+          {
+            "role": "user",
+            "content": "受访者刚亲自发来了更新，明确同意博物馆在开放网站首页介绍旧市场搬迁时用那句拔钉子捏钥匙的文字引语，只要标明是她在展厅口述的原话。她仍只允许在馆内播放原声。今晚的公开版按这个更新怎么定？"
+          }
+        ]
+      },
+      "response": {
+        "requestId": "diag-r9-oral-granted",
+        "error": "invalid_model_output",
+        "details": "reviewer_protocol_error"
+      },
+      "checkHistory": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": false,
+          "contractIssues": [
+            "synthesis_keys"
+          ]
+        },
+        {
+          "stage": "draft",
+          "repair": true,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": false,
+          "reason": "reviewer_protocol_error",
+          "reviewIssues": [
+            {
+              "code": "unreviewed_authorization_action",
+              "field": "authorization"
+            }
+          ]
+        },
+        {
+          "stage": "audit",
+          "repair": true,
+          "valid": false,
+          "reason": "reviewer_protocol_error",
+          "reviewIssues": [
+            {
+              "code": "unreviewed_authorization_action",
+              "field": "authorization"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "draw": 8,
+      "patchSha256": "8e1af53b3c227d90c12c5eea09d03ba93591da38db7783337c4862b5aae96102",
+      "fixture": "oral",
+      "variant": "limited",
+      "requestId": "diag-r9-oral-limited",
+      "httpStatus": 502,
+      "request": {
+        "meaningVersion": 1,
+        "rootInput": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。\n\n她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+        "sources": [
+          {
+            "id": "holdout-06-a",
+            "text": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。",
+            "summary": "如果完全拿掉会失去第一人称",
+            "label": "留住证言位置",
+            "stance": "正"
+          },
+          {
+            "id": "holdout-06-b",
+            "text": "她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+            "summary": "展厅同意不能覆盖可下载发布",
+            "label": "守住播放范围",
+            "stance": "反"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 街区博物馆今晚锁定口述史 · id=holdout-06-user · 来源=无] 街区博物馆今晚锁定口述史展的网页。受访者同意馆内展厅播放原声，馆方希望把原声放上开放网站。她已经失联，家人在展厅照片里认出了她的声音，网页发布后文件可被访客下载、转发。团队觉得取消这段会让旧市场搬迁失去第一手声音。应该怎么定今晚的公开版？"
+          },
+          {
+            "role": "assistant",
+            "content": "[反 · 守住播放范围 · id=holdout-06-b · 来源=holdout-06-user] 她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。"
+          },
+          {
+            "role": "assistant",
+            "content": "[正 · 留住证言位置 · id=holdout-06-a · 来源=holdout-06-user] 她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。"
+          }
+        ]
+      },
+      "response": {
+        "requestId": "diag-r9-oral-limited",
+        "error": "invalid_model_output",
+        "details": "reviewer_protocol_error"
+      },
+      "checkHistory": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": false,
+          "reason": "reviewer_protocol_error",
+          "reviewIssues": [
+            {
+              "code": "missing_authorization_gate",
+              "field": "authorization"
+            },
+            {
+              "code": "missing_authorization_gate",
+              "field": "authorization"
+            },
+            {
+              "code": "invalid_authorization_review",
+              "field": "authorization"
+            }
+          ]
+        },
+        {
+          "stage": "audit",
+          "repair": true,
+          "valid": false,
+          "reason": "reviewer_protocol_error",
+          "reviewIssues": [
+            {
+              "code": "missing_authorization_gate",
+              "field": "authorization"
+            },
+            {
+              "code": "missing_authorization_gate",
+              "field": "authorization"
+            },
+            {
+              "code": "invalid_authorization_review",
+              "field": "authorization"
+            },
+            {
+              "code": "missing_authorization_gate",
+              "field": "authorization"
+            },
+            {
+              "code": "invalid_authorization_review",
+              "field": "authorization"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "draw": 8,
+      "patchSha256": "8e1af53b3c227d90c12c5eea09d03ba93591da38db7783337c4862b5aae96102",
+      "fixture": "oral",
+      "variant": "granted",
+      "requestId": "diag-r9-oral-granted",
+      "httpStatus": 200,
+      "request": {
+        "meaningVersion": 1,
+        "rootInput": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。\n\n她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+        "sources": [
+          {
+            "id": "holdout-06-a",
+            "text": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。",
+            "summary": "如果完全拿掉会失去第一人称",
+            "label": "留住证言位置",
+            "stance": "正"
+          },
+          {
+            "id": "holdout-06-b",
+            "text": "她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+            "summary": "展厅同意不能覆盖可下载发布",
+            "label": "守住播放范围",
+            "stance": "反"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 街区博物馆今晚锁定口述史 · id=holdout-06-user · 来源=无] 街区博物馆今晚锁定口述史展的网页。受访者同意馆内展厅播放原声，馆方希望把原声放上开放网站。她已经失联，家人在展厅照片里认出了她的声音，网页发布后文件可被访客下载、转发。团队觉得取消这段会让旧市场搬迁失去第一手声音。应该怎么定今晚的公开版？"
+          },
+          {
+            "role": "assistant",
+            "content": "[反 · 守住播放范围 · id=holdout-06-b · 来源=holdout-06-user] 她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。"
+          },
+          {
+            "role": "assistant",
+            "content": "[正 · 留住证言位置 · id=holdout-06-a · 来源=holdout-06-user] 她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。"
+          },
+          {
+            "role": "user",
+            "content": "受访者刚亲自发来了更新，明确同意博物馆在开放网站首页介绍旧市场搬迁时用那句拔钉子捏钥匙的文字引语，只要标明是她在展厅口述的原话。她仍只允许在馆内播放原声。今晚的公开版按这个更新怎么定？"
+          }
+        ]
+      },
+      "response": {
+        "requestId": "diag-r9-oral-granted",
+        "synthesis": {
+          "text": "更新后，许可分成两层：首页可放那句“拔掉钉子、手里还捏着钥匙”的文字引语，须标明是她在展厅口述的原话；原声仍只在馆内播放。于是首页能保留搬迁的第一人称入口，但公开版少了声音质感。文字仍可能让熟悉的人认出她，且网页可被下载转发，馆方下架也收不回副本；能撤下首页不等于收回已扩散内容。台词本身的证言价值与本人对声音范围的限定，在此各得其所，代价须明确承担。因此，公开版只能按更新后的范围保留这句文字引语，不能把展厅原声当作已获准的首页素材；若要把声音也放上首页，须另获对应许可后再议。",
+          "summary": "按更新，首页可用标明为展厅口述原话的文字引语保留第一人称叙述，原声继续限馆内播放；公开版须接受少了声音质感及转发后难以收回的代价。",
+          "label": "文字引语限用",
+          "stance": "合"
+        }
+      },
+      "checkHistory": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": false,
+          "contractIssues": [
+            "synthesis_text_underlength"
+          ]
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": true
+        }
+      ]
+    },
+    {
+      "draw": 9,
+      "patchSha256": "56c087f6858b33a5253d65bf050479e615e091553864753c9c721bb4acec67f9",
+      "fixture": "oral",
+      "variant": "limited",
+      "requestId": "diag-r9-oral-limited",
+      "httpStatus": 502,
+      "request": {
+        "meaningVersion": 1,
+        "rootInput": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。\n\n她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+        "sources": [
+          {
+            "id": "holdout-06-a",
+            "text": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。",
+            "summary": "如果完全拿掉会失去第一人称",
+            "label": "留住证言位置",
+            "stance": "正"
+          },
+          {
+            "id": "holdout-06-b",
+            "text": "她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+            "summary": "展厅同意不能覆盖可下载发布",
+            "label": "守住播放范围",
+            "stance": "反"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 街区博物馆今晚锁定口述史 · id=holdout-06-user · 来源=无] 街区博物馆今晚锁定口述史展的网页。受访者同意馆内展厅播放原声，馆方希望把原声放上开放网站。她已经失联，家人在展厅照片里认出了她的声音，网页发布后文件可被访客下载、转发。团队觉得取消这段会让旧市场搬迁失去第一手声音。应该怎么定今晚的公开版？"
+          },
+          {
+            "role": "assistant",
+            "content": "[反 · 守住播放范围 · id=holdout-06-b · 来源=holdout-06-user] 她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。"
+          },
+          {
+            "role": "assistant",
+            "content": "[正 · 留住证言位置 · id=holdout-06-a · 来源=holdout-06-user] 她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。"
+          }
+        ]
+      },
+      "response": {
+        "requestId": "diag-r9-oral-limited",
+        "error": "invalid_model_output",
+        "details": "synthesis prose could not be verified"
+      },
+      "checkHistory": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": false
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": false,
+          "reason": "reviewer_protocol_error",
+          "reviewIssues": [
+            {
+              "code": "missing_authorization_gate",
+              "field": "authorization"
+            },
+            {
+              "code": "missing_authorization_gate",
+              "field": "authorization"
+            },
+            {
+              "code": "unverified_authorization_basis",
+              "field": "authorization"
+            }
+          ]
+        },
+        {
+          "stage": "audit",
+          "repair": true,
+          "valid": false,
+          "reviewIssues": [
+            {
+              "code": "missing_authorization_gate",
+              "field": "authorization"
+            },
+            {
+              "code": "missing_authorization_gate",
+              "field": "authorization"
+            },
+            {
+              "code": "authorization_scope_violation",
+              "field": "authorization"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "draw": 9,
+      "patchSha256": "56c087f6858b33a5253d65bf050479e615e091553864753c9c721bb4acec67f9",
+      "fixture": "oral",
+      "variant": "granted",
+      "requestId": "diag-r9-oral-granted",
+      "httpStatus": 502,
+      "request": {
+        "meaningVersion": 1,
+        "rootInput": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。\n\n她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+        "sources": [
+          {
+            "id": "holdout-06-a",
+            "text": "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。",
+            "summary": "如果完全拿掉会失去第一人称",
+            "label": "留住证言位置",
+            "stance": "正"
+          },
+          {
+            "id": "holdout-06-b",
+            "text": "她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。",
+            "summary": "展厅同意不能覆盖可下载发布",
+            "label": "守住播放范围",
+            "stance": "反"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 街区博物馆今晚锁定口述史 · id=holdout-06-user · 来源=无] 街区博物馆今晚锁定口述史展的网页。受访者同意馆内展厅播放原声，馆方希望把原声放上开放网站。她已经失联，家人在展厅照片里认出了她的声音，网页发布后文件可被访客下载、转发。团队觉得取消这段会让旧市场搬迁失去第一手声音。应该怎么定今晚的公开版？"
+          },
+          {
+            "role": "assistant",
+            "content": "[反 · 守住播放范围 · id=holdout-06-b · 来源=holdout-06-user] 她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。"
+          },
+          {
+            "role": "assistant",
+            "content": "[正 · 留住证言位置 · id=holdout-06-a · 来源=holdout-06-user] 她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。"
+          },
+          {
+            "role": "user",
+            "content": "受访者刚亲自发来了更新，明确同意博物馆在开放网站首页介绍旧市场搬迁时用那句拔钉子捏钥匙的文字引语，只要标明是她在展厅口述的原话。她仍只允许在馆内播放原声。今晚的公开版按这个更新怎么定？"
+          }
+        ]
+      },
+      "response": {
+        "requestId": "diag-r9-oral-granted",
+        "error": "invalid_model_output",
+        "details": "reviewer_protocol_error"
+      },
+      "checkHistory": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": false,
+          "contractIssues": [
+            "synthesis_text_underlength"
+          ]
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": false,
+          "reason": "reviewer_protocol_error",
+          "reviewIssues": [
+            {
+              "code": "missing_authorization_gate",
+              "field": "authorization"
+            },
+            {
+              "code": "authorization_action_too_broad",
+              "field": "authorization"
+            }
+          ]
+        },
+        {
+          "stage": "audit",
+          "repair": true,
+          "valid": false,
+          "reason": "reviewer_protocol_error",
+          "reviewIssues": [
+            {
+              "code": "missing_authorization_gate",
+              "field": "authorization"
+            },
+            {
+              "code": "authorization_action_too_broad",
+              "field": "authorization"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

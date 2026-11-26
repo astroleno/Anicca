@@ -1,0 +1,50 @@
+{
+  "id": "holdout-07",
+  "route": "synthesis",
+  "attempts": [
+    {
+      "body": {
+        "meaningVersion": 1,
+        "rootInput": "那位会员来信说「可以留活动合照，请把我的卡片从公开照片里删掉」。开场是在面向所有到场者的屏幕，不是档案室里翻看原件。\n\n旧照片上的祝福刚好从左到右，删几行会让朗读的人停住。我喜欢开场有十秒让观众想起当时的店。",
+        "sources": [
+          {
+            "id": "holdout-07-a",
+            "text": "那位会员来信说「可以留活动合照，请把我的卡片从公开照片里删掉」。开场是在面向所有到场者的屏幕，不是档案室里翻看原件。",
+            "summary": "尊重撤下的具体卡片",
+            "label": "让请求落在画面上",
+            "stance": "想法"
+          },
+          {
+            "id": "holdout-07-b",
+            "text": "旧照片上的祝福刚好从左到右，删几行会让朗读的人停住。我喜欢开场有十秒让观众想起当时的店。",
+            "summary": "旧版的全图便于顺着读",
+            "label": "让开场流畅",
+            "stance": "想法"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 读书会想在新店的告别会上 · id=holdout-07-user · 来源=无] 读书会想在新店的告别会上投影上一家店的留言墙。留言里有一位已明确要求删掉自己卡片的会员，剪掉那几行会打断照片中间的阅读顺序。还有一张会场全景，能让人看出店里的布局但看不清任何留言。我们应该把什么放到开场？"
+          },
+          {
+            "role": "assistant",
+            "content": "[想法 · 让开场流畅 · id=holdout-07-b · 来源=holdout-07-user] 旧照片上的祝福刚好从左到右，删几行会让朗读的人停住。我喜欢开场有十秒让观众想起当时的店。"
+          },
+          {
+            "role": "assistant",
+            "content": "[想法 · 让请求落在画面上 · id=holdout-07-a · 来源=holdout-07-user] 那位会员来信说「可以留活动合照，请把我的卡片从公开照片里删掉」。开场是在面向所有到场者的屏幕，不是档案室里翻看原件。"
+          }
+        ],
+        "requestId": "r9-after-holdout-07-1"
+      },
+      "startedAt": "2026-11-26T15:41:42.427Z",
+      "elapsedMs": 10680,
+      "status": 502,
+      "rawBody": "{\"requestId\":\"r9-after-holdout-07-1\",\"error\":\"invalid_model_output\",\"details\":\"reviewer_protocol_error\"}",
+      "reading": null,
+      "error": "invalid_model_output",
+      "retryable": false
+    }
+  ]
+}

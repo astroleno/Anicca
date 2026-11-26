@@ -1,0 +1,50 @@
+{
+  "id": "r9-confirm-03",
+  "route": "synthesis",
+  "attempts": [
+    {
+      "body": {
+        "meaningVersion": 1,
+        "rootInput": "拍照的人说：「这张月面照可用在这周末免费观测的公开海报，我不授权拿它招收付费学员。」他希望把照片放在海报中间，不过说位置可以由社团决定。\n\n社团用自制的月相示意图排好了备用版，主图位和日期标题的尺寸都够。免费活动和春季付费班分别有发布页。",
+        "sources": [
+          {
+            "id": "r9-confirm-03-a",
+            "text": "拍照的人说：「这张月面照可用在这周末免费观测的公开海报，我不授权拿它招收付费学员。」他希望把照片放在海报中间，不过说位置可以由社团决定。",
+            "summary": "拍照的人说：「这张月面照可用在这周末免费观测的公开海报，我不授权拿它招收付费学员。」他希望把照片放在海报中间，不过说位置可以由社团决定。",
+            "label": "摄影者回复",
+            "stance": "想法"
+          },
+          {
+            "id": "r9-confirm-03-b",
+            "text": "社团用自制的月相示意图排好了备用版，主图位和日期标题的尺寸都够。免费活动和春季付费班分别有发布页。",
+            "summary": "社团用自制的月相示意图排好了备用版，主图位和日期标题的尺寸都够。免费活动和春季付费班分别有发布页。",
+            "label": "可用备图",
+            "stance": "想法"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 团队安排 · id=r9-confirm-03-u · 来源=无] 天文社周末有公开观测活动。海报只有一块能放主图的地方。现成的月面照片能放到对外海报和春季付费课程的招生页吗？理想图因期限用不了时，海报还可以怎么做？"
+          },
+          {
+            "role": "assistant",
+            "content": "[想法 · 可用备图 · id=r9-confirm-03-b · 来源=r9-confirm-03-u] 社团用自制的月相示意图排好了备用版，主图位和日期标题的尺寸都够。免费活动和春季付费班分别有发布页。"
+          },
+          {
+            "role": "assistant",
+            "content": "[想法 · 摄影者回复 · id=r9-confirm-03-a · 来源=r9-confirm-03-u] 拍照的人说：「这张月面照可用在这周末免费观测的公开海报，我不授权拿它招收付费学员。」他希望把照片放在海报中间，不过说位置可以由社团决定。"
+          }
+        ],
+        "requestId": "r9-after-r9-confirm-03-1"
+      },
+      "startedAt": "2026-11-26T15:42:29.423Z",
+      "elapsedMs": 8867,
+      "status": 502,
+      "rawBody": "{\"requestId\":\"r9-after-r9-confirm-03-1\",\"error\":\"invalid_model_output\",\"details\":\"reviewer_protocol_error\"}",
+      "reading": null,
+      "error": "invalid_model_output",
+      "retryable": false
+    }
+  ]
+}
