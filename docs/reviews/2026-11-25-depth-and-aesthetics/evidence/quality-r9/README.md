@@ -15,19 +15,23 @@
 
 新卷共 8 次 HTTP 请求，8 条真实跟踪，零重试。模型及供应商调用各 27 次，含 3 次格式修复。客户端 p50/p95 为 6,495/9,978 毫秒。输入、已缓存输入、输出分别为 75,517、43,008、5,503 token。[改前新卷原始统计](new-before/summary.json) · [改前新卷真实跟踪](new-before/traces.json)
 
+最终评测合并原 41 题与追加确认 4 题。[最终 45 题结果](results.md) · [最终判词封存](seal.json) · [第一候选生产统计](candidate-one/summary.json) · [第二候选 41 题揭盲](candidate-two/README.md) · [追加确认卷](confirmation/README.md)
+
 ## 生产复跑
 
-运行真实 `POST /api/synthesis`。合流入口须有对应版本与设置的独立服务和生产跟踪日志。两个命令之前先冻结并校验请求。用空目录保存新一轮响应，下面的改前命令保留实际运行记录中的端口与修订。候选的环境变量指向正式运行的生产实例。
+运行真实 `POST /api/synthesis`。合流入口须有对应版本与设置的独立服务和生产跟踪日志。运行前先校验冻结请求。每次复跑用新建的空目录保存响应，原始档案留作揭盲输入。下面的改前及候选环境变量分别指向对应版本的生产实例。
 
 ```sh
 r9=docs/reviews/2026-11-25-depth-and-aesthetics/evidence/quality-r9
+baseline_output=$(mktemp -d /tmp/anicca-r9-new-before.XXXXXX)
+candidate_output=$(mktemp -d /tmp/anicca-r9-extended-after.XXXXXX)
 
 node scripts/evals/dialectic-quality-r9.mjs --exam new \
-  --base http://127.0.0.1:3284 --output "$r9/new-before" \
-  --run before --revision 34a47e4 --server-log /tmp/anicca-r9.Km3QPA/before-server.log
+  --base "$baseline_base" --output "$baseline_output" \
+  --run before --revision 34a47e4 --server-log "$baseline_log"
 
-node scripts/evals/dialectic-quality-r9.mjs --exam all \
-  --base "$candidate_base" --output "$r9/after" \
+node scripts/evals/dialectic-quality-r9.mjs --exam extended \
+  --base "$candidate_base" --output "$candidate_output" \
   --run after --revision "$candidate_revision" --server-log "$candidate_log"
 ```
 
@@ -35,21 +39,41 @@ node scripts/evals/dialectic-quality-r9.mjs --exam all \
 
 ## 封包、盲判与揭盲
 
-匿名卷随机混排 41 题并独立交换逐题 A/B。每题含原问题、两源、连接补充（若有）、按角色及时间排列的上下文与两侧正文。评审只得到匿名卷与盲判说明。评审独立判每侧，缺测也记录，并对仍可读的一侧判风险。映射单独保管，先封存判词哈希及 UTC 时间，再揭盲。[盲判填写说明](judge-instructions.md)
+最终匿名卷随机混排 45 题并独立交换逐题 A/B。每题含原问题、两源、连接补充（若有）、按角色及时间排列的上下文与两侧正文。评审只得到匿名卷与盲判说明。评审独立判每侧，缺测也记录，并对仍可读的一侧判风险。映射单独保管，先封存判词哈希及 UTC 时间，再揭盲。[盲判填写说明](judge-instructions.md)
 
 ```sh
 packet_dir=$(mktemp -d /tmp/anicca-r9-packet.XXXXXX)
 key_dir=$(mktemp -d /tmp/anicca-r9-key.XXXXXX)
 node scripts/evals/blind-dialectic-quality-r9.mjs pack \
-  --after "$r9/after" --packet "$packet_dir/packet.json" --key "$key_dir/key.json"
+  --extended --after "$candidate_output" \
+  --packet "$packet_dir/packet.json" --key "$key_dir/key.json"
+```
 
-# 收齐独立判词后，对实际文件记录 UTC 时间与 SHA-256，复算应始终传入封存的 SHA-256。
-date -u +%Y-%m-%dT%H:%M:%SZ
-shasum -a 256 "$judgments"
+## 复算封存结果
+
+最终 45 题使用根目录的封存判词与映射，生产采样取自 `after`。复算产物写到新建的空目录。
+
+```sh
 results_dir=$(mktemp -d /tmp/anicca-r9-reveal.XXXXXX)
+sealed_sha=$(jq -r .judgmentsSha256 "$r9/seal.json")
 node scripts/evals/blind-dialectic-quality-r9.mjs reveal \
-  --after "$r9/after" --packet "$packet_dir/packet.json" --key "$key_dir/key.json" \
-  --judgments "$judgments" --judge-sha "$sealed_sha" --out "$results_dir"
+  --extended --after "$r9/after" --packet "$r9/packet.json" --key "$r9/key.json" \
+  --judgments "$r9/judgments.json" --judge-sha "$sealed_sha" --out "$results_dir"
+cmp "$r9/results.md" "$results_dir/results.md"
+cmp "$r9/revealed.json" "$results_dir/revealed.json"
+```
+
+历史 41 题用 `--exam all` 进行生产采样。复算第二候选时，输入和封存判词均取自 `candidate-two`，输出写入新的空目录。[第二候选评测说明](candidate-two/README.md)
+
+```sh
+second="$r9/candidate-two"
+results_dir=$(mktemp -d /tmp/anicca-r9-second-reveal.XXXXXX)
+sealed_sha=$(jq -r .judgmentsSha256 "$second/seal.json")
+node scripts/evals/blind-dialectic-quality-r9.mjs reveal \
+  --after "$second" --packet "$second/packet.json" --key "$second/key.json" \
+  --judgments "$second/judgments.json" --judge-sha "$sealed_sha" --out "$results_dir"
+cmp "$second/results.md" "$results_dir/results.md"
+cmp "$second/revealed.json" "$results_dir/revealed.json"
 ```
 
 复算校验两版每题原始 HTTP、跟踪、请求、设置、匿名映射及判词哈希，生成机器可读的 `revealed.json` 与 `results.md`。其中新卷参考动作与两侧盲判动作并列。程序核对动作数、决定类型与盲判，Astra 按语义逐条核对动作对应、遗漏与引文，再对照第八轮原参考核验三道历史严重题。动作名称可用同义改述，动作对应须逐项成立。[历史严重题原参考](../quality-r8/holdout-reference.json)
