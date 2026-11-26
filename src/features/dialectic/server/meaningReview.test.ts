@@ -484,3 +484,286 @@ it.each([false, true])("checks changed publication separately from continued aut
   }
   expect(generate).toHaveBeenCalledOnce();
 });
+
+const oralSourceA = "她只用一句「我把铺子门上的钉子拔掉，手里还捏着钥匙」讲清了搬迁那天。其他材料都来自会议简报。我们很想在首页留住一个摊贩的叙述。";
+const oralSourceB = "她签的只是馆内播放原声。家人说熟悉的人很容易认出来，网页一旦被下载，馆方即使下架也收不回那些副本。";
+const oralGrant = "后来她另以书面明确同意在公开首页刊出这句文字摘引。";
+const oralExcerpt = "首页可保留「拔掉门上钉子，手里还捏着钥匙」这句摘引";
+const oralBoundary = "在此之前不把声音放上开放网站";
+const oralText = `甲点出首页需要一个摊贩的第一人称声音，乙点出她只签了馆内播放原声，而网页文件可被下载转发、下架也收不回。两者合成后的判断是：公开版应以她的授权范围定形式，而非以原声定位置。${oralExcerpt}，标明来自展厅口述，用文字延续第一人称，原声仍限馆内。若要在网页播放原声，须先取得她本人或家属对公开、下载、转发的许可，并核对撤回条件；${oralBoundary}。代价是首页失去原声质感，但搬迁的第一手位置与她的播放边界同时成立。`;
+const oralFocus = [
+  { action: "把原声放上开放网站", nonGrants: ["她签的只是馆内播放原声"] },
+  { action: "在首页使用这句摘引", nonGrants: ["馆内展厅播放原声的同意不当然覆盖网页公开"] }
+];
+const oralEvidence = { sourceA: { unit: "A1" }, sourceB: { unit: "B1" },
+  useA: "甲点出首页需要一个摊贩的第一人称声音", useB: "乙点出她只签了馆内播放原声", consequence: oralExcerpt };
+const oralRowF1 = {
+  focus: "F1", action: oralBoundary, decision: "hold", use: "在开放网站播原声",
+  basis: { owner: "B", quote: { unit: "B1" }, scope: "馆内播放原声" }, gaps: ["channel", "audience"]
+};
+const oralRowF2 = {
+  focus: "F2", action: oralExcerpt, decision: "proceed", use: "以书面摘引向网站公众发布证言",
+  basis: { owner: "B", quote: { unit: "B1" }, scope: "馆内播放原声" }, gaps: []
+};
+const oralInput = (grant = "") => ({ ...synthesisInput(), sources: [
+  { ...orderedSources[0], text: oralSourceA }, { ...orderedSources[1], text: oralSourceB + grant }
+] });
+
+it("maps both real historical paraphrases on a same-text protocol retry before correcting the changed form", async () => {
+  const original = { synthesis: { ...synthesis, text: oralText }, outputText: "original", authorizationFocus: oralFocus };
+  const repairedText = "甲重视第一人称细节，乙说许可仅限于馆内原声。首页先用团队自己的说明，暂不刊发她的原话或声音。馆内按现有许可播放，仍能在展厅保留现场的第一人称经验。";
+  const repaired = { synthesis: { ...synthesis, text: repairedText }, outputText: "repaired" };
+  const repair = vi.fn().mockResolvedValue(repaired);
+  generate.mockResolvedValueOnce(synthesisReview(prose(oralEvidence)))
+    .mockResolvedValueOnce(respond({ pass: true, issues: [], authorization: [oralRowF1, oralRowF2] }))
+    .mockResolvedValueOnce(synthesisReview({
+      ...prose({ ...oralEvidence, useA: "甲重视第一人称细节", useB: "乙说许可仅限于馆内原声", consequence: "首页先用团队自己的说明" }),
+      authorization: [
+        { focus: "F1", action: "暂不刊发她的原话或声音", decision: "not_adopted", reason: "正文排除网站播放原声" },
+        { focus: "F2", action: "首页先用团队自己的说明", decision: "not_adopted", reason: "首页改用团队说明" }
+      ]
+    }));
+
+  expect(await finalizeSynthesisMeaning(oralInput(), original, repair)).toMatchObject({ synthesis: { text: repairedText } });
+  expect(repair).toHaveBeenCalledWith([expect.stringContaining("不能假定他人有权代签")], original);
+  expect(generate).toHaveBeenCalledTimes(3);
+  expect(generate.mock.calls[1][0].input).toContain("authorization 的空数组是占位");
+});
+
+it("adopts the remapped text action when the speaker has granted the same public use", async () => {
+  const text = oralText.replace("她本人或家属", "她本人");
+  const original = { synthesis: { ...synthesis, text }, outputText: "original", authorizationFocus: oralFocus };
+  generate.mockResolvedValueOnce(synthesisReview({ ...prose(oralEvidence), authorization: [oralRowF1, {
+    ...oralRowF2, basis: { owner: "B", quote: { unit: "B3" }, scope: "在公开首页刊出这句文字摘引" }
+  }] }));
+  expect(await finalizeSynthesisMeaning(oralInput(oralGrant), original)).toMatchObject({ synthesis: { text } });
+  expect(generate).toHaveBeenCalledOnce();
+});
+
+it.each(["none", "missing", "paraphrase", "wrong-owner"])("rejects an incomplete focus remapping (%s)", async kind => {
+  const original = { synthesis: { ...synthesis, text: oralText }, outputText: "original", authorizationFocus: oralFocus };
+  const authorization = kind === "none" ? kind
+    : kind === "missing" ? [oralRowF1]
+    : [oralRowF1, { ...oralRowF2, decision: "hold",
+      action: kind === "paraphrase" ? oralFocus[1].action : { unit: "B1" }, at: "R" }];
+  generate.mockResolvedValue(synthesisReview({ ...prose(oralEvidence), authorization }));
+  await expect(finalizeSynthesisMeaning(oralInput(), original)).rejects.toBeInstanceOf(ReviewerProtocolError);
+  expect(generate).toHaveBeenCalledTimes(2);
+});
+
+it("reanchors the live granted example without mistaking an adjacent authorized form for a violation", async () => {
+  const grantedText = "开放网站首页可用的只是那句拔钉子捏钥匙的文字引语";
+  const text = `她把两件事拆得很清楚：馆内播放原声的授权未变，${grantedText}，并须标明出自她在展厅的口述。今晚公开版可按此区分制作，原声留在展厅。`;
+  const textGrant = "明确同意博物馆在开放网站首页介绍旧市场搬迁时用那句拔钉子捏钥匙的文字引语，只要标明是她在展厅口述的原话";
+  const audioGrant = "她仍只允许在馆内播放原声";
+  const value = { ...oralInput(), authorizationUserMaterial: textGrant + "。" + audioGrant + "。" };
+  const original = {
+    synthesis: { ...synthesis, text }, outputText: "granted",
+    authorizationFocus: [{ action: "在开放网站首页介绍旧市场搬迁时用那句拔钉子捏钥匙的文字引语", nonGrants: [audioGrant] }]
+  };
+  const grants = [{
+    action: { unit: "R1" }, decision: "proceed",
+    use: "在开放网站首页介绍旧市场搬迁时使用那句拔钉子捏钥匙的文字引语，面向网页访客，并标明是她在展厅口述的原话",
+    basis: { owner: "U", quote: { unit: "U1" }, scope: textGrant }, gaps: []
+  }, {
+    action: { unit: "R2" }, decision: "proceed", use: "在馆内展厅播放原声",
+    basis: { owner: "U", quote: { unit: "U2" }, scope: audioGrant }, gaps: []
+  }];
+  const metadata = { ...verified, change: null };
+  const evidence = { sourceA: { unit: "A1" }, sourceB: { unit: "B1" }, useA: grantedText, useB: "馆内播放原声的授权未变",
+    consequence: "今晚公开版可按此区分制作" };
+  generate.mockResolvedValueOnce(respond({ ...metadata, prose: { ...prose(evidence), authorization: grants } }))
+    .mockResolvedValueOnce(respond({ pass: true, issues: [], authorization: [
+      { ...grants[0], focus: "F1", action: grantedText },
+      { ...grants[1], action: "原声留在展厅" }
+    ] }));
+  const repair = vi.fn();
+  expect(await finalizeSynthesisMeaning(value, original, repair)).toMatchObject({ synthesis: { text } });
+  expect(repair).not.toHaveBeenCalled();
+  expect(generate).toHaveBeenCalledTimes(2);
+  expect(generate.mock.calls[0][0].input).toContain("不添加 synthesis 外壳");
+  expect(generate.mock.calls[1][0].input).toContain("动作引文混入另一种用法");
+  value.trace.finish("success");
+  expect(lastTrace().checks[0].reviewIssues).toContainEqual({ code: "authorization_action_too_broad", field: "authorization" });
+});
+
+it.each(["granted", "held", "wrong-grant"])("checks different uses sharing the same sentence without conflating their permissions (%s)", async mode => {
+  const textGrant = "明确同意博物馆在开放网站首页介绍旧市场搬迁时用那句拔钉子捏钥匙的文字引语，只要标明是她在展厅口述的原话";
+  const audioGrant = "她仍只允许在馆内播放原声";
+  const text = mode === "held"
+    ? "首页先不发原声，文字引语也要另获公开许可才使用。"
+    : "今晚公开版可首页用该文字引语并注明来源，原声只留展厅；馆内播放授权不能扩到网页或音频发布。";
+  const value = { ...oralInput(), authorizationUserMaterial: (mode === "granted" ? textGrant + "。" : "") + audioGrant + "。" };
+  const audioEvidence = { owner: "U", quote: { unit: mode === "granted" ? "U2" : "U1" }, scope: audioGrant };
+  const original = { synthesis: { ...synthesis, text }, outputText: "shared",
+    authorizationFocus: [
+      { action: "在开放网站公开文字引语", nonGrants: [audioGrant] },
+      { action: mode === "held" ? "向网站访客播放访谈原声" : "在馆内展厅播放受访者原声", nonGrants: [] }
+    ] };
+  const evidence = { sourceA: { unit: "A1" }, sourceB: { unit: "B1" }, useA: { unit: "R1" }, useB: { unit: "R1" },
+    consequence: { unit: "R1" } };
+  const repair = vi.fn().mockResolvedValue(null);
+  generate.mockResolvedValueOnce(respond({ ...verified, change: null, prose: { ...prose(evidence), authorization: [{
+    focus: "F1", action: { unit: "R1" }, decision: mode === "held" ? "conditional" : "proceed",
+    use: "在开放网站首页使用文字引语，面向网页访客",
+    basis: mode === "granted" ? { owner: "U", quote: { unit: "U1" }, scope: textGrant }
+      : audioEvidence,
+    gaps: mode === "held" ? ["permission", "form", "channel", "audience"] : []
+  }, {
+    focus: "F2", action: { unit: "R1" }, decision: mode === "held" ? "hold" : "proceed",
+    use: mode === "held" ? "将原声网上发布" : "在馆内展厅播放受访者原声，面向到馆观众",
+    basis: audioEvidence, gaps: mode === "held" ? ["channel", "audience"] : []
+  }] } }));
+  const result = await finalizeSynthesisMeaning(value, original, repair);
+  if (mode === "wrong-grant") {
+    expect(result).toBeNull();
+    expect(repair).toHaveBeenCalledWith([expect.stringContaining("所引原文没有授予这项使用")], original);
+  } else {
+    expect(result).toMatchObject({ synthesis: { text } });
+    expect(repair).not.toHaveBeenCalled();
+  }
+  expect(generate).toHaveBeenCalledOnce();
+});
+
+it("accepts the live second review that expands one focus into two independently authorized uses", async () => {
+  const statement = "公开版据此用文字引语并加标注，原声留展厅。";
+  const textGrant = "受访者刚亲自发来了更新，明确同意博物馆在开放网站首页介绍旧市场搬迁时用那句拔钉子捏钥匙的文字引语，只要标明是她在展厅口述的原话。";
+  const audioGrant = "她仍只允许在馆内播放原声。";
+  const value = { ...oralInput(), authorizationUserMaterial: textGrant + audioGrant };
+  const original = { synthesis: { ...synthesis, text: statement }, outputText: "granted",
+    authorizationFocus: [{
+      action: "在开放网站首页介绍旧市场搬迁时用那句拔钉子捏钥匙的文字引语",
+      nonGrants: ["她签的只是馆内播放原声"]
+    }] };
+  const rows = [{
+    focus: "F1", action: { unit: "R1" }, decision: "proceed",
+    use: "在开放网站首页介绍旧市场搬迁时，以文字形式引用那句拔钉子捏钥匙的话，并标明是她在展厅口述的原话；受众为公开网站访客",
+    basis: { owner: "U", quote: { unit: "U1" }, scope: "明确同意博物馆在开放网站首页介绍旧市场搬迁时用那句拔钉子捏钥匙的文字引语，只要标明是她在展厅口述的原话" }, gaps: []
+  }, {
+    focus: "F1", action: { unit: "R1" }, decision: "proceed",
+    use: "原声仅在馆内展厅播放，不随网页公开版发布或供下载转发",
+    basis: { owner: "U", quote: { unit: "U2" }, scope: "她仍只允许在馆内播放原声" }, gaps: []
+  }];
+  const evidence = { sourceA: { unit: "A1" }, sourceB: { unit: "B1" },
+    useA: { unit: "R1" }, useB: { unit: "R1" }, consequence: { unit: "R1" } };
+  generate.mockResolvedValueOnce(respond({ ...verified, change: null, prose: { ...prose(evidence), authorization: rows.map(row =>
+    ({ ...row, action: row.basis.quote })) } }))
+    .mockResolvedValueOnce(respond({ pass: true, issues: [], authorization: rows }));
+  const repair = vi.fn();
+  expect(await finalizeSynthesisMeaning(value, original, repair)).toMatchObject({ synthesis: { text: statement } });
+  expect(generate).toHaveBeenCalledTimes(2);
+  expect(repair).not.toHaveBeenCalled();
+});
+
+it.each(["missing", "adjacent", "granted"])("requires the body to gate the same use when permission is absent (%s)", async mode => {
+  const waiting = "另获网页文字摘引或转述的公开许可后再使用。";
+  const text = mode === "granted"
+    ? "今晚公开版应只放这段标明出处的文字引语，不嵌原声，也不提供可下载音频。"
+    : mode === "adjacent" ? "首页可保留文字摘引或转述的位置，原声仍限于展厅播放；" + waiting
+      : "今晚可先在公开版保留文字摘引或转述，让首页仍有摊贩的搬迁叙述，原声仍限于展厅播放；这样舍弃的是嗓音质感，却不让可识别声音进入不可撤回的下载传播。";
+  const phrase = mode === "granted" ? "在公开网站首页使用文字引语" : "在首页以文字保留这段叙述";
+  const value = oralInput(mode === "granted" ? oralGrant : "");
+  const original = { synthesis: { ...synthesis, text }, outputText: "gate", authorizationFocus: [
+    { action: "把原声放上开放网站", nonGrants: [] }, { action: phrase, nonGrants: [] }
+  ] };
+  const evidence = { sourceA: { unit: "A1" }, sourceB: { unit: "B1" }, useA: { unit: "R1" }, useB: { unit: "R1" },
+    consequence: { unit: "R1" } };
+  generate.mockResolvedValueOnce(respond({ ...verified, change: null, prose: {
+    ...prose(evidence), authorization: [{
+      focus: "F1", action: { unit: "R1" }, decision: "permission_hold",
+      use: "把原声放上开放网站，供访客下载、转发",
+      basis: { owner: "B", quote: { unit: "B1" }, scope: "她签的只是馆内播放原声" },
+      gaps: ["channel", "audience", "form"]
+    }, {
+      focus: "F2", action: { unit: "R1" }, decision: mode === "granted" ? "proceed" : "conditional",
+      use: mode === "granted" ? "在公开版首页使用文字引语" : "在公开版首页以文字摘引或转述保留搬迁叙述，面向网页访客",
+      ...(mode === "adjacent" ? { gate: { unit: "R2" } } : {}),
+      basis: mode === "granted"
+        ? { owner: "B", quote: { unit: "B3" }, scope: "在公开首页刊出这句文字摘引" }
+        : { owner: "B", quote: { unit: "B1" }, scope: "她签的只是馆内播放原声" },
+      gaps: mode === "granted" ? [] : ["permission"]
+    }]
+  } }));
+  const repair = vi.fn().mockResolvedValue(null);
+  const result = await finalizeSynthesisMeaning(value, original, repair);
+  if (mode === "missing") {
+    expect(result).toBeNull();
+    expect(repair).toHaveBeenCalledWith([expect.stringContaining("今晚可先在公开版保留文字摘引或转述")], original);
+  } else {
+    expect(result).toMatchObject({ synthesis: { text } });
+    expect(repair).not.toHaveBeenCalled();
+  }
+  expect(generate).toHaveBeenCalledOnce();
+});
+
+it.each(["discovered", "uncovered", "malformed"])("distinguishes advisory additional focus labels from missing obligations (%s)", async mode => {
+  const release = "公开版据此用文字引语并加标注";
+  const playback = "原声仍只在馆内播放";
+  const text = `${release}，${playback}。`;
+  const value = oralInput(oralGrant);
+  const original = { synthesis: { ...synthesis, text }, outputText: "grant",
+    authorizationFocus: [{ action: "在公开网站首页使用文字摘引", nonGrants: ["她签的只是馆内播放原声"] }] };
+  const evidence = { sourceA: { unit: "A1" }, sourceB: { unit: "B1" }, useA: release, useB: playback, consequence: text };
+  generate.mockResolvedValue(respond({ ...verified, change: null, prose: { ...prose(evidence), authorization: [{
+    focus: mode === "uncovered" ? "F3" : "F1", action: release, decision: "proceed", use: "公开版使用文字引语",
+    basis: { unit: "B3" }, gaps: []
+  }, {
+    focus: mode === "malformed" ? "verified" : "F5", action: playback, decision: "proceed", use: "延续馆内原声播放",
+    basis: { unit: "B1" }, gaps: []
+  }] } }));
+  if (mode === "discovered") {
+    expect(await finalizeSynthesisMeaning(value, original)).toMatchObject({ synthesis: { text } });
+    expect(generate).toHaveBeenCalledOnce();
+  } else {
+    await expect(finalizeSynthesisMeaning(value, original)).rejects.toBeInstanceOf(ReviewerProtocolError);
+    expect(generate).toHaveBeenCalledTimes(2);
+  }
+});
+
+it("keeps confirmed evidence when a same-text patch includes unrelated empty placeholders", async () => {
+  generate.mockResolvedValueOnce(synthesisReview(prose({ ...passEvidence, consequence: "" })))
+    .mockResolvedValueOnce(respond({ pass: true, issues: [], evidence: {
+      sourceA: "", sourceB: "", useA: "", useB: "", consequence: passEvidence.consequence
+    } }));
+  expect(await finalizeSynthesisMeaning(synthesisInput(), candidate)).toMatchObject({ synthesis: { text: synthesis.text } });
+  expect(generate).toHaveBeenCalledTimes(2);
+});
+
+it.each(["scope", "ordinary", "unknown-action", "truncated"])(
+  "recovers only grounded authorization issues after exhausting same-text correction (%s)", async kind => {
+    const action = "可把馆内播放与网页公开分开：展厅继续播原声，首页用家属核对过、不暴露声音与身份的摘引或转述来保留这句细节";
+    const substitute = "前提是摘引同样经家属确认，若家属核对未完成，就先只保留馆内播放";
+    const text = `${action}。${substitute}。`;
+    const original = { synthesis: { ...synthesis, text }, outputText: "wrong-grant",
+      authorizationFocus: [{ action: "首页以家属核对的匿名文字转述", nonGrants: ["她签的只是馆内播放原声"] }] };
+    const candidateEvidence = { sourceA: { unit: "A1" }, sourceB: { unit: kind === "ordinary" ? "X1" : "B1" },
+      useA: { unit: "R1" }, useB: { unit: "R2" }, consequence: { unit: "R1" } };
+    const row = { focus: "F1", action: { unit: kind === "unknown-action" ? "X1" : "R1" }, decision: "conditional",
+      use: "首页使用经家属核对、不暴露声音与身份的摘引或转述", basis: { unit: "R2" }, gaps: ["permission", "condition"] };
+    const first = respond({ ...verified, change: null, prose: { ...prose(candidateEvidence), authorization: [row] } });
+    const second = respond({ pass: true, issues: [], authorization: [row, {
+      ...row, action: { unit: "R2" }, use: "家属核对未完成时仅保留馆内播放，暂不公开摘引"
+    }] });
+    generate.mockResolvedValueOnce(first).mockResolvedValueOnce(kind === "truncated" ? { ...second, truncated: true } : second);
+
+    const safeText = "今晚不在网页摘引或转述她的话。保留馆内原声播放，首页只介绍展讯。";
+    const safe = { synthesis: { ...synthesis, text: safeText }, outputText: "safe" };
+    const repair = vi.fn().mockResolvedValue(safe);
+    generate.mockResolvedValueOnce(respond({ ...verified, change: null, prose: {
+      ...prose({ sourceA: { unit: "A1" }, sourceB: { unit: "B1" }, useA: { unit: "R2" }, useB: { unit: "R2" }, consequence: { unit: "R1" } }),
+      authorization: [{ focus: "F1", action: { unit: "R1" }, decision: "not_adopted", reason: "当前网页改用一般展讯" }]
+    } }));
+
+    if (kind === "scope") {
+      expect(await finalizeSynthesisMeaning(oralInput(), original, repair)).toMatchObject({ synthesis: { text: safeText } });
+      expect(repair).toHaveBeenCalledExactlyOnceWith(expect.arrayContaining([
+        expect.stringContaining("匿名、改写或他人核对不能替代许可")
+      ]), original);
+      expect(generate).toHaveBeenCalledTimes(3);
+    } else {
+      await expect(finalizeSynthesisMeaning(oralInput(), original, repair)).rejects.toBeInstanceOf(ReviewerProtocolError);
+      expect(repair).not.toHaveBeenCalled();
+      expect(generate).toHaveBeenCalledTimes(2);
+    }
+  }
+);

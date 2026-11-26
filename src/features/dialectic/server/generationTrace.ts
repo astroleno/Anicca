@@ -14,8 +14,9 @@ export type SynthesisContractIssueCode = typeof synthesisContractIssues[number];
 const reviewProtocolCodes = [
   "output_truncated", "invalid_json", "invalid_verdict", "missing_evidence", "invalid_evidence",
   "evidence_too_short", "evidence_too_long", "wrong_evidence_owner", "unmatched_evidence",
-  "unknown_evidence_unit", "invalid_evidence_range", "missing_authorization_review",
-  "invalid_authorization_review", "unreviewed_authorization_action", "authorization_scope_violation"
+  "unknown_evidence_unit", "invalid_evidence_range", "missing_authorization_review", "authorization_action_too_broad",
+  "invalid_authorization_review", "unreviewed_authorization_action", "authorization_scope_violation", "missing_authorization_gate",
+  "unverified_authorization_basis"
 ] as const;
 const reviewEvidenceFields = ["sourceA", "sourceB", "useA", "useB", "consequence", "gap", "opening", "thesis", "target", "premise", "authorization"] as const;
 export type ReviewEvidenceField = typeof reviewEvidenceFields[number];
@@ -95,7 +96,7 @@ export function createGenerationTrace(endpoint: "branches" | "synthesis" | "pola
       const modelId = /^[a-zA-Z0-9_.:/-]{1,100}$/.test(model) ? model : "unrecognized";
       const record = {
         schemaVersion: 1, traceId, endpoint, model: modelId,
-        promptVersion: endpoint === "synthesis" ? "seed-flow-2026-11-26-authorization-json" : DIALECTIC_PROMPT_VERSION,
+        promptVersion: endpoint === "synthesis" ? "seed-flow-2026-11-26-authorization-focus-map" : DIALECTIC_PROMPT_VERSION,
         policyVersion: DIALECTIC_POLICY_CARD_VERSION,
         outcome: signal.aborted ? "cancelled" : outcome,
         elapsedMs: Math.round(performance.now() - started),

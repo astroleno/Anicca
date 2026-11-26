@@ -209,7 +209,7 @@ it.each([false, true])("keeps a changed form and audience within actual permissi
       at: "R", action: "目前只在组内工作坊使用演示稿", decision: "proceed", use: "在组内工作坊展示演示稿",
       basis: { owner: "B", quote: privateUse, scope: "组内工作坊展示演示稿" }, gaps: []
     }, {
-      at: "R", action: "等讲者明确同意向该受众转述再把例子补进去", decision: "conditional", use: "对外活动简报转述讲者例子",
+      at: "R", focus: "F1", action: "等讲者明确同意向该受众转述再把例子补进去", decision: "conditional", use: "对外活动简报转述讲者例子",
       basis: { owner: "B", quote: privateUse, scope: "组内工作坊展示演示稿" }, gaps: ["form", "audience"]
     }]);
   generate.mockImplementationOnce(({ input }: { input: string }) => emit({ synthesis: candidate,
