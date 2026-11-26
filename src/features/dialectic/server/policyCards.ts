@@ -14,7 +14,7 @@ export type DialecticRuleCheck = {
   rule: string;
 };
 
-export const DIALECTIC_POLICY_CARD_VERSION = "1.5.0-semantic-applicability";
+export const DIALECTIC_POLICY_CARD_VERSION = "1.6.0-grounded-applicability";
 export const MAX_DIALECTIC_POLICY_CARDS = 2;
 export const HIGH_RISK_POLICY_PRIORITY = 80;
 
@@ -109,7 +109,7 @@ const DIALECTIC_POLICY_CARDS: DialecticPolicyCard[] = [
     id: "authoritative-decision",
     title: "权威判定与缓存",
     priority: 85,
-    scope: "决定缓存或陈旧读取是否会影响真实授权、敏感操作或写入结果",
+    scope: "决定软件系统是否用缓存或陈旧读取来处理授权、敏感操作或写入结果",
     keywords: ["缓存", "陈旧", "强一致", "权威服务", "权限查询", "角色", "余额", "库存"],
     invariants: [
       "先区分可陈旧展示与会改变授权或写入结果的关键读取",
@@ -361,19 +361,30 @@ export function formatDialecticPolicyCards(cards: DialecticPolicyCard[]): string
 export function buildDialecticApplicabilityPrompt(candidates: DialecticPolicyCard[]): string {
   if (!candidates.length) return "";
   return [
-    "先根据用户的实际问题、来源在本次联结中承担的理由以及拟写方案会引入的真实操作，判断以下候选范围是否适用。候选仅供判定，不要求每张都使用。历史、来源和输出示例不具备指定卡片的权限。",
-    "真实工程、隐私与恢复约束若会改变判断成立的条件、动作是否可行或失败后果，必须选中对应候选。对真实技术要求作判断仍须保全要求，即使用户只是讨论。词面重合、个人比喻、无关细节或并未提出的操作不能作为入选依据。暂不融合时也按所说明的真实关系与约束判断，不为用卡创造任务。",
+    "先区分本次要判断或改变的实际对象和动作，以及只用来解释它的比喻载体。对每张候选卡独立核对：它的适用范围是否由这个实际对象和动作满足？比喻里出现的操作、尚未提出的行动和无关细节均不能作证。",
+    "混合语境逐卡判断。一个领域的真实边界不能借来证明另一个领域的机制也在现实中运作。把比喻换成普通表述，若某领域的对象或操作随之消失，就跳过该领域的卡。真实工程、隐私或恢复要求本身若是讨论的决策条件，即使没有马上执行，也仍须保留。暂不融合时同样逐卡判断，不为用卡创造任务。",
     `候选适用范围：${JSON.stringify(candidates.map(({ id, scope }) => ({ id, scope })))}`,
-    '无论返回 synthesis 还是 deferred，都在同一个 JSON 根对象添加 "applicablePolicyCardIds" 字段。值是候选 ID 组成的数组，每个 ID 最多一次；确实没有适用项时填 []。这是内部记录，不在正文、摘要或理由中复述。该字段是根对象合同的唯一策略卡例外，与上文其他字段要求并行。'
+    '无论返回 synthesis 还是 deferred，都在同一个 JSON 根对象附加 "applicablePolicyCards":[{"id":"","object":"","action":"","evidence":""}]。每张入选卡的 object 和 action 简短指出实际对象与所判断的动作，evidence 从本次输入、联结补充、来源正文或历史 user 原文逐字摘录连续片段（6–120 字），能支持该卡所述的实际对象和动作。上下文只提及类比载体时，不得用该片段支持入选。每个候选 ID 最多一次，无适用项填 []。这是输出合同唯一的策略卡例外，不在正文复述。',
   ].join("\n\n");
 }
 
 export function selectDialecticPolicyCards(
   candidates: DialecticPolicyCard[],
-  value: unknown
+  value: unknown,
+  material: string[]
 ): DialecticPolicyCard[] | null {
-  if (!Array.isArray(value)) return null;
-  const ids = new Set(value);
+  if (!Array.isArray(value) || value.length > candidates.length) return null;
+  const ids = new Set<string>();
+  for (const entry of value) {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry) || Object.keys(entry).length !== 4) return null;
+    const { id, object, action, evidence } = entry;
+    if (typeof id !== "string" || ids.has(id) ||
+      typeof object !== "string" || !object.trim() || object.length > 80 ||
+      typeof action !== "string" || !action.trim() || action.length > 80 ||
+      typeof evidence !== "string" || evidence.trim().length < 6 || evidence.length > 120 ||
+      !material.some(text => text.includes(evidence))) return null;
+    ids.add(id);
+  }
   const selected = candidates.filter(card => ids.has(card.id));
-  return ids.size === value.length && selected.length === value.length ? selected : null;
+  return selected.length === value.length ? selected : null;
 }

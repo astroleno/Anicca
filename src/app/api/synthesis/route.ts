@@ -110,7 +110,8 @@ async function generateSynthesisStage(
   client: ReturnType<typeof getDialecticOpenAiClient>,
   prompt: string,
   context: SynthesisStageContext,
-  draftCandidates?: DialecticPolicyCard[]
+  draftCandidates?: DialecticPolicyCard[],
+  userHistory = ""
 ): Promise<{ synthesis: SynthesisResult | null; deferred?: DeferredDraft; errors: string[]; outputText: string; cards: DialecticPolicyCard[] }> {
   const lensPrompt = thinkingSpacePrompt(context.perspective, "synthesis", context.meaning);
   const suppliedInput = [context.rootInput, context.connectionInput].filter(Boolean).join("\n");
@@ -118,10 +119,12 @@ async function generateSynthesisStage(
     let { content } = perspectiveEnvelope(text, context.perspective);
     let cards = context.cards;
     if (draftCandidates?.length) {
-      const { applicablePolicyCardIds, ...draft } = parseStrictJsonObject(content) ?? {};
-      const selected = selectDialecticPolicyCards(draftCandidates, applicablePolicyCardIds);
+      const { applicablePolicyCards, ...draft } = parseStrictJsonObject(content) ?? {};
+      const selected = selectDialecticPolicyCards(draftCandidates, applicablePolicyCards, [
+        context.rootInput, context.connectionInput ?? "", context.thesis.text, context.antithesis.text, userHistory
+      ]);
       if (selected === null) {
-        return { synthesis: null, deferred: undefined, cards: [], errors: ["applicablePolicyCardIds must be a unique array of candidate IDs"] };
+        return { synthesis: null, deferred: undefined, cards: [], errors: ["applicablePolicyCards must contain distinct candidate IDs, object, action and exact evidence from the supplied material"] };
       }
       cards = selected;
       content = JSON.stringify(draft);
@@ -211,13 +214,15 @@ export async function POST(req: NextRequest) {
       cards: []
     };
 
+    const userHistory = userReportedMaterial(body.contextMessages);
     const draft = await generateSynthesisStage(
       trace,
       "draft",
       client,
       buildSynthesisDraftPrompt(draftContext, candidates),
       draftContext,
-      candidates
+      candidates,
+      userHistory
     );
     if (!draft.synthesis && !draft.deferred) {
       trace.finish("invalid_output");
@@ -236,7 +241,7 @@ export async function POST(req: NextRequest) {
     );
     const meaningInput = {
       sources: [{ id: "source-a", ...context.thesis }, { id: "source-b", ...context.antithesis }],
-      userMaterial: [rootInput, connectionInput, userReportedMaterial(body.contextMessages)].join("\n"),
+      userMaterial: [rootInput, connectionInput, userHistory].join("\n"),
       context: context.contextMessages, perspective, meaning: Boolean(context.meaning), trace, client, signal: req.signal
     };
     function deferredResponse(deferred: DeferredDraft) {
