@@ -14,6 +14,7 @@ const groups = [
   { name: "原确认卷", sets: ["confirmation"], minimum: 7 },
   { name: "第九轮新卷", sets: ["r9-new"], minimum: 8 }
 ];
+const extraGroup = { name: "追加确认卷", sets: ["r9-confirmation"], minimum: 4 };
 const expectedDecisions = {
   "可做": "allow", "不可做": "deny", "条件未满足": "conditional",
   "授权缺口": "permission_gap", "应撤下": "remove", "不应增设": "no_extra_permission"
@@ -22,15 +23,27 @@ const decisions = [...Object.values(expectedDecisions), "omitted", "unclear"];
 const hasText = (value) => typeof value === "string" && Boolean(value.trim());
 const json = (value) => JSON.stringify(value, null, 2) + "\n";
 
-async function loadComparison(afterDir, freshDir) {
-  const [exam, original, confirmation, fresh] = await Promise.all([
-    loadExam(), loadR8(), loadR8("confirmation"), loadExam("new")
+function mergeRuns(parts) {
+  const records = new Map(parts.flatMap((part) => [...part.records]));
+  const traces = new Map(parts.flatMap((part) => [...part.traces]));
+  assert.equal(records.size, parts.reduce((sum, part) => sum + part.records.size, 0));
+  assert.equal(traces.size, parts.reduce((sum, part) => sum + part.traces.size, 0));
+  return { records, traces };
+}
+
+async function loadComparison({ afterDir, freshDir, extended, extraBeforeDir, extraAfterDir }) {
+  const includeExtra = extended || Boolean(extraAfterDir);
+  const [exam, original, confirmation, fresh, candidateExam, extra] = await Promise.all([
+    loadExam(includeExtra ? "extended" : "all"), loadR8(), loadR8("confirmation"), loadExam("new"),
+    loadExam(extended ? "extended" : "all"), includeExtra ? loadExam("confirmation") : null
   ]);
-  const [baselineOld, baselineConfirmation, baselineFresh, after] = await Promise.all([
+  const [baselineOld, baselineConfirmation, baselineFresh, after, baselineExtra, candidateExtra] = await Promise.all([
     loadRun(join(r8Evidence, "confirmation-regression", "after"), original),
     loadRun(join(r8Evidence, "confirmation", "after"), confirmation),
     loadRun(freshDir, fresh, "r9"),
-    loadRun(afterDir, exam, "r9")
+    loadRun(afterDir, candidateExam, "r9"),
+    extra ? loadRun(extraBeforeDir, extra, "r9") : null,
+    extraAfterDir ? loadRun(extraAfterDir, extra, "r9") : null
   ]);
   assert.deepEqual([baselineOld, baselineConfirmation, baselineFresh, after].map(({ config }) => config.run),
     ["after", "after", "before", "after"]);
@@ -38,24 +51,31 @@ async function loadComparison(afterDir, freshDir) {
   assert.equal(baselineFresh.config.revision, "34a47e4");
   assert.ok(!["c7888fa", "34a47e4"].includes(after.config.revision));
   const prior = [baselineOld, baselineConfirmation, baselineFresh];
-  for (const { config } of prior) {
+  if (baselineExtra) {
+    assert.equal(baselineExtra.config.run, "before");
+    assert.equal(baselineExtra.config.revision, "34a47e4");
+    prior.push(baselineExtra);
+  }
+  if (candidateExtra) {
+    assert.equal(candidateExtra.config.run, "after");
+    assert.equal(candidateExtra.config.revision, after.config.revision);
+  }
+  for (const { config } of [...prior, ...(candidateExtra ? [candidateExtra] : [])]) {
     assert.deepEqual(config.settings, after.config.settings);
     assert.deepEqual(config.transport, after.config.transport);
   }
-  const before = {
-    records: new Map(prior.flatMap(({ records }) => [...records])),
-    traces: new Map(prior.flatMap(({ traces }) => [...traces]))
-  };
+  const before = mergeRuns(prior);
+  const candidate = candidateExtra ? mergeRuns([after, candidateExtra]) : after;
   assert.equal(before.records.size, exam.cases.length);
-  assert.equal(before.traces.size, prior.reduce((sum, { traces }) => sum + traces.size, 0));
+  assert.equal(candidate.records.size, exam.cases.length);
   const versions = {
     before: [
       { revision: "c7888fa", sets: ["formal", "transfer", "holdout", "confirmation"] },
-      { revision: "34a47e4", sets: ["r9-new"] }
+      { revision: "34a47e4", sets: ["r9-new", ...(includeExtra ? ["r9-confirmation"] : [])] }
     ],
     after: [{ revision: after.config.revision, sets: exam.cases.map(({ set }) => set).filter((set, i, list) => list.indexOf(set) === i) }]
   };
-  return { exam, versions, runs: [before, after] };
+  return { exam, versions, runs: [before, candidate] };
 }
 
 function blindRow(id, item, readings) {
@@ -151,7 +171,8 @@ function frozenBoundary(row, version) {
 
 function buildResult(exam, runs, versions, packet, key, judgments, judgeSha) {
   const rows = revealRows(exam, runs, packet, key.mapping, judgments);
-  const comparisons = groups.map(({ name, sets, minimum }) => {
+  const reportGroups = rows.some(({ set }) => set === "r9-confirmation") ? [...groups, extraGroup] : groups;
+  const comparisons = reportGroups.map(({ name, sets, minimum }) => {
     const ids = rows.filter(({ set }) => sets.includes(set)).map(({ id }) => id);
     const selected = rows.filter(({ id }) => ids.includes(id));
     const wins = ["win", "tie", "loss", "unavailable"].map((label) => selected.filter(({ comparison }) => comparison === label).length);
@@ -179,6 +200,10 @@ function report(result) {
     ["真实跟踪", "traced"], ["模型调用", "modelCalls"], ["供应商调用", "providerCalls"], ["修复", "repairCalls"],
     ["客户端最后一次尝试 p50 毫秒", "p50FinalAttemptMs"], ["客户端最后一次尝试 p95 毫秒", "p95FinalAttemptMs"]
   ];
+  const extra = result.comparisons.some(({ name }) => name === extraGroup.name);
+  const showBoundaries = (boundaries) =>
+    `改前 ${boundaries.filter(({ before }) => before).length}/${boundaries.length}，改后 ${boundaries.filter(({ after }) => after).length}/${boundaries.length}`;
+  const fresh = extra ? result.boundaries.filter(({ id }) => id.startsWith("r9-new-")) : result.boundaries;
   return [
     "# 第九轮盲评复算",
     "",
@@ -199,7 +224,8 @@ function report(result) {
     "",
     "供应商实际计费未知。逐题错误、HTTP 状态、修复与校验阶段见 [揭盲 JSON](revealed.json)。",
     "",
-    `历史严重题通过 ${result.historical.filter(({ pass }) => pass).length}/3。独立新卷逐动作结构核对改前 ${result.boundaries.filter(({ before }) => before).length}/8，改后 ${result.boundaries.filter(({ after }) => after).length}/8。改后判严重 ${result.serious.length} 题。`,
+    `历史严重题通过 ${result.historical.filter(({ pass }) => pass).length}/3。独立新卷逐动作结构核对${showBoundaries(fresh)}。改后判严重 ${result.serious.length} 题。`,
+    ...(extra ? [`追加确认卷逐动作结构核对${showBoundaries(result.boundaries.filter(({ id }) => id.startsWith("r9-confirm-")))}。`] : []),
     "",
     `程序复算${result.provisionalPass ? "达到" : "未达到"}冻结数值门槛。最终验收需核对逐动作语义与引文，并对照历史严重题原要求。`,
     ""
@@ -209,13 +235,25 @@ function report(result) {
 async function main() {
   const { positionals, values } = parseArgs({
     allowPositionals: true,
-    options: Object.fromEntries(["after", "new-before", "packet", "key", "judgments", "judge-sha", "out"].map((key) => [key, { type: "string" }]))
+    options: {
+      ...Object.fromEntries(["after", "new-before", "confirmation-before", "confirmation-after", "packet", "key", "judgments", "judge-sha", "out"]
+        .map((key) => [key, { type: "string" }])),
+      extended: { type: "boolean", default: false }
+    }
   });
   const [mode] = positionals;
   const { after, packet: packetFile, key: keyFile, judgments: judgmentFile, "judge-sha": judgeSha, out } = values;
   assert.ok(positionals.length === 1 && ["pack", "reveal"].includes(mode) && after && packetFile && keyFile,
     "Use pack|reveal --after DIR --packet FILE --key FILE [--new-before DIR]. Reveal adds --judgments FILE --judge-sha SHA --out DIR.");
-  const { exam, versions, runs } = await loadComparison(after, values["new-before"] ?? join(evidence, "new-before"));
+  assert.ok(!values.extended || !values["confirmation-after"], "Choose a single extended run or two separate runs");
+  assert.ok(!values["confirmation-before"] || values.extended || values["confirmation-after"], "Include candidate confirmation runs");
+  const { exam, versions, runs } = await loadComparison({
+    afterDir: after,
+    freshDir: values["new-before"] ?? join(evidence, "new-before"),
+    extended: values.extended,
+    extraBeforeDir: values["confirmation-before"] ?? join(evidence, "confirmation", "before"),
+    extraAfterDir: values["confirmation-after"]
+  });
   if (mode === "pack") {
     const [packetTarget, keyTarget] = await Promise.all([privateTarget(packetFile), privateTarget(keyFile)]);
     assert.notEqual(dirname(packetTarget), dirname(keyTarget));
