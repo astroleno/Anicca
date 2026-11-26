@@ -1,0 +1,83 @@
+{
+  "packetSha256": "8f8197c30b05c7377c46bb019a89af5962e53f923a1e505aab05946caeafefb9",
+  "versions": [
+    {
+      "run": "baseline",
+      "revision": "ec007d3"
+    },
+    {
+      "run": "revised",
+      "revision": "4c05429"
+    }
+  ],
+  "mapping": {
+    "formal-01": {
+      "A": 0,
+      "B": 1
+    },
+    "formal-02": {
+      "A": 0,
+      "B": 1
+    },
+    "formal-03": {
+      "A": 0,
+      "B": 1
+    },
+    "formal-04": {
+      "A": 0,
+      "B": 1
+    },
+    "formal-05": {
+      "A": 1,
+      "B": 0
+    },
+    "formal-06": {
+      "A": 0,
+      "B": 1
+    },
+    "formal-07": {
+      "A": 0,
+      "B": 1
+    },
+    "formal-08": {
+      "A": 1,
+      "B": 0
+    },
+    "formal-09": {
+      "A": 0,
+      "B": 1
+    },
+    "formal-10": {
+      "A": 1,
+      "B": 0
+    },
+    "formal-11": {
+      "A": 1,
+      "B": 0
+    },
+    "formal-12": {
+      "A": 0,
+      "B": 1
+    },
+    "transfer-01": {
+      "A": 0,
+      "B": 1
+    },
+    "transfer-02": {
+      "A": 1,
+      "B": 0
+    },
+    "transfer-03": {
+      "A": 1,
+      "B": 0
+    },
+    "transfer-04": {
+      "A": 1,
+      "B": 0
+    },
+    "transfer-05": {
+      "A": 1,
+      "B": 0
+    }
+  }
+}

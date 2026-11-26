@@ -121,6 +121,7 @@ function gate(run, id) {
 }
 
 function generateTable(result) {
+  const runbook = result.versions[1].run === "revised" ? "../README.md" : "README.md";
   const lines = [
     "# 第七轮正文评测技术附表",
     "",
@@ -144,7 +145,7 @@ function generateTable(result) {
     "",
     "## 策略卡语义门控",
     "",
-    "改前检索复核记录在[复跑说明](README.md)。改后候选与适用卡取自当次真实跟踪，final 阶段用于识别高风险审计后的最终重写。audit 调用还包括正文审阅。",
+    `改前检索复核记录在[复跑说明](${runbook})。改后候选与适用卡取自当次真实跟踪，final 阶段用于识别高风险审计后的最终重写。audit 调用还包括正文审阅。`,
     "",
     "| 题号 | 语境 | 改后候选 | 改后适用 | final 阶段 改前 → 改后 | 客户端耗时 ms 改前 → 改后 |",
     "| --- | --- | --- | --- | --- | ---: |",

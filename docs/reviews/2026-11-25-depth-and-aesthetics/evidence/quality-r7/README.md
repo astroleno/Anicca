@@ -66,7 +66,7 @@ node scripts/evals/summarize-dialectic-quality-r7.mjs \
 ```sh
 results_dir=$(mktemp -d /tmp/anicca-r7-retest.XXXXXX)
 node scripts/evals/summarize-dialectic-quality-r7.mjs \
-  --judgments "$evidence/retest/judgments.json" --judge-sha SEALED_RETEST_SHA256 \
+  --judgments "$evidence/retest/judgments.json" --judge-sha 95e450fe5de210163721df99ce0d84a80f77bdbabfa6d09a917bc412b8ad16b5 \
   --packet "$evidence/retest/packet.json" --key "$evidence/retest/key.json" \
   --evidence "$evidence" --out "$results_dir" --second-run revised
 ```
