@@ -16,6 +16,15 @@ const sha = (contents) => createHash("sha256").update(contents).digest("hex");
 const read = (file) => readFile(file, "utf8");
 const json = async (file) => JSON.parse(await read(file));
 const mapById = (items) => new Map(items.map((item) => [item.id, item]));
+function errorDetails(rawBody) {
+  try {
+    const details = JSON.parse(rawBody)?.details;
+    return typeof details === "string" ? details : null;
+  } catch {
+    return null;
+  }
+}
+
 const sum = (values) => values.reduce((total, value) => total + value, 0);
 const fmt = (value) => value == null ? "—" : value.toLocaleString("en-US");
 const md = (value) => typeof value === "string" ? value.replaceAll("|", "\\|").replace(/\s+/gu, " ") : String(value ?? "—");
@@ -114,8 +123,8 @@ function generateTable(result) {
     "",
     "| 题号 | 路由 | 版本 | 状态 | 原因 |",
     "| --- | --- | --- | ---: | --- |",
-    ...(result.missing.length ? result.missing.map(({ id, route, version, status, error }) =>
-      `| ${id} | ${routeNames[route]} | ${names[version]} | ${fmt(status)} | ${md(error)} |`) : ["| 无 | — | — | — | — |"]),
+    ...(result.missing.length ? result.missing.map(({ id, route, version, status, error, details }) =>
+      `| ${id} | ${routeNames[route]} | ${names[version]} | ${fmt(status)} | ${md([error, details].filter(Boolean).join(" · "))} |`) : ["| 无 | — | — | — | — |"]),
     "",
     "## 策略卡语义门控",
     "",
@@ -149,7 +158,7 @@ function generateTable(result) {
     }),
     ""
   ];
-  return lines.join("\n") + "\n";
+  return lines.join("\n").trimEnd() + "\n";
 }
 
 async function main(values) {
@@ -197,7 +206,7 @@ async function main(values) {
         byVersion[index] = { side, outcome: attempt.reading?.outcome ?? "unavailable",
           ...(route === "synthesis" && judge[side] !== undefined ? { judgment: judge[side] } : {}) };
         if (!attempt.reading) missing.push({ id, route, side, version: index,
-          requestId: attempt.body.requestId, status: attempt.status, error: attempt.error });
+          requestId: attempt.body.requestId, status: attempt.status, error: attempt.error, details: errorDetails(attempt.rawBody) });
       }
       if (byVersion.some(({ outcome }) => outcome === "unavailable")) {
         assert.equal(judge.winner, "unavailable", `Uncomparable row assigned winner: ${id} ${route}`);

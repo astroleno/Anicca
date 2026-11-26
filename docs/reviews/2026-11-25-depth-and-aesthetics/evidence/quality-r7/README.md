@@ -23,7 +23,7 @@ evidence=docs/reviews/2026-11-25-depth-and-aesthetics/evidence/quality-r7
 node scripts/evals/dialectic-quality-r7.mjs \
   --base http://127.0.0.1:3276 --output "$evidence/baseline" --run baseline \
   --revision BASELINE_GIT_SHA --settings "$evidence/provider.json" \
-  --concurrency 3 --server-log /tmp/quality-r7-server.log
+  --concurrency 4 --server-log /tmp/quality-r7-server.log
 ```
 
 两条路由从服务器默认模型配置选用 DeepSeek 的 `deepseek-v4-flash`，校准时供应商返回 `deepseek-flash`。runner 用跟踪日志核对实际请求别名。使用 Chat Completions，DeepSeek 思考模式关闭。主要生成阶段使用供应商默认温度，意义审阅显式设为 0。基线每次正反生成上限为 2000 token，默认空间的合流草稿、批评及最后生成各为 1400，高风险审计为 1800，意义审阅为 2200。机制调整时，以真实版本的阶段、上限及路由行为为准。
@@ -44,16 +44,16 @@ node scripts/evals/blind-dialectic-quality-r7.mjs \
 
 匿名题卷含题面、固定甲乙、题面补充联结与两侧最终阅读正文或暂不融合的理由及问题。错误回包仅显示缺测。每题独立以等概率交换左右，两条路由在同题共享左右。映射另存题卷哈希和版本对应。先把匿名题卷交给评审者，待按题封存判读后再提供映射。
 
-`first-candidate/` 留存过程版实测，最终盲评使用 `baseline/` 和 `candidate/`。语义门控的 `gate-calibration/` 是单独冻结的卷外校准题，统计正文胜平负和成本时使用原 17 题。
+`first-candidate/` 留存过程版实测，最终盲评使用 `baseline/` 和 `candidate/`。[语义门控校准](gate-calibration.json)保留了五道卷外题的输入、预期与首轮响应，统计正文胜平负和成本时使用原 17 题。
 
 ### 揭盲后复算
 
-准备与封存哈希相符的 `judgments.json`、原匿名题卷和揭盲映射。输出目录需已存在且为空。汇总器核对封存判断、匿名题卷、冻结请求、两版模型设置及逐题正文的一致性。
+使用[封存判断](judgments.json)、[原匿名题卷](packet.json)和[揭盲映射](key.json)重算[技术附表](results.md)与[逐题明细](revealed.json)。输出目录需已存在且为空。汇总器核对封存判断、匿名题卷、冻结请求、两版模型设置及逐题正文的一致性。
 
 ```sh
 results_dir=$(mktemp -d /tmp/anicca-r7-results.XXXXXX)
 node scripts/evals/summarize-dialectic-quality-r7.mjs \
-  --judgments "$evidence/judgments.json" --judge-sha SEALED_JUDGMENTS_SHA256 \
-  --packet "$packet_dir/packet.json" --key "$key_dir/key.json" \
+  --judgments "$evidence/judgments.json" --judge-sha 2f504f9b20b22d33e3b1036ad8770102dce67e532e37a0b063ffef2cd9547556 \
+  --packet "$evidence/packet.json" --key "$evidence/key.json" \
   --evidence "$evidence" --out "$results_dir"
 ```
