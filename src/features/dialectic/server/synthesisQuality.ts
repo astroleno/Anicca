@@ -1,3 +1,4 @@
+import { DEFERRED_PROSE_RULE, SYNTHESIS_PROSE_RULE } from "./meaningReview";
 import { normalizeDialecticLabel, normalizeDialecticSummary } from "@/features/dialectic/outputContract";
 import { parseStrictJsonObject } from "@/lib/openai/parseStrictJsonObject";
 import { readDeferredDraft, readUnderstandingChange, UNDERSTANDING_CHANGE_PROMPT, type DeferredDraft } from "../meaning";
@@ -229,6 +230,7 @@ function commonOutputRules(context: SynthesisPromptContext): string[] {
       '在写正文前判断两份来源是否有具体联系。有共享对象、过程、张力或有依据的结构对应时，返回 synthesis。若只有“都依赖语境、都有局部整体”这类可套任意题目的共性，或必须虚构来源事实才能建立联系，返回另一种完整结构：{"deferred":{"reason":"","question":""}}。两种结构只能选一种；deferred 不带 synthesis、change、spatial 或 suggestedAxes。',
       "暂不融合是有效结果，不是报错。reason 用 12–180 字具体说明两者各在回答什么、当前缺少哪个联系；question 用 6–100 字给用户一个可选择的联结入口，不能要求先证明联想正确、不能催促用户补材料，也不偷偷把假设写成事实。不为凑字数扩写无关性。只有用户明确提出跨领域类比或创作意图时，才能沿这个意图形成标明边界的假设联系。",
       "reason 以 50–90 字为目标，只比较原始来源的内容与缺少的联系，不评述内部草稿、校正、规则或生成过程；question 以 20–45 字为目标。问题只询问想联结的对象、用途或创作方向，或允许停在此处；不要在引导问题里再次肯定来源未给的现象，也不要把刚否定的牵强比喻换成问句推销。",
+      SYNTHESIS_PROSE_RULE, DEFERRED_PROSE_RULE,
       "deferred 的短文本合同优先于以下 synthesis 正文长度和写作要求。检查 change 中的因果判断也没有超出来源；不能把摘要换词当作变化。"
     ] : []),
     "synthesis.text 含标点必须是 180–320 个字符，目标 230–270 字，避免贴近上下限；summary 必须单行；label 必须是 1–8 个字符的中文短标签；stance 严格为‘合’。",
@@ -352,7 +354,7 @@ export function buildSynthesisContractRepairPrompt(
     ? error.slice("unsupported quantities: ".length).split(", ") : []))];
   return [
     "你是短文编辑。只修复给定 JSON 的契约错误，保留正文已有的核心判断、联系和边界，不重新推演方案。优先保留使新判断成立的具体细节及推理，先删重复解释，不能把新理解压成‘兼顾两者’。",
-    ...(context.meaning ? commonOutputRules(context).slice(0, 6) : ['只返回严格 JSON：{"synthesis":{"text":"","summary":"","label":"","stance":"合"}}，不得有其他键或 JSON 外文字。summary 为单行，label 为 1–8 字。']),
+    ...(context.meaning ? commonOutputRules(context) : ['只返回严格 JSON：{"synthesis":{"text":"","summary":"","label":"","stance":"合"}}，不得有其他键或 JSON 外文字。summary 为单行，label 为 1–8 字。']),
     "text 含标点必须为 180–320 字，目标 240–280 字。低于下限时补充已有论述中省略的理由与边界含义；高于上限时删次要例子与重复结论。不要只换词后交回同样长度的正文。",
     "errors 中的 unsupported quantities 必须逐项从正文移除，改为不含该数量的定性表述，不用另一种数字写法替换。保留输入已明确的硬约束，不增加新事实、动机、能力或期限。",
     "关联薄弱仍保留联系不足的判断；新解释仍保留条件。不能为补字数强造机制，也不把观点、感受或创意改成执行计划，不强制五句。",

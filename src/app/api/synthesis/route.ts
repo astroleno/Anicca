@@ -5,7 +5,7 @@ import { getDialecticModel, getDialecticOpenAiClient } from "@/lib/openai/client
 import { createGenerationTrace, type GenerationTrace } from "@/features/dialectic/server/generationTrace";
 import { parseStrictJsonObject } from "@/lib/openai/parseStrictJsonObject";
 import { describeProviderFailure } from "@/lib/openai/providerErrors";
-import { finalizeMeaning, userReportedMaterial } from "@/features/dialectic/server/meaningReview";
+import { finalizeSynthesisMeaning, userReportedMaterial } from "@/features/dialectic/server/meaningReview";
 import type { DeferredDraft } from "@/features/dialectic/meaning";
 import {
   analyzeSynthesisOutput,
@@ -15,6 +15,7 @@ import {
   buildSynthesisDraftPrompt,
   buildSynthesisFinalPrompt,
   parseSynthesisAudit,
+  type SynthesisAudit,
   SynthesisResult,
   SynthesisSource
 } from "@/features/dialectic/server/synthesisQuality";
@@ -233,37 +234,50 @@ export async function POST(req: NextRequest) {
       buildSynthesisCriticPrompt(context, (draft.synthesis || draft.deferred)!),
       context
     );
-    if (critic.deferred) {
-      req.signal.throwIfAborted();
-      trace.finish("success");
-      return NextResponse.json({ requestId, outcome: "deferred", deferred: critic.deferred });
-    }
-    if (!critic.synthesis) {
-      trace.finish("invalid_output");
-      return invalidModelOutput(requestId, "synthesis critic failed contract after one repair");
-    }
-
-    let synthesis = critic.synthesis;
-    let selectedOutput = critic.outputText;
     const meaningInput = {
       sources: [{ id: "source-a", ...context.thesis }, { id: "source-b", ...context.antithesis }],
       userMaterial: [rootInput, connectionInput, userReportedMaterial(body.contextMessages)].join("\n"),
       context: context.contextMessages, perspective, meaning: Boolean(context.meaning), trace, client, signal: req.signal
     };
-    const checked = await finalizeMeaning({ ...meaningInput, results: { synthesis },
-      repair: async issues => {
-        const output = await trace!.generate("critic", { client, maxOutputTokens: perspective ? 1800 : 1400,
-          input: `${buildSynthesisCriticPrompt(context, synthesis)}\n${thinkingSpacePrompt(perspective, "synthesis", context.meaning)}\n必须逐句修复以下假设语气问题：${issues.join("；")}` }, true, 12000);
-        const repaired = analyzeSynthesisOutput(perspectiveEnvelope(output.text, perspective).content,
-          [rootInput, connectionInput].filter(Boolean).join("\n"), { meaning: context.meaning });
-        trace!.check("critic", Boolean(repaired.synthesis), true);
-        if (!repaired.synthesis) return null;
-        selectedOutput = output.text;
-        return { synthesis: repaired.synthesis };
-      }
-    });
-    if (!checked) { trace.finish("invalid_output"); return invalidModelOutput(requestId, "hypothesis grounding could not be verified"); }
-    synthesis = checked.synthesis;
+    function deferredResponse(deferred: DeferredDraft) {
+      req.signal.throwIfAborted();
+      trace!.finish("success");
+      return NextResponse.json({ requestId, outcome: "deferred", deferred });
+    }
+
+    function reviewStage(stage: "critic" | "final", output: typeof critic, finalContext?: { audit: SynthesisAudit; original: SynthesisResult }) {
+      const candidate = output.deferred ? { deferred: output.deferred, outputText: output.outputText }
+        : output.synthesis ? { synthesis: output.synthesis, outputText: output.outputText } : null;
+      if (!candidate) return null;
+      return finalizeSynthesisMeaning<SynthesisResult>(meaningInput, candidate, stage === "critic" || context.meaning
+        ? async (issues, previous) => {
+          const previousDraft = "deferred" in previous ? previous.deferred : previous.synthesis;
+          const prompt = finalContext
+            ? `${buildSynthesisFinalPrompt(context, "synthesis" in previous ? previous.synthesis : finalContext.original, finalContext.audit)}\n待修正输出：${JSON.stringify(previousDraft)}`
+            : buildSynthesisCriticPrompt(context, previousDraft);
+          const repairedOutput = await trace!.generate(stage, { client, maxOutputTokens: perspective ? 1800 : 1400,
+            input: [prompt, thinkingSpacePrompt(perspective, "synthesis", context.meaning),
+              `必须修复以下审校问题：${issues.join("；")}`].filter(Boolean).join("\n\n") }, true, 12000);
+          const repaired = analyzeSynthesisOutput(perspectiveEnvelope(repairedOutput.text, perspective).content,
+            [rootInput, connectionInput].filter(Boolean).join("\n"), { meaning: context.meaning });
+          trace!.check(stage, Boolean(repaired.synthesis || repaired.deferred), true);
+          if (repaired.deferred) return { deferred: repaired.deferred, outputText: repairedOutput.text };
+          return repaired.synthesis ? { synthesis: repaired.synthesis, outputText: repairedOutput.text } : null;
+        } : undefined);
+    }
+
+    if (!critic.synthesis && !critic.deferred) {
+      trace.finish("invalid_output");
+      return invalidModelOutput(requestId, "synthesis critic failed contract after one repair");
+    }
+    const checked = await reviewStage("critic", critic);
+    if (!checked) {
+      trace.finish("invalid_output");
+      return invalidModelOutput(requestId, context.meaning ? "synthesis prose could not be verified" : "hypothesis grounding could not be verified");
+    }
+    if ("deferred" in checked) return deferredResponse(checked.deferred);
+
+    let { synthesis, outputText: selectedOutput } = checked;
     if (isHighRiskDialectic(cards)) {
       const auditResponse = await trace.generate("audit", {
         client,
@@ -284,20 +298,18 @@ export async function POST(req: NextRequest) {
         buildSynthesisFinalPrompt(context, synthesis, audit),
         context
       );
-      if (final.deferred) {
-        req.signal.throwIfAborted();
-        trace.finish("success");
-        return NextResponse.json({ requestId, outcome: "deferred", deferred: final.deferred });
-      }
-      if (!final.synthesis) {
+      if (!final.synthesis && !final.deferred) {
         trace.finish("invalid_output");
         return invalidModelOutput(requestId, "synthesis final rewrite failed contract after one repair");
       }
-      synthesis = final.synthesis;
-      selectedOutput = final.outputText;
-      const checkedFinal = await finalizeMeaning({ ...meaningInput, results: { synthesis } });
-      if (!checkedFinal) { trace.finish("invalid_output"); return invalidModelOutput(requestId, "final hypothesis grounding could not be verified"); }
+      const checkedFinal = await reviewStage("final", final, { audit, original: synthesis });
+      if (!checkedFinal) {
+        trace.finish("invalid_output");
+        return invalidModelOutput(requestId, context.meaning ? "final synthesis prose could not be verified" : "final hypothesis grounding could not be verified");
+      }
+      if ("deferred" in checkedFinal) return deferredResponse(checkedFinal.deferred);
       synthesis = checkedFinal.synthesis;
+      selectedOutput = checkedFinal.outputText;
     }
 
     req.signal.throwIfAborted();

@@ -939,7 +939,13 @@ describe("dialectic routes", () => {
       question: "你希望从谁的眼睛里看到这次重逢？"
     };
     createResponse.mockResolvedValueOnce({ output_text: JSON.stringify({ deferred, applicablePolicyCardIds: [] }) })
-      .mockResolvedValueOnce({ output_text: JSON.stringify({ deferred }) });
+      .mockResolvedValueOnce({ output_text: JSON.stringify({ deferred }) })
+      .mockResolvedValueOnce({ output_text: JSON.stringify({ pass: true, issues: [], evidence: {
+        sourceA: "删去自己脑中的童年记忆",
+        sourceB: "母亲和女儿在街口重逢",
+        gap: "还没有交代它们之间的因果关系",
+        opening: "从谁的眼睛里看到这次重逢"
+      } }) });
     const response = await synthesisPost(new NextRequest("http://localhost/api/synthesis", {
       method: "POST", body: JSON.stringify({ requestId: "policy-deferred", meaningVersion: 1,
         rootInput: "小说里她要从‘家庭记忆数据库’删除旧数据。",
@@ -952,9 +958,12 @@ describe("dialectic routes", () => {
     }));
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ requestId: "policy-deferred", outcome: "deferred", deferred });
-    expect(createResponse).toHaveBeenCalledTimes(2);
+    expect(createResponse).toHaveBeenCalledTimes(3);
     expect(createResponse.mock.calls[0][0].input).toContain("verified-recovery");
-    expect(createResponse.mock.calls[1][0].input).not.toContain("applicablePolicyCardIds");
+    for (const [payload] of createResponse.mock.calls.slice(1)) {
+      expect(payload.input).not.toContain("applicablePolicyCardIds");
+      expect(payload.input).not.toContain("不可再生数据只有在隔离环境实际恢复");
+    }
   });
 
   it("stops synthesis after cancellation even when the provider ignores the signal", async () => {
