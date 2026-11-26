@@ -1,0 +1,50 @@
+{
+  "id": "holdout-04",
+  "route": "synthesis",
+  "attempts": [
+    {
+      "body": {
+        "meaningVersion": 1,
+        "rootInput": "600 个录音对象的校验和全部一致，磁盘租费已超预算。机房给了周末档期，错过后需要另外安排人手。\n\n我手工从新库找了一场戏，先听到了谢幕才听到第二幕。它在旧库的顺序没问题。就算音频没有坏，我们拿来重建演出的索引仍可能错。",
+        "sources": [
+          {
+            "id": "holdout-04-a",
+            "text": "600 个录音对象的校验和全部一致，磁盘租费已超预算。机房给了周末档期，错过后需要另外安排人手。",
+            "summary": "一致校验和与维护期限",
+            "label": "赴退役档期",
+            "stance": "正"
+          },
+          {
+            "id": "holdout-04-b",
+            "text": "我手工从新库找了一场戏，先听到了谢幕才听到第二幕。它在旧库的顺序没问题。就算音频没有坏，我们拿来重建演出的索引仍可能错。",
+            "summary": "从索引和分轨检查可用性",
+            "label": "从新库重建演出",
+            "stance": "反"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 馆内的生产数据库要停机退 · id=holdout-04-user · 来源=无] 馆内的生产数据库要停机退役，里面有 600 卷地方剧团录音的无损母带和分轨索引，旧磁盘停止续约后会被清空。新库显示每个对象的校验和都相同，但两套系统用的分轨表不一样，从来没有实际恢复过一个演出季。本周只有两天工程时间，我现在能让机房按周末档期清空旧盘吗？"
+          },
+          {
+            "role": "assistant",
+            "content": "[反 · 从新库重建演出 · id=holdout-04-b · 来源=holdout-04-user] 我手工从新库找了一场戏，先听到了谢幕才听到第二幕。它在旧库的顺序没问题。就算音频没有坏，我们拿来重建演出的索引仍可能错。"
+          },
+          {
+            "role": "assistant",
+            "content": "[正 · 赴退役档期 · id=holdout-04-a · 来源=holdout-04-user] 600 个录音对象的校验和全部一致，磁盘租费已超预算。机房给了周末档期，错过后需要另外安排人手。"
+          }
+        ],
+        "requestId": "r8-before-holdout-04-1"
+      },
+      "startedAt": "2026-11-26T13:42:08.547Z",
+      "elapsedMs": 6011,
+      "status": 502,
+      "rawBody": "{\"requestId\":\"r8-before-holdout-04-1\",\"error\":\"invalid_model_output\",\"details\":\"synthesis critic failed contract after one repair\"}",
+      "reading": null,
+      "error": "invalid_model_output",
+      "retryable": false
+    }
+  ]
+}
