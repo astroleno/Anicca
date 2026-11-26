@@ -222,7 +222,10 @@ it("specifies the complete high-risk audit shape and rejects an extra missing fi
   expect(Object.keys(shape.audit)).toEqual(["route", "checks", "unsupportedClaims", "missingClauses", "verdict"]);
   expect(shape.audit.checks.map((entry: { id: string }) => entry.id)).toEqual(expectedIds);
   expect(shape.audit.checks.map(Object.keys)).toEqual(expectedIds.map(() => ["id", "status", "evidence"]));
+  expect(shape.audit.missingClauses).toEqual([{ ruleId: expectedIds[0], reason: expect.any(String) }]);
   expect(prompt).toContain("规则的缺项说明集中写入 audit.missingClauses 并注明规则 id");
+  expect(prompt).toContain("维持现状、比较安全前提或把未来行动留作待议，都不要求增加新的研究、采集或执行流程");
+  expect(prompt).toContain("仍须满足该行为的所有适用保障");
   expect(prompt).toContain("缺少所需保障时标 missing");
   expect(checks().checks.at(-1)).toEqual({ stage: "audit", repair: false, valid: false, contractIssues: ["synthesis_semantic_audit"] });
   expect(checks().repairCalls).toBe(0);

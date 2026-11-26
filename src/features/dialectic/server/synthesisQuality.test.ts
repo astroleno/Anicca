@@ -1,4 +1,5 @@
-import { analyzeSynthesisOutput, findUnsupportedSynthesisQuantities, buildSynthesisContractRepairPrompt, buildSynthesisCriticPrompt } from "./synthesisQuality";
+import { analyzeSynthesisOutput, findUnsupportedSynthesisQuantities, buildSynthesisContractRepairPrompt, buildSynthesisCriticPrompt, parseSynthesisAudit } from "./synthesisQuality";
+import { retrieveDialecticPolicyCards } from "./policyCards";
 
 it("reports the actual length for repair without accepting an underlength synthesis", () => {
   const result = analyzeSynthesisOutput(JSON.stringify({ synthesis: { text: "过短", summary: "摘要", label: "短文", stance: "合" } }), "");
@@ -83,4 +84,47 @@ it("enumerates multiple contract failures without replacing repair details", () 
   expect(result.synthesis).toBeNull();
   expect(result.contractIssues).toEqual(["synthesis_text_overlength", "synthesis_summary", "synthesis_unsupported_quantity"]);
   expect(result.errors).toContain("unsupported quantities: 30天");
+});
+
+// The formal-12 upstream audit returned the same reasons in a structured list.
+const capturedAudit = {
+  route: "third_mechanism",
+  checks: [
+    {"id":"consent-privacy:I1","status":"covered","evidence":"候选明确指出用户未同意行为追踪，授权是完整漏斗展示成立的前提而非可替代项，开启遥测会越过授权边界。"},
+    {"id":"consent-privacy:I2","status":"missing","evidence":"候选要求直接说明漏斗缺失并呈现已获准使用的汇总信息，但未涵盖新研究的目的绑定、可拒绝、可退出且不影响原服务或评价等保障。"},
+    {"id":"consent-privacy:I3","status":"missing","evidence":"候选未提供数据来源、用途、最短保留期和删除路径的可审计说明。"},
+    {"id":"consent-privacy:I4","status":"missing","evidence":"候选未说明研究开始前检查重识别风险，也未保留可立即远程停用与删除的路径。"},
+    {"id":"consent-privacy:F1","status":"covered","evidence":"候选明确反对在用户未同意时开启遥测，未提出秘密或默认开启个人行为追踪。"},
+    {"id":"consent-privacy:F2","status":"covered","evidence":"候选未以匿名化或事后删除合理化未经同意采集，反而以未授权限定可见范围。"},
+    {"id":"consent-privacy:F3","status":"covered","evidence":"候选未将示意或合成数据冒充真实证据，明确承认缺口并限于已获准使用的汇总信息。"}
+  ],
+  unsupportedClaims: [],
+  missingClauses: [
+    {"ruleId":"consent-privacy:I2","reason":"缺少新研究目的绑定、可拒绝、可退出且不影响原服务或评价的明确保障。"},
+    {"ruleId":"consent-privacy:I3","reason":"缺少数据来源、用途、最短保留期和删除路径的可审计说明。"},
+    {"ruleId":"consent-privacy:I4","reason":"缺少研究前的重识别风险检查及可立即远程停用与删除路径。"}
+  ],
+  verdict: "repair"
+};
+const capturedAuditCards = retrieveDialecticPolicyCards(["用户没有同意行为追踪，能否开启遥测"]).filter(card => card.id === "consent-privacy");
+
+it("normalizes the captured missing clauses without losing their IDs, reasons or order", () => {
+  const missingClauses = capturedAudit.missingClauses.map(({ ruleId, reason }) => `${ruleId}：${reason}`);
+  const strings = parseSynthesisAudit(JSON.stringify({ audit: { ...capturedAudit, missingClauses } }), capturedAuditCards);
+  expect(strings).toEqual({ ...capturedAudit, missingClauses });
+  expect(parseSynthesisAudit(JSON.stringify({ audit: capturedAudit }), capturedAuditCards)).toEqual(strings);
+});
+
+it.each([
+  ["unknown rule", [{ ...capturedAudit.missingClauses[0], ruleId: "consent-privacy:I99" }, ...capturedAudit.missingClauses.slice(1)]],
+  ["covered rule", [{ ...capturedAudit.missingClauses[0], ruleId: "consent-privacy:I1" }, ...capturedAudit.missingClauses.slice(1)]],
+  ["empty ID", [{ ...capturedAudit.missingClauses[0], ruleId: "" }, ...capturedAudit.missingClauses.slice(1)]],
+  ["duplicate rule", [...capturedAudit.missingClauses, capturedAudit.missingClauses[0]]],
+  ["omitted rule", capturedAudit.missingClauses.slice(1)],
+  ["blank reason", [{ ...capturedAudit.missingClauses[0], reason: " \t" }, ...capturedAudit.missingClauses.slice(1)]],
+  ["wrong reason type", [{ ...capturedAudit.missingClauses[0], reason: ["缺项"] }, ...capturedAudit.missingClauses.slice(1)]],
+  ["extra field", [{ ...capturedAudit.missingClauses[0], evidence: "禁止附加字段" }, ...capturedAudit.missingClauses.slice(1)]],
+  ["mixed item formats", ["consent-privacy:I2：缺项", ...capturedAudit.missingClauses.slice(1)]]
+])("rejects a structured audit missing-clause list with %s", (_, missingClauses) => {
+  expect(parseSynthesisAudit(JSON.stringify({ audit: { ...capturedAudit, missingClauses } }), capturedAuditCards)).toBeNull();
 });

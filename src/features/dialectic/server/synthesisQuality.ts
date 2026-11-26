@@ -179,6 +179,19 @@ export function analyzeSynthesisOutput(
   };
 }
 
+function readAuditMissingClauses(clauses: unknown[], checks: SynthesisAudit["checks"]): string[] | null {
+  if (clauses.every((clause): clause is string => typeof clause === "string")) return clauses;
+
+  const outstanding = new Set(checks.filter(check => check.status === "missing" || check.status === "violated").map(check => check.id));
+  const canonical: string[] = [];
+  for (const clause of clauses) {
+    if (!hasExactKeys(clause, ["ruleId", "reason"]) || typeof clause.ruleId !== "string" ||
+      typeof clause.reason !== "string" || !clause.reason.trim() || !outstanding.delete(clause.ruleId)) return null;
+    canonical.push(`${clause.ruleId}：${clause.reason}`);
+  }
+  return outstanding.size ? null : canonical;
+}
+
 export function parseSynthesisAudit(outputText: string, cards: DialecticPolicyCard[]): SynthesisAudit | null {
   const parsed = outputText ? parseStrictJsonObject(outputText) : null;
   if (!hasExactKeys(parsed, ["audit"]) || !hasExactKeys(parsed.audit, [
@@ -200,8 +213,7 @@ export function parseSynthesisAudit(outputText: string, cards: DialecticPolicyCa
     !Array.isArray(audit.checks) ||
     !Array.isArray(audit.unsupportedClaims) ||
     !audit.unsupportedClaims.every((claim) => typeof claim === "string") ||
-    !Array.isArray(audit.missingClauses) ||
-    !audit.missingClauses.every((clause) => typeof clause === "string")
+    !Array.isArray(audit.missingClauses)
   ) {
     return null;
   }
@@ -234,12 +246,14 @@ export function parseSynthesisAudit(outputText: string, cards: DialecticPolicyCa
   if (checks.length !== expectedIds.length) {
     return null;
   }
+  const missingClauses = readAuditMissingClauses(audit.missingClauses, checks);
+  if (!missingClauses) return null;
 
   return {
     route: audit.route as SynthesisAudit["route"],
     checks,
     unsupportedClaims: audit.unsupportedClaims as string[],
-    missingClauses: audit.missingClauses as string[],
+    missingClauses,
     verdict: audit.verdict as SynthesisAudit["verdict"]
   };
 }
@@ -334,19 +348,19 @@ export function buildSynthesisAuditPrompt(
     route: "choose_thesis|choose_antithesis|third_mechanism",
     checks: checks.map(({ id }) => ({ id, status: "covered|missing|violated", evidence: "" })),
     unsupportedClaims: [],
-    missingClauses: [],
+    missingClauses: checks.length ? [{ ruleId: checks[0].id, reason: "填写候选缺少的具体保障或违反的边界" }] : [],
     verdict: "pass|repair"
   } };
   return [
     "你是独立语义审计器，只审计候选 synthesis，不改写答案。逐条检查规则，不得因为语气合理而推断未明确写出的保障。",
-    "只返回一个严格 JSON 对象，不要代码围栏或 JSON 外文字。审计输出中每条 checks 只有 id、status、evidence，规则的缺项说明集中写入 audit.missingClauses 并注明规则 id。没有未支持断言或缺项时，相关列表填空数组。",
+    "只返回一个严格 JSON 对象，不要代码围栏或 JSON 外文字。审计输出中每条 checks 只有 id、status、evidence，规则的缺项说明集中写入 audit.missingClauses 并注明规则 id。missingClauses 的每项只含 ruleId 和非空 reason，须与 checks 中状态为 missing 或 violated 的规则逐条对应，各规则只列一次。unsupportedClaims 是字符串数组。无相应内容时填空数组。",
     `checks 必须按给定顺序返回，id 完全一致，共 ${checks.length} 条。规则约束的行为在题设和候选中都不存在时，可记 covered，evidence 必须明确写‘不适用’及理由，不能捏造已具备保障。实际适用的 invariant 只有候选存在明确可执行语义才是 covered；缺少所需保障时标 missing。forbidden 只有候选完全没有该动作及实质相同的变体才是 covered，否则为 violated。`,
-    "按请求和候选实际语义判断规则适用性：仅比较某个安全前提与另一命题，未请求或建议执行该操作时，不要求补入操作清单、停写或部署流程，对这些执行规则记不适用并说明原因。安全前提本身仍须准确；若提出实际行动、用隐喻包装行动或把必要条件误写成充分条件，相关规则仍适用。",
+    "先定位题设或候选确实请求、建议或承诺执行的行为，再检查对应保障。维持现状、比较安全前提或把未来行动留作待议，都不要求增加新的研究、采集或执行流程，此时对执行规则记不适用并说明原因。若候选确实提出执行该行为，即使以假设、局部试点或未来条件表达，仍须满足该行为的所有适用保障。核对安全前提的方向，规则本身不能证明已经获得授权或已有能力。",
     "unsupportedClaims 列出题设和规则均未提供的数字、人员、预算、工具、日志、授权、基础设施或既有能力。任一 invariant missing、任一 forbidden violated 或存在 unsupportedClaims 时，verdict 必须为 repair。",
     `待检查规则：${JSON.stringify(checks)}`,
     ...promptContext(context),
     `候选 synthesis：${JSON.stringify(candidate)}`,
-    `按此完整 JSON 形状返回。逐条核对键名、规则 ID 和顺序，保留相同的键，用实际判断填写值，带 | 的值只选其中一项。缺项不要写成单条 checks 的附加字段。\n${JSON.stringify(outputShape)}`
+    `按此完整 JSON 形状返回。逐条核对键名、规则 ID 和顺序，保留相同的键，用实际判断填写值，带 | 的值只选其中一项。missingClauses 示例只说明字段；只列出实际缺项或违规，不照抄示例的 ruleId 和 reason。缺项不要写成单条 checks 的附加字段。\n${JSON.stringify(outputShape)}`
   ].join("\n\n");
 }
 
