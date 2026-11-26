@@ -36,3 +36,26 @@ it("gives underlength and overlength repairs an explicit editing direction while
   expect(prompt("字".repeat(240))).toContain("保持长度");
   expect(prompt("字".repeat(177))).toContain("180–320");
 });
+
+it("distinguishes the two provided sources from invented quantities or concatenated numbers", () => {
+  expect(findUnsupportedSynthesisQuantities([], "两份来源共同解释原问题；两份材料都围绕同一对象展开。")).toEqual([]);
+  expect(findUnsupportedSynthesisQuantities([], "两份来源共同用于核实另外两份记录，三份材料也要回收。"))
+    .toEqual(["两份", "三份"]);
+  expect(findUnsupportedSynthesisQuantities([], "两份材料都要采购，另外还有两份采购单和两份来源记录。"))
+    .toEqual(["两份"]);
+  expect(findUnsupportedSynthesisQuantities([], "我们另查了两份材料都指出某种趋势。手里另有两份来源，其中一份是报告。"))
+    .toEqual(["两份"]);
+  expect(findUnsupportedSynthesisQuantities([], "题设给出的两份来源共同解释原问题。上述两份材料都围绕同一对象展开。"))
+    .toEqual([]);
+  expect(findUnsupportedSynthesisQuantities(["只剩三天", "最后的备选数量为3", "天数仍待确认"], "三天内尚未交付，还要3天。"))
+    .toEqual(["3天"]);
+});
+
+it("enumerates multiple contract failures without replacing repair details", () => {
+  const result = analyzeSynthesisOutput(JSON.stringify({ synthesis: {
+    text: "字".repeat(320) + "30天", summary: "", label: "需要修复", stance: "合"
+  } }), []);
+  expect(result.synthesis).toBeNull();
+  expect(result.contractIssues).toEqual(["synthesis_text_overlength", "synthesis_summary", "synthesis_unsupported_quantity"]);
+  expect(result.errors).toContain("unsupported quantities: 30天");
+});

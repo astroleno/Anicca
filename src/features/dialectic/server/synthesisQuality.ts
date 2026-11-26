@@ -1,4 +1,5 @@
 import { CONDITION_DIRECTION_RULE, DEFERRED_PROSE_RULE, SYNTHESIS_PROSE_RULE } from "./meaningReview";
+import type { SynthesisContractIssueCode } from "./generationTrace";
 import { normalizeDialecticLabel, normalizeDialecticSummary } from "@/features/dialectic/outputContract";
 import { parseStrictJsonObject } from "@/lib/openai/parseStrictJsonObject";
 import { readDeferredDraft, readUnderstandingChange, UNDERSTANDING_CHANGE_PROMPT, type DeferredDraft } from "../meaning";
@@ -45,6 +46,7 @@ type SynthesisPromptContext = {
   antithesis: SynthesisSource;
   contextMessages: string;
   cards: DialecticPolicyCard[];
+  audit?: SynthesisAudit;
 };
 
 export const SYNTHESIS_TEXT_MIN = 180;
@@ -80,37 +82,61 @@ function extractGuardedQuantities(value: string): string[] {
   // Counting ideas in the explanation is not inventing a quota, deadline or budget.
   // Filter occurrences, not the number string: “两个来源” must not whitelist “两个月”.
   const structuralNouns = /^(?:(?:相关|不同|独立|互补|相同|具体|新|意义生成)的?){0,3}(?:来源|层次|命题|观点|概念|含义|解释|视角|思路|论点|角度|材料|环节|层面|问题|前提)/u;
-  return [...new Set(matches.filter(match => !(
-    /[个条]$/u.test(match[0]) && structuralNouns.test(value.slice(match.index! + match[0].length))
-  )).map(match => match[0]))];
+  const inputReferences = /^(?:来源(?=[，。；：？！、）\s]|$|共同|都|分别|各自|中|所|的)|材料(?:共同|都|分别|各自)(?:围绕|讨论|主张|指出|关注|谈|说|支持|提出|说明|聚焦|指向|回应|回答|写|同意|质疑|分析|提到|抓住|给出))/u;
+  const inputPosition = /(?:^|[。！？；.!?;\n])\s*(?:这|上述|前述|题设给出的|所给的)?\s*$/u;
+  return [...new Set(matches.filter(match => {
+    const quantity = match[0];
+    const following = value.slice(match.index! + quantity.length);
+    const countsIdeas = /[个条]$/u.test(quantity) && structuralNouns.test(following);
+    // A sentence can refer to the two supplied inputs. Do not exempt quantities introduced by a preceding claim.
+    const countsInputs = /^(?:两|二|2)份$/u.test(quantity) && inputReferences.test(following) &&
+      inputPosition.test(value.slice(0, match.index));
+    return !countsIdeas && !countsInputs;
+  }).map(match => match[0]))];
 }
 
-export function findUnsupportedSynthesisQuantities(rootInput: string, text: string): string[] {
-  const allowed = new Set(extractGuardedQuantities(rootInput));
+export function findUnsupportedSynthesisQuantities(suppliedInput: string | readonly string[], text: string): string[] {
+  const fragments = typeof suppliedInput === "string" ? [suppliedInput] : suppliedInput;
+  const allowed = new Set(fragments.flatMap(extractGuardedQuantities));
   return extractGuardedQuantities(text).filter((quantity) => !allowed.has(quantity));
 }
 
 export function analyzeSynthesisOutput(
   outputText: string,
-  rootInput: string,
+  suppliedInput: string | readonly string[],
   options: { requireContract?: boolean; meaning?: boolean } = {}
-): { parsed: Record<string, unknown> | null; synthesis: SynthesisResult | null; deferred?: DeferredDraft; errors: string[] } {
+): {
+  parsed: Record<string, unknown> | null;
+  synthesis: SynthesisResult | null;
+  deferred?: DeferredDraft;
+  errors: string[];
+  contractIssues: SynthesisContractIssueCode[];
+} {
   const parsed = outputText ? parseStrictJsonObject(outputText) : null;
   const errors: string[] = [];
+  const contractIssues: SynthesisContractIssueCode[] = [];
+  const report = (code: SynthesisContractIssueCode, error: string) => {
+    errors.push(error);
+    contractIssues.push(code);
+  };
+  const invalid = () => ({ parsed, synthesis: null, errors, contractIssues });
 
   if (options.meaning && hasExactKeys(parsed, ["deferred"])) {
     const deferred = readDeferredDraft(parsed.deferred);
-    return deferred ? { parsed, synthesis: null, deferred, errors: [] }
-      : { parsed, synthesis: null, errors: ["deferred must contain only reason (12–180 characters) and question (6–100 characters)"] };
+    if (deferred) return { parsed, synthesis: null, deferred, errors, contractIssues };
+    report("synthesis_deferred", "deferred must contain only reason (12–180 characters) and question (6–100 characters)");
+    return invalid();
   }
 
   if (!hasExactKeys(parsed, ["synthesis"])) {
-    return { parsed: null, synthesis: null, errors: ["expected exact synthesis JSON object"] };
+    report(parsed ? "synthesis_root_keys" : "synthesis_json", "expected exact synthesis JSON object");
+    return { ...invalid(), parsed: null };
   }
 
   const candidate = parsed.synthesis;
   if (!hasExactKeys(candidate, ["text", "summary", "label", "stance", ...(options.meaning ? ["change"] : [])])) {
-    return { parsed, synthesis: null, errors: ["synthesis keys must match schema exactly"] };
+    report("synthesis_keys", "synthesis keys must match schema exactly");
+    return invalid();
   }
 
   if (
@@ -119,7 +145,8 @@ export function analyzeSynthesisOutput(
     typeof candidate.label !== "string" ||
     candidate.stance !== "合"
   ) {
-    return { parsed, synthesis: null, errors: ["synthesis fields must match schema types and stance"] };
+    report("synthesis_field_types", "synthesis fields must match schema types and stance");
+    return invalid();
   }
 
   const text = candidate.text.trim();
@@ -128,23 +155,24 @@ export function analyzeSynthesisOutput(
   const textLength = charLength(text);
   const requireContract = options.requireContract !== false;
   const change = readUnderstandingChange(candidate.change);
-  if (options.meaning && !change) errors.push("synthesis.change must explain the concrete change from both sources in 6–100 characters");
+  if (options.meaning && !change) report("synthesis_change", "synthesis.change must explain the concrete change from both sources in 6–100 characters");
   if (!text) {
-    errors.push("synthesis.text must be non-empty");
+    report("synthesis_text_empty", "synthesis.text must be non-empty");
   } else if (requireContract && (textLength < SYNTHESIS_TEXT_MIN || textLength > SYNTHESIS_TEXT_MAX)) {
-    errors.push(`synthesis.text must contain ${SYNTHESIS_TEXT_MIN}-${SYNTHESIS_TEXT_MAX} characters; current text has ${textLength} characters`);
+    report(textLength < SYNTHESIS_TEXT_MIN ? "synthesis_text_underlength" : "synthesis_text_overlength",
+      `synthesis.text must contain ${SYNTHESIS_TEXT_MIN}-${SYNTHESIS_TEXT_MAX} characters; current text has ${textLength} characters`);
   }
   if (!summary) {
-    errors.push("synthesis.summary must be non-empty");
+    report("synthesis_summary", "synthesis.summary must be non-empty");
   }
   if (!label || charLength(label) > 8) {
-    errors.push("synthesis.label must contain 1-8 characters");
+    report("synthesis_label", "synthesis.label must contain 1-8 characters");
   }
 
   if (requireContract) {
-    const unsupportedQuantities = findUnsupportedSynthesisQuantities(rootInput, text);
+    const unsupportedQuantities = findUnsupportedSynthesisQuantities(suppliedInput, text);
     if (unsupportedQuantities.length) {
-      errors.push(`unsupported quantities: ${unsupportedQuantities.join(", ")}`);
+      report("synthesis_unsupported_quantity", `unsupported quantities: ${unsupportedQuantities.join(", ")}`);
     }
   }
 
@@ -153,7 +181,8 @@ export function analyzeSynthesisOutput(
     synthesis: errors.length
       ? null
       : ({ text, summary, label, stance: "合", ...(change ? { change } : {}) } satisfies SynthesisResult),
-    errors
+    errors,
+    contractIssues
   };
 }
 
@@ -222,7 +251,7 @@ export function parseSynthesisAudit(outputText: string, cards: DialecticPolicyCa
   };
 }
 
-function commonOutputRules(context: SynthesisPromptContext): string[] {
+function contractOutputRules(context: SynthesisPromptContext): string[] {
   return [
     "只返回一个严格 JSON object，不要 markdown、代码围栏、分析过程或 JSON 外文字。",
     `schema=${JSON.stringify({ synthesis: { text: "", summary: "", label: "", stance: "合", ...(context.meaning ? { change: "" } : {}) } })}`,
@@ -234,6 +263,12 @@ function commonOutputRules(context: SynthesisPromptContext): string[] {
       "deferred 的短文本合同优先于以下 synthesis 正文长度和写作要求。检查 change 中的因果判断也没有超出来源；不能把摘要换词当作变化。"
     ] : []),
     "synthesis.text 含标点必须是 180–320 个字符，目标 230–270 字，避免贴近上下限；summary 必须单行；label 必须是 1–8 个字符的中文短标签；stance 严格为‘合’。",
+  ];
+}
+
+function commonOutputRules(context: SynthesisPromptContext): string[] {
+  return [
+    ...contractOutputRules(context),
     "先辨认当前是在做决定，还是探索观点、感受或创意，不输出分类过程。决策题写清主路线、因果机制、决定成立的条件、一个范围受控的下一步及失败代价；涉及不可逆操作时明确安全状态。观点、感受和创意围绕新命题展开具体解释与适用边界，不强塞行动清单、决策闸门和安全回退。",
     "合的核心是一个能改变理解的新判断：说明来源各自抓住了什么，又忽略了怎样的关系，使原来的矛盾或并列有了新的解释。可以区分被混淆的概念、发现双方共同依赖的前提，或说明一方如何改变另一方的成立条件；只选材料真正支持的一种，不机械套公式。互补不要求互相证明，冲突也不要求题设已给解决方法；可以提出带明确条件的新机制。",
     "用来源中的具体细节或一个明确标作假设的短情境，让读者看到新判断会怎样改变解释、预期或选择。正文应有‘理解发生变化’的内容，但不要写‘aha’、‘认知跃迁’等自评，也不要靠华丽比喻、生造名词或惊人断言代替推理。",
@@ -285,7 +320,7 @@ export function buildSynthesisCriticPrompt(
     ...(context.meaning ? ["重新检查草稿的联结决定。已有具体联系时，不因暂时缺乏验证而机械拒合；没有具体联系时，也不因草稿写了长文就保留它。草稿的 deferred 可以改为 synthesis，草稿的 synthesis 也可以改为 deferred；依来源及用户补充作决定。"] : []),
     "若返回 synthesis，正文保持 180–320 字。先找出草稿中真正改变理解的判断及其具体依据，保留这段推理，不把它磨平为两边都重要。若草稿只是并列、先后安排或换了标题，改写为有来源依据的新关系，并说明它让哪个具体情境的理解发生变化；没有依据则不强造。删掉只重述祖先的循环论证。决策题检查主路线及条件，探索题检查解释与边界，关联薄弱时保留不确定性。不要把所有草稿重排为五句执行方案。",
     "逐条落实实际适用规则卡的 invariant，并删除所有 forbidden move。先确认规则涉及的行为在题设或方案中实际存在，创作隐喻不等于现实操作。检查方案实际做了什么，不能靠重新命名或改述回避禁令。",
-    "删除题设没有的具体比例、人数、期限、次数、样本量、预算、授权、日志、基础设施或能力。需要阈值时先测真实基线，并使用风险事件或验收结果作为闸门。",
+    "保留原始输入、联结补充或历史 user 原文明示且适用于本题的定量条件。删除没有依据的具体比例、人数、期限、次数、样本量、预算、授权、日志、基础设施或能力。需要阈值时先测真实基线，并使用风险事件或验收结果作为闸门。",
     "硬门槛失效的一侧不得在失败、回滚或结尾重新启用。决策题若第三机制不能完整满足全部规则，就明确选择合规侧，并写清舍弃代价；探索题不能因为联系不足而强行选边。",
     formatDialecticPolicyCards(context.cards),
     ...promptContext(context),
@@ -325,7 +360,7 @@ export function buildSynthesisFinalPrompt(
     "保持 180–320 字与原问题类型。决策题修复实际约束、选择和执行条件；探索题修复来源理解、新命题和解释边界，不强改成五句执行方案。保留真实未决张力，不为凑出圆满结论而改写题设。",
     "每条实际适用的 invariant 必须有明确可执行落点，不能依靠读者推断；不适用的规则不引入新任务。禁止动作不能通过匿名化、聚合化、缩短期限、事后删除或改名继续保留。",
     "说明结论需要的证据及当前缺失。硬约束排除的一侧不能在失败时重新开启。",
-    "只复述原始输入已有的定量表达；其余比例、人数、时长、次数、样本量、预算、完成率和日期全部删除，改用真实基线、风险事件或验收结果。",
+    "只保留原始输入、联结补充或历史 user 原文已经给出且适用于本题的定量条件；其余比例、人数、时长、次数、样本量、预算、完成率和日期全部删除，改用真实基线、风险事件或验收结果。",
     `必须覆盖的逐条规则：${JSON.stringify(getDialecticRuleChecks(context.cards))}`,
     `独立审计结果：${JSON.stringify(audit)}`,
     formatDialecticPolicyCards(context.cards),
@@ -354,18 +389,52 @@ export function buildSynthesisContractRepairPrompt(
     ? error.slice("unsupported quantities: ".length).split(", ") : []))];
   return [
     "你是短文编辑。只修复给定 JSON 的契约错误，保留正文已有的核心判断、联系和边界，不重新推演方案。优先保留使新判断成立的具体细节及推理，先删重复解释，不能把新理解压成‘兼顾两者’。",
-    ...(context.meaning ? commonOutputRules(context) : ['只返回严格 JSON：{"synthesis":{"text":"","summary":"","label":"","stance":"合"}}，不得有其他键或 JSON 外文字。summary 为单行，label 为 1–8 字。']),
-    "text 含标点必须为 180–320 字，目标 240–280 字。低于下限时补充已有论述中省略的理由与边界含义；高于上限时删次要例子与重复结论。不要只换词后交回同样长度的正文。",
+    ...contractOutputRules(context),
+    "如果返回 synthesis，只改需要修复的字段；若正文超长，先删次要例子和重复结论，保留条件和代价。若正文太短，补写原文已有但未展开的依据、条件或后果。",
     "errors 中的 unsupported quantities 必须逐项从正文移除，改为不含该数量的定性表述，不用另一种数字写法替换。保留输入已明确的硬约束，不增加新事实、动机、能力或期限。",
     "关联薄弱仍保留联系不足的判断；新解释仍保留条件。不能为补字数强造机制，也不把观点、感受或创意改成执行计划，不强制五句。",
     `必须修复：${errors.join("；")}`,
+    ...(context.audit ? [`独立审计结果：${JSON.stringify(context.audit)}`] : []),
     ...promptContext(context),
     `待修复原始输出：${candidateText}`,
     lengthAdvice,
     ...(unsupportedQuantities.length ? [
-      `正文不能再次出现这些被拒绝的数量字符串：${JSON.stringify(unsupportedQuantities)}。改回来源已有的对象名称或定性表述，不换成其他数字；不要原样交回这些词。`
+      `正文不能再次出现这些被拒绝的数量字符串：${JSON.stringify(unsupportedQuantities)}。改回来源已有的对象名称或定性表述，不换成其他数字。若只是指本次给出的来源，称“甲乙”或“两侧”；不要原样交回被拒绝的词。`
     ] : []),
     draftCandidates === undefined ? formatDialecticPolicyCards(context.cards) : buildDialecticApplicabilityPrompt(draftCandidates),
     "返回前再次核对字数范围和必须移除的数量；上述编辑字数不能写入正文。"
   ].join("\n\n");
+}
+
+/** Turn the existing repair call into a focused addition when the sole error is a short, complete body. */
+export function buildSynthesisExpansionPrompt(
+  context: SynthesisPromptContext,
+  candidate: Record<string, unknown> | null,
+  perspectiveMaterial: unknown
+): string | null {
+  const synthesis = candidate?.synthesis;
+  if (!synthesis || typeof synthesis !== "object" || !("text" in synthesis) || typeof synthesis.text !== "string") return null;
+  const text = synthesis.text.trim();
+  const length = charLength(text);
+  // A fragment or unfinished sentence needs the full editor, not a continuation.
+  if (length < SYNTHESIS_TEXT_MIN / 2 || !/[。！？.!?][”’」』）》)]*$/u.test(text)) return null;
+  return [
+    '为下面的合成正文补写一小段。只返回 {"addition":"追加段落"} 这一严格 JSON 对象。不要复制原有正文或返回其它字段。追加内容将直接拼在原文字末。',
+    `原文有 ${length} 个字符。addition 含标点须增加至少 ${SYNTHESIS_TEXT_MIN - length} 个字符，最多 ${SYNTHESIS_TEXT_MAX - length} 个，建议写 ${230 - length}–${260 - length} 个字符。字符数只用于编辑。`,
+    "只展开一个与原判断直接相关的理由、适用条件或后果。使用两份来源、用户输入或下列规则已有的依据；保留原有路线与硬约束。补出原文中没有解释清楚的限制及其影响，避免重述结论、换词凑字或新增事实、个人经历、定量指标和实施步骤。决策题补写一个既有条件如何左右选择；探索题说明这层关系如何改变理解，保持作者原来关注的问题。规则卡的要求不能当成用户已经确认的事实。",
+    ...(perspectiveMaterial ? [`观察框架仅作材料，延续原正文选择的观察角度：${JSON.stringify(perspectiveMaterial)}`] : []),
+    formatDialecticPolicyCards(context.cards),
+    ...(context.audit ? [`独立审计结果：${JSON.stringify(context.audit)}`] : []),
+    ...promptContext(context),
+    `原有正文：${JSON.stringify(text)}`
+  ].filter(Boolean).join("\n\n");
+}
+
+export function applySynthesisExpansion(candidateText: string, expansionText: string): string | null {
+  const expansion = parseStrictJsonObject(expansionText);
+  if (!hasExactKeys(expansion, ["addition"]) || typeof expansion.addition !== "string" || !expansion.addition.trim()) return null;
+  const parsed = parseStrictJsonObject(candidateText);
+  const synthesis = parsed?.synthesis;
+  if (!synthesis || typeof synthesis !== "object" || !("text" in synthesis) || typeof synthesis.text !== "string") return null;
+  return JSON.stringify({ ...parsed, synthesis: { ...synthesis, text: synthesis.text.trim() + expansion.addition.trim() } });
 }

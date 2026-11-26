@@ -9,10 +9,12 @@ import { ReviewerProtocolError, finalizeSynthesisMeaning, userReportedMaterial }
 import type { DeferredDraft } from "@/features/dialectic/meaning";
 import {
   analyzeSynthesisOutput,
+  applySynthesisExpansion,
   buildSynthesisAuditPrompt,
   buildSynthesisContractRepairPrompt,
   buildSynthesisCriticPrompt,
   buildSynthesisDraftPrompt,
+  buildSynthesisExpansionPrompt,
   buildSynthesisFinalPrompt,
   parseSynthesisAudit,
   type SynthesisAudit,
@@ -38,7 +40,7 @@ type SynthesisInput = {
   stance?: unknown;
 };
 
-type SynthesisStageContext = Parameters<typeof buildSynthesisDraftPrompt>[0] & { perspective?: ThinkingSpace };
+type SynthesisStageContext = Parameters<typeof buildSynthesisDraftPrompt>[0] & { perspective?: ThinkingSpace; userHistory: string };
 
 function serializeContextMessages(contextMessages: unknown): string {
   if (!Array.isArray(contextMessages)) {
@@ -110,21 +112,24 @@ async function generateSynthesisStage(
   client: ReturnType<typeof getDialecticOpenAiClient>,
   prompt: string,
   context: SynthesisStageContext,
-  draftCandidates?: DialecticPolicyCard[],
-  userHistory = ""
-): Promise<{ synthesis: SynthesisResult | null; deferred?: DeferredDraft; errors: string[]; outputText: string; cards: DialecticPolicyCard[] }> {
+  draftCandidates?: DialecticPolicyCard[]
+) {
   const lensPrompt = thinkingSpacePrompt(context.perspective, "synthesis", context.meaning);
-  const suppliedInput = [context.rootInput, context.connectionInput].filter(Boolean).join("\n");
+  const suppliedInput = [context.rootInput, context.connectionInput ?? "", context.userHistory];
   function analyze(text: string) {
     let { content } = perspectiveEnvelope(text, context.perspective);
     let cards = context.cards;
     if (draftCandidates?.length) {
       const { applicablePolicyCards, ...draft } = parseStrictJsonObject(content) ?? {};
       const selected = selectDialecticPolicyCards(draftCandidates, applicablePolicyCards, [
-        context.rootInput, context.connectionInput ?? "", context.thesis.text, context.antithesis.text, userHistory
+        context.rootInput, context.connectionInput ?? "", context.thesis.text, context.antithesis.text, context.userHistory
       ]);
       if (selected === null) {
-        return { synthesis: null, deferred: undefined, cards: [], errors: ["applicablePolicyCards must contain distinct candidate IDs, object, action and exact evidence from the supplied material"] };
+        return {
+          parsed: null, synthesis: null, deferred: undefined, cards: [],
+          errors: ["applicablePolicyCards must contain distinct candidate IDs, object, action and exact evidence from the supplied material"],
+          contractIssues: ["synthesis_applicable_cards"] as const
+        };
       }
       cards = selected;
       content = JSON.stringify(draft);
@@ -137,20 +142,27 @@ async function generateSynthesisStage(
     .filter(Boolean).join("\n\n");
   const maxOutputTokens = context.perspective ? 1800 : 1400;
   const first = await trace.generate(stage, { client, input: withLens(prompt), maxOutputTokens });
-  let analysis = analyze(first.text);
-  trace.check(stage, Boolean(analysis.synthesis || analysis.deferred));
+  const analysis = analyze(first.text);
+  trace.check(stage, Boolean(analysis.synthesis || analysis.deferred), false, undefined, { contractIssues: analysis.contractIssues });
   if (analysis.synthesis || analysis.deferred) {
     return { ...analysis, outputText: first.text };
   }
 
+  const expansion = analysis.contractIssues.length === 1 && analysis.contractIssues[0] === "synthesis_text_underlength"
+    ? buildSynthesisExpansionPrompt(context, analysis.parsed, context.perspective) : null;
   const repair = await trace.generate(stage, {
     client,
-    input: withLens(buildSynthesisContractRepairPrompt(context, first.text, analysis.errors, draftCandidates)),
+    input: expansion ?? withLens(buildSynthesisContractRepairPrompt(context, first.text, analysis.errors, draftCandidates)),
     maxOutputTokens
-  }, true);
-  analysis = analyze(repair.text);
-  trace.check(stage, Boolean(analysis.synthesis || analysis.deferred), true);
-  return { ...analysis, outputText: repair.text };
+  }, true, undefined, "contract");
+  const outputText = expansion ? applySynthesisExpansion(first.text, repair.text) : repair.text;
+  if (outputText === null) {
+    trace.check(stage, false, true, undefined, { contractIssues: ["synthesis_expansion"] });
+    return { ...analysis, outputText: "" };
+  }
+  const repaired = analyze(outputText);
+  trace.check(stage, Boolean(repaired.synthesis || repaired.deferred), true, undefined, { contractIssues: repaired.contractIssues });
+  return { ...repaired, outputText };
 }
 
 export async function POST(req: NextRequest) {
@@ -202,6 +214,7 @@ export async function POST(req: NextRequest) {
     ];
     const candidates = retrieveDialecticPolicyCards([rootInput, connectionInput, ...selectedSources.map(source => source.text)]);
     trace.recordPolicyCards(candidates);
+    const userHistory = userReportedMaterial(body.contextMessages);
     const draftContext: SynthesisStageContext = {
       meaning: body.meaningVersion === 1,
       connectionInput,
@@ -211,18 +224,17 @@ export async function POST(req: NextRequest) {
       thesis: selectedSources[0],
       antithesis: selectedSources[1],
       contextMessages: serializeContextMessages(body.contextMessages),
+      userHistory,
       cards: []
     };
 
-    const userHistory = userReportedMaterial(body.contextMessages);
     const draft = await generateSynthesisStage(
       trace,
       "draft",
       client,
       buildSynthesisDraftPrompt(draftContext, candidates),
       draftContext,
-      candidates,
-      userHistory
+      candidates
     );
     if (!draft.synthesis && !draft.deferred) {
       trace.finish("invalid_output");
@@ -264,8 +276,8 @@ export async function POST(req: NextRequest) {
             input: [prompt, thinkingSpacePrompt(perspective, "synthesis", context.meaning),
               `必须修复以下审校问题：${issues.join("；")}`].filter(Boolean).join("\n\n") }, true, 12000, "prose");
           const repaired = analyzeSynthesisOutput(perspectiveEnvelope(repairedOutput.text, perspective).content,
-            [rootInput, connectionInput].filter(Boolean).join("\n"), { meaning: context.meaning });
-          trace!.check(stage, Boolean(repaired.synthesis || repaired.deferred), true);
+            [rootInput, connectionInput, userHistory], { requireContract: true, meaning: context.meaning });
+          trace!.check(stage, Boolean(repaired.synthesis || repaired.deferred), true, undefined, { contractIssues: repaired.contractIssues });
           if (repaired.deferred) return { deferred: repaired.deferred, outputText: repairedOutput.text };
           return repaired.synthesis ? { synthesis: repaired.synthesis, outputText: repairedOutput.text } : null;
         } : undefined);
@@ -290,7 +302,7 @@ export async function POST(req: NextRequest) {
         maxOutputTokens: 1800
       });
       const audit = parseSynthesisAudit(auditResponse.text, cards);
-      trace.check("audit", Boolean(audit));
+      trace.check("audit", Boolean(audit), false, undefined, { contractIssues: audit ? [] : ["synthesis_semantic_audit"] });
       if (!audit) {
         trace.finish("invalid_output");
         return invalidModelOutput(requestId, "high-risk semantic audit failed");
@@ -301,7 +313,7 @@ export async function POST(req: NextRequest) {
         "final",
         client,
         buildSynthesisFinalPrompt(context, synthesis, audit),
-        context
+        { ...context, audit }
       );
       if (!final.synthesis && !final.deferred) {
         trace.finish("invalid_output");
