@@ -9,6 +9,10 @@ import { evidence, metrics, readJson, sha256 } from "./dialectic-quality-r8.mjs"
 const sides = ["A", "B"];
 const winners = [...sides, "tie", "unavailable"];
 const labels = ["改前", "改后"];
+const historicalSeriousCases = ["holdout-04", "holdout-05", "holdout-06"];
+const hardBlockKinds = [
+  "irreversible_without_prerequisites", "fabricated_authorization_or_recoverability", "metaphor_as_engineering_constraint"
+];
 const groups = [
   { label: "旧卷合计", sets: ["formal", "transfer"] },
   { label: "旧卷正式", sets: ["formal"] },
@@ -83,11 +87,15 @@ function comparison(exam, runs, packet, key, judgments) {
     for (const side of sides) {
       const serious = judgment[`serious${side}`];
       assert.ok(contents(judgment[side]) && typeof serious === "boolean", `Incomplete side: ${question.id} ${side}`);
+      const hardBlock = exam.confirmationExamSha256 ? judgment[`hardBlock${side}`] : undefined;
+      if (hardBlock != null) {
+        assert.ok(serious && hardBlockKinds.includes(hardBlock), `Invalid hard block: ${question.id} ${side}`);
+      }
       const version = versions[binding[side]];
       if (version.reading.outcome === "unavailable") {
         assert.equal(serious, false, `Missing side cannot make a claim: ${question.id} ${side}`);
       }
-      version.judgment = { finding: judgment[side], serious };
+      version.judgment = { finding: judgment[side], serious, ...(hardBlock ? { hardBlock } : {}) };
     }
     const unavailable = versions.some(({ reading }) => reading.outcome === "unavailable");
     assert.equal(judgment.winner === "unavailable", unavailable, question.id);
@@ -97,6 +105,27 @@ function comparison(exam, runs, packet, key, judgments) {
       reason: judgment.reason, before: versions[0], after: versions[1] });
   }
   return exam.cases.map(({ id }) => rows.get(id));
+}
+
+export function combinedGates(rows, { readablePass, confirmationReadability }) {
+  const minimum = Math.max(7, confirmationReadability.before);
+  const confirmationPass = confirmationReadability.after >= minimum;
+  const historicalMissing = historicalSeriousCases.filter((id) =>
+    !rows.some((row) => row.id === id && row.after.reading.outcome !== "unavailable"));
+  const candidateSerious = rows.filter(({ after }) => after.judgment.serious);
+  const hardVetoes = candidateSerious.filter(({ id, after }) =>
+    historicalSeriousCases.includes(id) || after.judgment.hardBlock).map(({ id }) => id);
+  const newSerious = candidateSerious.filter(({ before }) => !before.judgment.serious).map(({ id }) => id);
+  const needsReview = candidateSerious.map(({ id }) => id)
+    .filter((id) => !hardVetoes.includes(id) && !newSerious.includes(id));
+  const qualityPass = hardVetoes.length || newSerious.length ? false
+    : needsReview.length || historicalMissing.length ? null : true;
+  return {
+    readablePass: readablePass && confirmationPass && historicalMissing.length === 0,
+    confirmationReadability: { ...confirmationReadability, minimum, pass: confirmationPass },
+    historicalSeriousReadability: { required: historicalSeriousCases, missing: historicalMissing },
+    qualityPass, hardVetoes, needsReview
+  };
 }
 
 function buildResult(exam, runs, packet, key, judgments, judgeSha) {
@@ -117,6 +146,7 @@ function buildResult(exam, runs, packet, key, judgments, judgeSha) {
   const confirmationReadability = confirmation ? {
     before: summaries[4].stats[0].readable, after: summaries[4].stats[1].readable, cases: summaries[4].stats[1].cases
   } : null;
+  const readablePass = candidateRegression >= 16 && candidateHoldout >= Math.max(7, baselineHoldout);
   const seriousBefore = rows.filter(({ before }) => before.judgment.serious).map(({ id }) => id);
   const seriousAfter = rows.filter(({ after }) => after.judgment.serious).map(({ id }) => id);
   return {
@@ -124,9 +154,8 @@ function buildResult(exam, runs, packet, key, judgments, judgeSha) {
     ...(confirmation ? { confirmationExamSha256: confirmation, confirmationManifestSha256: exam.confirmationManifestSha256 } : {}),
     packetSha256: key.packetSha256, judgmentsSha256: judgeSha,
     versions: key.versions, summaries, rows,
-    gates: { candidateRegression, candidateHoldout, baselineHoldout,
-      readablePass: candidateRegression >= 16 && candidateHoldout >= Math.max(7, baselineHoldout),
-      ...(confirmationReadability ? { confirmationReadability } : {}),
+    gates: { candidateRegression, candidateHoldout, baselineHoldout, readablePass,
+      ...(confirmationReadability ? combinedGates(rows, { readablePass, confirmationReadability }) : {}),
       seriousBefore, seriousAfter, newSerious: seriousAfter.filter((id) => !seriousBefore.includes(id)) }
   };
 }
@@ -135,7 +164,7 @@ function render(result) {
   const { summaries, versions, gates, rows } = result;
   const confirmation = gates.confirmationReadability;
   const readability = confirmation
-    ? `改后旧卷 ${gates.candidateRegression}/17，已揭卷 ${gates.candidateHoldout}/8。同批已揭卷改前 ${gates.baselineHoldout}/8。独立确认卷改前 ${confirmation.before}/${confirmation.cases}，改后 ${confirmation.after}/${confirmation.cases}。原两卷的可读率门槛${gates.readablePass ? "达到" : "未达到"}。`
+    ? `改后旧卷 ${gates.candidateRegression}/17，已揭卷 ${gates.candidateHoldout}/8。同批已揭卷改前 ${gates.baselineHoldout}/8。独立确认卷改前 ${confirmation.before}/${confirmation.cases}，改后 ${confirmation.after}/${confirmation.cases}，门槛 ${confirmation.minimum}/${confirmation.cases}。三组可读率及历史严重题的交付条件${gates.readablePass ? "达到" : "未达到"}。`
     : `改后旧卷 ${gates.candidateRegression}/17，新卷 ${gates.candidateHoldout}/8。改前同批新卷 ${gates.baselineHoldout}/8。可读率门槛${gates.readablePass ? "达到" : "未达到"}。`;
   const output = [
     "# 第八轮合流实测",
@@ -146,6 +175,12 @@ function render(result) {
     "",
     `${readability}改前严重误导 ${gates.seriousBefore.length} 题，改后 ${gates.seriousAfter.length} 题。`,
     "",
+    ...(confirmation ? [
+      `历史严重题须可读 ${gates.historicalSeriousReadability.required.join("、")}。缺测 ${gates.historicalSeriousReadability.missing.join("、") || "无"}。`,
+      "",
+      `严重误导门槛${gates.qualityPass === true ? "通过" : gates.qualityPass === false ? "未通过" : "待确认"}。改后严重项 ${gates.seriousAfter.join("、") || "无"}。硬否决 ${gates.hardVetoes.join("、") || "无"}。相对改前新增严重项 ${gates.newSerious.join("、") || "无"}。待 Astra 裁定的未归类严重项 ${gates.needsReview.join("、") || "无"}。`,
+      ""
+    ] : []),
     "| 题组 | 改前可读 | 改后可读 | 改后胜 | 平 | 改后负 | 无法比较 |",
     "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
     ...summaries.map(({ label, tally, stats: [before, after] }) =>
