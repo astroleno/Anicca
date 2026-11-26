@@ -180,7 +180,7 @@ const passEvidence = {
   sourceA: { unit: "A1", through: "A2" }, sourceB: { unit: "B1" },
   useA: { unit: "R1", through: "R2" }, useB: { unit: "R3" }, consequence: { unit: "R4" }
 };
-const prose = (evidence: object) => ({ pass: true, issues: [], evidence });
+const prose = (evidence: object) => ({ pass: true, issues: [], evidence, authorization: "none" });
 const synthesisReview = (value: unknown) => respond({ synthesis: { ...verified, change: null, prose: value } });
 const lastTrace = () => JSON.parse(String(vi.mocked(console.info).mock.calls.at(-1)?.[0]).slice("anicca.generation ".length));
 
@@ -284,3 +284,131 @@ it("does not accept a numbered range that exceeds the exact quote limit", async 
   value.trace.finish("reviewer_protocol_error");
   expect(lastTrace().checks[0]).toMatchObject({ reviewIssues: [{ code: "evidence_too_long", field: "sourceA" }] });
 });
+
+const proposalA = "可以把活动照片发布到公开新闻页";
+const proposalB = "将采访稿转发给合作方";
+const permissionA = "摄影师已明确许可把活动照片发布到公开新闻页。";
+const permissionB = "采访者只同意在组内复盘中阅读采访稿。";
+const disclosureText = `${proposalA}并${proposalB}。这两种材料承担不同职责。`;
+const disclosureEvidence = { sourceA: permissionA, sourceB: permissionB,
+  useA: proposalA, useB: proposalB, consequence: disclosureText };
+const disclosureCandidate = { synthesis: { ...synthesis, text: disclosureText }, outputText: "disclosure" };
+const disclosureInput = () => ({ ...synthesisInput(), sources: [
+  { ...orderedSources[0], text: permissionA }, { ...orderedSources[1], text: permissionB }
+] });
+const allowedPhoto = { at: "R", action: proposalA, decision: "proceed", use: "活动照片发布到公开新闻页",
+  basis: { owner: "A", quote: permissionA, scope: "公开新闻页可刊照片" }, gaps: [] };
+const unsupportedInterview = { at: "R", action: proposalB, decision: "proceed", use: "合作方收到采访稿",
+  basis: { owner: "B", quote: permissionB, scope: "采访稿仅限组内阅读" }, gaps: ["audience"] };
+
+it.each(["none", [], [allowedPhoto], [{ ...allowedPhoto, action: { unit: "R1" } }]])(
+  "does not let an empty or incomplete action review pass (%j)", async authorization => {
+    const value = disclosureInput();
+    const repair = vi.fn().mockResolvedValue(null);
+    generate.mockResolvedValueOnce(synthesisReview({ ...prose(disclosureEvidence), authorization }))
+      .mockResolvedValueOnce(respond({ pass: true, issues: [], authorization: [allowedPhoto, unsupportedInterview] }));
+    expect(await finalizeSynthesisMeaning(value, disclosureCandidate, repair)).toBeNull();
+    expect(repair).toHaveBeenCalledWith([expect.stringContaining(proposalB)], disclosureCandidate);
+    expect(generate).toHaveBeenCalledTimes(2);
+    value.trace.finish("invalid_output");
+    const trace = lastTrace();
+    expect(trace.checks[0].reviewIssues[0]).toMatchObject({ field: "authorization" });
+    expect(trace.checks[1].reviewIssues).toEqual([{ code: "authorization_scope_violation", field: "authorization" }]);
+    expect(JSON.stringify(trace)).not.toContain(permissionB);
+  }
+);
+
+it("checks authority ownership independently of the ordinary source evidence", async () => {
+  const value = disclosureInput();
+  const wrongOwner = { ...allowedPhoto, basis: { ...allowedPhoto.basis, owner: "U" } };
+  const candidate = { ...disclosureCandidate, synthesis: { ...synthesis, text: proposalA + "。" } };
+  const evidence = { ...disclosureEvidence, useB: proposalA, consequence: candidate.synthesis.text };
+  generate.mockResolvedValueOnce(synthesisReview({ ...prose(evidence), authorization: [wrongOwner] }))
+    .mockResolvedValueOnce(respond({ pass: true, issues: [], authorization: [allowedPhoto] }));
+  expect(await finalizeSynthesisMeaning(value, candidate)).toMatchObject({ synthesis: { text: candidate.synthesis.text } });
+  value.trace.finish("success");
+  expect(lastTrace().checks[0].reviewIssues).toEqual([{ code: "wrong_evidence_owner", field: "authorization" }]);
+});
+
+it("blocks an exact internal-only quote offered as approval to share with the public", async () => {
+  const text = "可以把采访稿发布到公开新闻页。";
+  const candidate = { ...disclosureCandidate, synthesis: { ...synthesis, text } };
+  const row = { ...unsupportedInterview, action: text, use: "将采访稿发布给公众", gaps: [] };
+  const evidence = { ...disclosureEvidence, useA: text, useB: text, consequence: text };
+  const repair = vi.fn().mockResolvedValue(null);
+  generate.mockResolvedValueOnce(synthesisReview({ ...prose(evidence), authorization: [row] }));
+  expect(await finalizeSynthesisMeaning(disclosureInput(), candidate, repair)).toBeNull();
+  expect(repair).toHaveBeenCalledWith([expect.stringContaining("只允许内部使用")], candidate);
+  expect(generate).toHaveBeenCalledOnce();
+});
+
+it.each([["permission_hold", false], ["hold", true]])(
+  "distinguishes denying existing permission from choosing to hold (%s)", async (decision, canPass) => {
+    const text = canPass ? "活动照片已获许可，版面不足所以先不用。" : "活动照片缺少公开发布许可，所以先不用。";
+    const candidate = { ...disclosureCandidate, synthesis: { ...synthesis, text } };
+    const evidence = { ...disclosureEvidence, useA: text, useB: text, consequence: text };
+    generate.mockResolvedValueOnce(synthesisReview({
+      ...prose(evidence), authorization: [{ ...allowedPhoto, action: text, decision }]
+    }));
+    const repair = vi.fn().mockResolvedValue(null);
+    const result = await finalizeSynthesisMeaning(disclosureInput(), candidate, repair);
+    expect(Boolean(result)).toBe(canPass);
+    if (canPass) expect(repair).not.toHaveBeenCalled();
+    else expect(repair).toHaveBeenCalledWith([expect.stringContaining("原文已覆盖该动作")], candidate);
+  }
+);
+
+it("checks the use presumed by a deferred question", async () => {
+  const reason = "活动照片与组内采访稿没有提供共同主题。";
+  const question = "怎么把组内采访稿发布到公开新闻页？";
+  const deferred = { deferred: { reason, question }, outputText: "deferred" };
+  const evidence = { sourceA: permissionA, sourceB: permissionB, gap: reason, opening: question };
+  const repair = vi.fn().mockResolvedValue(null);
+  generate.mockResolvedValueOnce(respond({ ...prose(evidence), authorization: [{
+    ...unsupportedInterview, at: "Q", action: question, use: "在公开新闻页发布采访稿"
+  }] }));
+  expect(await finalizeSynthesisMeaning(disclosureInput(), deferred, repair)).toBeNull();
+  expect(repair).toHaveBeenCalledWith([expect.stringContaining(question)], deferred);
+});
+
+it.each(["none", "wish", "grant", "revoked"])(
+  "checks an independently inventoried action expressed without permission keywords (%s)", async verdict => {
+    const action = "今晚把她的谈话挂到网站上";
+    const wish = "网页编辑希望首页出现这段谈话。";
+    const grant = "讲述者亲自确认这段谈话可刊在首页，供任何读者浏览。";
+    const withdrawal = "讲述者刚撤回首页刊出谈话的同意。";
+    const other = "录音留存在工作室，工作人员可在现场听。";
+    const value = { ...synthesisInput(), sources: [
+      { ...orderedSources[0], text: wish },
+      { ...orderedSources[1], text: other }
+    ], authorizationUserMaterial: verdict === "revoked" ? `${grant}\n${withdrawal}` : verdict === "grant" ? grant : "" };
+    const next = {
+      synthesis: { ...synthesis, text: `${action}。让读者在入口看到经验的细节。` },
+      outputText: "web",
+      authorizationFocus: [{ action, nonGrants: [wish], ...(verdict === "revoked" ? { withdrawn: withdrawal } : {}) }]
+    };
+    const evidence = { sourceA: wish, sourceB: other, useA: action, useB: action, consequence: action };
+    const authorization = verdict === "none" ? "none" : [{
+      action, decision: "proceed", use: "首页刊出谈话供外部读者浏览",
+      basis: verdict === "wish"
+        ? { owner: "A", quote: wish, scope: "网页编辑希望首页出现这段谈话" }
+        : { owner: "U", quote: { unit: "U1" }, scope: "讲述者批准首页刊出谈话" },
+      gaps: []
+    }];
+    const repair = vi.fn().mockResolvedValue(null);
+    generate.mockResolvedValue(synthesisReview({ ...prose(evidence), authorization }));
+    if (verdict === "none") {
+      await expect(finalizeSynthesisMeaning(value, next, repair)).rejects.toBeInstanceOf(ReviewerProtocolError);
+      expect(generate).toHaveBeenCalledTimes(2);
+      expect(repair).not.toHaveBeenCalled();
+    } else if (verdict === "wish" || verdict === "revoked") {
+      expect(await finalizeSynthesisMeaning(value, next, repair)).toBeNull();
+      expect(repair).toHaveBeenCalledWith([
+        expect.stringContaining(verdict === "wish" ? "原文没有授予这项使用" : "对应许可已被撤回")
+      ], next);
+    } else {
+      expect(await finalizeSynthesisMeaning(value, next, repair)).toMatchObject({ synthesis: { text: next.synthesis.text } });
+      expect(repair).not.toHaveBeenCalled();
+    }
+  }
+);

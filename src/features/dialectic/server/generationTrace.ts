@@ -14,9 +14,10 @@ export type SynthesisContractIssueCode = typeof synthesisContractIssues[number];
 const reviewProtocolCodes = [
   "output_truncated", "invalid_json", "invalid_verdict", "missing_evidence", "invalid_evidence",
   "evidence_too_short", "evidence_too_long", "wrong_evidence_owner", "unmatched_evidence",
-  "unknown_evidence_unit", "invalid_evidence_range"
+  "unknown_evidence_unit", "invalid_evidence_range", "missing_authorization_review",
+  "invalid_authorization_review", "unreviewed_authorization_action", "authorization_scope_violation"
 ] as const;
-const reviewEvidenceFields = ["sourceA", "sourceB", "useA", "useB", "consequence", "gap", "opening", "thesis", "target", "premise"] as const;
+const reviewEvidenceFields = ["sourceA", "sourceB", "useA", "useB", "consequence", "gap", "opening", "thesis", "target", "premise", "authorization"] as const;
 export type ReviewEvidenceField = typeof reviewEvidenceFields[number];
 export type ReviewProtocolIssue = { code: typeof reviewProtocolCodes[number]; field?: ReviewEvidenceField };
 

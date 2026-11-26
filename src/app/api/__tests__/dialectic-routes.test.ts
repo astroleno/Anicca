@@ -1037,7 +1037,7 @@ describe("dialectic routes", () => {
     };
     createResponse.mockResolvedValueOnce({ output_text: JSON.stringify({ deferred, applicablePolicyCards: [] }) })
       .mockResolvedValueOnce({ output_text: JSON.stringify({ deferred }) })
-      .mockResolvedValueOnce({ output_text: JSON.stringify({ pass: true, issues: [], evidence: {
+      .mockResolvedValueOnce({ output_text: JSON.stringify({ pass: true, issues: [], authorization: "none", evidence: {
         sourceA: "删去自己脑中的童年记忆",
         sourceB: "母亲和女儿在街口重逢",
         gap: "还没有交代它们之间的因果关系",

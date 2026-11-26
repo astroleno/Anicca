@@ -1,4 +1,4 @@
-import { CONDITION_DIRECTION_RULE, DEFERRED_PROSE_RULE, SYNTHESIS_ACTION_SCOPE_RULE, SYNTHESIS_PROSE_RULE } from "./meaningReview";
+import { CONDITION_DIRECTION_RULE, DEFERRED_PROSE_RULE, SYNTHESIS_ACTION_SCOPE_RULE, SYNTHESIS_AUTHORIZATION_RULE, SYNTHESIS_PROSE_RULE } from "./meaningReview";
 import type { SynthesisContractIssueCode } from "./generationTrace";
 import { normalizeDialecticLabel, normalizeDialecticSummary } from "@/features/dialectic/outputContract";
 import { parseStrictJsonObject } from "@/lib/openai/parseStrictJsonObject";
@@ -264,6 +264,7 @@ function contractOutputRules(context: SynthesisPromptContext): string[] {
     `schema=${JSON.stringify({ synthesis: { text: "", summary: "", label: "", stance: "合", ...(context.meaning ? { change: "" } : {}) } })}`,
     SOURCE_REFERENCE_RULE,
     SYNTHESIS_ACTION_SCOPE_RULE,
+    SYNTHESIS_AUTHORIZATION_RULE,
     ...(context.meaning ? [UNDERSTANDING_CHANGE_PROMPT,
       '在写正文前判断两份来源是否有具体联系。有共享对象、过程、张力或有依据的结构对应时，返回 synthesis。若只有“都依赖语境、都有局部整体”这类可套任意题目的共性，或必须虚构来源事实才能建立联系，返回另一种完整结构：{"deferred":{"reason":"","question":""}}。两种结构只能选一种；deferred 不带 synthesis、change、spatial 或 suggestedAxes。',
       "暂不融合是有效结果，不是报错。reason 用 12–180 字具体说明两者各在回答什么、当前缺少哪个联系；question 用 6–100 字给用户一个可选择的联结入口，不能要求先证明联想正确、不能催促用户补材料，也不偷偷把假设写成事实。不为凑字数扩写无关性。只有用户明确提出跨领域类比或创作意图时，才能沿这个意图形成标明边界的假设联系。",
@@ -355,6 +356,7 @@ export function buildSynthesisAuditPrompt(
   return [
     "你是独立语义审计器，只审计候选 synthesis，不改写答案。逐条检查规则，不得因为语气合理而推断未明确写出的保障。",
     SYNTHESIS_ACTION_SCOPE_RULE,
+    SYNTHESIS_AUTHORIZATION_RULE,
     "只返回一个严格 JSON 对象，不要代码围栏或 JSON 外文字。审计输出中每条 checks 只有 id、status、evidence，规则的缺项说明集中写入 audit.missingClauses 并注明规则 id。missingClauses 的每项只含 ruleId 和非空 reason，须与 checks 中状态为 missing 或 violated 的规则逐条对应，各规则只列一次。unsupportedClaims 是字符串数组。无相应内容时填空数组。",
     `checks 必须按给定顺序返回，id 完全一致，共 ${checks.length} 条。规则约束的行为在题设和候选中都不存在时，可记 covered，evidence 必须明确写‘不适用’及理由，不能捏造已具备保障。实际适用的 invariant 只有候选存在明确可执行语义才是 covered；缺少所需保障时标 missing。forbidden 只有候选完全没有该动作及实质相同的变体才是 covered，否则为 violated。`,
     "先定位题设或候选确实请求、建议或承诺执行的行为，再检查对应保障。维持现状、比较安全前提或把未来行动留作待议，都不要求增加新的研究、采集或执行流程，此时对执行规则记不适用并说明原因。若候选确实提出执行该行为，即使以假设、局部试点或未来条件表达，仍须满足该行为的所有适用保障。核对安全前提的方向，规则本身不能证明已经获得授权或已有能力。",
@@ -441,6 +443,7 @@ export function buildSynthesisExpansionPrompt(
     `原文有 ${length} 个字符。addition 含标点须增加至少 ${SYNTHESIS_TEXT_MIN - length} 个字符，最多 ${SYNTHESIS_TEXT_MAX - length} 个，建议写 ${230 - length}–${260 - length} 个字符。字符数只用于编辑。`,
     SOURCE_REFERENCE_RULE,
     SYNTHESIS_ACTION_SCOPE_RULE,
+    SYNTHESIS_AUTHORIZATION_RULE,
     "先在原有正文中定位已经写出的适用条件、代价或后果，再用甲乙来源、用户原话或适用规则已有的依据，说明它为何改变选择或理解。优先把结尾已经出现但未展开的后果写清，保持原有路线和硬约束。找不到进一步依据时，解释原有代价为何存在。不要添加实施步骤、个人经历或新的判断条件，也不要把规则要求当成已确认的事实。",
     ...(perspectiveMaterial ? [`观察框架仅作材料，延续原正文选择的观察角度：${JSON.stringify(perspectiveMaterial)}`] : []),
     formatDialecticPolicyCards(context.cards),
