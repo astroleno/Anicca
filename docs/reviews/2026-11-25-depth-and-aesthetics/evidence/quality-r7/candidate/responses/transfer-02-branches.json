@@ -1,0 +1,21 @@
+{
+  "id": "transfer-02",
+  "route": "branches",
+  "attempts": [
+    {
+      "body": {
+        "meaningVersion": 1,
+        "userText": "爱情是不是一种需要强一致的缓存？我把这话拿来比喻关系：我和伴侣想知道对方在忙什么，但对方已明确说不同意我查看私人消息。我还该坚持彼此完全透明吗？",
+        "contextMessages": [],
+        "requestId": "quality-r7-candidate-transfer-02-branches-1"
+      },
+      "startedAt": "2026-11-26T13:13:23.637Z",
+      "elapsedMs": 10769,
+      "status": 502,
+      "rawBody": "{\"requestId\":\"quality-r7-candidate-transfer-02-branches-1\",\"error\":\"invalid_model_output\",\"details\":\"branch prose could not be verified\"}",
+      "reading": null,
+      "error": "invalid_model_output",
+      "retryable": false
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "id": "formal-11",
+  "route": "synthesis",
+  "attempts": [
+    {
+      "body": {
+        "meaningVersion": 1,
+        "rootInput": "立即删除历史数据能释放生产空间；这个选择依赖现有备份在删错或磁盘出问题时仍可用。\n\n备份与生产库同盘，单点故障可同时带走两者。删除前先得到异地副本并实际验证可恢复。",
+        "sources": [
+          {
+            "id": "formal-11-a",
+            "text": "立即删除历史数据能释放生产空间；这个选择依赖现有备份在删错或磁盘出问题时仍可用。",
+            "summary": "尽快解除磁盘压力",
+            "label": "立即释放",
+            "stance": "正"
+          },
+          {
+            "id": "formal-11-b",
+            "text": "备份与生产库同盘，单点故障可同时带走两者。删除前先得到异地副本并实际验证可恢复。",
+            "summary": "先获得独立可恢复副本",
+            "label": "异地验证",
+            "stance": "反"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 需要删除生产数据释放空间 · id=formal-11-user · 来源=无] 需要删除生产数据释放空间，但唯一备份与生产库位于同一块磁盘，应该立即删除还是等待异地备份完成？"
+          },
+          {
+            "role": "assistant",
+            "content": "[反 · 异地验证 · id=formal-11-b · 来源=formal-11-user] 备份与生产库同盘，单点故障可同时带走两者。删除前先得到异地副本并实际验证可恢复。"
+          },
+          {
+            "role": "assistant",
+            "content": "[正 · 立即释放 · id=formal-11-a · 来源=formal-11-user] 立即删除历史数据能释放生产空间；这个选择依赖现有备份在删错或磁盘出问题时仍可用。"
+          }
+        ],
+        "requestId": "quality-r7-candidate-formal-11-synthesis-1"
+      },
+      "startedAt": "2026-11-26T13:13:08.941Z",
+      "elapsedMs": 14693,
+      "status": 502,
+      "rawBody": "{\"requestId\":\"quality-r7-candidate-formal-11-synthesis-1\",\"error\":\"invalid_model_output\",\"details\":\"final synthesis prose could not be verified\"}",
+      "reading": null,
+      "error": "invalid_model_output",
+      "retryable": false
+    }
+  ]
+}

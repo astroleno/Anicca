@@ -1,0 +1,21 @@
+{
+  "id": "transfer-04",
+  "route": "branches",
+  "attempts": [
+    {
+      "body": {
+        "meaningVersion": 1,
+        "userText": "我和朋友共同做一本家乡小册子。我想保留祖辈访谈的口语，她想让外地读者能读懂人和地方的关系。这两颗同样支持继续做下去的想法可以怎么相遇？",
+        "contextMessages": [],
+        "requestId": "quality-r7-candidate-transfer-04-branches-1"
+      },
+      "startedAt": "2026-11-26T13:13:31.500Z",
+      "elapsedMs": 7558,
+      "status": 502,
+      "rawBody": "{\"requestId\":\"quality-r7-candidate-transfer-04-branches-1\",\"error\":\"invalid_model_output\",\"details\":\"branch prose could not be verified\"}",
+      "reading": null,
+      "error": "invalid_model_output",
+      "retryable": false
+    }
+  ]
+}

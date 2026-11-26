@@ -43,3 +43,17 @@ node scripts/evals/blind-dialectic-quality-r7.mjs \
 ```
 
 匿名题卷含题面、固定甲乙、题面补充联结与两侧最终阅读正文或暂不融合的理由及问题。错误回包仅显示缺测。每题独立以等概率交换左右，两条路由在同题共享左右。映射另存题卷哈希和版本对应。先把匿名题卷交给评审者，待按题封存判读后再提供映射。
+
+`first-candidate/` 留存过程版实测，最终盲评使用 `baseline/` 和 `candidate/`。语义门控的 `gate-calibration/` 是单独冻结的卷外校准题，统计正文胜平负和成本时使用原 17 题。
+
+### 揭盲后复算
+
+准备与封存哈希相符的 `judgments.json`、原匿名题卷和揭盲映射。输出目录需已存在且为空。汇总器核对封存判断、匿名题卷、冻结请求、两版模型设置及逐题正文的一致性。
+
+```sh
+results_dir=$(mktemp -d /tmp/anicca-r7-results.XXXXXX)
+node scripts/evals/summarize-dialectic-quality-r7.mjs \
+  --judgments "$evidence/judgments.json" --judge-sha SEALED_JUDGMENTS_SHA256 \
+  --packet "$packet_dir/packet.json" --key "$key_dir/key.json" \
+  --evidence "$evidence" --out "$results_dir"
+```
