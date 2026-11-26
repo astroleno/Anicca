@@ -1,0 +1,180 @@
+{
+  "packetSha256": "9b94c6c9a1dbfa9b9647836346aeacb720578f7d8fa007d20b0eadb2cc0c0cb1",
+  "versions": [
+    {
+      "run": "before",
+      "revision": "e537d79"
+    },
+    {
+      "run": "after",
+      "revision": "c7888fa"
+    }
+  ],
+  "mapping": {
+    "q01": {
+      "caseId": "confirmation-05",
+      "A": 0,
+      "B": 1
+    },
+    "q02": {
+      "caseId": "formal-08",
+      "A": 1,
+      "B": 0
+    },
+    "q03": {
+      "caseId": "holdout-03",
+      "A": 1,
+      "B": 0
+    },
+    "q04": {
+      "caseId": "formal-03",
+      "A": 1,
+      "B": 0
+    },
+    "q05": {
+      "caseId": "confirmation-08",
+      "A": 0,
+      "B": 1
+    },
+    "q06": {
+      "caseId": "confirmation-06",
+      "A": 1,
+      "B": 0
+    },
+    "q07": {
+      "caseId": "transfer-01",
+      "A": 1,
+      "B": 0
+    },
+    "q08": {
+      "caseId": "holdout-06",
+      "A": 1,
+      "B": 0
+    },
+    "q09": {
+      "caseId": "formal-12",
+      "A": 0,
+      "B": 1
+    },
+    "q10": {
+      "caseId": "formal-10",
+      "A": 0,
+      "B": 1
+    },
+    "q11": {
+      "caseId": "holdout-08",
+      "A": 1,
+      "B": 0
+    },
+    "q12": {
+      "caseId": "formal-09",
+      "A": 1,
+      "B": 0
+    },
+    "q13": {
+      "caseId": "transfer-05",
+      "A": 0,
+      "B": 1
+    },
+    "q14": {
+      "caseId": "transfer-03",
+      "A": 0,
+      "B": 1
+    },
+    "q15": {
+      "caseId": "transfer-04",
+      "A": 0,
+      "B": 1
+    },
+    "q16": {
+      "caseId": "confirmation-07",
+      "A": 0,
+      "B": 1
+    },
+    "q17": {
+      "caseId": "formal-07",
+      "A": 1,
+      "B": 0
+    },
+    "q18": {
+      "caseId": "formal-02",
+      "A": 1,
+      "B": 0
+    },
+    "q19": {
+      "caseId": "confirmation-03",
+      "A": 1,
+      "B": 0
+    },
+    "q20": {
+      "caseId": "holdout-01",
+      "A": 1,
+      "B": 0
+    },
+    "q21": {
+      "caseId": "confirmation-01",
+      "A": 1,
+      "B": 0
+    },
+    "q22": {
+      "caseId": "formal-05",
+      "A": 0,
+      "B": 1
+    },
+    "q23": {
+      "caseId": "holdout-05",
+      "A": 0,
+      "B": 1
+    },
+    "q24": {
+      "caseId": "formal-04",
+      "A": 0,
+      "B": 1
+    },
+    "q25": {
+      "caseId": "formal-11",
+      "A": 1,
+      "B": 0
+    },
+    "q26": {
+      "caseId": "transfer-02",
+      "A": 0,
+      "B": 1
+    },
+    "q27": {
+      "caseId": "holdout-07",
+      "A": 1,
+      "B": 0
+    },
+    "q28": {
+      "caseId": "confirmation-04",
+      "A": 0,
+      "B": 1
+    },
+    "q29": {
+      "caseId": "holdout-04",
+      "A": 1,
+      "B": 0
+    },
+    "q30": {
+      "caseId": "formal-06",
+      "A": 1,
+      "B": 0
+    },
+    "q31": {
+      "caseId": "confirmation-02",
+      "A": 1,
+      "B": 0
+    },
+    "q32": {
+      "caseId": "formal-01",
+      "A": 0,
+      "B": 1
+    },
+    "q33": {
+      "caseId": "holdout-02",
+      "A": 0,
+      "B": 1
+    }
+  }
+}
