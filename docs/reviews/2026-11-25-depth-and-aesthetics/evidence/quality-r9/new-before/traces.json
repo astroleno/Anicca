@@ -1,0 +1,688 @@
+{
+  "traces": [
+    {
+      "schemaVersion": 1,
+      "traceId": "03ae5315-7e54-4a35-9479-41be9866936f",
+      "endpoint": "synthesis",
+      "model": "deepseek-v4-flash",
+      "promptVersion": "seed-flow-2026-11-26-evidence-units",
+      "policyVersion": "1.6.0-grounded-applicability",
+      "outcome": "success",
+      "elapsedMs": 5857,
+      "modelCalls": 3,
+      "repairCalls": 0,
+      "providerCalls": 3,
+      "firstPassValid": true,
+      "calls": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "elapsedMs": 2444,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 2422,
+            "outputTokens": 185,
+            "cachedInputTokens": 1536
+          }
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "elapsedMs": 2208,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 3175,
+            "outputTokens": 211,
+            "cachedInputTokens": 1920
+          }
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "elapsedMs": 1199,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 3118,
+            "outputTokens": 184,
+            "cachedInputTokens": 1920
+          }
+        }
+      ],
+      "checks": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": true
+        }
+      ],
+      "policyCards": {
+        "candidateIds": [],
+        "applicableIds": []
+      },
+      "evalRequestId": "r9-before-r9-new-02-1"
+    },
+    {
+      "schemaVersion": 1,
+      "traceId": "5f388a3b-b6d1-4218-9ff1-a76606bec9c6",
+      "endpoint": "synthesis",
+      "model": "deepseek-v4-flash",
+      "promptVersion": "seed-flow-2026-11-26-evidence-units",
+      "policyVersion": "1.6.0-grounded-applicability",
+      "outcome": "success",
+      "elapsedMs": 6447,
+      "modelCalls": 3,
+      "repairCalls": 0,
+      "providerCalls": 3,
+      "firstPassValid": true,
+      "calls": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "elapsedMs": 1876,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 2493,
+            "outputTokens": 108,
+            "cachedInputTokens": 1536
+          }
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "elapsedMs": 2794,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 3169,
+            "outputTokens": 274,
+            "cachedInputTokens": 1920
+          }
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "elapsedMs": 1776,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 3308,
+            "outputTokens": 343,
+            "cachedInputTokens": 1920
+          }
+        }
+      ],
+      "checks": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": true
+        }
+      ],
+      "policyCards": {
+        "candidateIds": [],
+        "applicableIds": []
+      },
+      "evalRequestId": "r9-before-r9-new-04-1"
+    },
+    {
+      "schemaVersion": 1,
+      "traceId": "e8eff462-3392-417e-b224-2a0db9bc0f2a",
+      "endpoint": "synthesis",
+      "model": "deepseek-v4-flash",
+      "promptVersion": "seed-flow-2026-11-26-evidence-units",
+      "policyVersion": "1.6.0-grounded-applicability",
+      "outcome": "success",
+      "elapsedMs": 7555,
+      "modelCalls": 4,
+      "repairCalls": 1,
+      "providerCalls": 4,
+      "firstPassValid": false,
+      "calls": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "elapsedMs": 2640,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 2509,
+            "outputTokens": 198,
+            "cachedInputTokens": 1536
+          }
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "elapsedMs": 2029,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 3275,
+            "outputTokens": 204,
+            "cachedInputTokens": 1920
+          }
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "repairKind": "contract",
+          "elapsedMs": 969,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 1331,
+            "outputTokens": 65,
+            "cachedInputTokens": 0
+          }
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "elapsedMs": 1914,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 3321,
+            "outputTokens": 305,
+            "cachedInputTokens": 1920
+          }
+        }
+      ],
+      "checks": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": false,
+          "contractIssues": [
+            "synthesis_text_underlength"
+          ]
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": true
+        }
+      ],
+      "policyCards": {
+        "candidateIds": [],
+        "applicableIds": []
+      },
+      "evalRequestId": "r9-before-r9-new-03-1"
+    },
+    {
+      "schemaVersion": 1,
+      "traceId": "161c1888-e387-4e33-8fc8-1c4bd9388e57",
+      "endpoint": "synthesis",
+      "model": "deepseek-v4-flash",
+      "promptVersion": "seed-flow-2026-11-26-evidence-units",
+      "policyVersion": "1.6.0-grounded-applicability",
+      "outcome": "success",
+      "elapsedMs": 9939,
+      "modelCalls": 4,
+      "repairCalls": 1,
+      "providerCalls": 4,
+      "firstPassValid": false,
+      "calls": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "elapsedMs": 2407,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 2445,
+            "outputTokens": 184,
+            "cachedInputTokens": 1536
+          }
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "elapsedMs": 1815,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 3197,
+            "outputTokens": 191,
+            "cachedInputTokens": 1920
+          }
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "repairKind": "contract",
+          "elapsedMs": 1325,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 1265,
+            "outputTokens": 36,
+            "cachedInputTokens": 0
+          }
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "elapsedMs": 4386,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 3161,
+            "outputTokens": 196,
+            "cachedInputTokens": 1920
+          }
+        }
+      ],
+      "checks": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": false,
+          "contractIssues": [
+            "synthesis_text_underlength"
+          ]
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": true
+        }
+      ],
+      "policyCards": {
+        "candidateIds": [],
+        "applicableIds": []
+      },
+      "evalRequestId": "r9-before-r9-new-01-1"
+    },
+    {
+      "schemaVersion": 1,
+      "traceId": "02e16f17-49e7-463b-a6a3-f916df488294",
+      "endpoint": "synthesis",
+      "model": "deepseek-v4-flash",
+      "promptVersion": "seed-flow-2026-11-26-evidence-units",
+      "policyVersion": "1.6.0-grounded-applicability",
+      "outcome": "success",
+      "elapsedMs": 5945,
+      "modelCalls": 3,
+      "repairCalls": 0,
+      "providerCalls": 3,
+      "firstPassValid": true,
+      "calls": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "elapsedMs": 2960,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 2524,
+            "outputTokens": 206,
+            "cachedInputTokens": 1536
+          }
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "elapsedMs": 1734,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 3298,
+            "outputTokens": 217,
+            "cachedInputTokens": 1920
+          }
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "elapsedMs": 1250,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 3251,
+            "outputTokens": 287,
+            "cachedInputTokens": 1920
+          }
+        }
+      ],
+      "checks": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": true
+        }
+      ],
+      "policyCards": {
+        "candidateIds": [],
+        "applicableIds": []
+      },
+      "evalRequestId": "r9-before-r9-new-07-1"
+    },
+    {
+      "schemaVersion": 1,
+      "traceId": "e50a128b-e5c9-459a-a7d5-4a4e1993086c",
+      "endpoint": "synthesis",
+      "model": "deepseek-v4-flash",
+      "promptVersion": "seed-flow-2026-11-26-evidence-units",
+      "policyVersion": "1.6.0-grounded-applicability",
+      "outcome": "success",
+      "elapsedMs": 7854,
+      "modelCalls": 4,
+      "repairCalls": 1,
+      "providerCalls": 4,
+      "firstPassValid": false,
+      "calls": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "elapsedMs": 3459,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 2552,
+            "outputTokens": 200,
+            "cachedInputTokens": 1536
+          }
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "elapsedMs": 1814,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 3320,
+            "outputTokens": 202,
+            "cachedInputTokens": 1920
+          }
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "repairKind": "contract",
+          "elapsedMs": 1249,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 1372,
+            "outputTokens": 54,
+            "cachedInputTokens": 0
+          }
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "elapsedMs": 1330,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 3358,
+            "outputTokens": 266,
+            "cachedInputTokens": 1920
+          }
+        }
+      ],
+      "checks": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": false,
+          "contractIssues": [
+            "synthesis_text_underlength"
+          ]
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": true
+        }
+      ],
+      "policyCards": {
+        "candidateIds": [],
+        "applicableIds": []
+      },
+      "evalRequestId": "r9-before-r9-new-05-1"
+    },
+    {
+      "schemaVersion": 1,
+      "traceId": "e4250ffe-a9a4-4930-af79-b9d374c636d0",
+      "endpoint": "synthesis",
+      "model": "deepseek-v4-flash",
+      "promptVersion": "seed-flow-2026-11-26-evidence-units",
+      "policyVersion": "1.6.0-grounded-applicability",
+      "outcome": "success",
+      "elapsedMs": 7429,
+      "modelCalls": 3,
+      "repairCalls": 0,
+      "providerCalls": 3,
+      "firstPassValid": true,
+      "calls": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "elapsedMs": 4074,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 2453,
+            "outputTokens": 164,
+            "cachedInputTokens": 1536
+          }
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "elapsedMs": 1838,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 3185,
+            "outputTokens": 195,
+            "cachedInputTokens": 1920
+          }
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "elapsedMs": 1514,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 3114,
+            "outputTokens": 323,
+            "cachedInputTokens": 1920
+          }
+        }
+      ],
+      "checks": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": true
+        }
+      ],
+      "policyCards": {
+        "candidateIds": [],
+        "applicableIds": []
+      },
+      "evalRequestId": "r9-before-r9-new-06-1"
+    },
+    {
+      "schemaVersion": 1,
+      "traceId": "f070db95-4934-4a9d-8d22-b69eb64624dc",
+      "endpoint": "synthesis",
+      "model": "deepseek-v4-flash",
+      "promptVersion": "seed-flow-2026-11-26-evidence-units",
+      "policyVersion": "1.6.0-grounded-applicability",
+      "outcome": "success",
+      "elapsedMs": 6170,
+      "modelCalls": 3,
+      "repairCalls": 0,
+      "providerCalls": 3,
+      "firstPassValid": true,
+      "calls": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "elapsedMs": 2343,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 2477,
+            "outputTokens": 202,
+            "cachedInputTokens": 1536
+          }
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "elapsedMs": 1986,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 3247,
+            "outputTokens": 218,
+            "cachedInputTokens": 1920
+          }
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "elapsedMs": 1840,
+          "outcome": "success",
+          "providerCalls": 1,
+          "transport": "chat_completions",
+          "usage": {
+            "inputTokens": 3177,
+            "outputTokens": 285,
+            "cachedInputTokens": 1920
+          }
+        }
+      ],
+      "checks": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "valid": true
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "valid": true
+        }
+      ],
+      "policyCards": {
+        "candidateIds": [],
+        "applicableIds": []
+      },
+      "evalRequestId": "r9-before-r9-new-08-1"
+    }
+  ],
+  "missingRequestIds": [],
+  "mismatches": []
+}
