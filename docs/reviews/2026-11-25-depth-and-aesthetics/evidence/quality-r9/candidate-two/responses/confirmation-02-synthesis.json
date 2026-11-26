@@ -1,0 +1,50 @@
+{
+  "id": "confirmation-02",
+  "route": "synthesis",
+  "attempts": [
+    {
+      "body": {
+        "meaningVersion": 1,
+        "rootInput": "我想每个人先提自己能做到的开始时间和一项需要例外的情况。我周三打完球近十一点才回来，有时会需要在厨房加热晚饭。\n\n之前大家点头的其实只是「夜深慢一点」。我想先把试行时段和例外写成一句，三个室友看完同一句再定哪天开始。",
+        "sources": [
+          {
+            "id": "confirmation-02-a",
+            "text": "我想每个人先提自己能做到的开始时间和一项需要例外的情况。我周三打完球近十一点才回来，有时会需要在厨房加热晚饭。",
+            "summary": "把有人无法执行的部分提前摆上桌",
+            "label": "先让三个版本见面",
+            "stance": "正"
+          },
+          {
+            "id": "confirmation-02-b",
+            "text": "之前大家点头的其实只是「夜深慢一点」。我想先把试行时段和例外写成一句，三个室友看完同一句再定哪天开始。",
+            "summary": "没有合意的文本就别各自预告",
+            "label": "一起确认开始日",
+            "stance": "反"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 我们三个室友谁都不反对夜 · id=confirmation-02-user · 来源=无] 我们三个室友谁都不反对夜里安静，但我每次只问一个人，最后大家记住了三个不同的时间。我拿「两阶段提交」想这件事。下一次怎么约定，才能让晚归的人也能开口，听见的人也知道到底从哪天开始？"
+          },
+          {
+            "role": "assistant",
+            "content": "[反 · 一起确认开始日 · id=confirmation-02-b · 来源=confirmation-02-user] 之前大家点头的其实只是「夜深慢一点」。我想先把试行时段和例外写成一句，三个室友看完同一句再定哪天开始。"
+          },
+          {
+            "role": "assistant",
+            "content": "[正 · 先让三个版本见面 · id=confirmation-02-a · 来源=confirmation-02-user] 我想每个人先提自己能做到的开始时间和一项需要例外的情况。我周三打完球近十一点才回来，有时会需要在厨房加热晚饭。"
+          }
+        ],
+        "requestId": "r9-after-confirmation-02-1"
+      },
+      "startedAt": "2026-11-26T15:02:44.381Z",
+      "elapsedMs": 5585,
+      "status": 502,
+      "rawBody": "{\"requestId\":\"r9-after-confirmation-02-1\",\"error\":\"invalid_model_output\",\"details\":\"synthesis critic failed contract after one repair\"}",
+      "reading": null,
+      "error": "invalid_model_output",
+      "retryable": false
+    }
+  ]
+}

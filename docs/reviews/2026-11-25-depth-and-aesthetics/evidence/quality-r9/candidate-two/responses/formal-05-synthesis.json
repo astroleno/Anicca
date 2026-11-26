@@ -1,0 +1,50 @@
+{
+  "id": "formal-05",
+  "route": "synthesis",
+  "attempts": [
+    {
+      "body": {
+        "meaningVersion": 1,
+        "rootInput": "线上读取接口的 p95 延迟过高，增加接口缓存可减少回源并接受短期陈旧。这个办法要求接口缓存里的旧值不会继续放行已撤销的访问权限。\n\n继续保持强一致。如果读到过期权限、余额或业务状态会产生损失，较慢响应比读错更可控。题面还没有给出哪些字段属于这种情况。",
+        "sources": [
+          {
+            "id": "formal-05-a",
+            "text": "线上读取接口的 p95 延迟过高，增加接口缓存可减少回源并接受短期陈旧。这个办法要求接口缓存里的旧值不会继续放行已撤销的访问权限。",
+            "summary": "用缓存降低尾部延迟",
+            "label": "缓存读取",
+            "stance": "正"
+          },
+          {
+            "id": "formal-05-b",
+            "text": "继续保持强一致。如果读到过期权限、余额或业务状态会产生损失，较慢响应比读错更可控。题面还没有给出哪些字段属于这种情况。",
+            "summary": "保持权威读取",
+            "label": "一致读取",
+            "stance": "反"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 读取接口的 p95 延迟 · id=formal-05-user · 来源=无] 读取接口的 p95 延迟过高，应该增加缓存并接受短期不一致，还是保持强一致并接受更慢响应？"
+          },
+          {
+            "role": "assistant",
+            "content": "[反 · 一致读取 · id=formal-05-b · 来源=formal-05-user] 继续保持强一致。如果读到过期权限、余额或业务状态会产生损失，较慢响应比读错更可控。题面还没有给出哪些字段属于这种情况。"
+          },
+          {
+            "role": "assistant",
+            "content": "[正 · 缓存读取 · id=formal-05-a · 来源=formal-05-user] 线上读取接口的 p95 延迟过高，增加接口缓存可减少回源并接受短期陈旧。这个办法要求接口缓存里的旧值不会继续放行已撤销的访问权限。"
+          }
+        ],
+        "requestId": "r9-after-formal-05-1"
+      },
+      "startedAt": "2026-11-26T15:02:01.981Z",
+      "elapsedMs": 8700,
+      "status": 502,
+      "rawBody": "{\"requestId\":\"r9-after-formal-05-1\",\"error\":\"invalid_model_output\",\"details\":\"high-risk semantic audit failed\"}",
+      "reading": null,
+      "error": "invalid_model_output",
+      "retryable": false
+    }
+  ]
+}

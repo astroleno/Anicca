@@ -1,0 +1,50 @@
+{
+  "id": "r9-new-03",
+  "route": "synthesis",
+  "attempts": [
+    {
+      "body": {
+        "meaningVersion": 1,
+        "rootInput": "她写的是「展厅可以贴一段文字，把我姓名和那座山屋的名字拿掉以后先给我看，我回复确认再贴。声音不要展出。」\n\n策展人已做出删去两处名字的文字，还没发给她。音频师能把原声变调，而且带姓名版本阅读起来更自然。",
+        "sources": [
+          {
+            "id": "r9-new-03-a",
+            "text": "她写的是「展厅可以贴一段文字，把我姓名和那座山屋的名字拿掉以后先给我看，我回复确认再贴。声音不要展出。」",
+            "summary": "她写的是「展厅可以贴一段文字，把我姓名和那座山屋的名字拿掉以后先给我看，我回复确认再贴。声音不要展出。」",
+            "label": "材料与边界",
+            "stance": "想法"
+          },
+          {
+            "id": "r9-new-03-b",
+            "text": "策展人已做出删去两处名字的文字，还没发给她。音频师能把原声变调，而且带姓名版本阅读起来更自然。",
+            "summary": "策展人已做出删去两处名字的文字，还没发给她。音频师能把原声变调，而且带姓名版本阅读起来更自然。",
+            "label": "可选安排",
+            "stance": "想法"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 条件和材料粒度 · id=r9-new-03-user · 来源=无] 口述档案里一位山屋管理员讲过风灾。展厅今天得定下来：无名文字、变声的原录音、带姓名的文字，都能上吗？"
+          },
+          {
+            "role": "assistant",
+            "content": "[想法 · 可选安排 · id=r9-new-03-b · 来源=r9-new-03-user] 策展人已做出删去两处名字的文字，还没发给她。音频师能把原声变调，而且带姓名版本阅读起来更自然。"
+          },
+          {
+            "role": "assistant",
+            "content": "[想法 · 材料与边界 · id=r9-new-03-a · 来源=r9-new-03-user] 她写的是「展厅可以贴一段文字，把我姓名和那座山屋的名字拿掉以后先给我看，我回复确认再贴。声音不要展出。」"
+          }
+        ],
+        "requestId": "r9-after-r9-new-03-1"
+      },
+      "startedAt": "2026-11-26T15:02:56.915Z",
+      "elapsedMs": 3933,
+      "status": 502,
+      "rawBody": "{\"requestId\":\"r9-after-r9-new-03-1\",\"error\":\"invalid_model_output\",\"details\":\"synthesis draft failed contract after one repair\"}",
+      "reading": null,
+      "error": "invalid_model_output",
+      "retryable": false
+    }
+  ]
+}

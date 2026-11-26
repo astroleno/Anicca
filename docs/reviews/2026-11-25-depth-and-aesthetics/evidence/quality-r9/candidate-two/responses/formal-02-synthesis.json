@@ -1,0 +1,50 @@
+{
+  "id": "formal-02",
+  "route": "synthesis",
+  "attempts": [
+    {
+      "body": {
+        "meaningVersion": 1,
+        "rootInput": "三家都需要接入。若身份、数据流和交付节奏有共同部分，通用插件平台能降低往后每次集成的成本。\n\n三家各自要求不同。先把最大客户需要的一个集成交付到实际使用，从真实限制中发现是否存在值得抽象的共性。",
+        "sources": [
+          {
+            "id": "formal-02-a",
+            "text": "三家都需要接入。若身份、数据流和交付节奏有共同部分，通用插件平台能降低往后每次集成的成本。",
+            "summary": "复用三个接入需求中的共性",
+            "label": "共用底座",
+            "stance": "正"
+          },
+          {
+            "id": "formal-02-b",
+            "text": "三家各自要求不同。先把最大客户需要的一个集成交付到实际使用，从真实限制中发现是否存在值得抽象的共性。",
+            "summary": "先交付最大客户的集成",
+            "label": "单一交付",
+            "stance": "反"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 三个早期客户分别要求不同 · id=formal-02-user · 来源=无] 三个早期客户分别要求不同的集成，应该先做通用插件平台，还是只做最大客户需要的单一集成？"
+          },
+          {
+            "role": "assistant",
+            "content": "[反 · 单一交付 · id=formal-02-b · 来源=formal-02-user] 三家各自要求不同。先把最大客户需要的一个集成交付到实际使用，从真实限制中发现是否存在值得抽象的共性。"
+          },
+          {
+            "role": "assistant",
+            "content": "[正 · 共用底座 · id=formal-02-a · 来源=formal-02-user] 三家都需要接入。若身份、数据流和交付节奏有共同部分，通用插件平台能降低往后每次集成的成本。"
+          }
+        ],
+        "requestId": "r9-after-formal-02-1"
+      },
+      "startedAt": "2026-11-26T15:01:56.230Z",
+      "elapsedMs": 7578,
+      "status": 502,
+      "rawBody": "{\"requestId\":\"r9-after-formal-02-1\",\"error\":\"invalid_model_output\",\"details\":\"synthesis critic failed contract after one repair\"}",
+      "reading": null,
+      "error": "invalid_model_output",
+      "retryable": false
+    }
+  ]
+}

@@ -1,0 +1,560 @@
+{
+  "revision": "a7c1b8f",
+  "scope": "Synthetic evaluation only. Original oral-history item, frozen authorization cases, and remaining failures. Raw authorization rows preserve the exact evidence references emitted by the reviewer.",
+  "requests": [
+    {
+      "requestId": "r9-after-formal-02-1",
+      "outcome": "invalid_output",
+      "stages": [
+        {
+          "stage": "critic",
+          "repair": false,
+          "finish": "stop",
+          "check": {
+            "stage": "critic",
+            "repair": false,
+            "valid": false,
+            "contractIssues": [
+              "synthesis_unsupported_quantity"
+            ]
+          },
+          "rejectedOutput": "{\"synthesis\":{\"text\":\"甲的条件并非空话，它指出三家都要接入时，共用插件平台只有在身份、数据流和交付节奏上确有共性才值得建；乙则指出共性不是先验假设，最大客户的单个集成跑到实际使用后才能看到哪些限制真实、哪些只是设想。两者的关系发生在同一判断上：乙的交付构成检验甲的“若”的取样过程，但它只能暴露该客户范围内的复用证据，不能自动证明另外两家也有同样结构。因此可做的是先交付该集成并记录可复用的边界，若第二份实际复用需求出现，再按客户定制与抽象规则启动平台建设；若尚未出现，只保留隔离于核心模型之外的客户专属字段，不预建完整平台。代价是首期复用收益延后。\",\"summary\":\"先以最大客户的单集成取得真实限制与第一份范围证据；只有出现第二份实际复用需求，才在产品核心之外启动平台抽象。\",\"label\":\"二证再抽象\",\"stance\":\"合\",\"change\":\"把甲的“若存在共性”限定为须由乙的首个交付取样、再由第二份实际复用需求触发，明确单客户证据不足以支撑平台。\"}}"
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "finish": "stop",
+          "check": {
+            "stage": "critic",
+            "repair": true,
+            "valid": false,
+            "contractIssues": [
+              "synthesis_unsupported_quantity"
+            ]
+          },
+          "rejectedOutput": "{\"synthesis\":{\"text\":\"甲的条件并非空话：三家都要接入时，通用插件平台只有在身份、数据流和交付节奏上确有共性才值得建；乙则指出共性不是先验假设，最大客户的单个集成跑到实际使用后才能看清哪些限制真实。乙的交付构成检验甲那个“若”的取样过程，但只暴露该客户范围内的复用证据，不能推出另外两家有同样结构。因此可做的是先交付该集成、记录可复用边界；只有出现第二份实际复用证据，才在产品核心之外启动平台抽象，否则只保留隔离的客户专属字段，不预建完整平台，代价是首期复用收益延后。\",\"summary\":\"先以最大客户的单集成取得真实限制与首份范围证据；出现第二份实际复用需求后，才在核心之外启动平台抽象。\",\"label\":\"二证再抽象\",\"stance\":\"合\",\"change\":\"把甲的“若存在共性”限定为须经乙的首个交付取样、再由实际复用证据触发，明确单客户证据不足以支撑平台。\"}}"
+        }
+      ]
+    },
+    {
+      "requestId": "r9-after-formal-05-1",
+      "outcome": "invalid_output",
+      "stages": [
+        {
+          "stage": "audit",
+          "repair": false,
+          "finish": "stop",
+          "check": {
+            "stage": "audit",
+            "repair": false,
+            "valid": true
+          },
+          "review": {
+            "pass": true,
+            "issues": []
+          }
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "finish": "stop",
+          "check": {
+            "stage": "audit",
+            "repair": false,
+            "valid": false,
+            "contractIssues": [
+              "synthesis_semantic_audit"
+            ]
+          },
+          "rejectedOutput": "{\"audit\":{\"route\":\"third_mechanism\",\"checks\":[{\"id\":\"authoritative-decision:I1\",\"status\":\"covered\",\"evidence\":\"候选明确区分可短期陈旧的‘只影响展示的字段’与高风险判定字段（权限撤销、余额、业务状态），并在字段清单未定时暂缓整体上线缓存。\"},{\"id\":\"authoritative-decision:I2\",\"status\":\"covered\",\"evidence\":\"候选要求‘权限撤销、余额与业务状态等判定须由权威服务校验或回源’，将敏感判定交由权威服务校验。\"},{\"id\":\"authoritative-decision:I3\",\"status\":\"missing\",\"evidence\":\"候选提出‘保留立即回源路径’，但未写明只从一个慢端点做小范围验证；相反其措施为‘暂缓整体上线缓存’，没有给出小范围验证的具体对象或范围。\"},{\"id\":\"authoritative-decision:F1\",\"status\":\"covered\",\"evidence\":\"候选要求高风险判定回源校验、字段未定时暂缓整体上线，未让陈旧值直接授权敏感动作。\"},{\"id\":\"authoritative-decision:F2\",\"status\":\"covered\",\"evidence\":\"候选以读取错误代价分层，而非用命中率或延迟证明正确性。\"}],\"unsupportedClaims\":[],\"missingClauses\":[{\"ruleId\":\"authoritative-decision:I3\",\"reason\":\"候选仅提出暂缓整体上线并保留立即回源路径，未写明只从一个慢端点进行小范围验证的验证方案。\"}]},\"verdict\":\"repair\"}"
+        }
+      ]
+    },
+    {
+      "requestId": "r9-after-holdout-05-1",
+      "outcome": "invalid_output",
+      "stages": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "finish": "stop",
+          "check": {
+            "stage": "draft",
+            "repair": false,
+            "valid": false,
+            "contractIssues": [
+              "synthesis_root_keys"
+            ]
+          },
+          "rejectedOutput": "{\"type\":\"json_object\",\"synthesis\":{\"text\":\"正面笔迹已入库不等于纸本地图已保留：背面的描画压痕要斜光照射才能看见，常规扫描与正面文字都不记录它。仅二十张确认，其余纸背尚未逐张查证，说明“数字化保预算”只覆盖正面内容。腾库期限与两百张移交上限并存时，可先把斜光抽查纳入腾库前流程，据结果锁定需移交的纸本，再定续租或碎纸。代价是清理延后与仓储费，收益是避免把街坊分地原线证据连同纸本删掉。\",\"summary\":\"数字化只保正面，腾库前须用斜光补检纸背，才能决定哪些纸本不能随预算一起碎掉。\",\"label\":\"斜光补检纸背\",\"stance\":\"合\",\"change\":\"把“入库即可碎纸”限定为只保住正面笔迹，背面压痕还需腾库前斜光抽检作移交依据。\"}}"
+        },
+        {
+          "stage": "draft",
+          "repair": true,
+          "finish": "stop",
+          "check": {
+            "stage": "draft",
+            "repair": true,
+            "valid": false,
+            "contractIssues": [
+              "synthesis_root_keys"
+            ]
+          },
+          "rejectedOutput": "{\"type\":\"json_object\",\"synthesis\":{\"text\":\"正面笔迹都入库，只保住了正面内容；背面压痕要斜光才显，常规扫描和正面文字都不记录它，所以“先全碎掉保住数字化预算”盖不住这一层证据。现有二十张确认有压痕，其余纸背尚未逐张查证，不能据此推定只有这二十张。腾库期限与志工只能完成两百张移交同时成立时，可在腾库前先用斜光查看待碎纸背，把已确认或新发现压痕的纸本优先移交，未查部分明确标为未覆盖；仓储续租是否值得，要等这一步结果再定。代价是清理延后与续租开支，收益是不把街坊分地原线的描画痕迹连同纸本一起碎掉，也不让尚未查证的纸背被当成无压痕。\",\"summary\":\"数字化只保正面，腾库前用斜光查纸背，把有压痕纸本优先移交，再定续租或碎纸。\",\"label\":\"斜光补检纸背\",\"stance\":\"合\",\"change\":\"把已入库等同于正面内容已保，限定全碎前提；压痕须斜光另查，未查纸背不能视为无痕。\"}}"
+        }
+      ]
+    },
+    {
+      "requestId": "r9-after-holdout-06-1",
+      "outcome": "success",
+      "stages": [
+        {
+          "stage": "critic",
+          "repair": false,
+          "finish": "stop",
+          "check": {
+            "stage": "critic",
+            "repair": false,
+            "valid": true
+          },
+          "text": "甲点出首页需要一个摊贩的第一人称声音，乙点出她只签了馆内播放原声，而网页文件可被下载转发、下架也收不回。两者合成后的判断是：公开版应以她的授权范围定形式，而非以原声定位置。首页可保留「拔掉门上钉子，手里还捏着钥匙」这句摘引，标明来自展厅口述，用文字延续第一人称，原声仍限馆内。若要在网页播放原声，须先取得她本人或家属对公开、下载、转发的许可，并核对撤回条件；在此之前不把声音放上开放网站。代价是首页失去原声质感，但搬迁的第一手位置与她的播放边界同时成立。",
+          "authorizationFocus": [
+            {
+              "action": "把原声放上开放网站",
+              "nonGrants": [
+                "她签的只是馆内播放原声"
+              ]
+            },
+            {
+              "action": "在首页使用这句摘引",
+              "nonGrants": [
+                "馆内展厅播放原声的同意不当然覆盖网页公开"
+              ]
+            }
+          ]
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "finish": "stop",
+          "check": {
+            "stage": "audit",
+            "repair": false,
+            "valid": true
+          },
+          "review": {
+            "pass": true,
+            "issues": []
+          }
+        }
+      ]
+    },
+    {
+      "requestId": "r9-after-confirmation-02-1",
+      "outcome": "invalid_output",
+      "stages": [
+        {
+          "stage": "critic",
+          "repair": false,
+          "finish": "stop",
+          "check": {
+            "stage": "critic",
+            "repair": false,
+            "valid": false,
+            "contractIssues": [
+              "synthesis_root_keys"
+            ]
+          },
+          "rejectedOutput": "{\"type\":\"json_object\",\"synthesis\":{\"text\":\"甲乙的共同对象不是“安静”这个愿望，而是怎样让三个版本汇成可共同执行的约定。甲要求每人先报能做到的开始时间和一项例外，使周三近十一点回来、需在厨房加热晚饭这类细节进入文本；乙提醒，“夜深慢一点”的点头只是模糊共识，须三人看同一句再定哪天开始。两者相接后，约定应先把各自起点和例外写成试行句，再由三人确认同句并定日开始；但同句确认并不只服务定日，它会反过来检验甲的例外是否被纳入。若例外未入句或有人未看同句，该句只记录部分版本，不能兑现“听见的人知道从哪天开始”。\",\"summary\":\"把各自可行起点与例外写成同一试行句，经三人确认同句后再定开始日。\",\"label\":\"同句定始\",\"stance\":\"合\",\"change\":\"点明同句确认不只定日，还检验甲的例外是否真被纳入共同文本。\"}}"
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "finish": "stop",
+          "check": {
+            "stage": "critic",
+            "repair": true,
+            "valid": false,
+            "contractIssues": [
+              "synthesis_root_keys"
+            ]
+          },
+          "rejectedOutput": "{\"type\":\"json_object\",\"synthesis\":{\"text\":\"甲乙的共同对象是让三个版本汇成可共同执行的约定。甲要每人先报能做到的开始时间和一项例外，使周三近十一点回来、需在厨房加热晚饭这类细节进入文本；乙提醒“夜深慢一点”的点头只是模糊共识，须三人看同一句再定哪天开始。两者相接后，约定应先把各自起点和例外写成试行句，再由三人确认同句并定日开始；同句确认不只服务定日，也会反过来检验甲的例外是否被纳入。若例外未入句或有人未看同句，该句只记录部分版本，不能兑现“听见的人知道从哪天开始”。\",\"summary\":\"把各自可行起点与例外写成同一试行句，经三人确认同句后再定开始日。\",\"label\":\"同句定始\",\"stance\":\"合\",\"change\":\"点明同句确认不只定日，还检验甲的例外是否真被纳入共同文本。\"}}"
+        }
+      ]
+    },
+    {
+      "requestId": "r9-after-r9-new-01-1",
+      "outcome": "success",
+      "stages": [
+        {
+          "stage": "critic",
+          "repair": false,
+          "finish": "stop",
+          "check": {
+            "stage": "critic",
+            "repair": false,
+            "valid": true
+          },
+          "text": "陈师傅的话给录音划出两道限定：用途是培训新学徒，位置是店内留存，并明确不愿声音上网；网页编辑自写的课程介绍只讲时间地点与报名，既未提及陈师傅，也未摘录访谈。两者合看，公开页面能推进的只是课程信息这条独立文字线，录音线不因网站存在而延伸到网上或供外部受众收听。培训档案继续用于店内带学徒，其声音不被公开传播。若日后想把录音片段、摘引或转述放上公开渠道，须先就用途、形式、渠道与受众另取陈师傅的许可；在此之前该项暂缓，公开页仍只保留自写介绍。",
+          "authorizationFocus": [
+            {
+              "action": "在首页放他的原声",
+              "nonGrants": [
+                "给你们培训新学徒用，店里留着就行",
+                "我不想把自己的声音放到网上"
+              ]
+            },
+            {
+              "action": "把录音片段、摘引或转述放上公开渠道",
+              "nonGrants": [
+                "给你们培训新学徒用，店里留着就行",
+                "我不想把自己的声音放到网上"
+              ]
+            }
+          ]
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "finish": "stop",
+          "check": {
+            "stage": "audit",
+            "repair": false,
+            "valid": true
+          },
+          "review": {
+            "pass": true,
+            "issues": [],
+            "authorization": [
+              {
+                "action": {
+                  "unit": "R5"
+                },
+                "decision": "conditional",
+                "use": "把录音片段、摘引或转述放上公开渠道，供外部受众收听或阅读",
+                "basis": {
+                  "owner": "A",
+                  "quote": {
+                    "unit": "A2"
+                  },
+                  "scope": "我不想把自己的声音放到网上"
+                },
+                "gaps": [
+                  "permission"
+                ]
+              },
+              {
+                "action": {
+                  "unit": "R4"
+                },
+                "decision": "proceed",
+                "use": "录音留在店内培训档案，用于带新学徒，不公开传播",
+                "basis": {
+                  "owner": "A",
+                  "quote": {
+                    "unit": "A1"
+                  },
+                  "scope": "这段录音给你们培训新学徒用，店里留着就行"
+                },
+                "gaps": []
+              },
+              {
+                "action": {
+                  "unit": "R6"
+                },
+                "decision": "proceed",
+                "use": "公开页面保留网页编辑自写的课程介绍，讲时间地点与报名",
+                "basis": {
+                  "owner": "B",
+                  "quote": {
+                    "unit": "B1"
+                  },
+                  "scope": "网页编辑有自己写的课程介绍，讲时间地点和怎么报名，没有提到陈师傅，也没摘录访谈"
+                },
+                "gaps": []
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "requestId": "r9-after-r9-new-03-1",
+      "outcome": "invalid_output",
+      "stages": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "finish": "stop",
+          "check": {
+            "stage": "draft",
+            "repair": false,
+            "valid": false,
+            "contractIssues": [
+              "synthesis_root_keys"
+            ]
+          },
+          "text": "甲乙共同框住的是展厅今天要定的三项安排，但各自抓的环节不同：乙列的是可做的技术选项——无名文字已删好、原声可变调、带姓名文字更自然；甲给出的是她的条件——无名文字须先经她本人确认再贴，声音明确不展出。合起来看，乙的“能”不等于“可”：变声只解决声音的识别问题，并未取得她对声音展出的同意；带姓名的自然读法也与她要求去掉姓名相抵。她不要声音这一条是硬边界，不在可选项里。因此今天可推进的是把已删名的文字发给她，等她回复确认后再贴；声音方案即使技术上可行也暂不进入。",
+          "rejectedOutput": "{\"type\":\"json_object\",\"synthesis\":{\"text\":\"甲乙共同框住的是展厅今天要定的三项安排，但各自抓的环节不同：乙列的是可做的技术选项——无名文字已删好、原声可变调、带姓名文字更自然；甲给出的是她的条件——无名文字须先经她本人确认再贴，声音明确不展出。合起来看，乙的“能”不等于“可”：变声只解决声音的识别问题，并未取得她对声音展出的同意；带姓名的自然读法也与她要求去掉姓名相抵。她不要声音这一条是硬边界，不在可选项里。因此今天可推进的是把已删名的文字发给她，等她回复确认后再贴；声音方案即使技术上可行也暂不进入。\",\"summary\":\"乙的技术选项受甲本人确认与不展出声音的条件约束：先发删名文字待确认，声音排除。\",\"label\":\"确认前暂贴\",\"stance\":\"合\",\"change\":\"把乙的“技术上能做”与甲的“她已同意什么”分开，明确变声不等于允许声音展出，两项条件各自限定不同对象。\"}}"
+        },
+        {
+          "stage": "draft",
+          "repair": true,
+          "finish": "stop",
+          "check": {
+            "stage": "draft",
+            "repair": true,
+            "valid": false,
+            "contractIssues": [
+              "synthesis_root_keys"
+            ]
+          },
+          "text": "乙列的是可做选项：删名文字已成、原声可变调、带姓名读法更自然；甲给出的是她本人的边界：文字须先给她看，她回复确认再贴，声音不展出。两者合看，技术上的“能”不等于取得她同意的“可”：变调只改听感，不覆盖她对声音不展出的决定；带姓名读法更自然，也与她要求先去掉姓名相抵。故声音不进入可选项，已删名文字可发她确认，确认前不贴。",
+          "rejectedOutput": "{\"type\":\"json_object\",\"synthesis\":{\"text\":\"乙列的是可做选项：删名文字已成、原声可变调、带姓名读法更自然；甲给出的是她本人的边界：文字须先给她看，她回复确认再贴，声音不展出。两者合看，技术上的“能”不等于取得她同意的“可”：变调只改听感，不覆盖她对声音不展出的决定；带姓名读法更自然，也与她要求先去掉姓名相抵。故声音不进入可选项，已删名文字可发她确认，确认前不贴。\",\"summary\":\"乙的可做选项受甲本人确认与不展出声音约束：先发删名文字待确认，声音排除。\",\"label\":\"确认前暂贴\",\"stance\":\"合\",\"change\":\"把乙的技术可行与甲已给的条件分开，明确变声不覆盖她不要声音展出的决定，删名文字仍须她确认后才贴。\"}}"
+        }
+      ]
+    },
+    {
+      "requestId": "r9-after-r9-new-02-1",
+      "outcome": "success",
+      "stages": [
+        {
+          "stage": "audit",
+          "repair": false,
+          "finish": "stop",
+          "check": {
+            "stage": "audit",
+            "repair": false,
+            "valid": true
+          },
+          "review": {
+            "pass": true,
+            "issues": []
+          }
+        }
+      ]
+    },
+    {
+      "requestId": "r9-after-r9-new-05-1",
+      "outcome": "success",
+      "stages": [
+        {
+          "stage": "critic",
+          "repair": false,
+          "finish": "stop",
+          "check": {
+            "stage": "critic",
+            "repair": false,
+            "valid": true
+          },
+          "text": "她的原话把照片用途限定为印给本次邻里展的观众看，并希望放主墙；侧墙同属这次室内展厅、明天开放，所以放侧墙仍落在“给观众看”的许可内，主墙只是尚未落实的偏好。手机号则明确只留作联系、不进任何展签，来宾问来历的设想不能把号码带上展签。团队可发展位图，说明来历可用不涉私人号码的展签文字或现场口头转述。要紧的是把“给观众看”的覆盖范围与“放主墙”的愿望分开：前者决定照片能否上侧墙，后者不构成对位置的许可。",
+          "authorizationFocus": [
+            {
+              "action": "把这张船票照片印出来给这次邻里展的观众看",
+              "nonGrants": []
+            },
+            {
+              "action": "留下电话让来宾问照片的来历",
+              "nonGrants": [
+                "我的手机只留给你联系，不要放在展签上"
+              ]
+            }
+          ]
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "finish": "stop",
+          "check": {
+            "stage": "audit",
+            "repair": false,
+            "valid": true
+          },
+          "review": {
+            "pass": true,
+            "issues": []
+          }
+        }
+      ]
+    },
+    {
+      "requestId": "r9-after-r9-new-04-1",
+      "outcome": "success",
+      "stages": [
+        {
+          "stage": "critic",
+          "repair": false,
+          "finish": "stop",
+          "check": {
+            "stage": "critic",
+            "repair": false,
+            "valid": false,
+            "contractIssues": [
+              "synthesis_text_underlength"
+            ]
+          },
+          "text": "学员的信把“这张照片”的公开用途与内部用途分开：报名页与明天投影须撤下，教练纸本手册可照旧保留。工作台照能看清相同的工具摆放，但它只承接现场布置的表现，不承接对学员入镜那帧的授权，故不能径行拿来替换；若要把它用于报名页或投影，须另核学员对它的许可及受众范围。可先做的是报名系统删照并保留其他报名信息；替换或改换渠道则等对应许可查明后再行。",
+          "rejectedOutput": "{\"synthesis\":{\"text\":\"学员的信把“这张照片”的公开用途与内部用途分开：报名页与明天投影须撤下，教练纸本手册可照旧保留。工作台照能看清相同的工具摆放，但它只承接现场布置的表现，不承接对学员入镜那帧的授权，故不能径行拿来替换；若要把它用于报名页或投影，须另核学员对它的许可及受众范围。可先做的是报名系统删照并保留其他报名信息；替换或改换渠道则等对应许可查明后再行。\",\"summary\":\"学员许可按渠道切分：报名页和投影撤照、教练纸本手册保留；工作台照须另核许可，报名删照可先做。\",\"label\":\"渠道切分\",\"stance\":\"合\",\"change\":\"把“同一张照片”拆为照片对象与使用渠道，区分须撤的公开用途与可留的内部手册，并指出工具相同的另一帧不等于同一授权。\"}}"
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "finish": "stop",
+          "check": {
+            "stage": "audit",
+            "repair": false,
+            "valid": true
+          },
+          "review": {
+            "pass": true,
+            "issues": []
+          }
+        }
+      ]
+    },
+    {
+      "requestId": "r9-after-r9-new-06-1",
+      "outcome": "success",
+      "stages": [
+        {
+          "stage": "critic",
+          "repair": false,
+          "finish": "stop",
+          "check": {
+            "stage": "critic",
+            "repair": false,
+            "valid": true
+          },
+          "text": "陈女士的回复覆盖的是文字全文、本周、十一位报名成员这一用途；它同时也划出了边界：受众一致并不自动允许把同一首诗改成音频。主持人的自愿只处分自己的声音，并未带来陈女士对录制和分发朗读版的许可，名单核对也只确认收件范围。因此邮件正文可先按已覆盖范围发文字全文；朗读版涉及把作品换形式并随同封邮件分发，应在问明陈女士能否录制、能否如此分发后再纳入，未获许可前不放入邮件。",
+          "authorizationFocus": [
+            {
+              "action": "把诗全文作为文字发给报名的十一位成员",
+              "nonGrants": [
+                "主持人自愿自己录音，不用陈女士的声音",
+                "没人问过陈女士能否录制朗读版"
+              ]
+            },
+            {
+              "action": "请主持人朗读同一首诗并把录音放进同封邮件",
+              "nonGrants": [
+                "主持人自愿自己录音，不用陈女士的声音",
+                "没人问过陈女士能否录制朗读版"
+              ]
+            }
+          ]
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "finish": "stop",
+          "check": {
+            "stage": "audit",
+            "repair": false,
+            "valid": true
+          },
+          "review": {
+            "pass": true,
+            "issues": []
+          }
+        }
+      ]
+    },
+    {
+      "requestId": "r9-after-r9-new-07-1",
+      "outcome": "success",
+      "stages": [
+        {
+          "stage": "critic",
+          "repair": false,
+          "finish": "stop",
+          "check": {
+            "stage": "critic",
+            "repair": false,
+            "valid": false,
+            "contractIssues": [
+              "synthesis_unsupported_quantity"
+            ]
+          },
+          "text": "甲只明确了内部原片可以保留，这条留言覆盖的是库存留存，没有覆盖把它剪成公开片花；整理人也没找到她同意公开排练录像的依据。乙的两个替代中，完全移除她的镜头和那段现场音、换成空台与团方自制配乐，不依赖她的授权，今天可以发；压暗头像后熟人仍能辨认，仍属公开使用她的形象，在取得对应许可前暂缓。库存原件可依内部留言保留，但保留不等于可公开，日后若改用她的镜头或现场音，须重新取得覆盖公开发布的许可。",
+          "authorizationFocus": [
+            {
+              "action": "把这段排练录像做公开片花",
+              "nonGrants": [
+                "内部原片可以保留",
+                "无人问过她能否用这段排练录像做公开片花"
+              ]
+            },
+            {
+              "action": "只把她的头像压暗",
+              "nonGrants": [
+                "内部原片可以保留"
+              ]
+            }
+          ],
+          "rejectedOutput": "{\"synthesis\":{\"text\":\"甲只明确了内部原片可以保留，这条留言覆盖的是库存留存，没有覆盖把它剪成公开片花；整理人也没找到她同意公开排练录像的依据。乙的两个替代中，完全移除她的镜头和那段现场音、换成空台与团方自制配乐，不依赖她的授权，今天可以发；压暗头像后熟人仍能辨认，仍属公开使用她的形象，在取得对应许可前暂缓。库存原件可依内部留言保留，但保留不等于可公开，日后若改用她的镜头或现场音，须重新取得覆盖公开发布的许可。\",\"summary\":\"今天可发完全移除其镜头与现场音、换成空台配乐的版本；原件按内部留言保留但不得据此公开，压暗方案待许可。\",\"label\":\"留存≠公开\",\"stance\":\"合\",\"change\":\"把内部留言限定为库存留存，并指出压暗头像仍是将她的形象用于公开片花，替代镜头不能替代公开许可。\"},\"authorizationFocus\":[{\"action\":\"把这段排练录像做公开片花\",\"nonGrants\":[\"内部原片可以保留\",\"无人问过她能否用这段排练录像做公开片花\"]},{\"action\":\"只把她的头像压暗\",\"nonGrants\":[\"内部原片可以保留\"]}]}"
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "finish": "stop",
+          "check": {
+            "stage": "critic",
+            "repair": true,
+            "valid": true
+          },
+          "text": "甲只明确了内部原片可以保留，这条留言覆盖库存留存，没有覆盖把它剪成公开片花；整理人也未找到她同意公开排练录像的依据。乙的完全移除方案不依赖她的授权：移除其镜头与那段现场音，换成空台和团方自制配乐，今天可以发。压暗头像后熟人仍能辨认，仍属公开使用她的形象，在取得对应许可前应暂缓。库存原件可依内部留言保留，但保留不等于可公开；日后若改用其镜头或现场音，须另取覆盖公开发布的许可。",
+          "authorizationFocus": [
+            {
+              "action": "把这段排练录像做公开片花",
+              "nonGrants": [
+                "内部原片可以保留",
+                "无人问过她能否用这段排练录像做公开片花"
+              ]
+            },
+            {
+              "action": "只把她的头像压暗",
+              "nonGrants": [
+                "内部原片可以保留"
+              ]
+            }
+          ]
+        },
+        {
+          "stage": "audit",
+          "repair": false,
+          "finish": "stop",
+          "check": {
+            "stage": "audit",
+            "repair": false,
+            "valid": true
+          },
+          "review": {
+            "pass": true,
+            "issues": []
+          }
+        }
+      ]
+    },
+    {
+      "requestId": "r9-after-r9-new-08-1",
+      "outcome": "success",
+      "stages": [
+        {
+          "stage": "audit",
+          "repair": false,
+          "finish": "stop",
+          "check": {
+            "stage": "audit",
+            "repair": false,
+            "valid": true
+          },
+          "review": {
+            "pass": true,
+            "issues": []
+          }
+        }
+      ]
+    }
+  ]
+}
