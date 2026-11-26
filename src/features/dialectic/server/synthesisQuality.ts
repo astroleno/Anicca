@@ -3,6 +3,7 @@ import { parseStrictJsonObject } from "@/lib/openai/parseStrictJsonObject";
 import { readDeferredDraft, readUnderstandingChange, UNDERSTANDING_CHANGE_PROMPT, type DeferredDraft } from "../meaning";
 import {
   DialecticPolicyCard,
+  buildDialecticApplicabilityPrompt,
   formatDialecticPolicyCards,
   getDialecticRuleChecks
 } from "@/features/dialectic/server/policyCards";
@@ -259,17 +260,15 @@ function promptContext(context: SynthesisPromptContext): string[] {
   ].filter(Boolean);
 }
 
-export function buildSynthesisDraftPrompt(context: SynthesisPromptContext): string {
+export function buildSynthesisDraftPrompt(context: SynthesisPromptContext, candidates: DialecticPolicyCard[] = []): string {
   return [
     context.sourceMode === "seeds"
       ? "你负责将两个来源 seed 发展为新的合。识别各自核心想法、相容点与张力，在不歪曲来源的前提下提出新的理解或机制。"
       : "你负责把同一母题下真正冲突的正与反转化成可执行的合。先识别不可违反的硬约束，再决定选正、选反或提出第三机制。",
     ...commonOutputRules(context),
-    "若同意、可访问性、数据可恢复性、安全、鉴权或生存窗口等硬约束已使一边失效，必须明确选择合规的一侧；期限、增长、成本、匿名化、事后删除或未来补救不能豁免硬约束。",
-    "决策题中，只有第三机制完整保留全部硬约束，并真实改变约束、顺序、信息条件、责任归属或资源结构时才允许使用；否则选边并说明舍弃另一边的代价。探索题可明确说明两来源之间尚无成立的联系，不因此替用户选择一个执行方案。",
-    "不得虚构题目未提供的比例、人数、期限、预算、授权、日志、基础设施或既有恢复能力。题设没有阈值时，使用真实基线、风险事件或验收结果作闸门。",
-    "若涉及发布、删除、追踪、迁移或持续投入等现实风险，失败后的安全状态须具体；清单、承诺、上传、校验和与同盘副本都不是回滚资产。抽象观点或创作隐喻不因此被改写成风险治理题。规则卡仅约束题设实际涉及或候选方案将引入的行为，不为满足无关规则而新增流程或设施。",
-    formatDialecticPolicyCards(context.cards),
+    "从实际材料识别会使判断不成立的必要条件。决策题的方案须保留这些条件，并说明什么情况会使选择失效；若一方已无法成立，明确选择并解释代价。探索题可以明确说明缺少什么关系或证据。",
+    "按题设保留可知的范围。任何新增方案都必须区分哪些条件已经成立、哪些仍需验证。避免把句中的比喻当作用户要求执行的事。",
+    buildDialecticApplicabilityPrompt(candidates),
     ...promptContext(context)
   ].join("\n\n");
 }
@@ -283,7 +282,7 @@ export function buildSynthesisCriticPrompt(
     ...commonOutputRules(context),
     ...(context.meaning ? ["重新检查草稿的联结决定。已有具体联系时，不因暂时缺乏验证而机械拒合；没有具体联系时，也不因草稿写了长文就保留它。草稿的 deferred 可以改为 synthesis，草稿的 synthesis 也可以改为 deferred；依来源及用户补充作决定。"] : []),
     "若返回 synthesis，正文保持 180–320 字。先找出草稿中真正改变理解的判断及其具体依据，保留这段推理，不把它磨平为两边都重要。若草稿只是并列、先后安排或换了标题，改写为有来源依据的新关系，并说明它让哪个具体情境的理解发生变化；没有依据则不强造。删掉只重述祖先的循环论证。决策题检查主路线及条件，探索题检查解释与边界，关联薄弱时保留不确定性。不要把所有草稿重排为五句执行方案。",
-    "逐条落实实际适用规则卡的 invariant，并删除所有 forbidden move。先确认规则涉及的行为在题设或方案中实际存在，创作隐喻不等于现实操作。禁止动作不能通过匿名化、聚合化、缩短期限、事后删除或更名继续保留。",
+    "逐条落实实际适用规则卡的 invariant，并删除所有 forbidden move。先确认规则涉及的行为在题设或方案中实际存在，创作隐喻不等于现实操作。检查方案实际做了什么，不能靠重新命名或改述回避禁令。",
     "删除题设没有的具体比例、人数、期限、次数、样本量、预算、授权、日志、基础设施或能力。需要阈值时先测真实基线，并使用风险事件或验收结果作为闸门。",
     "硬门槛失效的一侧不得在失败、回滚或结尾重新启用。决策题若第三机制不能完整满足全部规则，就明确选择合规侧，并写清舍弃代价；探索题不能因为联系不足而强行选边。",
     formatDialecticPolicyCards(context.cards),
@@ -304,7 +303,7 @@ export function buildSynthesisAuditPrompt(
     "你是独立语义审计器，只审计候选 synthesis，不改写答案。逐条检查规则，不得因为语气合理而推断未明确写出的保障。",
     "只返回严格 JSON object，不要 markdown、代码围栏或 JSON 外文字。",
     'schema={"audit":{"route":"choose_thesis|choose_antithesis|third_mechanism","checks":[{"id":"","status":"covered|missing|violated","evidence":""}],"unsupportedClaims":[""],"missingClauses":[""],"verdict":"pass|repair"}}',
-    `checks 必须按给定顺序返回，id 完全一致，共 ${checks.length} 条。规则约束的行为在题设和候选中都不存在时，可记 covered，evidence 必须明确写‘不适用’及理由，不能捏造已具备保障。实际适用的 invariant 只有候选存在明确可执行语义才是 covered；forbidden 只有候选完全没有该动作及其匿名化、聚合化、短期化或改名变体才是 covered，否则为 violated。`,
+    `checks 必须按给定顺序返回，id 完全一致，共 ${checks.length} 条。规则约束的行为在题设和候选中都不存在时，可记 covered，evidence 必须明确写‘不适用’及理由，不能捏造已具备保障。实际适用的 invariant 只有候选存在明确可执行语义才是 covered；forbidden 只有候选完全没有该动作及实质相同的变体才是 covered，否则为 violated。`,
     "按请求和候选实际语义判断规则适用性：仅比较某个安全前提与另一命题，未请求或建议执行该操作时，不要求补入操作清单、停写或部署流程，对这些执行规则记不适用并说明原因。安全前提本身仍须准确；若提出实际行动、用隐喻包装行动或把必要条件误写成充分条件，相关规则仍适用。",
     "unsupportedClaims 列出题设和规则均未提供的数字、人员、预算、工具、日志、授权、基础设施或既有能力。任一 invariant missing、任一 forbidden violated 或存在 unsupportedClaims 时，verdict 必须为 repair。",
     `待检查规则：${JSON.stringify(checks)}`,
@@ -323,7 +322,7 @@ export function buildSynthesisFinalPrompt(
     ...commonOutputRules(context),
     "保持 180–320 字与原问题类型。决策题修复实际约束、选择和执行条件；探索题修复来源理解、新命题和解释边界，不强改成五句执行方案。保留真实未决张力，不为凑出圆满结论而改写题设。",
     "每条实际适用的 invariant 必须有明确可执行落点，不能依靠读者推断；不适用的规则不引入新任务。禁止动作不能通过匿名化、聚合化、缩短期限、事后删除或改名继续保留。",
-    "合法证据不存在时必须如实披露缺失，并改用不依赖该证据的安全路线。硬约束排除的一侧不能在失败或回滚时重新开启。",
+    "说明结论需要的证据及当前缺失。硬约束排除的一侧不能在失败时重新开启。",
     "只复述原始输入已有的定量表达；其余比例、人数、时长、次数、样本量、预算、完成率和日期全部删除，改用真实基线、风险事件或验收结果。",
     `必须覆盖的逐条规则：${JSON.stringify(getDialecticRuleChecks(context.cards))}`,
     `独立审计结果：${JSON.stringify(audit)}`,
@@ -336,7 +335,8 @@ export function buildSynthesisFinalPrompt(
 export function buildSynthesisContractRepairPrompt(
   context: SynthesisPromptContext,
   candidateText: string,
-  errors: string[]
+  errors: string[],
+  draftCandidates?: DialecticPolicyCard[]
 ): string {
   const parsed = parseStrictJsonObject(candidateText);
   const value = parsed?.synthesis;
@@ -364,6 +364,7 @@ export function buildSynthesisContractRepairPrompt(
     ...(unsupportedQuantities.length ? [
       `正文不能再次出现这些被拒绝的数量字符串：${JSON.stringify(unsupportedQuantities)}。改回来源已有的对象名称或定性表述，不换成其他数字；不要原样交回这些词。`
     ] : []),
+    draftCandidates === undefined ? formatDialecticPolicyCards(context.cards) : buildDialecticApplicabilityPrompt(draftCandidates),
     "返回前再次核对字数范围和必须移除的数量；上述编辑字数不能写入正文。"
   ].join("\n\n");
 }

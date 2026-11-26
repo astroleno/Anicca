@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { generateText, type GenerateTextOptions, type TokenUsage } from "@/lib/openai/generateText";
-import { DIALECTIC_POLICY_CARD_VERSION } from "./policyCards";
+import { DIALECTIC_POLICY_CARD_VERSION, type DialecticPolicyCard } from "./policyCards";
 
-export const DIALECTIC_PROMPT_VERSION = "seed-flow-2026-10-24-grounded-meaning";
+export const DIALECTIC_PROMPT_VERSION = "seed-flow-2026-11-26-source-grounded-prose";
 type Stage = "branches" | "polarities" | "draft" | "critic" | "audit" | "final";
 type Outcome = "success" | "invalid_output" | "failed" | "cancelled";
 type Call = {
@@ -22,6 +22,7 @@ export function createGenerationTrace(endpoint: "branches" | "synthesis" | "pola
   const calls: Call[] = [];
   const checks: { stage: Stage; repair: boolean; valid: boolean }[] = [];
   let finished = false;
+  let policyCards: { candidateIds: string[]; applicableIds?: string[] } | undefined;
   return {
     async generate(stage: Stage, options: Omit<GenerateTextOptions, "model" | "signal" | "onProviderCall">, repair = false, timeoutMs?: number) {
       signal.throwIfAborted();
@@ -50,6 +51,12 @@ export function createGenerationTrace(endpoint: "branches" | "synthesis" | "pola
         call.elapsedMs = Math.round(performance.now() - callStarted);
       }
     },
+    recordPolicyCards(candidates: DialecticPolicyCard[], applicable?: DialecticPolicyCard[]) {
+      policyCards = {
+        candidateIds: candidates.map(card => card.id),
+        ...(applicable ? { applicableIds: applicable.map(card => card.id) } : {})
+      };
+    },
     check(stage: Stage, valid: boolean, repair = false) {
       checks.push({ stage, repair, valid });
     },
@@ -67,7 +74,7 @@ export function createGenerationTrace(endpoint: "branches" | "synthesis" | "pola
         providerCalls: calls.reduce((sum, call) => sum + call.providerCalls, 0),
         firstPassValid: (outcome === "success" || outcome === "invalid_output") && !signal.aborted && checks.length
           ? checks.every(check => check.valid && !check.repair) : null,
-        calls, checks
+        calls, checks, policyCards
       };
       // Logging must never change generation or its error behavior.
       try { console.info(`anicca.generation ${JSON.stringify(record)}`); } catch { /* best effort */ }

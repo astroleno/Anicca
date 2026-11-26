@@ -3,6 +3,7 @@ import { readThinkingSpaceRequest, thinkingSpacePrompt, type ThinkingSpace } fro
 import { perspectiveEnvelope, responsePerspective } from "@/features/perspectives/server";
 import { getDialecticModel, getDialecticOpenAiClient } from "@/lib/openai/client";
 import { createGenerationTrace, type GenerationTrace } from "@/features/dialectic/server/generationTrace";
+import { parseStrictJsonObject } from "@/lib/openai/parseStrictJsonObject";
 import { describeProviderFailure } from "@/lib/openai/providerErrors";
 import { finalizeMeaning, userReportedMaterial } from "@/features/dialectic/server/meaningReview";
 import type { DeferredDraft } from "@/features/dialectic/meaning";
@@ -19,7 +20,9 @@ import {
 } from "@/features/dialectic/server/synthesisQuality";
 import {
   isHighRiskDialectic,
-  retrieveDialecticPolicyCards
+  retrieveDialecticPolicyCards,
+  selectDialecticPolicyCards,
+  type DialecticPolicyCard
 } from "@/features/dialectic/server/policyCards";
 
 type ContextMessage = {
@@ -106,12 +109,31 @@ async function generateSynthesisStage(
   client: ReturnType<typeof getDialecticOpenAiClient>,
   prompt: string,
   context: SynthesisStageContext,
-  requireContract = true
-): Promise<{ synthesis: SynthesisResult | null; deferred?: DeferredDraft; errors: string[]; outputText: string }> {
+  draftCandidates?: DialecticPolicyCard[]
+): Promise<{ synthesis: SynthesisResult | null; deferred?: DeferredDraft; errors: string[]; outputText: string; cards: DialecticPolicyCard[] }> {
   const lensPrompt = thinkingSpacePrompt(context.perspective, "synthesis", context.meaning);
   const suppliedInput = [context.rootInput, context.connectionInput].filter(Boolean).join("\n");
-  const first = await trace.generate(stage, { client, input: [prompt, lensPrompt].filter(Boolean).join("\n\n"), maxOutputTokens: context.perspective ? 1800 : 1400 });
-  let analysis = analyzeSynthesisOutput(perspectiveEnvelope(first.text, context.perspective).content, suppliedInput, { requireContract, meaning: context.meaning });
+  function analyze(text: string) {
+    let { content } = perspectiveEnvelope(text, context.perspective);
+    let cards = context.cards;
+    if (draftCandidates?.length) {
+      const { applicablePolicyCardIds, ...draft } = parseStrictJsonObject(content) ?? {};
+      const selected = selectDialecticPolicyCards(draftCandidates, applicablePolicyCardIds);
+      if (selected === null) {
+        return { synthesis: null, deferred: undefined, cards: [], errors: ["applicablePolicyCardIds must be a unique array of candidate IDs"] };
+      }
+      cards = selected;
+      content = JSON.stringify(draft);
+    }
+    return { ...analyzeSynthesisOutput(content, suppliedInput, { requireContract: stage !== "draft", meaning: context.meaning }), cards };
+  }
+
+  // In a gated draft the root metadata contract must follow the optional lens example.
+  const withLens = (stagePrompt: string) => (draftCandidates?.length ? [lensPrompt, stagePrompt] : [stagePrompt, lensPrompt])
+    .filter(Boolean).join("\n\n");
+  const maxOutputTokens = context.perspective ? 1800 : 1400;
+  const first = await trace.generate(stage, { client, input: withLens(prompt), maxOutputTokens });
+  let analysis = analyze(first.text);
   trace.check(stage, Boolean(analysis.synthesis || analysis.deferred));
   if (analysis.synthesis || analysis.deferred) {
     return { ...analysis, outputText: first.text };
@@ -119,17 +141,12 @@ async function generateSynthesisStage(
 
   const repair = await trace.generate(stage, {
     client,
-    input: [buildSynthesisContractRepairPrompt(context, first.text, analysis.errors), lensPrompt].filter(Boolean).join("\n\n"),
-    maxOutputTokens: context.perspective ? 1800 : 1400
+    input: withLens(buildSynthesisContractRepairPrompt(context, first.text, analysis.errors, draftCandidates)),
+    maxOutputTokens
   }, true);
-  analysis = analyzeSynthesisOutput(perspectiveEnvelope(repair.text, context.perspective).content, suppliedInput, { requireContract, meaning: context.meaning });
+  analysis = analyze(repair.text);
   trace.check(stage, Boolean(analysis.synthesis || analysis.deferred), true);
-  return {
-    synthesis: analysis.synthesis,
-    deferred: analysis.deferred,
-    errors: analysis.errors,
-    outputText: repair.text
-  };
+  return { ...analysis, outputText: repair.text };
 }
 
 export async function POST(req: NextRequest) {
@@ -179,8 +196,9 @@ export async function POST(req: NextRequest) {
       toSynthesisSource(thesis as Required<SynthesisInput>, "正"),
       toSynthesisSource(antithesis as Required<SynthesisInput>, "反")
     ];
-    const cards = retrieveDialecticPolicyCards([rootInput, connectionInput, ...selectedSources.map(source => source.text)]);
-    const context: SynthesisStageContext = {
+    const candidates = retrieveDialecticPolicyCards([rootInput, connectionInput, ...selectedSources.map(source => source.text)]);
+    trace.recordPolicyCards(candidates);
+    const draftContext: SynthesisStageContext = {
       meaning: body.meaningVersion === 1,
       connectionInput,
       sourceMode: seedMode ? "seeds" : undefined,
@@ -189,22 +207,25 @@ export async function POST(req: NextRequest) {
       thesis: selectedSources[0],
       antithesis: selectedSources[1],
       contextMessages: serializeContextMessages(body.contextMessages),
-      cards
+      cards: []
     };
 
     const draft = await generateSynthesisStage(
       trace,
       "draft",
       client,
-      buildSynthesisDraftPrompt(context),
-      context,
-      false
+      buildSynthesisDraftPrompt(draftContext, candidates),
+      draftContext,
+      candidates
     );
     if (!draft.synthesis && !draft.deferred) {
       trace.finish("invalid_output");
       return invalidModelOutput(requestId, "synthesis draft failed contract after one repair");
     }
 
+    const { cards } = draft;
+    trace.recordPolicyCards(candidates, cards);
+    const context = { ...draftContext, cards };
     const critic = await generateSynthesisStage(
       trace,
       "critic",

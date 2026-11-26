@@ -2,6 +2,7 @@ export type DialecticPolicyCard = {
   id: string;
   title: string;
   priority: number;
+  scope: string;
   keywords: string[];
   invariants: string[];
   forbidden: string[];
@@ -13,7 +14,7 @@ export type DialecticRuleCheck = {
   rule: string;
 };
 
-export const DIALECTIC_POLICY_CARD_VERSION = "1.4.0-dev-derived";
+export const DIALECTIC_POLICY_CARD_VERSION = "1.5.0-semantic-applicability";
 export const MAX_DIALECTIC_POLICY_CARDS = 2;
 export const HIGH_RISK_POLICY_PRIORITY = 80;
 
@@ -22,6 +23,7 @@ const DIALECTIC_POLICY_CARDS: DialecticPolicyCard[] = [
     id: "survival-cash",
     title: "现金生存窗口",
     priority: 90,
+    scope: "在企业有限现金期限内决定继续、缩减或停止业务投入",
     keywords: ["现金流", "现金窗口", "只剩六周", "只剩四周", "续命", "付费客户", "销售"],
     invariants: [
       "题设给出的现金期限优先于长期增长、融资故事和虚荣指标",
@@ -34,6 +36,7 @@ const DIALECTIC_POLICY_CARDS: DialecticPolicyCard[] = [
     id: "bounded-abstraction",
     title: "客户定制与抽象",
     priority: 45,
+    scope: "处理真实客户的定制需求与可复用产品抽象之间的取舍",
     keywords: ["集成", "连接器", "插件平台", "SDK", "单一集成", "专属报表", "定制"],
     invariants: [
       "缺少第二份复用证据时不得先建设完整平台或生态",
@@ -46,6 +49,7 @@ const DIALECTIC_POLICY_CARDS: DialecticPolicyCard[] = [
     id: "consent-privacy",
     title: "同意与隐私",
     priority: 100,
+    scope: "决定是否、如何收集或使用可涉及个人的真实数据或行为记录",
     keywords: [
       "隐私",
       "遥测",
@@ -74,6 +78,7 @@ const DIALECTIC_POLICY_CARDS: DialecticPolicyCard[] = [
     id: "employee-monitoring",
     title: "员工监控边界",
     priority: 120,
+    scope: "决定是否、如何追踪员工个人活动或使用该数据做管理评价",
     keywords: ["员工", "个人效率监控", "键盘活动", "窗口活动", "绩效评价", "董事会"],
     invariants: [
       "如实披露目前没有合法的个人行为数据，管理期限不能替代同意",
@@ -91,6 +96,7 @@ const DIALECTIC_POLICY_CARDS: DialecticPolicyCard[] = [
     id: "contain-security-risk",
     title: "安全风险止血",
     priority: 95,
+    scope: "处理软件系统、权限边界或权威数据的疑似安全事故",
     keywords: ["跨租户", "权限泄漏", "数据污染", "数据错乱", "无法复现", "复现", "安全漏洞", "泄漏", "审计日志"],
     invariants: [
       "先停止可能扩大爆炸半径的写入、权限变更或危险路径",
@@ -103,6 +109,7 @@ const DIALECTIC_POLICY_CARDS: DialecticPolicyCard[] = [
     id: "authoritative-decision",
     title: "权威判定与缓存",
     priority: 85,
+    scope: "决定缓存或陈旧读取是否会影响真实授权、敏感操作或写入结果",
     keywords: ["缓存", "陈旧", "强一致", "权威服务", "权限查询", "角色", "余额", "库存"],
     invariants: [
       "先区分可陈旧展示与会改变授权或写入结果的关键读取",
@@ -115,6 +122,7 @@ const DIALECTIC_POLICY_CARDS: DialecticPolicyCard[] = [
     id: "safe-compatibility",
     title: "限寿兼容层",
     priority: 80,
+    scope: "决定是否、如何兼容旧客户端、协议或设备，涉及鉴权、数据或写入语义",
     keywords: ["旧客户端", "旧协议", "旧设备", "无法升级", "schema", "请求签名", "强制升级"],
     invariants: [
       "兼容不能削弱鉴权、数据或写入语义",
@@ -127,6 +135,7 @@ const DIALECTIC_POLICY_CARDS: DialecticPolicyCard[] = [
     id: "bounded-attention",
     title: "固定时间预算",
     priority: 55,
+    scope: "在有限工作时间内分配多个实际维护、交付或验证方向",
     keywords: ["每天九十分钟", "每周只有", "时间", "旧项目", "开源工具", "新项目", "教程产品"],
     invariants: [
       "所有承诺合计不得超过题设时间预算",
@@ -140,6 +149,7 @@ const DIALECTIC_POLICY_CARDS: DialecticPolicyCard[] = [
     id: "downstream-distribution",
     title: "母体与下游分发",
     priority: 50,
+    scope: "决定如何从已经运营的内容生产线向其他语言、媒介或受众分发",
     keywords: ["中文", "英文", "长篇", "短视频", "读者群", "内容生产线", "翻译"],
     invariants: [
       "保护已验证的原创母体，不立即建立第二条完整生产线",
@@ -152,6 +162,7 @@ const DIALECTIC_POLICY_CARDS: DialecticPolicyCard[] = [
     id: "revocable-ownership",
     title: "可撤回主理权",
     priority: 50,
+    scope: "分配共同作品、产品或品牌中可撤回的最终决策责任",
     keywords: ["合作者", "合伙人", "审美", "品牌定位", "拍板", "产品线", "商业表达"],
     invariants: [
       "每个作品、产品或决策域有清楚的最终责任人",
@@ -164,6 +175,7 @@ const DIALECTIC_POLICY_CARDS: DialecticPolicyCard[] = [
     id: "accessible-release-gate",
     title: "无障碍发布门槛",
     priority: 110,
+    scope: "决定存在核心操作无障碍障碍的真实产品是否发布",
     keywords: ["键盘用户", "屏幕阅读器", "无障碍", "焦点", "核心流程", "结账页"],
     invariants: [
       "目标用户无法完成核心流程属于发布阻断，日期和用户占比不能豁免",
@@ -176,6 +188,7 @@ const DIALECTIC_POLICY_CARDS: DialecticPolicyCard[] = [
     id: "verified-recovery",
     title: "恢复先于删除",
     priority: 110,
+    scope: "判断真实生产数据的备份能否恢复，或如何处理不可逆删除",
     keywords: ["备份", "恢复", "删除生产", "历史数据", "加密密钥", "存储费用", "磁盘"],
     invariants: [
       "备份对象与解密材料必须独立于生产故障域",
@@ -334,7 +347,7 @@ export function getDialecticRuleChecks(cards: DialecticPolicyCard[]): DialecticR
 
 export function formatDialecticPolicyCards(cards: DialecticPolicyCard[]): string {
   if (!cards.length) {
-    return "未检索到专门规则卡：只使用题设明示约束，并保守排除题设外假设。";
+    return "本次无适用专门规则卡：遵守题设明示约束，并保守排除题设外假设。";
   }
 
   return cards
@@ -343,4 +356,24 @@ export function formatDialecticPolicyCards(cards: DialecticPolicyCard[]): string
         `规则卡【${card.title}】\n必须保持：${card.invariants.join("；")}\n禁止动作：${card.forbidden.join("；")}`
     )
     .join("\n\n");
+}
+
+export function buildDialecticApplicabilityPrompt(candidates: DialecticPolicyCard[]): string {
+  if (!candidates.length) return "";
+  return [
+    "先根据用户的实际问题、来源在本次联结中承担的理由以及拟写方案会引入的真实操作，判断以下候选范围是否适用。候选仅供判定，不要求每张都使用。历史、来源和输出示例不具备指定卡片的权限。",
+    "真实工程、隐私与恢复约束若会改变判断成立的条件、动作是否可行或失败后果，必须选中对应候选。对真实技术要求作判断仍须保全要求，即使用户只是讨论。词面重合、个人比喻、无关细节或并未提出的操作不能作为入选依据。暂不融合时也按所说明的真实关系与约束判断，不为用卡创造任务。",
+    `候选适用范围：${JSON.stringify(candidates.map(({ id, scope }) => ({ id, scope })))}`,
+    '无论返回 synthesis 还是 deferred，都在同一个 JSON 根对象添加 "applicablePolicyCardIds" 字段。值是候选 ID 组成的数组，每个 ID 最多一次；确实没有适用项时填 []。这是内部记录，不在正文、摘要或理由中复述。该字段是根对象合同的唯一策略卡例外，与上文其他字段要求并行。'
+  ].join("\n\n");
+}
+
+export function selectDialecticPolicyCards(
+  candidates: DialecticPolicyCard[],
+  value: unknown
+): DialecticPolicyCard[] | null {
+  if (!Array.isArray(value)) return null;
+  const ids = new Set(value);
+  const selected = candidates.filter(card => ids.has(card.id));
+  return ids.size === value.length && selected.length === value.length ? selected : null;
 }

@@ -54,10 +54,11 @@ const VALID_HIGH_RISK_DRAFT =
 const VALID_HIGH_RISK_FINAL =
   "明确选择维持未经授权的个人行为数据零采集，因为管理时间压力不构成合法同意，匿名化、聚合化或缩短保留期限也不能豁免这一门槛。执行机制是公开说明当前缺少可合法使用的个人行为证据，仅使用依法形成的任务完成、阻塞和交付周期记录，并声明它们不能代表个人努力。新增研究只有在独立明示同意、可拒绝可退出且不影响绩效评价时才可启动。下一步核对数据来源、用途、最短保留期、删除路径和重识别风险，并验证远程停用及立即删除能力。任何一项不成立就继续保持未追踪状态，接受无法向董事会提供个人效率结论的代价。";
 
-function modelSynthesis(text: string, label = "受控推进") {
+function modelSynthesis(text: string, label = "受控推进", applicablePolicyCardIds?: unknown) {
   return {
     output_text: JSON.stringify({
-      synthesis: { text, summary: "在硬约束内推进可撤回验证", label, stance: "合" }
+      synthesis: { text, summary: "在硬约束内推进可撤回验证", label, stance: "合" },
+      ...(applicablePolicyCardIds !== undefined ? { applicablePolicyCardIds } : {})
     })
   };
 }
@@ -132,13 +133,15 @@ describe("dialectic routes", () => {
       connectionInput: "工作让我很愧疚",
       sourceTexts: ["我希望陪伴可以更自在", "工作让我很愧疚"],
       expectedTitles: [],
+      expectedIds: undefined,
     },
     {
-      name: "keeps independently supported business cards in order despite an ordinary connection",
+      name: "limits the critic to the selected business card despite recalling another one",
       rootInput: "两位合作者对品牌定位和拍板权有分歧，应该由谁决定",
       connectionInput: "工作让我很愧疚",
       sourceTexts: ["每周只有两天，如何分配旧项目维护与新功能验证？", "我每天只有2小时陪孩子"],
-      expectedTitles: ["可撤回主理权", "固定时间预算"],
+      expectedTitles: ["可撤回主理权"],
+      expectedIds: ["revocable-ownership"],
     },
     {
       name: "retains a high-risk decision expressed in one source of a mixed request",
@@ -146,16 +149,17 @@ describe("dialectic routes", () => {
       connectionInput: "工作让我很愧疚",
       sourceTexts: ["董事会要求评估员工个人效率，但没有同意，能否采集键盘活动和窗口活动？", "我希望陪伴可以更自在"],
       expectedTitles: ["员工监控边界", "同意与隐私"],
+      expectedIds: ["employee-monitoring", "consent-privacy"],
       highRisk: true,
     },
-  ])("$name", async ({ rootInput, connectionInput, sourceTexts, expectedTitles, highRisk }) => {
+  ])("$name", async ({ rootInput, connectionInput, sourceTexts, expectedTitles, expectedIds, highRisk }) => {
     if (highRisk) {
-      createResponse.mockResolvedValueOnce(modelSynthesis(VALID_HIGH_RISK_DRAFT))
+      createResponse.mockResolvedValueOnce(modelSynthesis(VALID_HIGH_RISK_DRAFT, undefined, expectedIds))
         .mockResolvedValueOnce(modelSynthesis(VALID_HIGH_RISK_DRAFT))
         .mockResolvedValueOnce(passingEmployeeMonitoringAudit())
         .mockResolvedValueOnce(modelSynthesis(VALID_HIGH_RISK_FINAL));
     } else {
-      createResponse.mockResolvedValueOnce(modelSynthesis(VALID_LOW_RISK_DRAFT))
+      createResponse.mockResolvedValueOnce(modelSynthesis(VALID_LOW_RISK_DRAFT, undefined, expectedIds))
         .mockResolvedValueOnce(modelSynthesis(VALID_LOW_RISK_CRITIC));
     }
     const sources = sourceTexts.map((text, index) => ({
@@ -164,8 +168,11 @@ describe("dialectic routes", () => {
     const response = await synthesisPost(new NextRequest("http://localhost/api/synthesis", {
       method: "POST", body: JSON.stringify({ requestId: "context-pair", rootInput, connectionInput, sources })
     }));
-    const prompt = String(createResponse.mock.calls[0][0].input);
-    expect(Array.from(prompt.matchAll(/规则卡【([^】]+)】/g), match => match[1])).toEqual(expectedTitles);
+    const draftPrompt = String(createResponse.mock.calls[0][0].input);
+    const criticPrompt = String(createResponse.mock.calls[1][0].input);
+    expect(draftPrompt).not.toContain("规则卡【");
+    if (expectedIds?.includes("revocable-ownership")) expect(draftPrompt).toContain("bounded-attention");
+    expect(Array.from(criticPrompt.matchAll(/规则卡【([^】]+)】/g), match => match[1])).toEqual(expectedTitles);
     expect(response.status).toBe(200);
     expect(createResponse).toHaveBeenCalledTimes(highRisk ? 4 : 2);
   });
@@ -703,7 +710,7 @@ describe("dialectic routes", () => {
 
   it("uses draft and critic stages for a normal-risk synthesis", async () => {
     createResponse
-      .mockResolvedValueOnce(modelSynthesis(VALID_LOW_RISK_DRAFT, "主理试验"))
+      .mockResolvedValueOnce(modelSynthesis(VALID_LOW_RISK_DRAFT, "主理试验", ["revocable-ownership"]))
       .mockResolvedValueOnce(modelSynthesis(VALID_LOW_RISK_CRITIC, "限时主理"));
 
     const response = await synthesisPost(
@@ -724,7 +731,9 @@ describe("dialectic routes", () => {
       synthesis: { text: VALID_LOW_RISK_CRITIC, label: "限时主理", stance: "合" }
     });
     expect(createResponse).toHaveBeenCalledTimes(2);
-    expect(createResponse.mock.calls[0][0].input).toContain("规则卡【可撤回主理权】");
+    expect(createResponse.mock.calls[0][0].input).toContain("revocable-ownership");
+    expect(createResponse.mock.calls[0][0].input).not.toContain("规则卡【");
+    expect(createResponse.mock.calls[1][0].input).toContain("规则卡【可撤回主理权】");
     expect(createResponse.mock.calls[1][0].input).toContain("最终校正器");
     const metrics = JSON.parse(String(vi.mocked(console.info).mock.calls[0][0]).slice("anicca.generation ".length));
     expect(metrics).toMatchObject({ endpoint: "synthesis", outcome: "success", modelCalls: 2, providerCalls: 2, repairCalls: 0, firstPassValid: true });
@@ -734,7 +743,7 @@ describe("dialectic routes", () => {
   it("keeps the critic within the length contract without forcing an execution template", async () => {
     createResponse.mockImplementation(({ input }: { input: string }) => {
       if (createResponse.mock.calls.length === 1) {
-        return Promise.resolve(modelSynthesis(VALID_LOW_RISK_DRAFT, "主理试验"));
+        return Promise.resolve(modelSynthesis(VALID_LOW_RISK_DRAFT, "主理试验", ["revocable-ownership"]));
       }
       return Promise.resolve(
         input.includes("180–320") && input.includes("不按固定句数") && !input.includes("严格写五句")
@@ -768,7 +777,7 @@ describe("dialectic routes", () => {
       Promise.resolve(
         input.includes("最终校正器")
           ? modelSynthesis(VALID_LOW_RISK_CRITIC, "限时主理")
-          : modelSynthesis(overlongDraft, "待压缩草稿")
+          : modelSynthesis(overlongDraft, "待压缩草稿", ["revocable-ownership"])
       )
     );
 
@@ -797,7 +806,7 @@ describe("dialectic routes", () => {
       "一旦30%的目标用户持续误解价值"
     );
     createResponse
-      .mockResolvedValueOnce(modelSynthesis(VALID_LOW_RISK_DRAFT, "主理试验"))
+      .mockResolvedValueOnce(modelSynthesis(VALID_LOW_RISK_DRAFT, "主理试验", ["revocable-ownership"]))
       .mockResolvedValueOnce(modelSynthesis(inventedQuantity, "虚构阈值"))
       .mockResolvedValueOnce(modelSynthesis(VALID_LOW_RISK_CRITIC, "限时主理"));
 
@@ -819,11 +828,12 @@ describe("dialectic routes", () => {
     });
     expect(createResponse).toHaveBeenCalledTimes(3);
     expect(createResponse.mock.calls[2][0].input).toContain("unsupported quantities: 30%");
+    expect(createResponse.mock.calls[2][0].input).toContain("规则卡【可撤回主理权】");
   });
 
   it("runs an independent audit and final rewrite for high-risk synthesis", async () => {
     createResponse
-      .mockResolvedValueOnce(modelSynthesis(VALID_HIGH_RISK_DRAFT, "停止监控"))
+      .mockResolvedValueOnce(modelSynthesis(VALID_HIGH_RISK_DRAFT, "停止监控", ["employee-monitoring", "consent-privacy"]))
       .mockResolvedValueOnce(modelSynthesis(VALID_HIGH_RISK_DRAFT, "同意优先"))
       .mockResolvedValueOnce(passingEmployeeMonitoringAudit())
       .mockResolvedValueOnce(modelSynthesis(VALID_HIGH_RISK_FINAL, "零采集"));
@@ -846,12 +856,105 @@ describe("dialectic routes", () => {
       synthesis: { text: VALID_HIGH_RISK_FINAL, label: "零采集", stance: "合" }
     });
     expect(createResponse).toHaveBeenCalledTimes(4);
-    expect(createResponse.mock.calls[0][0].input).toContain("规则卡【员工监控边界】");
+    expect(createResponse.mock.calls[0][0].input).toContain("employee-monitoring");
+    expect(createResponse.mock.calls[0][0].input).not.toContain("规则卡【");
+    expect(createResponse.mock.calls[1][0].input).toContain("规则卡【员工监控边界】");
     expect(createResponse.mock.calls[2][0].input).toContain("独立语义审计器");
     expect(createResponse.mock.calls[3][0].input).toContain("终审改写器");
     const metrics = JSON.parse(String(vi.mocked(console.info).mock.calls[0][0]).slice("anicca.generation ".length));
     expect(metrics).toMatchObject({ outcome: "success", modelCalls: 4, repairCalls: 0 });
     expect(metrics.calls.map((call: { stage: string }) => call.stage)).toEqual(["draft", "critic", "audit", "final"]);
+  });
+
+  it.each([
+    ["真实系统", "生产数据库能否先删除旧数据，再验证快照恢复？", ["verified-recovery"], 4],
+    ["写作比喻", "小说里，她想从“家庭记忆数据库”删除旧数据，再恢复和母亲相处的方式。这个比喻怎样写？", [], 2],
+  ] as const)("gates the same recovery vocabulary by decision type (%s)", async (_, rootInput, applicableIds, calls) => {
+    createResponse.mockResolvedValueOnce(modelSynthesis(VALID_LOW_RISK_DRAFT, undefined, [...applicableIds]))
+      .mockResolvedValueOnce(modelSynthesis(VALID_LOW_RISK_CRITIC));
+    if (applicableIds.length) {
+      createResponse.mockResolvedValueOnce({ output_text: JSON.stringify({ audit: {
+        route: "choose_thesis", checks: ["I1", "I2", "I3", "F1", "F2", "F3"].map(id => ({
+          id: `verified-recovery:${id}`, status: "covered", evidence: "测试已核查"
+        })), unsupportedClaims: [], missingClauses: [], verdict: "pass"
+      } }) }).mockResolvedValueOnce(modelSynthesis(VALID_LOW_RISK_CRITIC));
+    }
+
+    const response = await synthesisPost(new NextRequest("http://localhost/api/synthesis", {
+      method: "POST", body: JSON.stringify({ requestId: "recovery-gate", rootInput,
+        thesis: { text: "先找证据。", summary: "先验证", label: "验证", stance: "正" },
+        antithesis: { text: "先改变现状。", summary: "先改变", label: "改变", stance: "反" }
+      })
+    }));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).not.toHaveProperty("applicablePolicyCardIds");
+    expect(createResponse).toHaveBeenCalledTimes(calls);
+    const inputs = createResponse.mock.calls.map(([payload]) => payload.input);
+    expect(inputs[0]).toContain("verified-recovery");
+    expect(inputs[0]).not.toContain("不可再生数据只有在隔离环境实际恢复");
+    for (const input of inputs.slice(1)) {
+      if (applicableIds.length) expect(input).toContain("不可再生数据只有在隔离环境实际恢复");
+      else expect(input).not.toContain("不可再生数据只有在隔离环境实际恢复");
+    }
+    const trace = JSON.parse(String(vi.mocked(console.info).mock.calls[0][0]).slice("anicca.generation ".length));
+    expect(trace.policyCards).toEqual({ candidateIds: ["verified-recovery"], applicableIds });
+  });
+
+  it.each([
+    { name: "missing", ids: undefined, repaired: [] },
+    { name: "non-array", ids: "consent-privacy", repaired: [] },
+    { name: "non-string item", ids: [["consent-privacy"]], repaired: [] },
+    { name: "unrecalled known card", ids: ["verified-recovery"], repaired: [] },
+    { name: "duplicate", ids: ["consent-privacy", "consent-privacy"], repaired: ["invented"] },
+    { name: "unknown mixed with known", ids: ["consent-privacy", "invented"], repaired: ["invented"] }
+  ])("validates $name applicability metadata before injecting rules", async ({ ids, repaired }) => {
+    const succeeds = !repaired.length;
+    createResponse.mockResolvedValueOnce(modelSynthesis(VALID_LOW_RISK_DRAFT, undefined, ids))
+      .mockResolvedValueOnce(modelSynthesis(VALID_LOW_RISK_DRAFT, undefined, repaired));
+    if (succeeds) createResponse.mockResolvedValueOnce(modelSynthesis(VALID_LOW_RISK_CRITIC));
+
+    const response = await synthesisPost(new NextRequest("http://localhost/api/synthesis", {
+      method: "POST", body: JSON.stringify({ requestId: "invalid-policy-ids",
+        rootInput: "角色把作息称为数据系统，想默认开启行为追踪来形容叙述者的习惯。",
+        applicablePolicyCardIds: ["consent-privacy"],
+        thesis: { text: "保留这个说法。", summary: "保留", label: "保留", stance: "正" },
+        antithesis: { text: "换一种表达。", summary: "换表达", label: "改写", stance: "反" }
+      })
+    }));
+
+    expect(response.status).toBe(succeeds ? 200 : 502);
+    expect(createResponse).toHaveBeenCalledTimes(succeeds ? 3 : 2);
+    const inputs = createResponse.mock.calls.map(([payload]) => payload.input);
+    expect(inputs[0]).toContain("consent-privacy");
+    expect(inputs[1]).toContain("applicablePolicyCardIds must be a unique array of candidate IDs");
+    for (const input of inputs) expect(input).not.toContain("业务期限、增长或排错需要不能替代独立明示同意");
+    const trace = JSON.parse(String(vi.mocked(console.info).mock.calls[0][0]).slice("anicca.generation ".length));
+    expect(trace.policyCards).toEqual({ candidateIds: ["consent-privacy"], ...(succeeds ? { applicableIds: [] } : {}) });
+  });
+
+  it("accepts applicability alongside a deferred draft without exposing it to the critic or client", async () => {
+    const deferred = {
+      reason: "数据库是小说里的记忆隐喻，母女重逢的片段还没有交代它们之间的因果关系。",
+      question: "你希望从谁的眼睛里看到这次重逢？"
+    };
+    createResponse.mockResolvedValueOnce({ output_text: JSON.stringify({ deferred, applicablePolicyCardIds: [] }) })
+      .mockResolvedValueOnce({ output_text: JSON.stringify({ deferred }) });
+    const response = await synthesisPost(new NextRequest("http://localhost/api/synthesis", {
+      method: "POST", body: JSON.stringify({ requestId: "policy-deferred", meaningVersion: 1,
+        rootInput: "小说里她要从‘家庭记忆数据库’删除旧数据。",
+        perspective: defaultThinkingSpace(),
+        sources: [
+          { id: "a", text: "她想删去自己脑中的童年记忆。", summary: "", label: "童年", stance: "想法" },
+          { id: "b", text: "母亲和女儿在街口重逢。", summary: "", label: "重逢", stance: "想法" }
+        ]
+      })
+    }));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ requestId: "policy-deferred", outcome: "deferred", deferred });
+    expect(createResponse).toHaveBeenCalledTimes(2);
+    expect(createResponse.mock.calls[0][0].input).toContain("verified-recovery");
+    expect(createResponse.mock.calls[1][0].input).not.toContain("applicablePolicyCardIds");
   });
 
   it("stops synthesis after cancellation even when the provider ignores the signal", async () => {
@@ -872,7 +975,7 @@ describe("dialectic routes", () => {
 
   it("fails closed when a high-risk audit is malformed", async () => {
     createResponse
-      .mockResolvedValueOnce(modelSynthesis(VALID_HIGH_RISK_DRAFT))
+      .mockResolvedValueOnce(modelSynthesis(VALID_HIGH_RISK_DRAFT, undefined, ["consent-privacy"]))
       .mockResolvedValueOnce(modelSynthesis(VALID_HIGH_RISK_DRAFT))
       .mockResolvedValueOnce({ output_text: JSON.stringify({ audit: { verdict: "pass" } }) });
 
@@ -937,7 +1040,6 @@ describe("dialectic routes", () => {
     expect(createResponse.mock.calls[0][0].input).not.toContain("route must not read synthesis graph payload");
     expect(createResponse.mock.calls[0][0].input).toContain("原始输入：要不要继续这个项目");
     expect(createResponse.mock.calls[0][0].input).toContain("第三机制");
-    expect(createResponse.mock.calls[0][0].input).toContain("真实基线");
     expect(createResponse.mock.calls[0][0].input).toContain("不是二选一");
     expect(createResponse.mock.calls[1][0].input).toContain("最终校正器");
   });
