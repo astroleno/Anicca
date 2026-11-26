@@ -1,0 +1,50 @@
+{
+  "id": "formal-04",
+  "route": "synthesis",
+  "attempts": [
+    {
+      "body": {
+        "meaningVersion": 1,
+        "rootInput": "如果还不能限定受影响的数据，先暂停增加改动面，留住异常样本并追查写入链路。\n\n全面冻结会把不相关的需求也扣住；如果能隔离高风险改动，并检测和回退异常，可继续交付其余功能。",
+        "sources": [
+          {
+            "id": "formal-04-a",
+            "text": "如果还不能限定受影响的数据，先暂停增加改动面，留住异常样本并追查写入链路。",
+            "summary": "先缩小数据错乱范围",
+            "label": "冻结排查",
+            "stance": "正"
+          },
+          {
+            "id": "formal-04-b",
+            "text": "全面冻结会把不相关的需求也扣住；如果能隔离高风险改动，并检测和回退异常，可继续交付其余功能。",
+            "summary": "提升监控后继续发布",
+            "label": "带证据发布",
+            "stance": "反"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 线上偶发数据错乱但暂时无 · id=formal-04-user · 来源=无] 线上偶发数据错乱但暂时无法稳定复现，应该冻结新功能彻查，还是继续发布并加强监控？"
+          },
+          {
+            "role": "assistant",
+            "content": "[反 · 带证据发布 · id=formal-04-b · 来源=formal-04-user] 全面冻结会把不相关的需求也扣住；如果能隔离高风险改动，并检测和回退异常，可继续交付其余功能。"
+          },
+          {
+            "role": "assistant",
+            "content": "[正 · 冻结排查 · id=formal-04-a · 来源=formal-04-user] 如果还不能限定受影响的数据，先暂停增加改动面，留住异常样本并追查写入链路。"
+          }
+        ],
+        "requestId": "quality-r7-baseline-formal-04-synthesis-1"
+      },
+      "startedAt": "2026-11-26T12:44:52.008Z",
+      "elapsedMs": 5553,
+      "status": 502,
+      "rawBody": "{\"requestId\":\"quality-r7-baseline-formal-04-synthesis-1\",\"error\":\"invalid_model_output\",\"details\":\"synthesis critic failed contract after one repair\"}",
+      "reading": null,
+      "error": "invalid_model_output",
+      "retryable": false
+    }
+  ]
+}

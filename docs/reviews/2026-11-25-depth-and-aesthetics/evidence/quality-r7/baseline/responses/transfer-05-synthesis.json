@@ -1,0 +1,54 @@
+{
+  "id": "transfer-05",
+  "route": "synthesis",
+  "attempts": [
+    {
+      "body": {
+        "meaningVersion": 1,
+        "rootInput": "我可以事先告诉家人周六上午能陪他们去一趟，下午留给自己。如果临时再约，就重新商量。\n\n画面里的薄荷叶背着窗，亮边把卷曲的叶片勾出来。我想保留这个逆光效果，看看叶心的暗面是否还能分开。",
+        "sources": [
+          {
+            "id": "transfer-05-a",
+            "text": "我可以事先告诉家人周六上午能陪他们去一趟，下午留给自己。如果临时再约，就重新商量。",
+            "summary": "提前讲清能帮忙的时间",
+            "label": "周末边界",
+            "stance": "想法"
+          },
+          {
+            "id": "transfer-05-b",
+            "text": "画面里的薄荷叶背着窗，亮边把卷曲的叶片勾出来。我想保留这个逆光效果，看看叶心的暗面是否还能分开。",
+            "summary": "靠叶缘亮光描出薄荷",
+            "label": "保留逆光",
+            "stance": "想法"
+          }
+        ],
+        "contextMessages": [
+          {
+            "role": "user",
+            "content": "[想法 · 我选了两颗旧种子，一颗讲 · id=transfer-05-user · 来源=无] 我选了两颗旧种子，一颗讲怎样拒绝周末替家人跑腿，另一颗讲画窗边薄荷时要不要保留逆光。我目前说不出两件事要解决的共同问题。它们能合在一起吗？"
+          },
+          {
+            "role": "assistant",
+            "content": "[想法 · 保留逆光 · id=transfer-05-b · 来源=transfer-05-user] 画面里的薄荷叶背着窗，亮边把卷曲的叶片勾出来。我想保留这个逆光效果，看看叶心的暗面是否还能分开。"
+          },
+          {
+            "role": "assistant",
+            "content": "[想法 · 周末边界 · id=transfer-05-a · 来源=transfer-05-user] 我可以事先告诉家人周六上午能陪他们去一趟，下午留给自己。如果临时再约，就重新商量。"
+          }
+        ],
+        "requestId": "quality-r7-baseline-transfer-05-synthesis-1"
+      },
+      "startedAt": "2026-11-26T12:45:32.794Z",
+      "elapsedMs": 2017,
+      "status": 200,
+      "rawBody": "{\"requestId\":\"quality-r7-baseline-transfer-05-synthesis-1\",\"outcome\":\"deferred\",\"deferred\":{\"reason\":\"甲在说如何预先划定周六陪伴与自留时间，乙在观察逆光下薄荷叶缘亮与叶心暗能否分开，各自回答具体的生活安排与画面判断，缺少共享对象或可对应的过程。仅凭“边界清晰”作类比不足以建立机制。\",\"question\":\"你想把“留出边界”借到画面判断上，还是先让这两件事各自独立？\"}}",
+      "reading": {
+        "outcome": "deferred",
+        "reason": "甲在说如何预先划定周六陪伴与自留时间，乙在观察逆光下薄荷叶缘亮与叶心暗能否分开，各自回答具体的生活安排与画面判断，缺少共享对象或可对应的过程。仅凭“边界清晰”作类比不足以建立机制。",
+        "question": "你想把“留出边界”借到画面判断上，还是先让这两件事各自独立？"
+      },
+      "error": null,
+      "retryable": false
+    }
+  ]
+}

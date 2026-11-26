@@ -1,0 +1,21 @@
+{
+  "id": "transfer-03",
+  "route": "branches",
+  "attempts": [
+    {
+      "body": {
+        "meaningVersion": 1,
+        "userText": "我在家里总扮演懂事的角色。每次有家务没分完我就补上，家人以为我愿意，实际上我越来越累。我该继续补位，还是先说清我能做多少？",
+        "contextMessages": [],
+        "requestId": "quality-r7-baseline-transfer-03-branches-1"
+      },
+      "startedAt": "2026-11-26T12:45:25.407Z",
+      "elapsedMs": 6034,
+      "status": 502,
+      "rawBody": "{\"requestId\":\"quality-r7-baseline-transfer-03-branches-1\",\"error\":\"invalid_model_output\",\"details\":\"branch output failed contract after one repair\"}",
+      "reading": null,
+      "error": "invalid_model_output",
+      "retryable": false
+    }
+  ]
+}

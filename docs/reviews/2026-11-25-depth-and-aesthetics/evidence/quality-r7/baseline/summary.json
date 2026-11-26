@@ -1,0 +1,20 @@
+{
+  "branches": {
+    "cases": 17,
+    "readable": 16,
+    "deferred": 0,
+    "failed": 1,
+    "retried": 0,
+    "p50FinalAttemptMs": 4715,
+    "p95FinalAttemptMs": 7447
+  },
+  "synthesis": {
+    "cases": 17,
+    "readable": 16,
+    "deferred": 1,
+    "failed": 1,
+    "retried": 0,
+    "p50FinalAttemptMs": 7990,
+    "p95FinalAttemptMs": 11089
+  }
+}
