@@ -8,7 +8,7 @@ import { describeProviderFailure } from "@/lib/openai/providerErrors";
 import { normalizeDialecticLabel, normalizeDialecticSummary } from "@/features/dialectic/outputContract";
 import { readUnderstandingChange, UNDERSTANDING_CHANGE_PROMPT } from "@/features/dialectic/meaning";
 import { readComparisonSeeds } from "@/features/dialectic/novelty";
-import { BRANCH_PROSE_RULE, finalizeMeaning, userReportedMaterial } from "@/features/dialectic/server/meaningReview";
+import { BRANCH_PROSE_RULE, CONDITION_DIRECTION_RULE, ReviewerProtocolError, finalizeMeaning, userReportedMaterial } from "@/features/dialectic/server/meaningReview";
 
 type ContextMessage = {
   role?: string;
@@ -146,6 +146,7 @@ function buildBranchesPrompt(userText: string, contextMessages: unknown, perspec
     `schema=${branchesSchema(perspective, meaning)}`,
     meaning ? UNDERSTANDING_CHANGE_PROMPT : "",
     meaning ? BRANCH_PROSE_RULE : "",
+    meaning ? CONDITION_DIRECTION_RULE : "",
     "thesis.text 与 antithesis.text 必须分别是 120–220 个中文字符，建议各写 150–180 字，给长度上限留余量。summary 必须是单行摘要，label 必须是 8 个字符以内的中文短标签；不要在 label 中写解释、冒号、下划线或长短语。",
     "最高优先级是当前输入和历史实际写出的事实、拒绝、禁止与资源上限。不得为了正反对称绕过它们，也不得凭空添加题设没有的禁令。已被排除的一侧可说明吸引力与成立条件，但必须明确当前不可采用，不能先建议执行再把越界写成可接受代价。",
     consentBoundaryFor(userText, serializedContext, hasAssistantContext(contextMessages)),
@@ -187,6 +188,7 @@ function buildBranchesRepairPrompt(
       : `只返回一个严格 JSON object，schema=${branchesSchema(undefined, meaning)}。根对象只能有 thesis 和 antithesis。`,
     meaning ? UNDERSTANDING_CHANGE_PROMPT : "",
     meaning ? BRANCH_PROSE_RULE : "",
+    meaning ? CONDITION_DIRECTION_RULE : "",
     "每个 text 含标点必须为 120–220 个字符，目标各 160–190 字。过长删次要情节、旁支解释和重复结论，但不能缩到 120 字以下；过短则展开已有理由与关键边界。每侧留一个主张、一段理由和一个边界，决策还保留关键代价与失效条件。感受和创意不改成执行方案，不添加新事实。",
     "summary 必须单行；label 必须是 1–8 个字符的中文短标签；stance 分别严格为‘正’与‘反’。",
     "压缩时保留假设和不确定性标记；不把假设改成事实，不添加未给定的时间门槛。感受题讨论解释的前提，不评判当事人品格或推断隐藏动机。创作必须保留题设的‘只能、不能、先于’等边界，不能扩展被排除的能力。",
@@ -270,7 +272,7 @@ export async function POST(req: NextRequest) {
       repair: async issues => {
         const repair = await trace!.generate("branches", { client,
           input: [buildBranchesRepairPrompt(userText, body.contextMessages, selectedOutputText, issues, perspective, meaning), lensPrompt].filter(Boolean).join("\n\n"),
-          maxOutputTokens: 2000 }, true, 12000);
+          maxOutputTokens: 2000 }, true, 12000, "prose");
         selectedOutputText = repair.text;
         envelope = perspectiveEnvelope(repair.text, perspective);
         const repaired = analyzeBranchesOutput(envelope.content, meaning);
@@ -287,6 +289,10 @@ export async function POST(req: NextRequest) {
       ...(envelope.suggestions.length ? { suggestedAxes: envelope.suggestions } : {}) });
   } catch (error: unknown) {
     if (req.signal.aborted) return NextResponse.json({ requestId, error: "cancelled" }, { status: 499 });
+    if (error instanceof ReviewerProtocolError) {
+      trace?.finish("reviewer_protocol_error");
+      return invalidModelOutput(requestId, "reviewer_protocol_error");
+    }
     const failure = describeProviderFailure(error);
     return NextResponse.json(
       {

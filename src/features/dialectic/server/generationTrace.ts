@@ -4,10 +4,11 @@ import { DIALECTIC_POLICY_CARD_VERSION, type DialecticPolicyCard } from "./polic
 
 export const DIALECTIC_PROMPT_VERSION = "seed-flow-2026-11-26-source-grounded-prose";
 type Stage = "branches" | "polarities" | "draft" | "critic" | "audit" | "final";
-type Outcome = "success" | "invalid_output" | "failed" | "cancelled";
+type Outcome = "success" | "invalid_output" | "reviewer_protocol_error" | "failed" | "cancelled";
 type Call = {
   stage: Stage;
   repair: boolean;
+  repairKind?: "reviewer_protocol" | "prose";
   elapsedMs: number;
   outcome: "success" | "failed" | "cancelled";
   transport?: string;
@@ -20,18 +21,18 @@ export function createGenerationTrace(endpoint: "branches" | "synthesis" | "pola
   const started = performance.now();
   const traceId = randomUUID();
   const calls: Call[] = [];
-  const checks: { stage: Stage; repair: boolean; valid: boolean }[] = [];
+  const checks: { stage: Stage; repair: boolean; valid: boolean; reason?: "reviewer_protocol_error" }[] = [];
   let finished = false;
   let policyCards: { candidateIds: string[]; applicableIds?: string[] } | undefined;
   return {
-    async generate(stage: Stage, options: Omit<GenerateTextOptions, "model" | "signal" | "onProviderCall">, repair = false, timeoutMs?: number) {
+    async generate(stage: Stage, options: Omit<GenerateTextOptions, "model" | "signal" | "onProviderCall">, repair = false, timeoutMs?: number, repairKind?: Call["repairKind"]) {
       signal.throwIfAborted();
       const bounded = timeoutMs ? new AbortController() : null;
       const abort = () => bounded?.abort(signal.reason);
       signal.addEventListener("abort", abort, { once: true });
       const timer = timeoutMs ? setTimeout(() => bounded?.abort(new DOMException("Review timed out", "TimeoutError")), timeoutMs) : null;
       const callSignal = bounded?.signal || signal;
-      const call: Call = { stage, repair, elapsedMs: 0, outcome: "failed", providerCalls: 0 };
+      const call: Call = { stage, repair, ...(repairKind ? { repairKind } : {}), elapsedMs: 0, outcome: "failed", providerCalls: 0 };
       calls.push(call);
       const callStarted = performance.now();
       try {
@@ -58,8 +59,8 @@ export function createGenerationTrace(endpoint: "branches" | "synthesis" | "pola
         ...(applicable ? { applicableIds: applicable.map(card => card.id) } : {})
       };
     },
-    check(stage: Stage, valid: boolean, repair = false) {
-      checks.push({ stage, repair, valid });
+    check(stage: Stage, valid: boolean, repair = false, reason?: "reviewer_protocol_error") {
+      checks.push({ stage, repair, valid, ...(reason ? { reason } : {}) });
     },
     finish(outcome: Outcome) {
       if (finished) return;

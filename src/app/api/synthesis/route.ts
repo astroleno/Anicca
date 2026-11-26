@@ -5,7 +5,7 @@ import { getDialecticModel, getDialecticOpenAiClient } from "@/lib/openai/client
 import { createGenerationTrace, type GenerationTrace } from "@/features/dialectic/server/generationTrace";
 import { parseStrictJsonObject } from "@/lib/openai/parseStrictJsonObject";
 import { describeProviderFailure } from "@/lib/openai/providerErrors";
-import { finalizeSynthesisMeaning, userReportedMaterial } from "@/features/dialectic/server/meaningReview";
+import { ReviewerProtocolError, finalizeSynthesisMeaning, userReportedMaterial } from "@/features/dialectic/server/meaningReview";
 import type { DeferredDraft } from "@/features/dialectic/meaning";
 import {
   analyzeSynthesisOutput,
@@ -262,7 +262,7 @@ export async function POST(req: NextRequest) {
             : buildSynthesisCriticPrompt(context, previousDraft);
           const repairedOutput = await trace!.generate(stage, { client, maxOutputTokens: perspective ? 1800 : 1400,
             input: [prompt, thinkingSpacePrompt(perspective, "synthesis", context.meaning),
-              `必须修复以下审校问题：${issues.join("；")}`].filter(Boolean).join("\n\n") }, true, 12000);
+              `必须修复以下审校问题：${issues.join("；")}`].filter(Boolean).join("\n\n") }, true, 12000, "prose");
           const repaired = analyzeSynthesisOutput(perspectiveEnvelope(repairedOutput.text, perspective).content,
             [rootInput, connectionInput].filter(Boolean).join("\n"), { meaning: context.meaning });
           trace!.check(stage, Boolean(repaired.synthesis || repaired.deferred), true);
@@ -324,6 +324,10 @@ export async function POST(req: NextRequest) {
       ...(envelope.suggestions.length ? { suggestedAxes: envelope.suggestions } : {}) });
   } catch (error: unknown) {
     if (req.signal.aborted) return NextResponse.json({ requestId, error: "cancelled" }, { status: 499 });
+    if (error instanceof ReviewerProtocolError) {
+      trace?.finish("reviewer_protocol_error");
+      return invalidModelOutput(requestId, "reviewer_protocol_error");
+    }
     const failure = describeProviderFailure(error);
     return NextResponse.json(
       {

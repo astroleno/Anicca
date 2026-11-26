@@ -57,6 +57,31 @@ it("repairs an antithesis that addresses the topic but misses this thesis's load
   ]);
 });
 
+it.each(["正", "反"])("repairs a conditional conclusion reversed at the end of either branch (%s)", async stance => {
+  const key = stance === "正" ? "thesis" : "antithesis";
+  const good = { thesis, antithesis: preciseAntithesis };
+  const contradiction = "没问过家人能否接手时仍缺少授权，正因他们没有答应，现在应替每个人承诺当晚要做的家务。";
+  const bad = { ...good, [key]: { ...good[key], text: good[key].text + contradiction } };
+  generate.mockResolvedValueOnce(emit(bad))
+    .mockResolvedValueOnce(emit({ thesis: audited, antithesis: { ...audited, prose: invalid(`${stance}的末句把缺少答应当成可替人承诺的理由。应只说明如何发出邀请。`) } }))
+    .mockResolvedValueOnce(emit(good))
+    .mockResolvedValueOnce(emit({ thesis: audited, antithesis: { ...audited, prose: valid({
+      thesis: "熟悉厨房的人能顺手看到缺了什么",
+      target: "固定由熟悉厨房的人招呼能省下沟通",
+      premise: "厨房里看到的缺口和全家当晚能接手的时间大体相符",
+      consequence: "把协调交给最清楚家人当晚时间的人"
+    }) } }));
+  const response = await branchesPost(endpoint("branches", { userText: "怎样协调家务？不要替没有答应的家人承诺。" }));
+  expect(response.status).toBe(200);
+  expect((await response.json())[key].text).toBe(good[key].text);
+  expect(generate.mock.calls[1][0].input).toContain("逐段独立核对正、反");
+  expect(generate.mock.calls[1][0].input).toContain(contradiction);
+  expect(generate.mock.calls[2][0].input).toContain("末句把缺少答应当成可替人承诺的理由");
+  expect(generate.mock.calls[2][0].input).toContain("从各段开头到末句逐项复核");
+  const trace = JSON.parse(String(vi.mocked(console.info).mock.calls[0][0]).slice("anicca.generation ".length));
+  expect(trace.calls[2]).toMatchObject({ stage: "branches", repair: true, repairKind: "prose" });
+});
+
 it("reports a required branch review timeout without rewriting the candidate", async () => {
   vi.stubEnv("OPENAI_API_KEY", "test-key");
   vi.useFakeTimers();
@@ -100,6 +125,7 @@ it("repairs false deferral into synthesis using the ordered sources even when bo
   expect(response.status).toBe(200);
   expect(await response.json()).toMatchObject({ synthesis: { text: combined.text } });
   expect(generate.mock.calls[2][0].input).toContain("核对缺口真实");
+  expect(generate.mock.calls[2][0].input).toContain("缺少实施参数、未验证具体结果都不能证明两侧没有关系");
   expect(generate.mock.calls[3][0].input).toContain("感官不同不是证据缺口");
   expect(generate.mock.calls[4][0].input).toContain("分别引用当前第一、第二份来源");
 });
@@ -156,15 +182,50 @@ it("allows a one-sided conclusion that explains why the other source's claim fai
   expect(generate.mock.calls[2][0].input).toContain("让一整侧不保留");
 });
 
-it("fails closed after ungrounded citations survive the repair", async () => {
+it("corrects invalid pass evidence on the exact same synthesis without a content rewrite", async () => {
   generate.mockResolvedValueOnce(emit({ synthesis: combined })).mockResolvedValueOnce(emit({ synthesis: combined }))
     .mockResolvedValueOnce(synthesisAudit(valid({ ...combinedEvidence, sourceA: combinedEvidence.sourceB })))
-    .mockResolvedValueOnce(emit({ synthesis: combined }))
-    .mockResolvedValueOnce(synthesisAudit(valid({ ...combinedEvidence, sourceA: combinedEvidence.sourceB })));
+    .mockResolvedValueOnce(synthesisAudit(valid(combinedEvidence)));
+  const response = await synthesisPost(endpoint("synthesis", { rootInput: "共同创作一段祖屋故事", sources }));
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({ synthesis: { text: combined.text } });
+  expect(generate).toHaveBeenCalledTimes(4);
+  expect(generate.mock.calls[3][0].input.startsWith(generate.mock.calls[2][0].input)).toBe(true);
+  expect(generate.mock.calls[3][0].input).toContain("这些引证字段缺失或不匹配对应原文：sourceA");
+});
+
+it("reports exhausted reviewer protocol failure separately from a semantic rejection", async () => {
+  generate.mockResolvedValueOnce(emit({ synthesis: combined })).mockResolvedValueOnce(emit({ synthesis: combined }))
+    .mockResolvedValueOnce(synthesisAudit(valid({ ...combinedEvidence, useB: "不在正文里的虚构引文" })))
+    .mockResolvedValueOnce({ text: "{\"synthesis\":" });
   const response = await synthesisPost(endpoint("synthesis", { rootInput: "共同创作一段祖屋故事", sources }));
   expect(response.status).toBe(502);
-  expect(await response.json()).toMatchObject({ error: "invalid_model_output", details: "synthesis prose could not be verified" });
-  expect(generate).toHaveBeenCalledTimes(5);
+  expect(await response.json()).toMatchObject({ error: "invalid_model_output", details: "reviewer_protocol_error" });
+  expect(generate).toHaveBeenCalledTimes(4);
+  const logged = String(vi.mocked(console.info).mock.calls[0][0]);
+  expect(logged).not.toContain(combined.text);
+  expect(logged).not.toContain("不在正文里的虚构引文");
+  const trace = JSON.parse(logged.slice("anicca.generation ".length));
+  expect(trace.outcome).toBe("reviewer_protocol_error");
+  expect(trace.calls.at(-1)).toMatchObject({ stage: "audit", repair: true, repairKind: "reviewer_protocol" });
+  expect(trace.checks.slice(-2)).toEqual([
+    { stage: "audit", valid: false, repair: false, reason: "reviewer_protocol_error" },
+    { stage: "audit", valid: false, repair: true, reason: "reviewer_protocol_error" }
+  ]);
+});
+
+it("corrects a missing deferred evidence field while preserving short sources and the verified explanation", async () => {
+  const shortSources = [{ ...sources[0], text: "台灯" }, { ...sources[1], text: "潮汐" }];
+  const deferred = { reason: "台灯与潮汐尚未各自指向一个明确的问题，也没有提出它们之间的联系。", question: "你想在同一段作品里安排台灯和潮汐吗？" };
+  const evidence = { sourceA: "台灯", sourceB: "潮汐", gap: "没有提出它们之间的联系", opening: deferred.question };
+  const { gap, ...missingGap } = evidence;
+  generate.mockResolvedValueOnce(emit({ deferred })).mockResolvedValueOnce(emit({ deferred }))
+    .mockResolvedValueOnce(emit(valid(missingGap))).mockResolvedValueOnce(emit(valid({ ...missingGap, gap })));
+  const response = await synthesisPost(endpoint("synthesis", { rootInput: "这两个词之间有什么可写？", sources: shortSources }));
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ requestId: "prose-test", outcome: "deferred", deferred });
+  expect(generate).toHaveBeenCalledTimes(4);
+  expect(generate.mock.calls[3][0].input.startsWith(generate.mock.calls[2][0].input)).toBe(true);
 });
 
 it("rechecks the high-risk final prose and repairs a rewrite that loses the comparison", async () => {

@@ -1,4 +1,4 @@
-import { DEFERRED_PROSE_RULE, SYNTHESIS_PROSE_RULE } from "./meaningReview";
+import { CONDITION_DIRECTION_RULE, DEFERRED_PROSE_RULE, SYNTHESIS_PROSE_RULE } from "./meaningReview";
 import { normalizeDialecticLabel, normalizeDialecticSummary } from "@/features/dialectic/outputContract";
 import { parseStrictJsonObject } from "@/lib/openai/parseStrictJsonObject";
 import { readDeferredDraft, readUnderstandingChange, UNDERSTANDING_CHANGE_PROMPT, type DeferredDraft } from "../meaning";
@@ -230,7 +230,7 @@ function commonOutputRules(context: SynthesisPromptContext): string[] {
       '在写正文前判断两份来源是否有具体联系。有共享对象、过程、张力或有依据的结构对应时，返回 synthesis。若只有“都依赖语境、都有局部整体”这类可套任意题目的共性，或必须虚构来源事实才能建立联系，返回另一种完整结构：{"deferred":{"reason":"","question":""}}。两种结构只能选一种；deferred 不带 synthesis、change、spatial 或 suggestedAxes。',
       "暂不融合是有效结果，不是报错。reason 用 12–180 字具体说明两者各在回答什么、当前缺少哪个联系；question 用 6–100 字给用户一个可选择的联结入口，不能要求先证明联想正确、不能催促用户补材料，也不偷偷把假设写成事实。不为凑字数扩写无关性。只有用户明确提出跨领域类比或创作意图时，才能沿这个意图形成标明边界的假设联系。",
       "reason 以 50–90 字为目标，只比较原始来源的内容与缺少的联系，不评述内部草稿、校正、规则或生成过程；question 以 20–45 字为目标。问题只询问想联结的对象、用途或创作方向，或允许停在此处；不要在引导问题里再次肯定来源未给的现象，也不要把刚否定的牵强比喻换成问句推销。",
-      SYNTHESIS_PROSE_RULE, DEFERRED_PROSE_RULE,
+      SYNTHESIS_PROSE_RULE, DEFERRED_PROSE_RULE, CONDITION_DIRECTION_RULE,
       "deferred 的短文本合同优先于以下 synthesis 正文长度和写作要求。检查 change 中的因果判断也没有超出来源；不能把摘要换词当作变化。"
     ] : []),
     "synthesis.text 含标点必须是 180–320 个字符，目标 230–270 字，避免贴近上下限；summary 必须单行；label 必须是 1–8 个字符的中文短标签；stance 严格为‘合’。",
