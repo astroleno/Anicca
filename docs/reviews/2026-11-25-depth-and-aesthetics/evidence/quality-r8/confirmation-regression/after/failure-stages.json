@@ -1,0 +1,52 @@
+{
+  "revision": "c7888fa",
+  "cases": [
+    {
+      "id": "formal-02",
+      "requestId": "r8-after-formal-02-1",
+      "httpStatus": 502,
+      "details": "synthesis critic failed contract after one repair",
+      "calls": [
+        {
+          "stage": "draft",
+          "repair": false,
+          "check": {
+            "stage": "draft",
+            "repair": false,
+            "valid": true
+          },
+          "finish": "stop",
+          "output": "{\"synthesis\":{\"text\":\"三家要求不同，但“不同”不等于没有共性：身份、数据流、交付节奏是否真的重合，在纸面需求阶段无从确认。甲的条件判断本身成立，却把“若存在共性”当成了可以先行投入的前提；乙指出共性须在真实限制中暴露，先交付最大客户的单一集成，正是检验该前提的受控入口。新判断是：通用插件平台的收益依赖尚未证实的共性假设，单集成先行是对它的压力测试，而非退让；测试失败则须保留各客户差异化的集成成本。\",\"summary\":\"共性未证实时先做单一集成来检验抽象前提，失败则承认差异化成本。\",\"label\":\"验共性再抽象\",\"stance\":\"合\",\"change\":\"把甲的条件前提转为须由乙的首个交付去检验的假设，而非先行投入依据。\"},\"applicablePolicyCards\":[{\"id\":\"bounded-abstraction\",\"object\":\"三个早期客户的不同集成需求与可复用插件抽象\",\"action\":\"先交付最大客户的单一集成，检验是否存在值得抽象的共性\",\"evidence\":\"先把最大客户需要的一个集成交付到实际使用，从真实限制中发现是否存在值得抽象的共性\"}]}"
+        },
+        {
+          "stage": "critic",
+          "repair": false,
+          "check": {
+            "stage": "critic",
+            "repair": false,
+            "valid": false,
+            "contractIssues": [
+              "synthesis_text_underlength"
+            ]
+          },
+          "finish": "stop",
+          "output": "{\"synthesis\":{\"text\":\"两侧并非相反：甲说若三家在身份、数据流和交付节奏上确有共性，通用平台才会降低后续每次集成的成本；乙说这些共性是否值得抽象，只能从最大客户第一个集成的真实限制中看出。于是分歧落在共性是否已被确认，而非要不要复用。若首个集成暴露出可迁移的身份映射与数据流，平台投入才有依据；若暴露的多是客户专属字段，过早抽象反会把这些特例扩散进核心。\",\"summary\":\"共性是否值得复用，要由最大客户首个集成的真实限制来确认，未确认前不做通用平台。\",\"label\":\"先验共性\",\"stance\":\"合\",\"change\":\"把甲关于共性的条件从可直接下注的假设，改成须由乙的首个集成暴露后才能确认的依据。\"}}"
+        },
+        {
+          "stage": "critic",
+          "repair": true,
+          "check": {
+            "stage": "critic",
+            "repair": true,
+            "valid": false,
+            "contractIssues": [
+              "synthesis_unsupported_quantity"
+            ]
+          },
+          "finish": "stop",
+          "output": "{\"addition\":\"这与规则卡相符：客户专属字段和条件须隔离于核心领域模型，开工也须绑定签约、付款、验收和变更边界；只有第二份真实复用证据出现，才触发抽象，不能以未来可能复用代替实际证据。\"}"
+        }
+      ]
+    }
+  ]
+}
