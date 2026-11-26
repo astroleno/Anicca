@@ -92,7 +92,7 @@ it.each([
 it("reaudits a prose rewrite that retains a deadline stated only in the user's original text", async () => {
   const thesis = { id: "first", text: "按原日期交付，随后补键盘支持，以短期内可修复为前提。", summary: "维持交付安排", label: "按期交付", stance: "正" };
   const antithesis = { id: "second", text: "键盘用户无法完成核心流程，延期到能完整操作再开放。", summary: "恢复键盘主流程再发布", label: "流程可用", stance: "反" };
-  const text = "两份来源共同落在同一条发布门槛上，分歧在于门槛能否被三天期限和既定交付推开。来源甲把短期修复能够兑现当作前提，但材料没有给出键盘路径可在三天内修好的证据；前提不成立时，按原日期发布仍会让键盘用户被挡在核心流程外。来源乙据此要求延期到能完整操作，这一要求直接约束发布日期，却不等于交付安排不受影响。键盘路径三天内无法修复时，应先使发布顺延，把已知不可用状态作为阻断处理；来源甲保留的交付诉求则体现为延期的代价。";
+  const text = "甲乙共同落在同一条发布门槛上，分歧在于门槛能否被三天期限和既定交付推开。来源甲把短期修复能够兑现当作前提，但材料没有给出键盘路径可在三天内修好的证据；前提不成立时，按原日期发布仍会让键盘用户被挡在核心流程外。来源乙据此要求延期到能完整操作，这一要求直接约束发布日期，却不等于交付安排不受影响。键盘路径三天内无法修复时，应先使发布顺延，把已知不可用状态作为阻断处理；来源甲保留的交付诉求则体现为延期的代价。";
   const typed = { ...synthesis, text, summary: "未能让键盘操作完整走通时，应延后发布。", change: "原日期交付的前提失效时，发布日期要由键盘路径的可用性决定。" };
   const unsupported = "如果需要讨论日期，删去来源未给的分人群发布条件。";
   const critic = { ...typed, text: text.replaceAll("三天", "短期") + "可以先向非键盘用户开放。" };
@@ -124,6 +124,22 @@ it("uses the full editor for simultaneous length and quantity errors", async () 
   expect(prompt).toContain("unsupported quantities: 30天");
   expect(prompt).not.toContain('只返回 {"addition"');
   expect(checks().checks[1].contractIssues).toEqual(["synthesis_text_overlength", "synthesis_unsupported_quantity"]);
+  expect(generate).toHaveBeenCalledTimes(4);
+});
+
+it("repairs an invented source-count requirement before independent review", async () => {
+  const valid = { ...synthesis, text: shortText + addition };
+  const ungrounded = { ...valid, text: "两份来源都须另找并提交，满足最低份数后才可开放报名。" + valid.text };
+  generate.mockResolvedValueOnce(emit({ synthesis, applicablePolicyCards: [] })).mockResolvedValueOnce(emit({ synthesis: ungrounded }))
+    .mockResolvedValueOnce(emit({ synthesis: valid }))
+    .mockResolvedValueOnce(review("新增试用者接近未来的购买者", "尽快看到预算与购买承诺", "试用若确实接近未来购买者", "用来带着具体行为去核预算与承诺", "不能作为继续争取更多免费用户的依据"));
+  const response = await POST(endpoint({ rootInput, sources: [sourceA, sourceB] }));
+  expect(response.status).toBe(200);
+  expect((await response.json()).synthesis.text).toBe(valid.text);
+  expect(generate.mock.calls[2][0].input).toContain("unsupported quantities: 两份");
+  expect(generate.mock.calls[2][0].input).toContain("正文指代当前来源时称‘甲乙’或‘两侧’");
+  expect(generate.mock.calls[3][0].input).toContain(valid.text);
+  expect(generate.mock.calls[3][0].input).not.toContain("最低份数");
   expect(generate).toHaveBeenCalledTimes(4);
 });
 

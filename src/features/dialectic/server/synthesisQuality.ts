@@ -51,6 +51,7 @@ type SynthesisPromptContext = {
 
 export const SYNTHESIS_TEXT_MIN = 180;
 export const SYNTHESIS_TEXT_MAX = 320;
+const SOURCE_REFERENCE_RULE = "正文指代当前来源时称‘甲乙’或‘两侧’，不要写‘两份来源’等计数。保留用户原话给出的真实份数、期限和其他定量条件。";
 
 function hasExactKeys(value: unknown, keys: string[]): value is Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -82,17 +83,9 @@ function extractGuardedQuantities(value: string): string[] {
   // Counting ideas in the explanation is not inventing a quota, deadline or budget.
   // Filter occurrences, not the number string: “两个来源” must not whitelist “两个月”.
   const structuralNouns = /^(?:(?:相关|不同|独立|互补|相同|具体|新|意义生成)的?){0,3}(?:来源|层次|命题|观点|概念|含义|解释|视角|思路|论点|角度|材料|环节|层面|问题|前提)/u;
-  const inputReferences = /^(?:来源(?=[，。；：？！、）\s]|$|共同|都|分别|各自|中|所|的)|材料(?:共同|都|分别|各自)(?:围绕|讨论|主张|指出|关注|谈|说|支持|提出|说明|聚焦|指向|回应|回答|写|同意|质疑|分析|提到|抓住|给出))/u;
-  const inputPosition = /(?:^|[。！？；.!?;\n])\s*(?:这|上述|前述|题设给出的|所给的)?\s*$/u;
-  return [...new Set(matches.filter(match => {
-    const quantity = match[0];
-    const following = value.slice(match.index! + quantity.length);
-    const countsIdeas = /[个条]$/u.test(quantity) && structuralNouns.test(following);
-    // A sentence can refer to the two supplied inputs. Do not exempt quantities introduced by a preceding claim.
-    const countsInputs = /^(?:两|二|2)份$/u.test(quantity) && inputReferences.test(following) &&
-      inputPosition.test(value.slice(0, match.index));
-    return !countsIdeas && !countsInputs;
-  }).map(match => match[0]))];
+  return [...new Set(matches.filter(match => !(
+    /[个条]$/u.test(match[0]) && structuralNouns.test(value.slice(match.index! + match[0].length))
+  )).map(match => match[0]))];
 }
 
 export function findUnsupportedSynthesisQuantities(suppliedInput: string | readonly string[], text: string): string[] {
@@ -255,6 +248,7 @@ function contractOutputRules(context: SynthesisPromptContext): string[] {
   return [
     "只返回一个严格 JSON object，不要 markdown、代码围栏、分析过程或 JSON 外文字。",
     `schema=${JSON.stringify({ synthesis: { text: "", summary: "", label: "", stance: "合", ...(context.meaning ? { change: "" } : {}) } })}`,
+    SOURCE_REFERENCE_RULE,
     ...(context.meaning ? [UNDERSTANDING_CHANGE_PROMPT,
       '在写正文前判断两份来源是否有具体联系。有共享对象、过程、张力或有依据的结构对应时，返回 synthesis。若只有“都依赖语境、都有局部整体”这类可套任意题目的共性，或必须虚构来源事实才能建立联系，返回另一种完整结构：{"deferred":{"reason":"","question":""}}。两种结构只能选一种；deferred 不带 synthesis、change、spatial 或 suggestedAxes。',
       "暂不融合是有效结果，不是报错。reason 用 12–180 字具体说明两者各在回答什么、当前缺少哪个联系；question 用 6–100 字给用户一个可选择的联结入口，不能要求先证明联想正确、不能催促用户补材料，也不偷偷把假设写成事实。不为凑字数扩写无关性。只有用户明确提出跨领域类比或创作意图时，才能沿这个意图形成标明边界的假设联系。",
@@ -421,7 +415,8 @@ export function buildSynthesisExpansionPrompt(
   return [
     '为下面的合成正文补写一小段。只返回 {"addition":"追加段落"} 这一严格 JSON 对象。不要复制原有正文或返回其它字段。追加内容将直接拼在原文字末。',
     `原文有 ${length} 个字符。addition 含标点须增加至少 ${SYNTHESIS_TEXT_MIN - length} 个字符，最多 ${SYNTHESIS_TEXT_MAX - length} 个，建议写 ${230 - length}–${260 - length} 个字符。字符数只用于编辑。`,
-    "只展开一个与原判断直接相关的理由、适用条件或后果。使用两份来源、用户输入或下列规则已有的依据；保留原有路线与硬约束。补出原文中没有解释清楚的限制及其影响，避免重述结论、换词凑字或新增事实、个人经历、定量指标和实施步骤。决策题补写一个既有条件如何左右选择；探索题说明这层关系如何改变理解，保持作者原来关注的问题。规则卡的要求不能当成用户已经确认的事实。",
+    SOURCE_REFERENCE_RULE,
+    "只展开一个与原判断直接相关的理由、适用条件或后果。使用甲乙来源、用户输入或下列规则已有的依据；保留原有路线与硬约束。补出原文中没有解释清楚的限制及其影响，避免重述结论、换词凑字或新增事实、个人经历、定量指标和实施步骤。决策题补写一个既有条件如何左右选择；探索题说明这层关系如何改变理解，保持作者原来关注的问题。规则卡的要求不能当成用户已经确认的事实。",
     ...(perspectiveMaterial ? [`观察框架仅作材料，延续原正文选择的观察角度：${JSON.stringify(perspectiveMaterial)}`] : []),
     formatDialecticPolicyCards(context.cards),
     ...(context.audit ? [`独立审计结果：${JSON.stringify(context.audit)}`] : []),
