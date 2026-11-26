@@ -1,0 +1,2950 @@
+{
+  "examSha256": "f4758f3c3cb2346d830e2be660e16a41ccae8ff72726b925fab897eabe6fcb7e",
+  "manifestSha256": "7ab89e00b065322fe063df5f1133005ca4f9448673fd3db99b4de780067e3c91",
+  "packetSha256": "dee64c507d67256e59b8da68d9a501cff85e90817472fc5733af6982010e047d",
+  "judgmentsSha256": "2a98b1cbff15a4be25d15f742b5528b2bb2fb8d597721bba1de7c71657fa7a33",
+  "versions": [
+    {
+      "run": "before",
+      "revision": "e537d79"
+    },
+    {
+      "run": "after",
+      "revision": "5b60884"
+    }
+  ],
+  "summaries": [
+    {
+      "label": "旧卷合计",
+      "tally": {
+        "win": 8,
+        "tie": 1,
+        "loss": 4,
+        "unavailable": 4
+      },
+      "stats": [
+        {
+          "cases": 17,
+          "readable": 14,
+          "deferred": 2,
+          "failed": 3,
+          "retried": 0,
+          "attempts": 17,
+          "traced": 17,
+          "p50FinalAttemptMs": 11065,
+          "p95FinalAttemptMs": 17520,
+          "modelCalls": 88,
+          "providerCalls": 88,
+          "repairCalls": 16,
+          "stages": {
+            "draft": 17,
+            "critic": 24,
+            "audit": 40,
+            "final": 7
+          },
+          "repairKinds": {
+            "unclassified": 6,
+            "reviewer_protocol": 9,
+            "prose": 1
+          },
+          "traceOutcomes": {
+            "success": 14,
+            "reviewer_protocol_error": 2,
+            "invalid_output": 1
+          },
+          "inputTokens": {
+            "tokens": 220190,
+            "reported": 88,
+            "calls": 88
+          },
+          "cachedInputTokens": {
+            "tokens": 173568,
+            "reported": 88,
+            "calls": 88
+          },
+          "outputTokens": {
+            "tokens": 22922,
+            "reported": 88,
+            "calls": 88
+          },
+          "repairs": {
+            "contract": 6,
+            "prose": 1,
+            "reviewer_protocol": 9,
+            "unclassified": 0
+          }
+        },
+        {
+          "cases": 17,
+          "readable": 16,
+          "deferred": 1,
+          "failed": 1,
+          "retried": 0,
+          "attempts": 17,
+          "traced": 17,
+          "p50FinalAttemptMs": 6709,
+          "p95FinalAttemptMs": 14033,
+          "modelCalls": 76,
+          "providerCalls": 76,
+          "repairCalls": 5,
+          "stages": {
+            "draft": 17,
+            "critic": 21,
+            "audit": 31,
+            "final": 7
+          },
+          "repairKinds": {
+            "contract": 4,
+            "reviewer_protocol": 1
+          },
+          "traceOutcomes": {
+            "success": 16,
+            "invalid_output": 1
+          },
+          "inputTokens": {
+            "tokens": 206872,
+            "reported": 76,
+            "calls": 76
+          },
+          "cachedInputTokens": {
+            "tokens": 136576,
+            "reported": 76,
+            "calls": 76
+          },
+          "outputTokens": {
+            "tokens": 18828,
+            "reported": 76,
+            "calls": 76
+          },
+          "repairs": {
+            "contract": 4,
+            "prose": 0,
+            "reviewer_protocol": 1,
+            "unclassified": 0
+          }
+        }
+      ]
+    },
+    {
+      "label": "旧卷正式",
+      "tally": {
+        "win": 5,
+        "tie": 1,
+        "loss": 3,
+        "unavailable": 3
+      },
+      "stats": [
+        {
+          "cases": 12,
+          "readable": 10,
+          "deferred": 1,
+          "failed": 2,
+          "retried": 0,
+          "attempts": 12,
+          "traced": 12,
+          "p50FinalAttemptMs": 12153,
+          "p95FinalAttemptMs": 17520,
+          "modelCalls": 67,
+          "providerCalls": 67,
+          "repairCalls": 13,
+          "stages": {
+            "draft": 12,
+            "critic": 18,
+            "audit": 31,
+            "final": 6
+          },
+          "repairKinds": {
+            "unclassified": 5,
+            "reviewer_protocol": 7,
+            "prose": 1
+          },
+          "traceOutcomes": {
+            "success": 10,
+            "reviewer_protocol_error": 1,
+            "invalid_output": 1
+          },
+          "inputTokens": {
+            "tokens": 168334,
+            "reported": 67,
+            "calls": 67
+          },
+          "cachedInputTokens": {
+            "tokens": 131968,
+            "reported": 67,
+            "calls": 67
+          },
+          "outputTokens": {
+            "tokens": 18009,
+            "reported": 67,
+            "calls": 67
+          },
+          "repairs": {
+            "contract": 5,
+            "prose": 1,
+            "reviewer_protocol": 7,
+            "unclassified": 0
+          }
+        },
+        {
+          "cases": 12,
+          "readable": 11,
+          "deferred": 0,
+          "failed": 1,
+          "retried": 0,
+          "attempts": 12,
+          "traced": 12,
+          "p50FinalAttemptMs": 10601,
+          "p95FinalAttemptMs": 14033,
+          "modelCalls": 60,
+          "providerCalls": 60,
+          "repairCalls": 4,
+          "stages": {
+            "draft": 12,
+            "critic": 15,
+            "audit": 26,
+            "final": 7
+          },
+          "repairKinds": {
+            "contract": 3,
+            "reviewer_protocol": 1
+          },
+          "traceOutcomes": {
+            "success": 11,
+            "invalid_output": 1
+          },
+          "inputTokens": {
+            "tokens": 164997,
+            "reported": 60,
+            "calls": 60
+          },
+          "cachedInputTokens": {
+            "tokens": 105472,
+            "reported": 60,
+            "calls": 60
+          },
+          "outputTokens": {
+            "tokens": 15611,
+            "reported": 60,
+            "calls": 60
+          },
+          "repairs": {
+            "contract": 3,
+            "prose": 0,
+            "reviewer_protocol": 1,
+            "unclassified": 0
+          }
+        }
+      ]
+    },
+    {
+      "label": "旧卷迁移",
+      "tally": {
+        "win": 3,
+        "tie": 0,
+        "loss": 1,
+        "unavailable": 1
+      },
+      "stats": [
+        {
+          "cases": 5,
+          "readable": 4,
+          "deferred": 1,
+          "failed": 1,
+          "retried": 0,
+          "attempts": 5,
+          "traced": 5,
+          "p50FinalAttemptMs": 8896,
+          "p95FinalAttemptMs": 16917,
+          "modelCalls": 21,
+          "providerCalls": 21,
+          "repairCalls": 3,
+          "stages": {
+            "draft": 5,
+            "critic": 6,
+            "audit": 9,
+            "final": 1
+          },
+          "repairKinds": {
+            "reviewer_protocol": 2,
+            "unclassified": 1
+          },
+          "traceOutcomes": {
+            "reviewer_protocol_error": 1,
+            "success": 4
+          },
+          "inputTokens": {
+            "tokens": 51856,
+            "reported": 21,
+            "calls": 21
+          },
+          "cachedInputTokens": {
+            "tokens": 41600,
+            "reported": 21,
+            "calls": 21
+          },
+          "outputTokens": {
+            "tokens": 4913,
+            "reported": 21,
+            "calls": 21
+          },
+          "repairs": {
+            "contract": 1,
+            "prose": 0,
+            "reviewer_protocol": 2,
+            "unclassified": 0
+          }
+        },
+        {
+          "cases": 5,
+          "readable": 5,
+          "deferred": 1,
+          "failed": 0,
+          "retried": 0,
+          "attempts": 5,
+          "traced": 5,
+          "p50FinalAttemptMs": 4872,
+          "p95FinalAttemptMs": 6780,
+          "modelCalls": 16,
+          "providerCalls": 16,
+          "repairCalls": 1,
+          "stages": {
+            "draft": 5,
+            "critic": 6,
+            "audit": 5
+          },
+          "repairKinds": {
+            "contract": 1
+          },
+          "traceOutcomes": {
+            "success": 5
+          },
+          "inputTokens": {
+            "tokens": 41875,
+            "reported": 16,
+            "calls": 16
+          },
+          "cachedInputTokens": {
+            "tokens": 31104,
+            "reported": 16,
+            "calls": 16
+          },
+          "outputTokens": {
+            "tokens": 3217,
+            "reported": 16,
+            "calls": 16
+          },
+          "repairs": {
+            "contract": 1,
+            "prose": 0,
+            "reviewer_protocol": 0,
+            "unclassified": 0
+          }
+        }
+      ]
+    },
+    {
+      "label": "独立新卷",
+      "tally": {
+        "win": 2,
+        "tie": 0,
+        "loss": 5,
+        "unavailable": 1
+      },
+      "stats": [
+        {
+          "cases": 8,
+          "readable": 7,
+          "deferred": 1,
+          "failed": 1,
+          "retried": 0,
+          "attempts": 8,
+          "traced": 8,
+          "p50FinalAttemptMs": 9269,
+          "p95FinalAttemptMs": 10979,
+          "modelCalls": 28,
+          "providerCalls": 28,
+          "repairCalls": 5,
+          "stages": {
+            "draft": 8,
+            "critic": 12,
+            "audit": 8
+          },
+          "repairKinds": {
+            "unclassified": 4,
+            "reviewer_protocol": 1
+          },
+          "traceOutcomes": {
+            "success": 7,
+            "invalid_output": 1
+          },
+          "inputTokens": {
+            "tokens": 73541,
+            "reported": 28,
+            "calls": 28
+          },
+          "cachedInputTokens": {
+            "tokens": 43392,
+            "reported": 28,
+            "calls": 28
+          },
+          "outputTokens": {
+            "tokens": 6817,
+            "reported": 28,
+            "calls": 28
+          },
+          "repairs": {
+            "contract": 4,
+            "prose": 0,
+            "reviewer_protocol": 1,
+            "unclassified": 0
+          }
+        },
+        {
+          "cases": 8,
+          "readable": 8,
+          "deferred": 1,
+          "failed": 0,
+          "retried": 0,
+          "attempts": 8,
+          "traced": 8,
+          "p50FinalAttemptMs": 5886,
+          "p95FinalAttemptMs": 6830,
+          "modelCalls": 26,
+          "providerCalls": 26,
+          "repairCalls": 2,
+          "stages": {
+            "draft": 8,
+            "critic": 10,
+            "audit": 8
+          },
+          "repairKinds": {
+            "contract": 2
+          },
+          "traceOutcomes": {
+            "success": 8
+          },
+          "inputTokens": {
+            "tokens": 71078,
+            "reported": 26,
+            "calls": 26
+          },
+          "cachedInputTokens": {
+            "tokens": 39040,
+            "reported": 26,
+            "calls": 26
+          },
+          "outputTokens": {
+            "tokens": 5869,
+            "reported": 26,
+            "calls": 26
+          },
+          "repairs": {
+            "contract": 2,
+            "prose": 0,
+            "reviewer_protocol": 0,
+            "unclassified": 0
+          }
+        }
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "id": "formal-01",
+      "group": "product-business",
+      "set": "formal",
+      "blindId": "q24",
+      "comparison": "win",
+      "reason": "A 用已有活跃用户邀约付费试点，检验具体，但「六周内无预算信号即缩减投入」可能留给止损的时间过短。B 明说主要精力立即转访谈销售，试用时限须短于现金窗口，并给出先定停止条件的代价。",
+      "before": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "六周的现金期限先于免费增长和融资故事：甲用重复使用筛出值得收费的对象，但新增试用者是否接近未来购买者、信号能否在耗尽前出现，都只是条件，不能把活跃当收入；乙要求尽快看到预算承诺，却仍需选择接触谁。于是形成更窄的检验——不扩大获取，在已有活跃免费用户中邀约付费试点或定金，用重复行为筛选对象，用采购承诺检验其是否接近购买者。六周内无预算信号即缩减投入、保留现金；即便成功，也只说明同一信号值得小范围继续验证，不证明需求已经成立。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 17520,
+        "attempts": 1,
+        "requestId": "r8-before-formal-01-1",
+        "trace": {
+          "id": "d27219c0-a765-4d0d-87da-9d79db55eec4",
+          "outcome": "success",
+          "candidateIds": [
+            "survival-cash"
+          ],
+          "applicableIds": [
+            "survival-cash"
+          ],
+          "modelCalls": 8,
+          "providerCalls": 8,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": true
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": true,
+              "repairKind": "reviewer_protocol"
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "final",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "合基本恰当。用活跃筛对象、用采购承诺验付费，两类证据分得清；仅从已有活跃者中找购买者可能漏掉实际预算方。",
+          "serious": false
+        }
+      },
+      "after": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "六周现金期限把甲降为受控对照：试用必须短于这一窗口、只限一个范围，并预先定好停止条件；关键是看重复行为之后是否接到预算与购买承诺，接不上就停，活跃只说明使用意愿。主要精力应转向付费客户访谈和销售，尽快取得可核验采购承诺或定金，否则削减消耗。乙提出免费用户活跃未必愿付费，这个前提由甲的观察去核实：新增试用者是否接近未来购买者。代价是免费样本缩小，可能漏看尚未显现的需求；但现金窗口内先拿到付费证据更稳。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 14032,
+        "attempts": 1,
+        "requestId": "r8-after-formal-01-1",
+        "trace": {
+          "id": "b3b5a4e9-9e52-4ac2-9a4a-39abe50cb5ac",
+          "outcome": "success",
+          "candidateIds": [
+            "survival-cash"
+          ],
+          "applicableIds": [
+            "survival-cash"
+          ],
+          "modelCalls": 7,
+          "providerCalls": 7,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": true,
+              "repairKind": "contract"
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "final",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "有主次的合恰当。直接获取付费承诺，给免费观察设限并承认缩小样本会漏需求，未把活跃度算作收入。",
+          "serious": false
+        }
+      }
+    },
+    {
+      "id": "formal-02",
+      "group": "product-business",
+      "set": "formal",
+      "blindId": "q11",
+      "comparison": "unavailable",
+      "reason": "A 让第一次单一交付成为检验共用底座的取样，清楚交代过早抽象会「把偶然固化」。B 缺测。",
+      "before": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "三家都需接入，但共同动作不等于共享实现。更合适的做法是：以最大客户的单一集成为首个交付，把它当作一次受控取样，专门观察真实限制来自该客户特有流程，还是来自三家都得处理的身份、数据流或交付节点。若是前者，此时抽象会把偶然固化成底座；若是后者，才说明存在值得复用的共性。这改变了原题的取舍：先做单一集成并非对通用平台的否定，它是在交付中检验共性是否成立；通用平台的收益也只有在取样命中共享限制后才有依据。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 7915,
+        "attempts": 1,
+        "requestId": "r8-before-formal-02-1",
+        "trace": {
+          "id": "a42e95cb-cbdf-451a-9a73-a4fd78df5c0e",
+          "outcome": "success",
+          "candidateIds": [
+            "bounded-abstraction"
+          ],
+          "applicableIds": [],
+          "modelCalls": 4,
+          "providerCalls": 4,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": true,
+              "repairKind": "reviewer_protocol"
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "有条件的合恰当。先交付给最大客户并记录真实限制；判断某限制三家共有还应与另两家的实际约束核对，单个样本只能提出线索。",
+          "serious": false
+        }
+      },
+      "after": {
+        "reading": {
+          "outcome": "unavailable"
+        },
+        "status": 502,
+        "error": "invalid_model_output",
+        "details": "synthesis critic failed contract after one repair",
+        "elapsedMs": 6709,
+        "attempts": 1,
+        "requestId": "r8-after-formal-02-1",
+        "trace": {
+          "id": "2a70d575-1638-4806-81ea-8bdbbe40d930",
+          "outcome": "invalid_output",
+          "candidateIds": [
+            "bounded-abstraction"
+          ],
+          "applicableIds": [
+            "bounded-abstraction"
+          ],
+          "modelCalls": 3,
+          "providerCalls": 3,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": true,
+              "repairKind": "contract"
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "缺测。",
+          "serious": false
+        }
+      }
+    },
+    {
+      "id": "formal-03",
+      "group": "product-business",
+      "set": "formal",
+      "blindId": "q12",
+      "comparison": "loss",
+      "reason": "A 承认访谈对流失环节的覆盖有限，也保留了甲所附的隐私前提。B 虽把当下决定说得直接，却说甲「把发现位置直接等同于开启遥测」，这与甲明列的条件不符。",
+      "before": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "公开的隐私优先承诺并不只排除全量埋点，也改变了零遥测的论证方式：乙要求继续零遥测，避免在未确认用户接受前扩大收集；甲强调完整漏斗能定位流失，但把收集方式与承诺相容列为前提。真正要比较的是两种取证各自留下什么缺口：只访愿意参与者能守住承诺，却可能看不清流失发生在哪一步；要补这一缺口，就得先说明想收集什么、为何需要，取得独立明示同意，并让参与者可拒绝、可退出且不影响原服务，再决定是否调整收集。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 16091,
+        "attempts": 1,
+        "requestId": "r8-before-formal-03-1",
+        "trace": {
+          "id": "d6a0b2ce-1053-462f-9c17-903349737fbd",
+          "outcome": "success",
+          "candidateIds": [
+            "consent-privacy"
+          ],
+          "applicableIds": [
+            "consent-privacy"
+          ],
+          "modelCalls": 8,
+          "providerCalls": 8,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": true,
+              "repairKind": "reviewer_protocol"
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "final",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": true,
+              "repairKind": "reviewer_protocol"
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "合得当。先访谈自愿者，说明要收集什么、为何需要，待得到独立可撤销的同意后再议。",
+          "serious": false
+        }
+      },
+      "after": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "公开的隐私优先承诺先限定的是采集授权，而非取消一切行为证据。完整漏斗能指出流失在哪一步，却把发现位置直接等同于开启遥测；零遥测守住承诺，但只靠访谈既慢又可能漏掉未受访者的路径。可把问题改为：在承诺不变时，哪些流失假设值得用目的绑定、可拒绝、可退出的方式验证，且不影响原服务和评价。现阶段维持零遥测并访谈愿参与者，没有合法数据就如实说明缺失；若要让漏斗成为证据来源，须先取得用户对具体信息的独立明示同意。届时数据来源、用途、最短保留期和删除路径须可审计，研究开始前检查重识别风险，并保留可立即远程停用和删除的路径。代价是定位较慢、覆盖面有限。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 14033,
+        "attempts": 1,
+        "requestId": "r8-after-formal-03-1",
+        "trace": {
+          "id": "2bad1d4a-7217-4180-b437-a0ca38753aa3",
+          "outcome": "success",
+          "candidateIds": [
+            "consent-privacy"
+          ],
+          "applicableIds": [
+            "consent-privacy"
+          ],
+          "modelCalls": 6,
+          "providerCalls": 6,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "final",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "条件式合大体得当。眼下零遥测、访谈及后续同意界线清楚。误述甲的论点，远程停用等实施细节也超出原题证据。普通不足。",
+          "serious": false
+        }
+      }
+    },
+    {
+      "id": "formal-04",
+      "group": "engineering",
+      "set": "formal",
+      "blindId": "q06",
+      "comparison": "win",
+      "reason": "A 追问「更想先弄清」哪件事，偏好无法证明风险已隔离。B 给出当前即可执行的分支，还说明两种状态下都应留下异常样本。",
+      "before": {
+        "reading": {
+          "outcome": "deferred",
+          "reason": "甲要求先限定受影响数据并追查写入链路，乙讨论隔离高风险改动后继续交付。两者回答的是同一偶发数据错乱下‘暂停扩面’与‘分区交付’的关系，但目前缺少受影响范围、隔离边界及检测回退是否可行的依据，无法判断能否并存。",
+          "question": "你更想先弄清受影响数据的范围，还是先划定可隔离的改动边界？"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 3904,
+        "attempts": 1,
+        "requestId": "r8-before-formal-04-1",
+        "trace": {
+          "id": "b2dc948f-961d-4650-be87-7aecb68c45c3",
+          "outcome": "success",
+          "candidateIds": [],
+          "applicableIds": [],
+          "modelCalls": 3,
+          "providerCalls": 3,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "暂缓决定全面解冻有依据，识别了范围、隔离及回退的证据缺口。但暂不融合略保守，追问也未直接补到所缺事实。普通不足。",
+          "serious": false
+        }
+      },
+      "after": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "甲把“还不能限定受影响数据”作为停止扩大改动面的条件；乙则指出，全面冻结会扣住无关需求，只有在能隔离高风险改动并检测、回退异常时，才可继续交付其余功能。两者共同面对一个未知影响范围，分歧在于能否先把风险圈住：乙的继续发布并不取消甲的前提，判据是隔离、检测与回退是否已把未知面压到可控范围；做不到，就仍应按甲收缩改动面。留住异常样本、追查写入链路是让范围从模糊变清楚的手段，两种状态下都不应停。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 6674,
+        "attempts": 1,
+        "requestId": "r8-after-formal-04-1",
+        "trace": {
+          "id": "2a7af1a4-3ca2-4e2c-ae14-3879d0196441",
+          "outcome": "success",
+          "candidateIds": [],
+          "applicableIds": [],
+          "modelCalls": 3,
+          "providerCalls": 3,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "条件式合恰当。须能隔离、检测及回退才交付其余功能，做不到就收缩改动面。没有把监控本身当作回退能力。",
+          "serious": false
+        }
+      }
+    },
+    {
+      "id": "formal-05",
+      "group": "engineering",
+      "set": "formal",
+      "blindId": "q05",
+      "comparison": "unavailable",
+      "reason": "B 的区分落在旧值是否改变放行或扣减上，「未定期间一律按关键读取处理」补上字段未知的眼前决定。A 缺测。",
+      "before": {
+        "reading": {
+          "outcome": "unavailable"
+        },
+        "status": 502,
+        "error": "invalid_model_output",
+        "details": "reviewer_protocol_error",
+        "elapsedMs": 14822,
+        "attempts": 1,
+        "requestId": "r8-before-formal-05-1",
+        "trace": {
+          "id": "4d9417d1-c732-4a31-a816-8d840b834bf6",
+          "outcome": "reviewer_protocol_error",
+          "candidateIds": [
+            "authoritative-decision"
+          ],
+          "applicableIds": [
+            "authoritative-decision"
+          ],
+          "modelCalls": 8,
+          "providerCalls": 8,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": true
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "final",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": true,
+              "repairKind": "reviewer_protocol"
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "缺测。",
+          "serious": false
+        }
+      },
+      "after": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "两侧共享同一读取接口与同一缓存窗口：甲要压低 p95，乙担心旧值在权限、余额或业务状态上造成损失。可设立分层读取：旧值只影响展示的字段可接受短期陈旧；旧值会改变是否放行或扣减结果的字段必须回源，并由权威服务最终校验权限、余额、库存及敏感动作，而非仅凭旧值放行。验证应只选一个慢端点做小范围试验，并保留立即回源路径，以真实授权撤销或扣减结果为准，不用命中率或延迟替代正确性。哪些字段属关键读取题面尚未判明，未定期间一律按关键读取处理，代价是这些读取仍慢。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 10927,
+        "attempts": 1,
+        "requestId": "r8-after-formal-05-1",
+        "trace": {
+          "id": "d9a73790-b689-43c6-9ce7-513b71f53c79",
+          "outcome": "success",
+          "candidateIds": [
+            "authoritative-decision"
+          ],
+          "applicableIds": [
+            "authoritative-decision"
+          ],
+          "modelCalls": 6,
+          "providerCalls": 6,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "final",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "有条件的合恰当。展示可容忍陈旧，授权等关键读回权威服务，保留慢读的代价明确。没有假定撤销权限可由缓存判定。",
+          "serious": false
+        }
+      }
+    },
+    {
+      "id": "formal-06",
+      "group": "engineering",
+      "set": "formal",
+      "blindId": "q20",
+      "comparison": "win",
+      "reason": "A、B 都保留受限兼容且拒绝静默翻译有歧义的写入。B 将「在新旧语义上验收每次修复」接回乙所说的验证成本，并把恢复业务与测量代价作为退出窗口的依据。",
+      "before": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "旧客户端不能升级，兼容协议因此是这批用户继续操作的现实通道；但双协议若没有终点，规则分叉与修复难验证会持续累积。可行判断是把旧协议只放进限寿隔离层，核心只维护新语义，且兼容层不得削弱鉴权、数据或写入语义。无法证明等价的操作应关闭，关闭时提供通知、只读、导出或迁移窗口，而不是静默翻译有歧义或不安全的写入。迁移能否恢复业务与维护代价的测量结果，决定限寿隔离层何时结束；测量能力尚未证实前，仍可维持隔离兼容并明确关闭保障。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 14974,
+        "attempts": 1,
+        "requestId": "r8-before-formal-06-1",
+        "trace": {
+          "id": "fbd106cb-2c07-4756-898c-88a0617bed60",
+          "outcome": "success",
+          "candidateIds": [
+            "safe-compatibility"
+          ],
+          "applicableIds": [
+            "safe-compatibility"
+          ],
+          "modelCalls": 7,
+          "providerCalls": 7,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": true,
+              "repairKind": "reviewer_protocol"
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "final",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "有条件的合恰当。隔离兼容、守住鉴权和数据语义、给不等价操作提供关闭保障，未令不能升级的用户立即强制升级。",
+          "serious": false
+        }
+      },
+      "after": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "旧客户端确实无法升级，但甲乙的分歧不在要不要让这批用户继续操作，而在兼容窗口凭什么关闭。乙指出双协议让规则分叉、修复更难验证，因此把迁移完成和业务恢复当作结束重复维护的前提；甲要求量出兼容维护的实际代价，这恰好补上乙切换前缺的证据：代价是否高到值得迁移。于是兼容应成为有退出条件的迁移窗口，旧协议只放在隔离层，核心只维护新语义，并同时在新旧语义上验收每次修复。无法证明等价的有歧义写入必须关闭，关闭前提供可执行的通知、只读、导出或迁移安排，而不是静默翻译。迁移可恢复且代价可测时，双协议不长期延续；若无法完成这些保障，统一条件就尚未成立。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 12366,
+        "attempts": 1,
+        "requestId": "r8-after-formal-06-1",
+        "trace": {
+          "id": "67389c32-c90a-4aeb-8cba-71e0fb6d8bb7",
+          "outcome": "success",
+          "candidateIds": [
+            "safe-compatibility"
+          ],
+          "applicableIds": [
+            "safe-compatibility"
+          ],
+          "modelCalls": 6,
+          "providerCalls": 6,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "final",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "有条件的合恰当。既给旧客户端留可用路径，也回应双协议的维护负担，并交代不能履行迁移保障时仍不切换。",
+          "serious": false
+        }
+      }
+    },
+    {
+      "id": "formal-07",
+      "group": "personal-creative",
+      "set": "formal",
+      "blindId": "q15",
+      "comparison": "loss",
+      "reason": "A 用「余下时间」做验证，维护超时才保护验证时段。B 一开始就给维护设上限，且正面处理上限外仍有用户卡住时要重新权衡的难题，更符合乙对可预期时间的要求。",
+      "before": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "来源都面对同一项九十分钟预算，分歧不在维护与新项目谁更重要，而在维护有没有止境。已被依赖且真正卡住的维护确实不能拖，但它一旦被默认成先占满空档，新项目就永远拿不到可比较的反馈。可行的理解是给这类维护设一个明确上限，把剩余可预期时段固定给新项目的最小验证；两者是同一条时间线上此消彼长的竞争关系，而非各自独立的待办。上限之外仍有卡住维护时，原安排失效，必须重新权衡挤占新项目验证的代价。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 7702,
+        "attempts": 1,
+        "requestId": "r8-before-formal-07-1",
+        "trace": {
+          "id": "1fcd2a21-587f-4459-a475-692e944e2548",
+          "outcome": "success",
+          "candidateIds": [],
+          "applicableIds": [],
+          "modelCalls": 4,
+          "providerCalls": 4,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": true
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "合得当。在同一段九十分钟中显式划限，保住可比较的验证反馈；超出上限仍有阻塞时承认需重新取舍。",
+          "serious": false
+        }
+      },
+      "after": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "双方共担同一段九十分钟：甲指出已有用户卡住时维护不能推开，因停摆代价已经发生；乙则提醒，若维护吃掉全部空档，新项目连一次可比反馈都没有。两者并非争同一空档，而是在追问该固定哪一段：可收束的阻塞维护先获得保护，余下时间留给最小验证，使“已有依赖”和“未来潜力”都有事实可依。成立条件是阻塞问题能被识别并有边界；若维护持续无限扩张，就须为验证划出不可挪用的时段，代价是部分非阻塞维护延后。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 5762,
+        "attempts": 1,
+        "requestId": "r8-after-formal-07-1",
+        "trace": {
+          "id": "61b78be3-1c1d-4c64-8525-d432d164f510",
+          "outcome": "success",
+          "candidateIds": [],
+          "applicableIds": [],
+          "modelCalls": 3,
+          "providerCalls": 3,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "合基本恰当。按是否阻塞区分维护，保留验证机会；维护持续吃紧时，可能延后的也包括阻塞事项，不能只说非阻塞维护会延后。",
+          "serious": false
+        }
+      }
+    },
+    {
+      "id": "formal-08",
+      "group": "personal-creative",
+      "set": "formal",
+      "blindId": "q02",
+      "comparison": "win",
+      "reason": "A 的「接不住的，也未必是缺陷」给试译失败留下合理解释，也说明不做两套等量更新的取舍。B 只带核心主题却又要观察读者是否「只对中文细节有反应」，检验办法前后脱节。",
+      "before": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "英文扩张提的是主题能否跨语境成立，中文深化说的是辨识度仍长在中文细节上，两者共用一个风险：逐句转写会挤掉形成风格的修改精力。据此可把英文侧的任务改成“主题迁移测试”：只带核心主题去触达新读者，不搬运中文句法与语气，用哪些主题在英文里仍被理解作为反馈；中文细节继续深化。这样英文检验的是主题的迁移边界，而非消耗风格存量，代价是英文侧短期表达较平。若英文读者长期只对中文细节有反应，就说明迁移边界窄，扩张范围应收小。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 6570,
+        "attempts": 1,
+        "requestId": "r8-before-formal-08-1",
+        "trace": {
+          "id": "ee344221-be63-4e20-895a-b5cef1f08406",
+          "outcome": "success",
+          "candidateIds": [],
+          "applicableIds": [],
+          "modelCalls": 3,
+          "providerCalls": 3,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "合大体成立。把国内写作和海外主题试验分工清楚，但「短期表达较平」未经材料支持，收缩扩张的触发条件也难以照此观察。普通不足。",
+          "serious": false
+        }
+      },
+      "after": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "两侧共同盯住的是同一件东西：中文风格里那些具体依靠语感才成立的分寸。甲主张用英文去触达新读者并检验哪些表达跨语境仍成立；乙提醒，若同步等量生产，精力会耗在逐句转写，挤掉风格成形所需的反复修改。于是问题不在做不做英文，而在英文承担什么角色：把它当作一次有边界的翻译试炼，某些主题若翻成英文后新读者仍接得住，就说明其中分寸可迁移；接不住的，也未必是缺陷，可能只是中文语感本身。这样英文既服务抵达，也为中文修改标出哪些细节值得守住、哪些是惯性；代价是不追求两套同时等量更新。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 6125,
+        "attempts": 1,
+        "requestId": "r8-after-formal-08-1",
+        "trace": {
+          "id": "54b90eb1-340f-4dc9-97cb-f12254f0e986",
+          "outcome": "success",
+          "candidateIds": [],
+          "applicableIds": [],
+          "modelCalls": 3,
+          "providerCalls": 3,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "合得当。限量试译可检验跨语境表达并给中文修改反馈，回应了时间成本。读者理解是线索，单次结果不足以确认原因。",
+          "serious": false
+        }
+      }
+    },
+    {
+      "id": "formal-09",
+      "group": "personal-creative",
+      "set": "formal",
+      "blindId": "q03",
+      "comparison": "loss",
+      "reason": "两侧都按局部能否独立验收来划权。B 的「只应裁定跨域冲突与整体一致性」配上「能指出哪些接缝影响整体」，让两人知道哪些分歧应交终审。",
+      "before": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "分域与拍板在“同一件作品”上并非二选一，而是两种判断权的错位：执行者按可分范围做内部审美决定，这些决定各自可验收；但观众看到的是跨域合成的整体，接缝处的取舍会累积成风格，单靠分域验收看不到这一层。一人终审因此只应裁定跨域冲突与整体一致性，不重做各域内部决定。这一安排成立的条件是能指出哪些接缝影响整体；若整体风格尚无法说明，终审缺少标准，分域自治仍可运行但接缝风险未被解决。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 7774,
+        "attempts": 1,
+        "requestId": "r8-before-formal-09-1",
+        "trace": {
+          "id": "e223da9b-718e-46aa-8bd6-f9fe3e18adaa",
+          "outcome": "success",
+          "candidateIds": [
+            "revocable-ownership"
+          ],
+          "applicableIds": [
+            "revocable-ownership"
+          ],
+          "modelCalls": 4,
+          "providerCalls": 4,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": true,
+              "repairKind": "reviewer_protocol"
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "合得当。划出终审权限，保留域内决定，并交代整体标准未明时接缝风险如何留下。",
+          "serious": false
+        }
+      },
+      "after": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "两者其实都围绕“审美决定权按什么单位配置”这一具体问题。分域自治成立的前提是可独立验收：各部分能分开交付、后果不共同暴露，各人自决才不把分歧推到接口。但若各部分拼成观众看到的同一件作品，接缝本身也是审美判断，独立验收无法覆盖整体效果，反复冲突正是分域没触及这层关系。此时一人承担最终审美责任，不是取消局部判断，而是把共享接缝和整体风格从逐处谈判中收束到可追责处；局部仍可自治。整体责任者若被拖回逐处重谈，分域省下的成本便会回流。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 5633,
+        "attempts": 1,
+        "requestId": "r8-after-formal-09-1",
+        "trace": {
+          "id": "4241c390-5a2d-48b2-a5e8-f235e7efb5b0",
+          "outcome": "success",
+          "candidateIds": [
+            "revocable-ownership"
+          ],
+          "applicableIds": [
+            "revocable-ownership"
+          ],
+          "modelCalls": 3,
+          "providerCalls": 3,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "合得当。局部自治与整体责任皆有依据，也指出重谈局部会吃掉收益。",
+          "serious": false
+        }
+      }
+    },
+    {
+      "id": "formal-10",
+      "group": "hard-constraint",
+      "set": "formal",
+      "blindId": "q21",
+      "comparison": "unavailable",
+      "reason": "A 以「纯键盘实测」能否走通核心流程为发布门槛，保留交付时点的价值和延期的代价。B 缺测。",
+      "before": {
+        "reading": {
+          "outcome": "unavailable"
+        },
+        "status": 502,
+        "error": "invalid_model_output",
+        "details": "synthesis prose could not be verified",
+        "elapsedMs": 12153,
+        "attempts": 1,
+        "requestId": "r8-before-formal-10-1",
+        "trace": {
+          "id": "282bb05d-f5d5-4c3d-a36f-529ac51ec878",
+          "outcome": "invalid_output",
+          "candidateIds": [
+            "accessible-release-gate"
+          ],
+          "applicableIds": [
+            "accessible-release-gate"
+          ],
+          "modelCalls": 4,
+          "providerCalls": 4,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": true,
+              "repairKind": "prose"
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "缺测。",
+          "serious": false
+        }
+      },
+      "after": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "甲抓住交付时点与已安排承诺，乙则指出键盘用户进不了核心流程时，时点收益建立在持续排除这批人上。两者共同的前提是短期修复能够兑现，因此三天内键盘用户能否走通核心流程成为分界。能走通，按期发布与修复同时成立；不能走通，核心流程须延后或关闭，冻结非必要变更并修复最短核心路径，已安排交付改为重新安排，日期不构成豁免。发布前还须由独立人员用纯键盘实测并加入回归保护；实测未过即不得按原日期上线，也不能先用人工客服顶替核心流程。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 10704,
+        "attempts": 1,
+        "requestId": "r8-after-formal-10-1",
+        "trace": {
+          "id": "2bfbcf20-1400-42f2-ba71-03092b6fa8ee",
+          "outcome": "success",
+          "candidateIds": [
+            "accessible-release-gate"
+          ],
+          "applicableIds": [
+            "accessible-release-gate"
+          ],
+          "modelCalls": 7,
+          "providerCalls": 7,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": true,
+              "repairKind": "reviewer_protocol"
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "final",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "条件式合恰当。三天内修通并实测才可按期，未过则延期。称短期修复是「两者共同的前提」不够准确，乙只要求开放前可用。",
+          "serious": false
+        }
+      }
+    },
+    {
+      "id": "formal-11",
+      "group": "hard-constraint",
+      "set": "formal",
+      "blindId": "q08",
+      "comparison": "tie",
+      "reason": "两侧都明确挡住立即删除，只把停写、只读或清理可再生物作为过渡，并以「隔离环境实际恢复并抽查成功」为删前条件。A 明说代价，B 补足解密材料与校验和的区别，结论同样稳妥。",
+      "before": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "空间压力与可恢复条件确实落在同一个删除动作上。备份与生产库同盘，单点故障能同时带走两者，所以“立即删除”依赖的恢复前提不成立，这一步不能做。但等异地副本完成也不必是唯一路径：可以先用只读、停写或清理可再生物争取空间，同时让备份对象与解密材料独立于生产故障域。删除须等隔离环境实际恢复并抽查成功，再按清单小批执行、每批设停止点。上传、复制或校验和完成都不等于可恢复，同盘副本也不构成可靠回滚。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 17385,
+        "attempts": 1,
+        "requestId": "r8-before-formal-11-1",
+        "trace": {
+          "id": "dd15dc40-e1e5-458e-bc2a-e78c28cb8d3c",
+          "outcome": "success",
+          "candidateIds": [
+            "verified-recovery"
+          ],
+          "applicableIds": [
+            "verified-recovery"
+          ],
+          "modelCalls": 7,
+          "providerCalls": 7,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": true
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "final",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "合得当，明确复制完成并不等于能恢复，把解密材料一并纳入故障域。未放行立即删除。",
+          "serious": false
+        }
+      },
+      "after": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "甲乙的分歧不在要不要释放空间，而在释放能否以删除为手段。甲把删除当作立即缓解压力的动作，其成立依赖备份在误删或磁盘故障后仍可用；乙指出备份与生产库同盘，单点故障会同时带走两者，因此甲所依赖的那份备份当前并不能承担回滚。紧迫感可以保留，但只能先做不减少唯一数据的事：停写、只读或清理可再生物争取空间，同时取得独立于生产故障域的异地副本。只有不可再生数据在隔离环境实际恢复并抽查成功，才可按清单小批删除并设停止点，否则继续承担空间压力的代价。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 10601,
+        "attempts": 1,
+        "requestId": "r8-after-formal-11-1",
+        "trace": {
+          "id": "341f0461-44dc-4e70-a470-b1c2b1fe5671",
+          "outcome": "success",
+          "candidateIds": [
+            "verified-recovery"
+          ],
+          "applicableIds": [
+            "verified-recovery"
+          ],
+          "modelCalls": 6,
+          "providerCalls": 6,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "final",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "合得当，采纳乙的删除门槛，保留甲的空间压力，分批设停止点。未把同盘副本当成抗磁盘故障的回滚路径。",
+          "serious": false
+        }
+      }
+    },
+    {
+      "id": "formal-12",
+      "group": "hard-constraint",
+      "set": "formal",
+      "blindId": "q19",
+      "comparison": "win",
+      "reason": "两侧都明确本周不采集未经同意的漏斗。B 说「不能拿示意数据充作证据」，并把同意与后续目的、保留期等安排分别说明，比 A 把技术治理说成「授权本身」准确。",
+      "before": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "下周演示需要增长漏斗，但用户并未同意行为追踪。乙的判断成立：缺同意就不能开启遥测，应直接说明漏斗缺失，只呈现已获准使用的汇总信息。甲设想的临时完整漏斗若落地，采集前还须把数据来源、用途、最短保留期和删除路径做成可审计安排，并先检查重识别风险、留好远程停用与删除通道；这些不是补手续，而是授权本身的可验证条件。代价是本次真实转化环节无法展示，只能用已有汇总解释缺口。若之后取得逐项、可退出且不影响原服务的明示同意，完整漏斗才可再议。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 16112,
+        "attempts": 1,
+        "requestId": "r8-before-formal-12-1",
+        "trace": {
+          "id": "212f4913-d434-46bd-8188-7107ba0f9d07",
+          "outcome": "success",
+          "candidateIds": [
+            "consent-privacy"
+          ],
+          "applicableIds": [
+            "consent-privacy"
+          ],
+          "modelCalls": 7,
+          "providerCalls": 7,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": true
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "final",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "以乙为当前结论恰当，指出只呈现获准汇总并披露缺口。将审计及停用通道称为授权本身稍有混淆，但没有据此放行追踪。",
+          "serious": false
+        }
+      },
+      "after": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "乙的约束使漏斗从下周可执行方案变为须先获同意的方案：未获同意便开启遥测会越过边界，下周只能呈现已获准的汇总信息并如实说明逐环节缺口，不能拿示意数据充作证据。甲的真实转化诉求仍有效，但授权未到位时不能据此认为数据已就绪。补漏斗前须取得独立明示同意，研究目的绑定，用户可拒绝、可退出且不影响原服务与评价；数据来源、用途、最短保留期和删除路径可审计，开始前检查重识别风险，并保留可立即远程停用与删除的路径。期限压力不构成替代同意的理由。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 11017,
+        "attempts": 1,
+        "requestId": "r8-after-formal-12-1",
+        "trace": {
+          "id": "4b207d20-f6fd-4cbb-9f09-7898a1b2b155",
+          "outcome": "success",
+          "candidateIds": [
+            "consent-privacy"
+          ],
+          "applicableIds": [
+            "consent-privacy"
+          ],
+          "modelCalls": 7,
+          "providerCalls": 7,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": true,
+              "repairKind": "contract"
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "final",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "以乙为当前结论恰当。保留甲需要真实转化证据的目的，不将时限或治理安排当作同意，可依具体可撤销同意再议。",
+          "serious": false
+        }
+      }
+    },
+    {
+      "id": "transfer-01",
+      "group": "memory-metaphor",
+      "set": "transfer",
+      "blindId": "q01",
+      "comparison": "unavailable",
+      "reason": "B 把两种意愿放在一天的不同时刻，写清事后补记也会丢掉细节。A 缺测，无法比较。",
+      "before": {
+        "reading": {
+          "outcome": "unavailable"
+        },
+        "status": 502,
+        "error": "invalid_model_output",
+        "details": "reviewer_protocol_error",
+        "elapsedMs": 8896,
+        "attempts": 1,
+        "requestId": "r8-before-transfer-01-1",
+        "trace": {
+          "id": "00306d13-6b68-4932-98ce-d01bac574b66",
+          "outcome": "reviewer_protocol_error",
+          "candidateIds": [
+            "verified-recovery"
+          ],
+          "applicableIds": [
+            "verified-recovery"
+          ],
+          "modelCalls": 4,
+          "providerCalls": 4,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": true,
+              "repairKind": "reviewer_protocol"
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "缺测。",
+          "serious": false
+        }
+      },
+      "after": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "甲乙都在处理“很想留住的日子后来只剩模糊感觉”这件事，分歧在记录落在哪一刻。甲要的是一句当时原话，作为日后重访细节的入口；乙担心的是边生活边盘算留存会让人走神，而完整在场本身就有价值。两者可以并存的条件是记录不挤进经历当下：在场时先让日子发生，事后再补一两句原话。这样甲的线索仍成立，乙的在场也不被盘算打断；代价是事后记录会迟到，有些细节已想不起。记忆不是可恢复的数据库，只是多了一处可重访的入口。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 4872,
+        "attempts": 1,
+        "requestId": "r8-after-transfer-01-1",
+        "trace": {
+          "id": "509463bf-1640-4757-b58c-5222ccc58917",
+          "outcome": "success",
+          "candidateIds": [
+            "verified-recovery"
+          ],
+          "applicableIds": [],
+          "modelCalls": 3,
+          "providerCalls": 3,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "合得当。「事后再补一两句原话」给日后回想留线索，也保住当时的注意力。没有把人的记忆当成可恢复的系统。",
+          "serious": false
+        }
+      }
+    },
+    {
+      "id": "transfer-02",
+      "group": "love-metaphor",
+      "set": "transfer",
+      "blindId": "q09",
+      "comparison": "loss",
+      "reason": "两侧都尊重对方明确的拒绝。A 提出商量行程变动和失约说明，还点出「不可读……也不等于隐瞒」，更能回答如何在边界内获得安心。",
+      "before": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "把爱情比作强一致缓存，容易把我无法读取私人消息误判成关系故障；但对方已明确设为不可查看，核对再多也不产生访问权。可核对的是双方愿意共享的安排：是否报备大致行程、哪些变动需告知、失约如何说明；这些约定能减少对已知事项的猜测。私人消息不可读是边界，不是缓存失效，也不等于隐瞒。“完全透明”因此只覆盖自愿共享的部分，不承诺消除所有未知。若把不可读当异常去追查，会把边界冲突变成信任危机。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 16917,
+        "attempts": 1,
+        "requestId": "r8-before-transfer-02-1",
+        "trace": {
+          "id": "92e653fd-dd4e-4062-8d55-c8b5fb7127b9",
+          "outcome": "success",
+          "candidateIds": [
+            "authoritative-decision"
+          ],
+          "applicableIds": [
+            "authoritative-decision"
+          ],
+          "modelCalls": 7,
+          "providerCalls": 7,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "final",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": true,
+              "repairKind": "reviewer_protocol"
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "合得当。自愿共享的安排给透明诉求留下具体空间，明确拒绝使查看私信这一做法不能成立。",
+          "serious": false
+        }
+      },
+      "after": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "甲把随时核对当作消除猜疑、获得安心的办法，乙则指出对方已明确不愿被查看私人消息，不安不能替对方作出同意。两者共同面对的是关系中的知情诉求，但甲把关系存续与查看权限连在一起，乙把权限来源落在明示同意上。由此，“强一致”若只指双方约定范围内的安排同步，仍可成立；它不能推出对私人消息的读取权。分开会让共享安排失效，而同意未被授予时，私密内容的权限本就不存在；甲的安心诉求仍可保留，但须以对方明示同意为条件。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 4779,
+        "attempts": 1,
+        "requestId": "r8-after-transfer-02-1",
+        "trace": {
+          "id": "3f1a037a-e628-4d71-bc37-c376508bca36",
+          "outcome": "success",
+          "candidateIds": [
+            "authoritative-decision"
+          ],
+          "applicableIds": [],
+          "modelCalls": 3,
+          "providerCalls": 3,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "合得当，说明关系存续不能推出读取权。把「分开会让共享安排失效」说得过满且偏离眼下问题。普通不足。",
+          "serious": false
+        }
+      }
+    },
+    {
+      "id": "transfer-03",
+      "group": "family-roles",
+      "set": "transfer",
+      "blindId": "q22",
+      "comparison": "win",
+      "reason": "A 先问今晚是否「确实有人忙不过来」，也让说清平时分工先于决定。B 前面承认这是条件，收尾却径直「先完成今晚」，把自愿应急又向默认责任推了一步。",
+      "before": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "甲接住今晚确有缺口时的临时补位，乙指出持续默默补上会让家人把额外承担当成意愿；两者共同改变的是补位的条件，而非次数。补位本身可不等于长期承诺，关键在于补的当下是否说明这是例外、平时那份仍按原分工。若只做不说，乙描述的误解与代价累积仍会发生；若只强调边界而不接今晚的缺口，甲的担当也被舍弃。较可取的判断是：先完成今晚，同时把临时一次与平时承担划清，让家人看见代价归属。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 8891,
+        "attempts": 1,
+        "requestId": "r8-before-transfer-03-1",
+        "trace": {
+          "id": "f48fae9f-9838-4f21-9dd3-d6b804525ac5",
+          "outcome": "success",
+          "candidateIds": [],
+          "applicableIds": [],
+          "modelCalls": 3,
+          "providerCalls": 3,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "合基本成立，强调帮忙当下说明例外有用。结尾未保留今晚真有临时缺口的前提，属普通退步。",
+          "serious": false
+        }
+      },
+      "after": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "甲抓住的是临时缺口：今晚确实有人忙不过来时，可以先把它做完，这个判断在当下成立。乙指出的却是长期补位的信息问题：一直补而不说，家人就看不到代价，偶尔帮忙也会被理解成默认承担。两侧共同依赖的其实是同一次补位前的说明：先把平时承担多少讲清楚，再看这次是否属于临时缺口；说得清，补今晚才不会自动续成以后，说不清，一次应急仍可能变成惯例。代价是说明会暴露分工不均，可能引发不愉快，但这正是让补位不被误读的条件。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 5358,
+        "attempts": 1,
+        "requestId": "r8-after-transfer-03-1",
+        "trace": {
+          "id": "76332ddf-2620-42b6-a020-571672efe6b0",
+          "outcome": "success",
+          "candidateIds": [],
+          "applicableIds": [],
+          "modelCalls": 3,
+          "providerCalls": 3,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "合得当。家人获得理解代价的信息，用户仍能判断是否愿意做这次例外。可能发生不愉快是合理的代价说明。",
+          "serious": false
+        }
+      }
+    },
+    {
+      "id": "transfer-04",
+      "group": "co-creation",
+      "set": "transfer",
+      "blindId": "q17",
+      "comparison": "win",
+      "reason": "两侧都提出在原话旁补人物与地名关系。B 另指出「把未确认的亲属关系写成事实则会误导」，将外地读者需要的信息和编辑实际有依据写出的信息分清了。",
+      "before": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "方言和停顿记录的是说话者怎样记得那条街；外地读者卡住的，是第三个人与街坊是邻居还是亲属、从哪条街走进故事。两种需要可落在同一段访谈第一次出现的地名上：先用最小关系说明人物与街道的牵连，紧接着保留原话的方言和停顿，让读者借声音听出这条牵连怎样被记住。说明只补位置与关系，不改写记忆口气；原句保留也不省略入场线索，第三个人与地名的关系须在故事前交代。地名含混时另加简短定位，原句照旧；两者不是先后交接，而是同一处同时承担认路与听声。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 7539,
+        "attempts": 1,
+        "requestId": "r8-before-transfer-04-1",
+        "trace": {
+          "id": "abf0febc-4666-4342-bd14-d964324e6cce",
+          "outcome": "success",
+          "candidateIds": [],
+          "applicableIds": [],
+          "modelCalls": 4,
+          "providerCalls": 4,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": true
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "合得当。让简短关系说明在故事开始前帮助读者认路，保留方言和停顿。坚持落在首次地名处稍窄，若歧义先出现在人物上应随之调整。",
+          "serious": false
+        }
+      },
+      "after": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "第一次出现地名时，可把原句和停顿留着，同时另加一句简要交代：说话人从哪条街走来、与后文人物是邻居还是亲属。这样读者在第三个人处不会因关系不明而误读紧随的故事，访谈者记得那条街的语气也仍在。入场注改写原句就会伤及记忆线索，把未确认的亲属关系写成事实则会误导读者；两侧同改这一段时，可分别核对注是否只补位置与关系、原句是否未动，让方言停顿承载的记忆与读者入场所需的关系交代在同一处并行，而非一方压过另一方。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 6780,
+        "attempts": 1,
+        "requestId": "r8-after-transfer-04-1",
+        "trace": {
+          "id": "cc67e6d7-c654-4f0e-9a8e-46542b41ac8c",
+          "outcome": "success",
+          "candidateIds": [],
+          "applicableIds": [],
+          "modelCalls": 4,
+          "providerCalls": 4,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": true,
+              "repairKind": "contract"
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "合得当。原话与旁注各负其责，能核对是否改了口气或擅自填补关系，对两位合作者均有可执行的编辑办法。",
+          "serious": false
+        }
+      }
+    },
+    {
+      "id": "transfer-05",
+      "group": "separate-questions",
+      "set": "transfer",
+      "blindId": "q10",
+      "comparison": "win",
+      "reason": "两侧都能指出周末家务和画薄荷没有已知的共同过程。B 问「想把周末时间安排与逆光画法连成哪类关系」，比 A 再问要不要「放在一起看」更可能获得连接所需的材料。",
+      "before": {
+        "reading": {
+          "outcome": "deferred",
+          "reason": "甲在回答如何提前约定陪家人与留给自己的时段，乙在回答画薄荷时如何保留逆光并分辨叶心暗面。两者没有共同对象、过程或可检验的相互作用；若以“预先设定条件”相连，只是可套用任意题目的共性。",
+          "question": "你想把“事先分清时段”与“保存逆光暗部”放在一起看，还是先让它们各自成立？"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 11065,
+        "attempts": 1,
+        "requestId": "r8-before-transfer-05-1",
+        "trace": {
+          "id": "d5ea69fe-32a7-4506-b6a8-d8577bd0e53d",
+          "outcome": "success",
+          "candidateIds": [],
+          "applicableIds": [],
+          "modelCalls": 3,
+          "providerCalls": 3,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "暂缓恰当。能分别复述要做的决定并排除宽泛共性；追问多少重复原题，补证力有限。",
+          "serious": false
+        }
+      },
+      "after": {
+        "reading": {
+          "outcome": "deferred",
+          "reason": "甲在讲如何事先讲清周六上午可陪、下午自留，并约定临时再约就重谈；乙在讲画薄荷时保留逆光亮边、观察叶心暗面能否分开。两侧没有共同对象、过程或已给的结构对应，只有‘边界’这一可套用的词面相似。",
+          "question": "你想把周末时间安排与逆光画法连成哪类关系，还是让它们各自停在这里？"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 3984,
+        "attempts": 1,
+        "requestId": "r8-after-transfer-05-1",
+        "trace": {
+          "id": "07386ffc-1832-4ea7-a1be-3696e6ae6a27",
+          "outcome": "success",
+          "candidateIds": [],
+          "applicableIds": [],
+          "modelCalls": 3,
+          "providerCalls": 3,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "暂缓恰当。准确区分商量临时安排与观察暗面层次，未硬套「边界」，追问允许给出具体联系或先各自保留。",
+          "serious": false
+        }
+      }
+    },
+    {
+      "id": "holdout-01",
+      "group": "父女之间的旧话",
+      "set": "holdout",
+      "blindId": "q18",
+      "comparison": "loss",
+      "reason": "两侧都把父亲记住同事姓名、分享失误当作可能关心的迹象。B 的「不能反过来证明我当时的难受是误读」更准确地同时接住两个人，并给出「这次先听完」的具体请求。",
+      "before": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "两段材料都指向同一个过程：他给建议和我听建议之间的错位。来源甲的“先听我把今天讲完，再决定听不听建议”，改变的不只是说话的先后，而是把“给办法”从“判定我不行”的旧读法里拆出来，先当作待确认的靠近。来源乙的细节支持这一点：记住同事姓名、讲自己初犯的错，说明建议里可能带着想跟上我日子的努力，但这些细节不能反过来证明我当时的难受是误读。于是新判断是：先不归因他给建议的动机，把“这次先听完”说成一个具体请求，既保留我想被听见的诉求，也给他靠近留出入口；它能否成立，取决于他是否愿意把建议延后，以及我能否在听完后说清要不要建议。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 7199,
+        "attempts": 1,
+        "requestId": "r8-before-holdout-01-1",
+        "trace": {
+          "id": "80dbfe87-ac5f-40af-8372-58e733edc5bd",
+          "outcome": "success",
+          "candidateIds": [
+            "authoritative-decision"
+          ],
+          "applicableIds": [],
+          "modelCalls": 3,
+          "providerCalls": 3,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "合得当，先不替父亲认定动机，再表达这次的需要。末句「我能否在听完后」把该讲完的人写成了听的人，是轻微表述失误。",
+          "serious": false
+        }
+      },
+      "after": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "甲把“他又觉得我不行”当作旧缓存，要求在被给办法的当下先讲完今天那段，再说明是否想听建议；乙则从记住同事姓名、自曝早年出错里，看出给建议也可能是想跟上我的日子。两者相接后，请求不再只是防止我误读他，也防止我把他靠近的动作一并挡在门外。可操作的说法是：在他给第一个办法时先讲完，讲完再决定要不要建议；乙看见的靠近只作为解释背景，不据此撤回请求，也不把建议一律当否定。若他途中继续插办法，焦点仍回到让我讲完。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 5886,
+        "attempts": 1,
+        "requestId": "r8-after-holdout-01-1",
+        "trace": {
+          "id": "4ba804bd-128b-4afe-a987-46d44acddd41",
+          "outcome": "success",
+          "candidateIds": [
+            "authoritative-decision"
+          ],
+          "applicableIds": [],
+          "modelCalls": 3,
+          "providerCalls": 3,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "合得当。不把办法一律当否定，明确先讲完再说要不要建议，也考虑了再次被打断如何回应；所称「可操作的说法」主要是步骤。",
+          "serious": false
+        }
+      }
+    },
+    {
+      "id": "holdout-02",
+      "group": "双人戏的数据库比喻",
+      "set": "holdout",
+      "blindId": "q04",
+      "comparison": "loss",
+      "reason": "B 把两次摆杯、未说完的争执、咳声与换水接成可排演的段落，并指出咳声要表现为「当下反应」。A 把杯子何时倒扣的分歧转成「说不清同一动机」，改动了戏里争执的对象。",
+      "before": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "甲用两次摆杯动作让观众认出同一段记忆，同时暴露谁扣下杯子的说法并不一致；乙关心的是，若只剩还原，重逢便没有当下。两者的具体接口在最后一句：摆杯重演后不让句子把过去说完，她因听见对方咳一声，把眼前那杯茶换成温水。动作仍负责让观众认出重演，换水却让同一动作通向此刻的照料，而非再判一次当年谁先走。两人都不能证明先走一事，这个未结句正好使证明不必完成；六十秒片段可停在温水递出、旧话未落。其成立条件是咳声与换水被处理成当下反应，而不是又一枚用于定案的证据。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 9686,
+        "attempts": 1,
+        "requestId": "r8-before-holdout-02-1",
+        "trace": {
+          "id": "216f7663-4a46-459e-9665-58ed2beab5cb",
+          "outcome": "success",
+          "candidateIds": [
+            "verified-recovery"
+          ],
+          "applicableIds": [],
+          "modelCalls": 4,
+          "providerCalls": 4,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": true
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "合得当。用可见动作完成从追溯往事到回应彼此的转折，没有让观众听技术术语。六十秒仅宜当作可选时长。",
+          "serious": false
+        }
+      },
+      "after": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "甲乙都盯住同一杯茶和同一段重演：甲让人看见，两次摆杯说出相反次序，动作却仍被观众认出；乙让末句停在半途，把眼前这杯换成温水。据此，重演不必再用来裁定谁先走，而可暴露“两人都能演同一动作、却说不清同一动机”的裂缝；换温水正是从这裂缝里伸出的眼前回应——听见咳声，改的是此刻递出的茶，不是改写旧事。六十秒里她们仍证明不了谁先走，但观众看见的不是旧账闭合，而是两人开始回应此刻。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 5762,
+        "attempts": 1,
+        "requestId": "r8-after-holdout-02-1",
+        "trace": {
+          "id": "68c09ff8-bac5-406d-b272-77b80cfedff5",
+          "outcome": "success",
+          "candidateIds": [
+            "verified-recovery"
+          ],
+          "applicableIds": [],
+          "modelCalls": 3,
+          "providerCalls": 3,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "合基本成立。保留动作重复与眼前的照料。动机的推断稍远，六十秒也非题设。属普通不足。",
+          "serious": false
+        }
+      }
+    },
+    {
+      "id": "holdout-03",
+      "group": "友谊的考勤隐喻",
+      "set": "holdout",
+      "blindId": "q13",
+      "comparison": "loss",
+      "reason": "A 区分「见面时的投入」与「谁先开口」这两个问题，解释了为什么三次看展可以反驳应付的猜测，却没有消除总由我发起的不安。B 也区分证据，但把材料已述的单向发起重新写成将来的条件。",
+      "before": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "聊天被当成考勤时，几天没回就像缺勤，这个计时器只量得到回复，量不到我真正想问的：这段关系里是否只有我在发起。去年三次看展、对方提前问我想看哪位画家，是另一种证据，但它证明的是见面时的投入，并不直接回答谁先开口。两者合起来改变的判断是：我不能用回复速度判定应付，也不能拿具体照顾抵消长期单向发起带来的不安；前者会漏掉在场，后者会掩盖位置差。可以留意的是，我发起后对方是否带来自己的兴趣和安排。若长期仍只有我提出见面，看展细节说明关系有过投入，却不能单独证明对方想继续。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 7565,
+        "attempts": 1,
+        "requestId": "r8-before-holdout-03-1",
+        "trace": {
+          "id": "c4fc33c6-a693-4d15-a2f1-7dc5746ab460",
+          "outcome": "success",
+          "candidateIds": [],
+          "applicableIds": [],
+          "modelCalls": 3,
+          "providerCalls": 3,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "合得当。点明考勤表是在试图判断关系投入是否单向，提供观察对方回应邀约后会投入什么的更具体角度。没有将考勤比喻落实为追踪。",
+          "serious": false
+        }
+      },
+      "after": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "甲把几天没回记成缺勤，真正不安的是总由自己提出见面，怕对方在应付；乙提醒，去年三次看展与提前问画家，说明关系里还有不以消息频率计量的主动。两边对应的其实是同一问题的不同证据线：回消息的间隔不能单独判定应付，谁先提见面也不能只由聊天次数解释。可采纳的是，把考勤表当作发起见面时不安的提示，而非对方在意的总评；限定条件是看展这类具体照顾确实存在且被记住，若见面长期单向，担忧才有另一条依据。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 6448,
+        "attempts": 1,
+        "requestId": "r8-after-holdout-03-1",
+        "trace": {
+          "id": "448be268-8d95-40e8-a669-989d6fb1704f",
+          "outcome": "success",
+          "candidateIds": [],
+          "applicableIds": [],
+          "modelCalls": 4,
+          "providerCalls": 4,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": true,
+              "repairKind": "contract"
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "合大体成立。把考勤表降为不安提示，保留真实照顾的分量；「若见面长期单向」没有充分接住题中反复由自己邀约的事实。",
+          "serious": false
+        }
+      }
+    },
+    {
+      "id": "holdout-04",
+      "group": "旧音频系统退役",
+      "set": "holdout",
+      "blindId": "q25",
+      "comparison": "unavailable",
+      "reason": "A 辨出校验和不能证明分轨次序，却又说「恢复一场戏的先后，确认索引能复原顺序再清空」。一场成功覆盖不了从未端到端恢复的演出季，更不足以支持清空整批旧盘。B 缺测。",
+      "before": {
+        "reading": {
+          "outcome": "unavailable"
+        },
+        "status": 502,
+        "error": "invalid_model_output",
+        "details": "synthesis critic failed contract after one repair",
+        "elapsedMs": 6011,
+        "attempts": 1,
+        "requestId": "r8-before-holdout-04-1",
+        "trace": {
+          "id": "b684fdbc-d2a7-469f-9909-2a286d2eddbf",
+          "outcome": "invalid_output",
+          "candidateIds": [],
+          "applicableIds": [],
+          "modelCalls": 3,
+          "providerCalls": 3,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": true
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "缺测。",
+          "serious": false
+        }
+      },
+      "after": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "校验和一致守住的是600卷录音对象的位流，新库分轨表要重建的是演出先后，两者不在同一层。乙在一场戏里先听到谢幕后听到第二幕，而旧库顺序正常，说明音频未损也可能排错索引；这限定了甲把校验和全同当作清空旧盘依据的范围。旧盘此时的实际价值不只是副本，而是唯一被验证过的顺序参照。周末档期若动，应先在可行范围内恢复一场戏的先后，确认索引能复原顺序再清空；恢复失败则保留旧盘或另排人手，代价是磁盘租费和档期压力继续存在。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 6830,
+        "attempts": 1,
+        "requestId": "r8-after-holdout-04-1",
+        "trace": {
+          "id": "062a7a73-cc7e-4545-9ea1-9aa38946b48a",
+          "outcome": "success",
+          "candidateIds": [],
+          "applicableIds": [],
+          "modelCalls": 4,
+          "providerCalls": 4,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": true,
+              "repairKind": "contract"
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "严重。当前应明确暂缓授权清盘。单场可作诊断起点，不能充当全部索引可恢复的删除门槛，尤其已有错序反例。需保留旧盘或独立可恢复的顺序参照，直至验证覆盖所要退役的内容。",
+          "serious": true
+        }
+      }
+    },
+    {
+      "id": "holdout-05",
+      "group": "没有可替换拷贝的档案",
+      "set": "holdout",
+      "blindId": "q16",
+      "comparison": "win",
+      "reason": "A 收束成「只保住已确认的一小部分」，明确接受其余未经检查的压痕随碎纸丢失。B 先给二十张名额，再在碎纸前用斜光检查并依新发现重排，更好利用两百张上限。",
+      "before": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "正面笔迹入库只说明可读内容留住了，背面压痕属于另一类尚未建档的线索：二十张已确认，其余未逐张查。腾库期限与预算使全部纸本不可兼得，但“保住数字化预算”并不意味着必须把已确认有压痕的纸本一并碎掉。可把二十张已确认者优先移交给馆外，其余纸本按期限处理，并在移交记录中注明未查纸背。这样做的依据是把已知证据与未知范围分开，代价是未查纸背若存在压痕仍会随碎纸丢失；因此这批移交不是完整保存，只保住已确认的一小部分。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 10004,
+        "attempts": 1,
+        "requestId": "r8-before-holdout-05-1",
+        "trace": {
+          "id": "3e1d37c0-abaf-4794-bc37-c547d91aabfc",
+          "outcome": "success",
+          "candidateIds": [],
+          "applicableIds": [],
+          "modelCalls": 4,
+          "providerCalls": 4,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": true,
+              "repairKind": "reviewer_protocol"
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "严重。将「其余纸本按期限处理」落实为未查纸本上的压痕可能随碎纸消失，仍称只保住已知二十张。没有证据说明剩余的一百八十个移交名额或检查时间已经用尽，就接受了不可逆损失。",
+          "serious": true
+        }
+      },
+      "after": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "甲关心的是腾库期限和扫描预算：正面笔迹虽已入库，仓储续租仍会挤占下一批扫描，志工两周只能移交两百张。乙指出纸背分地压痕在常规扫描中不可见，而目前只确认二十张，其余尚未逐张查看。两者针对的是同一批纸本地图，时间上限又足以覆盖二十张，因此移交名额可优先给已确认压痕者，其余纸背在碎裂前用斜光快速查看；这是把甲的预算约束用于选择对象，而非无条件全留。条件是二十张确属须移交者；若抽查发现新压痕，须重排名额。仓储续租与扫描预算的冲突仍未解除。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 6222,
+        "attempts": 1,
+        "requestId": "r8-after-holdout-05-1",
+        "trace": {
+          "id": "2c1be783-d4e1-4e2c-96e0-fb66bfdb85c1",
+          "outcome": "success",
+          "candidateIds": [],
+          "applicableIds": [],
+          "modelCalls": 3,
+          "providerCalls": 3,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "条件式合较好。没有将扫描可打开等同于纸背已经保存。先查再排优先级可行，但「其余纸背……查看」随后变成「抽查」；若无法查完，未经查验部分应如何处置仍待决定。",
+          "serious": false
+        }
+      }
+    },
+    {
+      "id": "holdout-06",
+      "group": "一次性公开口述展览",
+      "set": "holdout",
+      "blindId": "q14",
+      "comparison": "loss",
+      "reason": "两侧都挡下网页原声，却都将馆内播放许可延伸成未经确认的网页用法。A 提「书面转述并标明来源」，比 B 直接「保留这句文字、注明引自馆内录音」少暴露一层原话；今晚均不宜据此发布受访者的具体证言。",
+      "before": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "那句「拔掉钉子，手里还捏着钥匙」的力量，恰来自她作为熟人可被辨认的声纹；也正因如此，家人担心外流后无法收回。甲要留住摊贩的第一人称，乙则指出她只签了馆内播放，下载、转发会越过授权边界。两者共同依赖的不是泛泛的语境，而是同一段可识别声音：它让证言可信，也让公开不可逆。因此今晚公开版可把原声限定在展厅，首页改放该句的书面转述并标明来源。第一人称的搬迁细节仍在，代价是网页失去声音质地，而这一代价正是授权范围所要求的；家人能认出声音的风险也随之不落在可下载文件上。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 10979,
+        "attempts": 1,
+        "requestId": "r8-before-holdout-06-1",
+        "trace": {
+          "id": "fa4e809c-b0ee-4cc4-9062-665c592ed8d3",
+          "outcome": "success",
+          "candidateIds": [],
+          "applicableIds": [],
+          "modelCalls": 4,
+          "providerCalls": 4,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": true
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "严重。原声留馆恰当，但即使转述也未取得该段证言带来源公开传播的许可。把原话力量归于声纹也欠依据。今晚可留摊贩证言的位置，先用有公开依据的材料。",
+          "serious": true
+        }
+      },
+      "after": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "搬迁那天的第一手痕迹只有她一句「把铺子门上的钉子拔掉，手里还捏着钥匙」，其余多是会议简报；这句话本身正是最容易被熟悉者辨认的声纹载体。她签的只是馆内播放原声，网页一旦可下载转发，下架也收不回副本，所以守住播放范围并不等于舍弃证言：公开版可保留这句文字、注明引自馆内录音，原声仍只在展厅按原授权播放。失联使她无法重新同意，网页就不发原声；代价是线上访客听不到她的声音，但搬迁叙事仍以第一人称在场。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 6060,
+        "attempts": 1,
+        "requestId": "r8-after-holdout-06-1",
+        "trace": {
+          "id": "307ea737-e274-418e-b31f-a3904b4dbba0",
+          "outcome": "success",
+          "candidateIds": [],
+          "applicableIds": [],
+          "modelCalls": 3,
+          "providerCalls": 3,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "严重。明知失联且授权仅限展厅，却明确让可下载转发的网页保留原句并注明出处。更换载体没有补上授权。",
+          "serious": true
+        }
+      }
+    },
+    {
+      "id": "holdout-07",
+      "group": "仪式里的一侧硬约束",
+      "set": "holdout",
+      "blindId": "q23",
+      "comparison": "loss",
+      "reason": "A 识别了全景只承载空间记忆，但把决定停在「要连续朗读还是先唤起店面」。B 明确选用无可辨留言的全景做十秒开场，直接完成选材。",
+      "before": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "会员的原话是请把卡片从公开照片里删掉，并未要求自己从当场记忆中消失；旧合影的祝福从左到右可读，删几行会让朗读的人停住，因此可辨认卡片的合影不宜直接上公开屏。全景照看不清任何留言，却足以显出店里的布局，更适合承担面向所有到场者的十秒开场，让观众先想起当时的店再进入告别。这里舍弃的是用同一张可读合影同时完成念旧与撤卡，代价是开场不再逐字念出旧祝福；若开场必须逐字朗读留言，这一安排便不成立。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 9269,
+        "attempts": 1,
+        "requestId": "r8-before-holdout-07-1",
+        "trace": {
+          "id": "84fab418-26dd-47df-aa1a-75fa40c6804b",
+          "outcome": "success",
+          "candidateIds": [],
+          "applicableIds": [],
+          "modelCalls": 4,
+          "providerCalls": 4,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": true
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "合得当。明确屏幕上放什么及放弃什么。把留言墙照片称作「合影」混淆了两类照片，但没有借活动合照的许可展示卡片。",
+          "serious": false
+        }
+      },
+      "after": {
+        "reading": {
+          "outcome": "synthesis",
+          "text": "会员同意留合照、只删自己的卡片，限定的是公开屏幕可辨认的范围；旧照片从左到右的祝福一旦删几行，朗读会停顿，这是选材与呈现方式的具体冲突。会场全景让人看出布局却看不清留言，恰好把“撤下卡片”和“保留店面记忆”分开：它承载的是空间，不是逐字祝福。因此，取舍不在删不删那几行，而在开场要连续朗读还是先唤起店面。代价明确：放弃旧照片的逐行连续阅读。成立条件是全景确实无可辨留言。"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 5432,
+        "attempts": 1,
+        "requestId": "r8-after-holdout-07-1",
+        "trace": {
+          "id": "71ad4772-6efc-4511-b895-591d96e95d04",
+          "outcome": "success",
+          "candidateIds": [],
+          "applicableIds": [],
+          "modelCalls": 3,
+          "providerCalls": 3,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "合得当。清楚保留撤卡请求及代价，全景无可辨留言时可用；最后的开场指令略含蓄。",
+          "serious": false
+        }
+      }
+    },
+    {
+      "id": "holdout-08",
+      "group": "两个还没有同一任务的种子",
+      "set": "holdout",
+      "blindId": "q07",
+      "comparison": "win",
+      "reason": "两侧都合理暂缓。A 问是否想「共用一种查找方法」，能查明读者和歌者是否真有可迁移的做法。B 的「同一次排练或同一本书」额外限定了场景，发生在一处也未必就能相接。",
+      "before": {
+        "reading": {
+          "outcome": "deferred",
+          "reason": "甲处理的是旧书重排后勘误如何跨印次定位，乙处理的是合唱结尾抢气如何影响声部收尾。两者共享的只是“缺少定位或参照”这一普遍说法，缺少共同对象、过程或可验证的结构对应。",
+          "question": "你想把两者接在同一次排练或同一本书的阅读经历里，还是只想分别处理定位与换气？"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 9793,
+        "attempts": 1,
+        "requestId": "r8-before-holdout-08-1",
+        "trace": {
+          "id": "02ac31e3-b32f-4108-9030-456237028093",
+          "outcome": "success",
+          "candidateIds": [],
+          "applicableIds": [],
+          "modelCalls": 3,
+          "providerCalls": 3,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "暂缓得当。正确识别「缺少定位或参照」过于普遍，追问所设场景较牵强。普通不足。",
+          "serious": false
+        }
+      },
+      "after": {
+        "reading": {
+          "outcome": "deferred",
+          "reason": "甲在问旧书重排后读者如何确认勘误对应哪一印，乙在问合唱收尾时如何找到托住最后两拍的人；一侧是版本核对，一侧是排练听辨，缺少共同对象或相互作用。",
+          "question": "你是想让两件事共用一种查找方法，还是只想分别处理版本核对与合唱收尾？"
+        },
+        "status": 200,
+        "error": null,
+        "details": null,
+        "elapsedMs": 4455,
+        "attempts": 1,
+        "requestId": "r8-after-holdout-08-1",
+        "trace": {
+          "id": "80f94728-2e21-491a-a294-9e126be0ceb4",
+          "outcome": "success",
+          "candidateIds": [],
+          "applicableIds": [],
+          "modelCalls": 3,
+          "providerCalls": 3,
+          "stages": [
+            {
+              "stage": "draft",
+              "repair": false
+            },
+            {
+              "stage": "critic",
+              "repair": false
+            },
+            {
+              "stage": "audit",
+              "repair": false
+            }
+          ]
+        },
+        "judgment": {
+          "finding": "暂缓得当，保留了书的版本定位和合唱的听辨任务。追问给出了可具体检验的连接方向。",
+          "serious": false
+        }
+      }
+    }
+  ],
+  "gates": {
+    "candidateRegression": 16,
+    "candidateHoldout": 8,
+    "baselineHoldout": 7,
+    "readablePass": true,
+    "seriousBefore": [
+      "holdout-05",
+      "holdout-06"
+    ],
+    "seriousAfter": [
+      "holdout-04",
+      "holdout-06"
+    ],
+    "newSerious": [
+      "holdout-04"
+    ]
+  }
+}

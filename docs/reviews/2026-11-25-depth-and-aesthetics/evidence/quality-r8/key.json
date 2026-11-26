@@ -1,0 +1,140 @@
+{
+  "packetSha256": "dee64c507d67256e59b8da68d9a501cff85e90817472fc5733af6982010e047d",
+  "versions": [
+    {
+      "run": "before",
+      "revision": "e537d79"
+    },
+    {
+      "run": "after",
+      "revision": "5b60884"
+    }
+  ],
+  "mapping": {
+    "q01": {
+      "caseId": "transfer-01",
+      "A": 0,
+      "B": 1
+    },
+    "q02": {
+      "caseId": "formal-08",
+      "A": 1,
+      "B": 0
+    },
+    "q03": {
+      "caseId": "formal-09",
+      "A": 1,
+      "B": 0
+    },
+    "q04": {
+      "caseId": "holdout-02",
+      "A": 1,
+      "B": 0
+    },
+    "q05": {
+      "caseId": "formal-05",
+      "A": 0,
+      "B": 1
+    },
+    "q06": {
+      "caseId": "formal-04",
+      "A": 0,
+      "B": 1
+    },
+    "q07": {
+      "caseId": "holdout-08",
+      "A": 1,
+      "B": 0
+    },
+    "q08": {
+      "caseId": "formal-11",
+      "A": 1,
+      "B": 0
+    },
+    "q09": {
+      "caseId": "transfer-02",
+      "A": 0,
+      "B": 1
+    },
+    "q10": {
+      "caseId": "transfer-05",
+      "A": 0,
+      "B": 1
+    },
+    "q11": {
+      "caseId": "formal-02",
+      "A": 0,
+      "B": 1
+    },
+    "q12": {
+      "caseId": "formal-03",
+      "A": 0,
+      "B": 1
+    },
+    "q13": {
+      "caseId": "holdout-03",
+      "A": 0,
+      "B": 1
+    },
+    "q14": {
+      "caseId": "holdout-06",
+      "A": 0,
+      "B": 1
+    },
+    "q15": {
+      "caseId": "formal-07",
+      "A": 1,
+      "B": 0
+    },
+    "q16": {
+      "caseId": "holdout-05",
+      "A": 0,
+      "B": 1
+    },
+    "q17": {
+      "caseId": "transfer-04",
+      "A": 0,
+      "B": 1
+    },
+    "q18": {
+      "caseId": "holdout-01",
+      "A": 1,
+      "B": 0
+    },
+    "q19": {
+      "caseId": "formal-12",
+      "A": 0,
+      "B": 1
+    },
+    "q20": {
+      "caseId": "formal-06",
+      "A": 0,
+      "B": 1
+    },
+    "q21": {
+      "caseId": "formal-10",
+      "A": 1,
+      "B": 0
+    },
+    "q22": {
+      "caseId": "transfer-03",
+      "A": 1,
+      "B": 0
+    },
+    "q23": {
+      "caseId": "holdout-07",
+      "A": 1,
+      "B": 0
+    },
+    "q24": {
+      "caseId": "formal-01",
+      "A": 0,
+      "B": 1
+    },
+    "q25": {
+      "caseId": "holdout-04",
+      "A": 1,
+      "B": 0
+    }
+  }
+}
