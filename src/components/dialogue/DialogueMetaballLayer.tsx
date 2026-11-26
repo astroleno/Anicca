@@ -11,7 +11,7 @@ import type { LiquidRendererMode, LiquidRendererStatus } from "./liquid/preferen
 import { LiquidQuality } from "./liquid/quality";
 import { LiquidSceneClock } from "./liquid/clock";
 import { DEFAULT_SEED_ORBIT, projectSpatialSeed, readSeedOrbit, readSeedZoom, publishSpatialFrame, clearSpatialFrame, fitSpatialSeed, fitSeedScene } from "./liquid/space";
-import { compactSourceCaptionWidth, layoutSeedLabels, seedLabelLeader } from "./labelLayout";
+import { compactSourceCaptionWidth, layoutSeedLabels, MIN_STAGE_SEED_TARGET, ordinaryCaptionWidth, seedLabelLeader, seedTitleGeometry } from "./labelLayout";
 import { isCompactStageWidth, MIN_SYNTHESIS_TARGET } from "./synthesisStageGeometry";
 import {
   computeFusedPairs,
@@ -225,7 +225,7 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
     const remeasure = () => { labelsDirty = true; sizingDirty = true; invalidate(); };
     const clearProjection = () => {
       for (const element of surfaces) {
-        for (const key of ["translate", "transform", "width", "height", "z-index", "--stage-projection-scale", "--stage-projection-inset", "--projected-synthesis-hit-min"]) {
+        for (const key of ["translate", "transform", "width", "height", "z-index", "--stage-projection-scale", "--stage-projection-inset", "--projected-synthesis-hit-min", "--projected-stage-seed-target"]) {
           element.style.removeProperty(key);
         }
       }
@@ -234,6 +234,7 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
         caption.style.removeProperty("--stage-label-offset-x");
         caption.style.removeProperty("--stage-label-offset-y");
         caption.style.removeProperty("--source-caption-width");
+        caption.style.removeProperty("--stage-owned-caption-visibility");
       }
       for (const leader of host.querySelectorAll<HTMLElement>("[data-seed-leader]")) {
         leader.hidden = true; leader.style.removeProperty("width"); leader.style.removeProperty("transform");
@@ -313,16 +314,16 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
         }
         const reading = host.dataset.readingOrbit === "true";
         // Read visible caption dimensions before any per-frame layout writes.
+        const captionsChanged = labelsDirty;
         if (labelsDirty) {
           measuredCaptions = surfaces.flatMap(element => {
             if (reading && element.dataset.readingRole !== "satellite") return [];
             const caption = element.querySelector<HTMLElement>("[data-seed-caption]");
             if (!caption || !caption.offsetWidth || !caption.offsetHeight) return [];
             const followsSource = host.dataset.compactSynthesis === "true" && element.dataset.sourceRole === "source";
-            const title = followsSource ? caption.querySelector("strong") : null;
-            return [{ id: element.dataset.metaballSurface!, width: followsSource ? compactSourceCaptionWidth(caption) : caption.offsetWidth, height: caption.offsetHeight,
-              titleHeight: title?.offsetHeight,
-              titleOffsetY: title ? title.offsetTop + (title.offsetHeight - caption.offsetHeight) / 2 : undefined,
+            const followsSeed = host.dataset.compactOrdinary === "true" && Boolean(element.dataset.ordinaryTier);
+            return [{ id: element.dataset.metaballSurface!, width: followsSource ? compactSourceCaptionWidth(caption) : followsSeed ? ordinaryCaptionWidth(caption) : caption.offsetWidth, height: caption.offsetHeight,
+              ...(followsSource || followsSeed ? seedTitleGeometry(caption, followsSeed) : {}),
               inset: element.clientTop, element, caption,
               leader: element.querySelector<HTMLElement>("[data-seed-leader]") }];
           });
@@ -369,7 +370,7 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
         fitActive = !reading && !dragging && Math.abs(fitGoal - viewFit) >= .0001;
         // Reading coordinates are screen-space gutters. Keep normal stage fitting and zoom for browsing.
         const sceneFit = reading ? 1 : viewFit * readSeedZoom(host);
-        if ((rawChanged || sceneFit !== lastLayoutFit) && trackRect) {
+        if ((rawChanged || captionsChanged || sceneFit !== lastLayoutFit) && trackRect) {
           lastLayoutBase = unfittedNodes; lastLayoutDepth = depth.nodes; lastLayoutFit = sceneFit;
           spatialNodes = sceneFit === 1 ? unfittedNodes : unfittedNodes.map(node => fitSpatialSeed(node, spatialPivot, sceneFit));
           displayNodes = sceneFit === 1 ? depth.nodes : depth.nodes.map(node => fitSpatialSeed(node, spatialPivot, sceneFit));
@@ -390,6 +391,11 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
             const transform = `translate(calc(-50% + var(--stage-node-drag-x, 0px)), calc(-50% + var(--stage-node-drag-y, 0px))) scale(${scale})`;
             if (element.style.translate !== translate) element.style.translate = translate;
             if (element.style.transform !== transform) element.style.transform = transform;
+            if (element.dataset.ordinaryTier) {
+              element.style.setProperty("--projected-stage-seed-target", `${MIN_STAGE_SEED_TARGET / offset.scale}px`);
+            } else if (element.style.getPropertyValue("--projected-stage-seed-target")) {
+              element.style.removeProperty("--projected-stage-seed-target");
+            }
             if (element.dataset.synthesisTier) {
               const hitMin = `${MIN_SYNTHESIS_TARGET / offset.scale}px`;
               if (element.style.getPropertyValue("--projected-synthesis-hit-min") !== hitMin) {
@@ -408,7 +414,8 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
             const node = localNodes.find(item => item.id === measured.id);
             if (!node || measured.element.dataset.labelHandoff === "true") return [];
             return [{ ...measured, x: node.x, y: node.y + node.radiusPx + 10 + measured.height/2,
-              followSource: compactSynthesis && measured.element.dataset.sourceRole === "source" }];
+              followSource: compactSynthesis && measured.element.dataset.sourceRole === "source",
+              followSeed: host.dataset.compactOrdinary === "true" && Boolean(measured.element.dataset.ordinaryTier) }];
           });
           const pairCaption = measuredPair?.element;
           const source = localNodes.find(node => node.id === pressedId);
@@ -418,9 +425,10 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
             width: measuredPair!.width, height: measuredPair!.height }] : [];
           const labelSurfaces = localNodes.map(node => ({ id: node.id, x: node.x, y: node.y, radius: node.radiusPx * 1.08 }));
           const synthesisSizes = localNodes.some(node => surfaces.find(element => element.dataset.metaballSurface === node.id)?.dataset.synthesisTier);
-          const labelObstacles = compactSynthesis ? localNodes.map(node => ({
+          const compactOrdinary = host.dataset.compactOrdinary === "true";
+          const labelObstacles = compactSynthesis || compactOrdinary ? localNodes.map(node => ({
             id: node.id, x: node.x, y: node.y, radius: node.radiusPx,
-            hitRadius: Math.max(node.radiusPx * 1.08, MIN_SYNTHESIS_TARGET / 2)
+            hitRadius: compactOrdinary ? Math.max(node.radiusPx, MIN_STAGE_SEED_TARGET / 2) : Math.max(node.radiusPx * 1.08, MIN_SYNTHESIS_TARGET / 2)
           })) : synthesisSizes ? labelSurfaces.map(surface => ({
             ...surface, radius: Math.max(surface.radius, MIN_SYNTHESIS_TARGET / 2)
           })) : labelSurfaces;
@@ -439,9 +447,11 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
             const width = offsets[caption.id]?.width;
             if (width === undefined) caption.caption.style.removeProperty("--source-caption-width");
             else caption.caption.style.setProperty("--source-caption-width", `${width}px`);
+            if (offsets[caption.id]?.hidden) caption.caption.style.setProperty("--stage-owned-caption-visibility", "hidden");
+            else caption.caption.style.removeProperty("--stage-owned-caption-visibility");
             ownStyles.set(caption.caption, caption.caption.getAttribute("style") || "");
             if (caption.leader) {
-              const leader = compactSynthesis ? null :
+              const leader = compactSynthesis || caption.followSeed ? null :
                 seedLabelLeader(caption, offsets[caption.id] || { x: 0, y: 0 }, labelSurfaces);
               caption.leader.hidden = !leader;
               if (leader) {
@@ -634,7 +644,7 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
         spatialLayoutDirty = true; activeUntil = performance.now() + 250; wake(); return;
       }
       if (changed.some(record => record.type === "childList" || record.type === "characterData" ||
-        ["class", "data-reading-orbit", "data-reading-role", "data-compact-synthesis"].includes(record.attributeName || ""))) { labelsDirty = true; activeUntil = performance.now() + 500; }
+        ["class", "data-reading-orbit", "data-reading-role", "data-compact-synthesis", "data-compact-ordinary"].includes(record.attributeName || ""))) { labelsDirty = true; activeUntil = performance.now() + 500; }
       if (changed.some(record => record.attributeName === "data-seed-attention")) activeUntil = performance.now() + 650;
       invalidate();
     });

@@ -5,6 +5,9 @@ export type SeedLabelBox = {
   width: number;
   height: number;
   followSource?: boolean;
+  followSeed?: boolean;
+  titleWidth?: number;
+  titleOffsetX?: number;
   titleHeight?: number;
   titleOffsetY?: number;
 };
@@ -54,10 +57,11 @@ export function separateSeedLabels(
   return offsets;
 }
 
-export type SeedLabelOffset = { x: number; y: number; width?: number };
+export type SeedLabelOffset = { x: number; y: number; width?: number; hidden?: boolean };
 export type SeedLabelSurface = { id?: string; x: number; y: number; radius: number; hitRadius?: number };
 
 const SOURCE_CAPTION_PADDING = 4;
+export const MIN_STAGE_SEED_TARGET = 44;
 
 export function compactSourceCaptionWidth(caption: HTMLElement) {
   // The one-line title keeps its full scroll width when packed to a smaller box.
@@ -71,11 +75,32 @@ function captionSurfaceDistance(label: SeedLabelBox, surface: SeedLabelSurface, 
   return Math.hypot(dx, dy) - radius;
 }
 
-/** Pack compact synthesis captions around their own liquid surface. */
+export function ordinaryCaptionWidth(caption: HTMLElement) {
+  const title = caption.querySelector("strong");
+  const instance = caption.querySelector("em");
+  const width = (title?.scrollWidth || 0) + 12 + (instance ? instance.offsetWidth + 4 : 0);
+  return Math.min(112, Math.max(MIN_STAGE_SEED_TARGET, width));
+}
+
+export function seedTitleGeometry(caption: HTMLElement, ordinary = false) {
+  const title = caption.querySelector("strong");
+  if (!title) return {};
+  const width = ordinary ? ordinaryCaptionWidth(caption) : caption.offsetWidth;
+  const titleWidth = Math.min(title.scrollWidth, title.offsetWidth + width - caption.offsetWidth);
+  return {
+    titleWidth,
+    titleHeight: title.offsetHeight,
+    titleOffsetX: title.offsetLeft + (title.offsetWidth - caption.offsetWidth) / 2,
+    titleOffsetY: title.offsetTop + (title.offsetHeight - caption.offsetHeight) / 2
+  };
+}
+
+/** Pack compact captions around their own liquid surface. */
 function layoutOwnedSeedLabels(
   labels: readonly SeedLabelBox[], width: number, height: number, surfaces: readonly SeedLabelSurface[]
 ): Record<string, SeedLabelOffset> {
-  const margin = 8, gap = 4;
+  const ordinary = labels.some(label => label.followSeed);
+  const margin = ordinary ? 4 : 8, gap = ordinary ? 2 : 4;
   const sourceIds = new Set(labels.filter(label => label.followSource).map(label => label.id));
   const sourceSurfaces = surfaces.filter(surface => surface.id !== undefined && sourceIds.has(surface.id));
   const order = [...labels].sort((a, b) => Number(Boolean(b.followSource)) - Number(Boolean(a.followSource))
@@ -86,7 +111,7 @@ function layoutOwnedSeedLabels(
     const midpoint = owner && peer ? (owner.x + peer.x) / 2 : 0;
     const side = owner && peer ? Math.sign(owner.x - peer.x) : 0;
     const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
-    const widths = label.followSource
+    const widths = label.followSource || label.followSeed
       ? new Set([label.width, Math.max(44, label.width - 12), Math.max(44, label.width - 24), 44])
       : [label.width];
     const ranked: { box: SeedLabelBox; score: number }[] = [];
@@ -101,9 +126,14 @@ function layoutOwnedSeedLabels(
         for (const direction of [-1, 1]) {
           xs.add(clamp(surface.x + direction * (radius + halfWidth), minX, maxX));
           ys.add(clamp(surface.y + direction * (radius + halfHeight), minY, maxY));
+          if (ordinary && surface === owner) {
+            xs.add(clamp(surface.x + direction * (radius * .7 + halfWidth), minX, maxX));
+            ys.add(clamp(surface.y + direction * (radius * .7 + halfHeight), minY, maxY));
+          }
         }
       }
       if (owner) {
+        if (ordinary) ys.add(clamp(owner.y, minY, maxY));
         // More than one sample on each edge lets a title round a neighboring drop.
         for (const shift of [-56, -32, -16, 0, 16, 32, 56]) {
           xs.add(clamp(owner.x + shift, minX, maxX));
@@ -114,11 +144,13 @@ function layoutOwnedSeedLabels(
         const box = { ...label, width: captionWidth, x, y };
         if (surfaces.some(surface => captionSurfaceDistance(box, surface, Math.max(surface.radius, surface.hitRadius || 0)) < gap - .01)) continue;
         const titleHeight = label.titleHeight || Math.min(24, label.height);
-        const title = { ...box, y: y + (label.titleOffsetY || 0),
-          width: captionWidth - SOURCE_CAPTION_PADDING, height: titleHeight };
+        const title = { ...box, x: x + (label.followSeed ? label.titleOffsetX || 0 : 0), y: y + (label.titleOffsetY || 0),
+          width: label.followSeed ? Math.max(1, (label.titleWidth || label.width) - (label.width - captionWidth))
+            : captionWidth - SOURCE_CAPTION_PADDING, height: titleHeight };
         const own = owner ? captionSurfaceDistance(title, owner) : 0;
-        const wrong = label.followSource && surfaces.some(surface =>
+        const wrong = (label.followSource || label.followSeed) && surfaces.some(surface =>
           surface.id !== label.id && captionSurfaceDistance(title, surface) < own + gap);
+        if (label.followSeed && own > titleHeight) continue;
         if (wrong) continue;
         const movement = Math.hypot(x - label.x, y - label.y);
         // A tangent at the inner edge can be mathematically close to one seed
@@ -129,7 +161,7 @@ function layoutOwnedSeedLabels(
         const score = label.followSource && owner
           ? own * 3 + Math.abs(x - owner.x) * 2 + movement * .4
             + Math.max(0, 16 - halfDistance) * 10 + Math.max(0, own - titleHeight) * 80 + (lostWidth ? 200 + lostWidth * 4 : 0)
-          : movement;
+          : label.followSeed ? own * 3 + movement * .4 + lostWidth * 2 : movement;
         ranked.push({ box, score });
       }
     }
@@ -139,8 +171,10 @@ function layoutOwnedSeedLabels(
     Math.abs(a.x - b.x) < (a.width + b.width) / 2 + gap - .01 &&
     Math.abs(a.y - b.y) < (a.height + b.height) / 2 + gap - .01;
   const placed: SeedLabelBox[] = [];
+  let attempts = 0;
   function place(index: number): boolean {
     if (index === options.length) return true;
+    if (ordinary && ++attempts > 400) return false;
     for (const { box } of options[index]) {
       if (placed.some(other => overlaps(box, other))) continue;
       placed.push(box);
@@ -150,9 +184,20 @@ function layoutOwnedSeedLabels(
     return false;
   }
   if (!place(0)) {
+    if (ordinary) {
+      // Extremely close seeds can have no unambiguous title slot. Preserve
+      // the titles that still fit and leave all seed buttons named and usable.
+      const anchors: SeedLabelBox[] = [];
+      return Object.fromEntries(order.map((label, index) => {
+        const best = options[index].find(({ box }) => !anchors.some(other => overlaps(box, other)))?.box;
+        if (!best) return [label.id, { x: 0, y: 0, hidden: true }];
+        anchors.push(best);
+        return [label.id, { x: best.x - label.x, y: best.y - label.y, width: best.width }];
+      }));
+    }
     // When user positions leave no complete arrangement, keep any distinct
     // source anchors we can place and let the existing packer handle the rest.
-    const fallback = layoutSeedLabels(labels.map(label => ({ ...label, followSource: false })), width, height, surfaces);
+    const fallback = layoutSeedLabels(labels.map(label => ({ ...label, followSource: false, followSeed: false })), width, height, surfaces);
     for (const [index, label] of order.entries()) {
       const best = options[index].find(({ box }) => !placed.some(other => overlaps(box, other)));
       const offset = fallback[label.id];
@@ -162,7 +207,7 @@ function layoutOwnedSeedLabels(
   return Object.fromEntries(placed.map((box, index) => {
     const original = order[index];
     return [box.id, { x: box.x - original.x, y: box.y - original.y,
-      ...(original.followSource ? { width: box.width } : {}) }];
+      ...(original.followSource || original.followSeed ? { width: box.width } : {}) }];
   }));
 }
 
@@ -195,7 +240,7 @@ export function layoutSeedLabels(
     labels.map(label => ({ ...label, y: label.y - top })), viewportWidth, viewportHeight - top - bottom,
     surfaces.map(surface => ({ ...surface, y: surface.y - top }))
   );
-  if (labels.some(label => label.followSource)) return layoutOwnedSeedLabels(labels, viewportWidth, viewportHeight, surfaces);
+  if (labels.some(label => label.followSource || label.followSeed)) return layoutOwnedSeedLabels(labels, viewportWidth, viewportHeight, surfaces);
   const vertical = separateSeedLabels(labels, viewportHeight);
   const margin = 8, gap = 12;
   const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));

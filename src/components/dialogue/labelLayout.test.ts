@@ -164,3 +164,20 @@ it("reserves clear ground for long captions before packing short labels in a nar
     ).toBe(true);
   }
 });
+
+it("keeps viable ordinary title anchors when two saved seed positions coincide", () => {
+  const surfaces = [
+    { id: "a", x: 65, y: 100, radius: 28 },
+    { id: "b", x: 65, y: 100, radius: 28 },
+    { id: "c", x: 235, y: 170, radius: 35 }
+  ];
+  const captions = surfaces.map(({ id, x, y, radius }) => ({
+    id, x, y: y + radius + 21, width: 92, height: 22, titleWidth: 80, titleHeight: 20, followSeed: true
+  }));
+  const offsets = layoutSeedLabels(captions, 320, 280, surfaces);
+  expect(offsets.a.hidden).toBe(true);
+  expect(offsets.b.hidden).toBe(true);
+  expect(offsets.c.hidden).toBeUndefined();
+  expect(Math.abs(offsets.c.x)).toBeLessThan(10);
+  expect(Math.abs(offsets.c.y)).toBeLessThan(15);
+});

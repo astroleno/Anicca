@@ -52,6 +52,30 @@ export function sourceInstances(graph: Graph, instances: SeedInstances, resultId
 }
 
 function distinctSourceConcepts(slots: ReturnType<typeof synthesisSourceSlots>): [string, string] | undefined {
+function directInstanceNeighbors(graph: Graph, instances: SeedInstances, active: string | null) {
+  const conceptId = seedConceptId(graph, instances, active);
+  const neighbors = new Set<string>();
+  if (!active || !conceptId) return neighbors;
+
+  const concept = graph.nodes[conceptId];
+  const linkedParents = (id: string) => {
+    const child = graph.nodes[id];
+    const sources = synthesisSourceSlots(graph, instances, id);
+    return child.parents.flatMap(parentId => {
+      if (!graph.nodes[parentId]?.children.includes(id)) return [];
+      return [sources.find(source => source?.conceptId === parentId)?.instanceId || parentId];
+    });
+  };
+
+  // Only the original child is the endpoint of an incoming graph edge.
+  // A saved synthesis source can make a specific copy its parent endpoint.
+  if (active === conceptId) linkedParents(conceptId).forEach(id => neighbors.add(id));
+  for (const child of concept.children) {
+    if (graph.nodes[child] && linkedParents(child).includes(active)) neighbors.add(child);
+  }
+  return neighbors;
+}
+
   if (slots.length !== 2) return undefined;
   const left = slots[0]?.conceptId, right = slots[1]?.conceptId;
   return left && right && left !== right ? [left, right] : undefined;
@@ -130,6 +154,7 @@ export function buildSeedInstanceScene(input: {
   const { graph, instances, focusId, thinkingSpace } = input;
   const active = seedConceptId(graph, instances, input.activeInstanceId) === focusId ? input.activeInstanceId : focusId;
   const result = input.expandedResultId || active;
+  const directNeighbors = directInstanceNeighbors(graph, instances, active);
   const sources = result ? sourceInstances(graph, instances, result) : [];
   const commonParentId = result ? commonDirectParent(graph, instances, result, synthesisSourceSlots(graph, instances, result)) : undefined;
   const focusCopies = focusId ? conceptInstances(instances, focusId).map(instance => instance.id).reverse() : [];
@@ -169,6 +194,7 @@ export function buildSeedInstanceScene(input: {
       sourceRole,
       ...(sourceRole === "source" ? { semanticColor: resolveColor(conceptId) } : {}),
       ...(id === result && commonParentId ? { commonParentId } : {}),
+      ordinaryTier: id === active ? "focus" : directNeighbors.has(id) ? "direct" : "distant",
       originNodeIds: id !== conceptId ? [conceptId] : template.originNodeIds };
   });
 }

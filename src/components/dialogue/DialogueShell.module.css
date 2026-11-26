@@ -3947,6 +3947,39 @@
 .stageNodeInner small { order: -1; flex-shrink: 0; font: 12px/1.5 var(--anicca-font-literary); letter-spacing: .08em; color: inherit; opacity: .85; }
 .stageNode { display: flex; align-items: center; justify-content: center; overflow: visible; }
 .seedHitArea { position: absolute; left: 50%; top: 50%; width: max(44px,100%); height: max(44px,100%); transform: translate(-50%,-50%); border-radius: 50%; }
+.stageNode[data-ordinary-tier][data-metaball-surface] {
+  --stage-node-scale: 1;
+  width: var(--ordinary-seed-diameter);
+  height: var(--ordinary-seed-diameter);
+}
+.stageNode[data-ordinary-tier="focus"] { --ordinary-seed-diameter: clamp(92px, 15vmin, 168px); }
+.stageNode[data-ordinary-tier="direct"] { --ordinary-seed-diameter: clamp(65px, 10.5vmin, 118px); }
+.stageNode[data-ordinary-tier="distant"] { --ordinary-seed-diameter: clamp(42px, 6.75vmin, 76px); }
+.stageNode[data-ordinary-tier] .seedHitArea {
+  width: max(var(--projected-stage-seed-target, var(--stage-seed-target)), 100%);
+  height: max(var(--projected-stage-seed-target, var(--stage-seed-target)), 100%);
+}
+.stageNode[data-ordinary-tier]::before,
+.stageNode[data-ordinary-tier]::after { pointer-events: none; }
+.stageTrack[data-metaball-renderer="fallback"] .stageNode[data-ordinary-tier="direct"] { opacity: .92; }
+.stageTrack[data-metaball-renderer="fallback"] .stageNode[data-ordinary-tier="distant"] { opacity: .78; }
+.stageTrack[data-compact-ordinary] .stageNode[data-ordinary-tier] .stageNodeInner {
+  width: var(--source-caption-width, max-content);
+  visibility: var(--stage-owned-caption-visibility, visible);
+  max-width: 112px;
+  height: 22px;
+  min-height: 22px;
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+.stageTrack[data-compact-ordinary] .stageNode[data-ordinary-tier] .stageNodeInner strong { font-size: 13px; line-height: 20px; }
+.stageTrack[data-compact-ordinary] .stageNode[data-ordinary-tier="distant"] [data-seed-caption] { display: none; }
+.stageTrack[data-compact-ordinary] .stageNode [data-ordinary-marker] {
+  max-width: 88%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .stageNode[data-synthesis-tier][data-metaball-surface] {
   --stage-node-scale: 1;
   width: var(--synthesis-seed-diameter);

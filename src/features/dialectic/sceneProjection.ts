@@ -16,6 +16,7 @@ export type DialogueStageNode = {
   branchType?: BranchType;
   displayRole?: "node" | "synthesis-record";
   isGrowthPerspective?: boolean;
+  ordinaryTier?: "focus" | "direct" | "distant";
   relation: "focus" | "ancestor" | "child" | "source";
   seedX: number;
   seedY: number;
