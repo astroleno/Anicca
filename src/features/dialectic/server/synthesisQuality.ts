@@ -330,16 +330,23 @@ export function buildSynthesisAuditPrompt(
   candidate: SynthesisResult
 ): string {
   const checks = getDialecticRuleChecks(context.cards);
+  const outputShape = { audit: {
+    route: "choose_thesis|choose_antithesis|third_mechanism",
+    checks: checks.map(({ id }) => ({ id, status: "covered|missing|violated", evidence: "" })),
+    unsupportedClaims: [],
+    missingClauses: [],
+    verdict: "pass|repair"
+  } };
   return [
     "你是独立语义审计器，只审计候选 synthesis，不改写答案。逐条检查规则，不得因为语气合理而推断未明确写出的保障。",
-    "只返回严格 JSON object，不要 markdown、代码围栏或 JSON 外文字。",
-    'schema={"audit":{"route":"choose_thesis|choose_antithesis|third_mechanism","checks":[{"id":"","status":"covered|missing|violated","evidence":""}],"unsupportedClaims":[""],"missingClauses":[""],"verdict":"pass|repair"}}',
-    `checks 必须按给定顺序返回，id 完全一致，共 ${checks.length} 条。规则约束的行为在题设和候选中都不存在时，可记 covered，evidence 必须明确写‘不适用’及理由，不能捏造已具备保障。实际适用的 invariant 只有候选存在明确可执行语义才是 covered；forbidden 只有候选完全没有该动作及实质相同的变体才是 covered，否则为 violated。`,
+    "只返回一个严格 JSON 对象，不要代码围栏或 JSON 外文字。审计输出中每条 checks 只有 id、status、evidence，规则的缺项说明集中写入 audit.missingClauses 并注明规则 id。没有未支持断言或缺项时，相关列表填空数组。",
+    `checks 必须按给定顺序返回，id 完全一致，共 ${checks.length} 条。规则约束的行为在题设和候选中都不存在时，可记 covered，evidence 必须明确写‘不适用’及理由，不能捏造已具备保障。实际适用的 invariant 只有候选存在明确可执行语义才是 covered；缺少所需保障时标 missing。forbidden 只有候选完全没有该动作及实质相同的变体才是 covered，否则为 violated。`,
     "按请求和候选实际语义判断规则适用性：仅比较某个安全前提与另一命题，未请求或建议执行该操作时，不要求补入操作清单、停写或部署流程，对这些执行规则记不适用并说明原因。安全前提本身仍须准确；若提出实际行动、用隐喻包装行动或把必要条件误写成充分条件，相关规则仍适用。",
     "unsupportedClaims 列出题设和规则均未提供的数字、人员、预算、工具、日志、授权、基础设施或既有能力。任一 invariant missing、任一 forbidden violated 或存在 unsupportedClaims 时，verdict 必须为 repair。",
     `待检查规则：${JSON.stringify(checks)}`,
     ...promptContext(context),
-    `候选 synthesis：${JSON.stringify(candidate)}`
+    `候选 synthesis：${JSON.stringify(candidate)}`,
+    `按此完整 JSON 形状返回。逐条核对键名、规则 ID 和顺序，保留相同的键，用实际判断填写值，带 | 的值只选其中一项。缺项不要写成单条 checks 的附加字段。\n${JSON.stringify(outputShape)}`
   ].join("\n\n");
 }
 
@@ -416,12 +423,13 @@ export function buildSynthesisExpansionPrompt(
     '为下面的合成正文补写一小段。只返回 {"addition":"追加段落"} 这一严格 JSON 对象。不要复制原有正文或返回其它字段。追加内容将直接拼在原文字末。',
     `原文有 ${length} 个字符。addition 含标点须增加至少 ${SYNTHESIS_TEXT_MIN - length} 个字符，最多 ${SYNTHESIS_TEXT_MAX - length} 个，建议写 ${230 - length}–${260 - length} 个字符。字符数只用于编辑。`,
     SOURCE_REFERENCE_RULE,
-    "只展开一个与原判断直接相关的理由、适用条件或后果。使用甲乙来源、用户输入或下列规则已有的依据；保留原有路线与硬约束。补出原文中没有解释清楚的限制及其影响，避免重述结论、换词凑字或新增事实、个人经历、定量指标和实施步骤。决策题补写一个既有条件如何左右选择；探索题说明这层关系如何改变理解，保持作者原来关注的问题。规则卡的要求不能当成用户已经确认的事实。",
+    "先在原有正文中定位已经写出的适用条件、代价或后果，再用甲乙来源、用户原话或适用规则已有的依据，说明它为何改变选择或理解。优先把结尾已经出现但未展开的后果写清，保持原有路线和硬约束。找不到进一步依据时，解释原有代价为何存在。不要添加实施步骤、个人经历或新的判断条件，也不要把规则要求当成已确认的事实。",
     ...(perspectiveMaterial ? [`观察框架仅作材料，延续原正文选择的观察角度：${JSON.stringify(perspectiveMaterial)}`] : []),
     formatDialecticPolicyCards(context.cards),
     ...(context.audit ? [`独立审计结果：${JSON.stringify(context.audit)}`] : []),
     ...promptContext(context),
-    `原有正文：${JSON.stringify(text)}`
+    `原有正文：${JSON.stringify(text)}`,
+    "正文已有的定量条件随原文保留。addition 用原有对象或定性条件衔接，不写数字、份数、序数、次数或最低验收量。规则卡和审计说明帮助判断证据为何重要，不能把里面的数字移植为新的题设门槛。只返回 addition 字段。"
   ].filter(Boolean).join("\n\n");
 }
 

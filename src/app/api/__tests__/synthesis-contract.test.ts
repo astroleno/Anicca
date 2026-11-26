@@ -157,3 +157,73 @@ it("keeps numbers from assistant turns, quoted seeds and user-turn headings outs
   expect(generate.mock.calls[2][0].input).toContain("unsupported quantities: 三天, 两周, 四周");
   expect(JSON.stringify(checks())).not.toMatch(/三天|两周|四周/u);
 });
+
+it.each([false, true])("only accepts a supplement that grounds the existing tradeoff (%s)", async grounded => {
+  const thesis = { id: "client-a", text: "三家都需要接入。若身份、数据流和交付节奏有共同部分，通用插件平台能降低往后每次集成的成本。", summary: "降低集成成本", label: "共用底座", stance: "正" };
+  const antithesis = { id: "client-b", text: "三家各自要求不同。先把最大客户需要的一个集成交付到实际使用，从真实限制中发现是否存在值得抽象的共性。", summary: "从真实集成验证共性", label: "单一交付", stance: "反" };
+  const rootInput = `${thesis.text}\n\n${antithesis.text}`;
+  const original = { ...synthesis, text: "三家都需接入，但各自要求不同；甲的插件平台要成立，得先确认身份、数据流与交付节奏确有共同部分。乙的单点交付把这一确认放到最大客户的实际使用中，用真实限制检验共性是否存在，而非仅凭三家都说要接入就抽象。于是原题的选择变成有条件的顺序：先取得一份可用的集成，再判断共同部分是否足够支撑平台；若限制互不相容，就停在单点交付，代价是后续接入仍需分别处理。" };
+  const captured = "而甲所说的“降低往后每次集成的成本”，只有在第二份复用证据出现后才成立；首客阶段若把专属字段与条件放进核心模型，反而会让两侧的差异被掩盖，后续抽象失去可靠依据。";
+  const explanation = "这一代价来自接口边界未被证实：身份或数据流差异会要求分别处理，把这些差异先写成平台规则，只会把原有维护负担转到共用层。";
+  const applicability = [{ id: "bounded-abstraction", object: "客户集成", action: "验证接入共性再抽象", evidence: "从真实限制中发现是否存在值得抽象的共性" }];
+  generate.mockResolvedValueOnce(emit({ synthesis: original, applicablePolicyCards: applicability }))
+    .mockResolvedValueOnce(emit({ synthesis: original }))
+    .mockResolvedValueOnce(emit({ addition: grounded ? explanation : captured }));
+  if (grounded) generate.mockResolvedValueOnce(review(
+    "身份、数据流和交付节奏有共同部分", "从真实限制中发现是否存在值得抽象的共性",
+    "得先确认身份、数据流与交付节奏确有共同部分", "乙的单点交付把这一确认放到最大客户的实际使用中", "把原有维护负担转到共用层"
+  ));
+
+  const response = await POST(endpoint({ rootInput, sources: [thesis, antithesis] }));
+  expect(response.status).toBe(grounded ? 200 : 502);
+  const supplementPrompt = generate.mock.calls[2][0].input;
+  expect(supplementPrompt).toContain("至少 7 个字符");
+  expect(supplementPrompt).toContain("先在原有正文中定位已经写出的适用条件、代价或后果");
+  expect(supplementPrompt).toContain("缺少第二份复用证据");
+  expect(supplementPrompt).toMatch(/不写数字、份数、序数、次数或最低验收量[^\n]+只返回 addition 字段。$/u);
+  expect(generate).toHaveBeenCalledTimes(grounded ? 4 : 3);
+  expect(checks().repairCalls).toBe(1);
+  if (grounded) {
+    expect((await response.json()).synthesis.text).toBe(original.text + explanation);
+    expect(generate.mock.calls[3][0].input).toContain(original.text + explanation);
+  } else {
+    expect(await response.json()).toMatchObject({ details: "synthesis critic failed contract after one repair" });
+    expect(checks().checks.at(-1)).toEqual({ stage: "critic", repair: true, valid: false, contractIssues: ["synthesis_unsupported_quantity"] });
+  }
+});
+
+it("specifies the complete high-risk audit shape and rejects an extra missing field without another call", async () => {
+  const thesis = { id: "telemetry-a", text: "记录完整漏斗可以发现流失发生在哪一步，让增长团队不只从少数访谈猜测。前提是收集方式与公开隐私承诺相容。", summary: "识别具体流失环节", label: "完整漏斗", stance: "正" };
+  const antithesis = { id: "telemetry-b", text: "继续零遥测。团队已经公开承诺隐私优先，应先确认用户接受什么，再改变所收集的信息；现在可以问愿意参与访谈的人。", summary: "维持零遥测承诺", label: "守住承诺", stance: "反" };
+  const rootInput = `${thesis.text}\n\n${antithesis.text}`;
+  const candidate = { ...synthesis, text: "公开的隐私优先承诺先于增长需要，零遥测当前仍然成立：全量埋点缺少合法收集前提，不能把“先确认接受范围”当成已经拿到授权。甲所说的漏斗价值不是虚构，但它只能作为待议条件——先向愿意受访者追问步骤，标成访谈样本，不冒充全量数据，再把偏差写进结论。若以后用户明确同意某种聚合范围，才可讨论有限漏斗；届时仍要核对公开承诺是否相容。代价是流失定位更慢、结论受限，但这正是守住承诺换来的边界。" };
+  const applicability = [{ id: "consent-privacy", object: "用户行为记录与访谈", action: "确认用户接受范围", evidence: "应先确认用户接受什么，再改变所收集的信息" }];
+  const cards = retrieveDialecticPolicyCards([rootInput]).filter(card => card.id === "consent-privacy");
+  const expectedIds = getDialecticRuleChecks(cards).map(({ id }) => id);
+  const missing = "新研究必须目的绑定、可拒绝、可退出且不影响原服务或评价";
+  const audit = {
+    route: "third_mechanism", unsupportedClaims: [], missingClauses: [`consent-privacy:I2：${missing}`], verdict: "repair",
+    checks: expectedIds.map(id => id === "consent-privacy:I2"
+      ? { id, status: "covered", evidence: "候选未完整覆盖该 invariant。", missing }
+      : { id, status: "covered", evidence: "候选遵守该规则。" })
+  };
+  generate.mockResolvedValueOnce(emit({ synthesis: candidate, applicablePolicyCards: applicability }))
+    .mockResolvedValueOnce(emit({ synthesis: candidate }))
+    .mockResolvedValueOnce(review("记录完整漏斗可以发现流失发生在哪一步", "团队已经公开承诺隐私优先", "甲所说的漏斗价值不是虚构", "零遥测当前仍然成立", "代价是流失定位更慢、结论受限"))
+    .mockResolvedValueOnce(emit({ audit }));
+
+  const response = await POST(endpoint({ rootInput, sources: [thesis, antithesis] }));
+  expect(response.status).toBe(502);
+  expect(await response.json()).toMatchObject({ details: "high-risk semantic audit failed" });
+  expect(generate).toHaveBeenCalledTimes(4);
+  const prompt = generate.mock.calls[3][0].input;
+  const shape = JSON.parse(prompt.split("\n").at(-1));
+  expect(Object.keys(shape)).toEqual(["audit"]);
+  expect(Object.keys(shape.audit)).toEqual(["route", "checks", "unsupportedClaims", "missingClauses", "verdict"]);
+  expect(shape.audit.checks.map((entry: { id: string }) => entry.id)).toEqual(expectedIds);
+  expect(shape.audit.checks.map(Object.keys)).toEqual(expectedIds.map(() => ["id", "status", "evidence"]));
+  expect(prompt).toContain("规则的缺项说明集中写入 audit.missingClauses 并注明规则 id");
+  expect(prompt).toContain("缺少所需保障时标 missing");
+  expect(checks().checks.at(-1)).toEqual({ stage: "audit", repair: false, valid: false, contractIssues: ["synthesis_semantic_audit"] });
+  expect(checks().repairCalls).toBe(0);
+});
