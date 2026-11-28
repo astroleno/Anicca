@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import type { DialogueStageNode } from "@/features/dialectic/viewModel";
 import type { ThinkingAxis, ThinkingSpace } from "@/features/perspectives/model";
 import { isChosenSpace, isJohari, JOHARI_REGIONS, lean, placed, type Sign } from "./thinkingField";
@@ -43,13 +43,14 @@ export function StageField({ space, nodes, carrying = false, hidden = false, syn
     return field(JOHARI_REGIONS.map(region => {
       const chosen = focusSelf === region.self && focusOthers === region.others;
       const visited = directed.some(node => lean(node.spatialCoordinates?.x) === region.self && lean(node.spatialCoordinates?.y) === region.others);
-      return <button key={region.label} type="button" className={styles.stageFieldRegion}
+      return <Fragment key={region.label}><button type="button" className={styles.stageFieldRegion}
         data-self={region.self} data-others={region.others}
         data-unexplored={directed.length && !visited ? "true" : undefined}
         aria-pressed={chosen} aria-label={`下一个想法从「${region.label}」展开`}
         onClick={() => onFocus(chosen ? { "johari-self": 0, "johari-others": 0 } : { "johari-self": region.self, "johari-others": region.others })}>
         <span>{region.label}</span>
-      </button>;
+      </button><span className={styles.stageFieldRegionGlow} data-self={region.self}
+        data-others={region.others} aria-hidden="true" /></Fragment>;
     }));
   }
 

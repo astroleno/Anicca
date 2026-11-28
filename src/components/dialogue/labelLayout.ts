@@ -6,6 +6,7 @@ export type SeedLabelBox = {
   height: number;
   followSource?: boolean;
   followSeed?: boolean;
+  ordinaryTier?: "focus" | "direct" | "distant";
   titleWidth?: number;
   titleOffsetX?: number;
   titleHeight?: number;
@@ -79,7 +80,10 @@ export function ordinaryCaptionWidth(caption: HTMLElement) {
   const title = caption.querySelector("strong");
   const instance = caption.querySelector("em");
   const width = (title?.scrollWidth || 0) + 12 + (instance ? instance.offsetWidth + 4 : 0);
-  return Math.min(112, Math.max(MIN_STAGE_SEED_TARGET, width));
+  const focus = caption.closest('[data-ordinary-tier="focus"]');
+  const stageWidth = focus?.closest<HTMLElement>('[data-testid="dialogue-stage-track"]')?.clientWidth;
+  const limit = stageWidth ? Math.min(176, stageWidth * .55) : 112;
+  return Math.min(limit, Math.max(MIN_STAGE_SEED_TARGET, width));
 }
 
 export function seedTitleGeometry(caption: HTMLElement, ordinary = false) {
@@ -103,7 +107,9 @@ function layoutOwnedSeedLabels(
   const margin = ordinary ? 4 : 8, gap = ordinary ? 2 : 4;
   const sourceIds = new Set(labels.filter(label => label.followSource).map(label => label.id));
   const sourceSurfaces = surfaces.filter(surface => surface.id !== undefined && sourceIds.has(surface.id));
-  const order = [...labels].sort((a, b) => Number(Boolean(b.followSource)) - Number(Boolean(a.followSource))
+  const priority = { focus: 3, direct: 2, distant: 1 } as const;
+  const order = [...labels].sort((a, b) => (b.ordinaryTier ? priority[b.ordinaryTier] : 0) - (a.ordinaryTier ? priority[a.ordinaryTier] : 0)
+    || Number(Boolean(b.followSource)) - Number(Boolean(a.followSource))
     || b.width - a.width || a.id.localeCompare(b.id));
   const options = order.map(label => {
     const owner = surfaces.find(surface => surface.id === label.id);
@@ -111,7 +117,7 @@ function layoutOwnedSeedLabels(
     const midpoint = owner && peer ? (owner.x + peer.x) / 2 : 0;
     const side = owner && peer ? Math.sign(owner.x - peer.x) : 0;
     const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
-    const widths = label.followSource || label.followSeed
+    const widths = label.ordinaryTier !== "focus" && (label.followSource || label.followSeed)
       ? new Set([label.width, Math.max(44, label.width - 12), Math.max(44, label.width - 24), 44])
       : [label.width];
     const ranked: { box: SeedLabelBox; score: number }[] = [];
@@ -150,8 +156,7 @@ function layoutOwnedSeedLabels(
         const own = owner ? captionSurfaceDistance(title, owner) : 0;
         const wrong = (label.followSource || label.followSeed) && surfaces.some(surface =>
           surface.id !== label.id && captionSurfaceDistance(title, surface) < own + gap);
-        if (label.followSeed && own > titleHeight) continue;
-        if (wrong) continue;
+        if (label.ordinaryTier !== "focus" && ((label.followSeed && own > titleHeight) || wrong)) continue;
         const movement = Math.hypot(x - label.x, y - label.y);
         // A tangent at the inner edge can be mathematically close to one seed
         // but visually read as a title for the pair. Prefer a vertical anchor
@@ -161,7 +166,7 @@ function layoutOwnedSeedLabels(
         const score = label.followSource && owner
           ? own * 3 + Math.abs(x - owner.x) * 2 + movement * .4
             + Math.max(0, 16 - halfDistance) * 10 + Math.max(0, own - titleHeight) * 80 + (lostWidth ? 200 + lostWidth * 4 : 0)
-          : label.followSeed ? own * 3 + movement * .4 + lostWidth * 2 : movement;
+          : label.followSeed ? own * 3 + movement * .4 + lostWidth * 2 + (wrong ? 80 : 0) : movement;
         ranked.push({ box, score });
       }
     }

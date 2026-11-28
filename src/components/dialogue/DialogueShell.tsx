@@ -837,9 +837,9 @@ export function DialogueShell() {
       ? arrangeSeedScene(buildSeedInstanceScene(sceneInput)) : ordinary };
   }, [graphSnapshot, seedInstances, view.focusNodeId, focusedInstanceId, expandedResultId, thinkingSpace, selectedPair, encounterInstances, combineSourceId, stageExpansion]);
   const seedScene = readingOpen ? ordinarySeedScene : synthesisSeedScene;
-  const readingOrbit = useMemo(() => readingOpen && !evolutionOpen
+  const readingOrbit = useMemo(() => readingOpen && !evolutionOpen && !activeEncounter
     ? arrangeReadingOrbit(seedScene, focusedInstanceId, readingOrbitLayout, thinkingSpace) : null,
-    [readingOpen, evolutionOpen, seedScene, focusedInstanceId, readingOrbitLayout, thinkingSpace]);
+    [readingOpen, evolutionOpen, activeEncounter, seedScene, focusedInstanceId, readingOrbitLayout, thinkingSpace]);
   const attentionIds = useMemo(() => {
     if (selectedPair?.sourceInstanceIds) return selectedPair.sourceInstanceIds;
     if (encounterInstances) return encounterInstances;
@@ -2308,6 +2308,8 @@ export function DialogueShell() {
           onRendererStatus={setRendererStatus}
           suspended={evolutionOpen}
           readingOrbit={readingOrbit}
+          deferredEncounterId={activeEncounter?.id}
+          deferredSourceIds={activeEncounter ? encounterInstances : undefined}
           attentionIds={attentionIds}
           cameraView={cameraView}
           theme={theme}

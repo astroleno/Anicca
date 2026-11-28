@@ -25,7 +25,8 @@ export class LiquidFrame {
     const count = Math.min(nodes.length, MAX_DIALOGUE_METABALLS, LIQUID_SEED_SLOTS);
     // The soft union is ordered: join the chosen pair first, then add every
     // unrelated surface with a hard union so a third seed cannot grow a neck.
-    if (interaction?.draggedId && interaction.partnerId) this.fusionPair = [interaction.draggedId, interaction.partnerId];
+    if (interaction?.separated) this.fusionPair = [];
+    else if (interaction?.draggedId && interaction.partnerId) this.fusionPair = [interaction.draggedId, interaction.partnerId];
     else if (!this.fusionPair.some(id => (this.blends.get(id) || 0) > RESTING_LIQUID_BLEND + .0001)) this.fusionPair = [];
     const pair = this.fusionPair;
     const visibleNodes = [...nodes.slice(0, count)].sort((a, b) => {
@@ -40,8 +41,8 @@ export class LiquidFrame {
     const elapsed = Math.max(0,timeSeconds-(this.previousTime ?? timeSeconds));
     const dt = changedInteraction ? Math.min(1 / 60, elapsed) : elapsed;
     this.previousDraggedId = draggedId; this.previousPartnerId = partnerId;
-    const immediate = this.previousTime === null || timeSeconds === 0;
-    const pressureAmount = this.previousTime === null || timeSeconds === 0 ? 1
+    const immediate = this.previousTime === null || timeSeconds === 0 || interaction?.separated;
+    const pressureAmount = immediate ? 1
       : 1 - Math.exp(-5 * dt);
     this.previousTime = timeSeconds;
     const ids = new Set(visibleNodes.map(node => node.id));

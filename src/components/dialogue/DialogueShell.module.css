@@ -3972,6 +3972,9 @@
   flex-wrap: nowrap;
   gap: 4px;
 }
+.stageTrack[data-compact-ordinary] .stageNode[data-ordinary-tier="focus"] .stageNodeInner {
+  max-width: min(176px, 55vw);
+}
 .stageTrack[data-compact-ordinary] .stageNode[data-ordinary-tier] .stageNodeInner strong { font-size: 13px; line-height: 20px; }
 .stageTrack[data-compact-ordinary] .stageNode[data-ordinary-tier="distant"] [data-seed-caption] { display: none; }
 .stageTrack[data-compact-ordinary] .stageNode [data-ordinary-marker] {
@@ -4496,16 +4499,19 @@
 .stageField[data-johari][data-carrying] .stageFieldAxis { opacity: 1; }
 .stageField[data-johari][data-hidden] { visibility: hidden; }
 .stageFieldRegion { z-index: 18; opacity: 1; }
-.stageFieldRegion > span {
-  padding: 2px 3px;
-  border-radius: 4px;
-  background: color-mix(in srgb, var(--stage-ground) 92%, transparent);
+.stageFieldRegion > span { padding: 2px 3px; border-radius: 4px; }
+.stageFieldRegion:active > span { background: color-mix(in srgb, var(--stage-ground) 92%, transparent); }
+.stageFieldRegionGlow {
+  position: absolute; width: 50%; height: 50%; pointer-events: none;
+  background: radial-gradient(ellipse 85px 64px at var(--region-glow-x) var(--region-glow-y), rgba(165, 140, 205, .2), transparent);
+  opacity: 0; transition: opacity 600ms ease;
 }
-/* An unexplored region breathes: a soft wash around its name, never a badge or a count. */
-.stageFieldRegion::before { content: ""; position: absolute; inset: -60px; z-index: -1; pointer-events: none; border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(165, 140, 205, .2), transparent); opacity: 0; transition: opacity 600ms ease; }
-.stageFieldRegion[data-unexplored="true"]::before { animation: fieldBreath 5.6s ease-in-out infinite; }
-.stageFieldRegion[aria-pressed="true"]::before { opacity: .8; animation: none; }
+.stageFieldRegionGlow[data-self="-1"] { left: 0; --region-glow-x: 25%; }
+.stageFieldRegionGlow[data-self="1"] { right: 0; --region-glow-x: 75%; }
+.stageFieldRegionGlow[data-others="1"] { top: 0; --region-glow-y: 44%; }
+.stageFieldRegionGlow[data-others="-1"] { bottom: 0; --region-glow-y: 56%; }
+.stageFieldRegion[data-unexplored="true"] + .stageFieldRegionGlow { animation: fieldBreath 5.6s ease-in-out infinite; }
+.stageFieldRegion[aria-pressed="true"] + .stageFieldRegionGlow { opacity: .8; animation: none; }
 @keyframes fieldBreath { 0%, 100% { opacity: 0; } 50% { opacity: .9; } }
 @media (max-width: 640px) {
   .stageFieldPole, .stageFieldRegion { font-size: 11px; padding: 10px 6px; }
@@ -4513,13 +4519,32 @@
   .stageFieldPole[data-side="bottom"] { bottom: 24%; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .stageFieldRegion[data-unexplored="true"]::before { animation: none; opacity: .5; }
+  .stageFieldRegion[data-unexplored="true"]:not([aria-pressed="true"]) + .stageFieldRegionGlow { animation: none; opacity: .5; }
 }
 .shell[data-theme="dark"] .stageFieldAxis[data-axis] { filter: invert(1) brightness(1.6); }
 
 /* Reading orbit: the read seed becomes the main drop behind the text; its relations orbit as satellites.
    Positions and sizes change at once in the DOM; the liquid springs carry the exchange. */
 .stageTrack[data-reading-orbit="true"] { transform: none; }
+.stageTrack[data-deferred-encounter] { transform: none; }
+.shell[data-reading="true"] .stageCanvas:has([data-deferred-encounter]) { opacity: .7; }
+.stageTrack[data-deferred-encounter] .stageNode[data-encounter-source] {
+  --seed-diameter: clamp(44px, min(17vmin, 11vh), 106px);
+  --stage-node-scale: 1;
+  --encounter-gap: calc(52px - var(--encounter-approach, 0) * 34px);
+  left: calc(50% + var(--encounter-side) * (var(--seed-diameter) + var(--encounter-gap)) / 2);
+  top: 18%;
+  width: var(--seed-diameter); height: var(--seed-diameter);
+  transition: none;
+}
+.stageNode[data-encounter-source="-1"] { --encounter-side: -1; }
+.stageNode[data-encounter-source="1"] { --encounter-side: 1; }
+@media (max-width: 640px) {
+  .stageTrack[data-deferred-encounter] .stageNode[data-encounter-source] {
+    --seed-diameter: clamp(40px, 13vw, 58px);
+    top: 30px;
+  }
+}
 .stageNode[data-reading-role="main"] { --seed-diameter: min(440px, 44vw, var(--reading-main-max-diameter, 440px)); cursor: default; }
 .stageNode[data-reading-role="satellite"] { --seed-diameter: 64px; cursor: pointer; }
 .stageNode[data-reading-role="rest"] { --seed-diameter: 20px; }

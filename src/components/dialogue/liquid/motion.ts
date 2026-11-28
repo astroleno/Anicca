@@ -10,6 +10,17 @@ const SPRING = { stiffness: 140, damping: 13 } as const;
 /** About 0.8s with a slight overshoot: a bud swells on its origin, stretches a neck, then pinches off. */
 const BUDDING_SPRING = { stiffness: 52, damping: 10.5 } as const;
 
+export function advanceLiquidSpring(current: number, goal: number, velocity: number, seconds: number,
+  { stiffness, damping }: { stiffness: number; damping: number } = SPRING): [number, number] {
+  for (let remaining = seconds; remaining > 0;) {
+    const step = Math.min(1 / 60, remaining);
+    velocity += ((goal - current) * stiffness - velocity * damping) * step;
+    current += velocity * step;
+    remaining -= step;
+  }
+  return [current, velocity];
+}
+
 /** A single spring state drives both the liquid and its accessible DOM label. */
 export class LiquidMotion {
   private bodies = new Map<string, Body>();
@@ -91,12 +102,7 @@ export class LiquidMotion {
         // Integrate missed visible time in bounded, stable steps. Dropped frames
         // must not stretch a one-second arrival into a minute of slow motion.
         // New targets and contacts still start with one gentle normal step.
-        for (let remaining = stepTime; remaining > 0;) {
-          const step = Math.min(1 / 60, remaining);
-          velocity += ((goal - current) * stiffness - velocity * damping) * step;
-          current += velocity * step;
-          remaining -= step;
-        }
+        [current, velocity] = advanceLiquidSpring(current, goal, velocity, stepTime, { stiffness, damping });
         if (Math.abs(goal - current) < .0003 && Math.abs(velocity) < .002) return [goal, 0];
         moving = true; bodyMoving = true;
         return [current, velocity];

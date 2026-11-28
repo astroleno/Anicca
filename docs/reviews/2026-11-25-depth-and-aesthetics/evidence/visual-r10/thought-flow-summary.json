@@ -1,0 +1,41 @@
+[
+  {
+    "name": "desktop",
+    "width": 1440,
+    "height": 900,
+    "passed": true,
+    "live": false,
+    "renderer": {
+      "backend": "webgpu",
+      "secureContext": true
+    },
+    "requestCount": 6,
+    "errors": []
+  },
+  {
+    "name": "mobile-390",
+    "width": 390,
+    "height": 844,
+    "passed": true,
+    "live": false,
+    "renderer": {
+      "backend": "original",
+      "secureContext": true
+    },
+    "requestCount": 6,
+    "errors": []
+  },
+  {
+    "name": "mobile-320",
+    "width": 320,
+    "height": 568,
+    "passed": true,
+    "live": false,
+    "renderer": {
+      "backend": "original",
+      "secureContext": true
+    },
+    "requestCount": 6,
+    "errors": []
+  }
+]

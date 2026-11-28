@@ -1,0 +1,42 @@
+[
+  {
+    "variant": "liquid",
+    "frames": 62,
+    "minEdgeGapPx": 18.015625,
+    "finalEdgeGapPx": 52.015625
+  },
+  {
+    "variant": "flat",
+    "frames": 62,
+    "minEdgeGapPx": 18.015625,
+    "finalEdgeGapPx": 52.015625
+  },
+  {
+    "variant": "reduced-liquid",
+    "frames": 61,
+    "minEdgeGapPx": 52.01542408491913,
+    "finalEdgeGapPx": 52.015625
+  },
+  {
+    "variant": "reduced-flat",
+    "frames": 56,
+    "minEdgeGapPx": 52.015625,
+    "finalEdgeGapPx": 52.015625
+  },
+  {
+    "prior": {
+      "x": 46.0078125,
+      "y": 286.53125,
+      "hit": true,
+      "width": 53.640625,
+      "height": 44,
+      "background": "rgba(0, 0, 0, 0)"
+    },
+    "measured": {
+      "glowClipped": true,
+      "title": "水边活动",
+      "titleFits": true,
+      "visibility": "visible"
+    }
+  }
+]

@@ -11,7 +11,7 @@ import type { LiquidRendererMode, LiquidRendererStatus } from "./liquid/preferen
 import { LiquidQuality } from "./liquid/quality";
 import { LiquidSceneClock } from "./liquid/clock";
 import { DEFAULT_SEED_ORBIT, projectSpatialSeed, readSeedOrbit, readSeedZoom, publishSpatialFrame, clearSpatialFrame, fitSpatialSeed, fitSeedScene } from "./liquid/space";
-import { compactSourceCaptionWidth, layoutSeedLabels, MIN_STAGE_SEED_TARGET, ordinaryCaptionWidth, seedLabelLeader, seedTitleGeometry } from "./labelLayout";
+import { compactSourceCaptionWidth, layoutSeedLabels, MIN_STAGE_SEED_TARGET, ordinaryCaptionWidth, seedLabelLeader, seedTitleGeometry, type SeedLabelBox } from "./labelLayout";
 import { isCompactStageWidth, MIN_SYNTHESIS_TARGET } from "./synthesisStageGeometry";
 import {
   computeFusedPairs,
@@ -312,7 +312,8 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
           const fusedPairs = computeFusedPairs(cachedNodes, DIALOGUE_METABALL_SMOOTHNESS).join(",");
           if (canvas.dataset.fusedPairs !== fusedPairs) canvas.dataset.fusedPairs = fusedPairs;
         }
-        const reading = host.dataset.readingOrbit === "true";
+        const deferred = host.dataset.deferredEncounter === "true";
+        const reading = host.dataset.readingOrbit === "true" || deferred;
         // Read visible caption dimensions before any per-frame layout writes.
         const captionsChanged = labelsDirty;
         if (labelsDirty) {
@@ -332,8 +333,8 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
           labelsDirty = false;
         }
         if (motionActive) {
-          const result = motion.step(cachedNodes, sceneTime, prefersReducedMotion, host.dataset.spaceNavigating === "true" ? null : pressedId,
-            pointerDown ? host.dataset.liquidPartner || null : null,12/hostRect.height);
+          const result = motion.step(cachedNodes, sceneTime, prefersReducedMotion || deferred, host.dataset.spaceNavigating === "true" || deferred ? null : pressedId,
+            pointerDown && !deferred ? host.dataset.liquidPartner || null : null,12/hostRect.height);
           renderedNodes = result.nodes;
           motionActive = result.moving;
           spatialLayoutDirty = true;
@@ -346,8 +347,8 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
           unfittedNodes = renderedNodes.map(node => projectSpatialSeed(node, pivot, orbit));
           spatialLayoutDirty = false;
         }
-        const manipulatingSeed = pointerDown && host.dataset.spaceNavigating !== "true";
-        const depth = depthMotion.step(unfittedNodes, sceneTime, prefersReducedMotion,
+        const manipulatingSeed = pointerDown && !deferred && host.dataset.spaceNavigating !== "true";
+        const depth = deferred ? { nodes: unfittedNodes, moving: false } : depthMotion.step(unfittedNodes, sceneTime, prefersReducedMotion,
           manipulatingSeed ? pressedId : null, manipulatingSeed ? host.dataset.liquidPartner || null : null);
         depthActive = depth.moving;
         const rawChanged = lastLayoutBase !== unfittedNodes || lastLayoutDepth !== depth.nodes;
@@ -415,7 +416,8 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
             if (!node || measured.element.dataset.labelHandoff === "true") return [];
             return [{ ...measured, x: node.x, y: node.y + node.radiusPx + 10 + measured.height/2,
               followSource: compactSynthesis && measured.element.dataset.sourceRole === "source",
-              followSeed: host.dataset.compactOrdinary === "true" && Boolean(measured.element.dataset.ordinaryTier) }];
+              followSeed: host.dataset.compactOrdinary === "true" && Boolean(measured.element.dataset.ordinaryTier),
+              ordinaryTier: host.dataset.compactOrdinary === "true" ? measured.element.dataset.ordinaryTier as SeedLabelBox["ordinaryTier"] : undefined }];
           });
           const pairCaption = measuredPair?.element;
           const source = localNodes.find(node => node.id === pressedId);
@@ -519,7 +521,7 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
         renderer.resize(hostRect.width, hostRect.height, Math.min(window.devicePixelRatio || 1, cap) * qualityScale);
         renderer.render(displayNodes, prefersReducedMotion ? 0 : sceneTime / 1000,
           { draggedId: manipulatingSeed ? pressedId : null, partnerId: manipulatingSeed ? host.dataset.liquidPartner || null : null,
-            atmosphere: host.dataset.atmosphere === "true", dark: host.dataset.theme === "dark", ground, orbit });
+            separated: deferred, atmosphere: host.dataset.atmosphere === "true", dark: host.dataset.theme === "dark", ground, orbit });
         // Tiny, throttled GPU batches adapt ink without blocking a gesture.
         if (!atmosphere) {
           // With the field hidden, captions sit on the known paper/dark ground.
@@ -644,12 +646,12 @@ export function DialogueMetaballLayer({ hostRef, onStateChange, rendererMode = "
         spatialLayoutDirty = true; activeUntil = performance.now() + 250; wake(); return;
       }
       if (changed.some(record => record.type === "childList" || record.type === "characterData" ||
-        ["class", "data-reading-orbit", "data-reading-role", "data-compact-synthesis", "data-compact-ordinary"].includes(record.attributeName || ""))) { labelsDirty = true; activeUntil = performance.now() + 500; }
+        ["class", "data-reading-orbit", "data-reading-role", "data-deferred-encounter", "data-compact-synthesis", "data-compact-ordinary"].includes(record.attributeName || ""))) { labelsDirty = true; activeUntil = performance.now() + 500; }
       if (changed.some(record => record.attributeName === "data-seed-attention")) activeUntil = performance.now() + 650;
       invalidate();
     });
     mutationObserver.observe(host, { subtree: true, childList: true, characterData: true, attributes: true,
-      attributeFilter: ["style", "class", "data-reading-orbit", "data-reading-role", "data-compact-stage", "data-compact-synthesis", "data-synthesis-tier", "data-source-role", "data-space-paused", "data-label-inset-top", "data-label-inset-bottom", "data-metaball-role", "data-metaball-relation", "data-liquid-origins", "data-liquid-color-key", "data-liquid-pending", "data-atmosphere", "data-theme", "data-liquid-partner", "data-liquid-contact", "data-label-handoff", "data-space-yaw", "data-space-pitch", "data-space-zoom", "data-space-navigating", "data-space-depth", "data-seed-generation", "data-seed-semantic-color", "data-seed-hue-shift", "data-seed-polarity-strength", "data-seed-attention"] });
+      attributeFilter: ["style", "class", "data-reading-orbit", "data-reading-role", "data-deferred-encounter", "data-compact-stage", "data-compact-synthesis", "data-synthesis-tier", "data-source-role", "data-space-paused", "data-label-inset-top", "data-label-inset-bottom", "data-metaball-role", "data-metaball-relation", "data-liquid-origins", "data-liquid-color-key", "data-liquid-pending", "data-atmosphere", "data-theme", "data-liquid-partner", "data-liquid-contact", "data-label-handoff", "data-space-yaw", "data-space-pitch", "data-space-zoom", "data-space-navigating", "data-space-depth", "data-seed-generation", "data-seed-semantic-color", "data-seed-hue-shift", "data-seed-polarity-strength", "data-seed-attention"] });
     if (shell) mutationObserver.observe(shell, { attributeFilter: ["data-reading"] });
     const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(remeasure) : null;
     resizeObserver?.observe(host);

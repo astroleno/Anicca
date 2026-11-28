@@ -26,6 +26,7 @@ import type { ThinkingSpace } from "@/features/perspectives/model";
 import { stageSeedRole } from "@/features/dialectic/sceneProjection";
 import { compactSourceCaptionWidth, layoutSeedLabels, MIN_STAGE_SEED_TARGET, ordinaryCaptionWidth, seedLabelLeader, seedTitleGeometry } from "./labelLayout";
 import { isCompactStageWidth, MIN_SYNTHESIS_TARGET, synthesisStageGeometry } from "./synthesisStageGeometry";
+import { advanceLiquidSpring } from "./liquid/motion";
 import type { DialogueTheme } from "./useDialogueTheme";
 import { DEFAULT_SEED_ORBIT, orbitSeedSpace, spatialStagePoint, dragSpatialStagePoint, SEED_VIEWS, wrapSeedYaw,
   readSpatialFrame, canCaptureSpatialPair, spatialPairInContact, SEED_CAMERA_DISTANCE, SEED_WORLD_CAMERA_DISTANCE,
@@ -71,6 +72,8 @@ type BubbleStageProps = {
   cameraView?: { direction: SeedViewDirection | "reset"; revision: number } | null;
   attentionIds?: readonly string[] | null;
   readingOrbit?: ReadingOrbit | null;
+  deferredEncounterId?: string;
+  deferredSourceIds?: readonly string[];
   suspended?: boolean;
   /** Thinking directions laid out on the stage; their faint field aims the next thought. */
   thinkingSpace?: ThinkingSpace | null;
@@ -200,6 +203,8 @@ export function BubbleStage({
   cameraView = null,
   attentionIds = null,
   readingOrbit = null,
+  deferredEncounterId,
+  deferredSourceIds,
   suspended = false,
   thinkingSpace = null,
   synthesisActive = false,
@@ -312,9 +317,9 @@ export function BubbleStage({
   const synthesisResult = nodes.find(node => node.sourceRole === "result");
   const synthesisResultId = synthesisResult?.id;
   const commonParentId = synthesisResult?.commonParentId;
-  const sizingSynthesisStage = !readingOrbit && !generationBusy && Boolean(synthesisResultId);
+  const sizingSynthesisStage = !readingOrbit && !deferredEncounterId && !generationBusy && Boolean(synthesisResultId);
   const compactStage = isCompactStageWidth(labelGeometry.width);
-  const ordinaryStage = !readingOrbit && !synthesisActive && !synthesisResultId && !generationBusy;
+  const ordinaryStage = !readingOrbit && !deferredEncounterId && !synthesisActive && !synthesisResultId && !generationBusy;
   const compactOrdinary = ordinaryStage && compactStage;
   const synthesisLayoutMode = compactStage ? "compact" : "wide";
   const synthesisGeometry = useMemo(() => sizingSynthesisStage && synthesisResultId && labelGeometry.width && labelGeometry.height
@@ -394,6 +399,12 @@ export function BubbleStage({
   // While a 合 forms, its two sources lean toward each other and bridge through it; they return when it arrives.
   const convergingIds = pendingPreview?.kind === "synthesis" ? [pendingPreview.thesisId, pendingPreview.antithesisId] : null;
   const positionedNodes = useMemo(() => {
+    if (deferredSourceIds?.length === 2) {
+      return deferredSourceIds.flatMap((id, index) => {
+        const source = basePositionedNodes.find(({ node }) => node.id === id);
+        return source ? [{ node: source.node, position: { x: index ? 66 : 34, y: 23, z: 0 } }] : [];
+      });
+    }
     const sources = convergingIds ? basePositionedNodes.filter(({ node }) => convergingIds.includes(node.id)) : [];
     if (sources.length !== 2) return basePositionedNodes;
     const center = { x: (sources[0].position.x + sources[1].position.x) / 2, y: (sources[0].position.y + sources[1].position.y) / 2 };
@@ -404,7 +415,31 @@ export function BubbleStage({
     return basePositionedNodes.map(item => convergingIds!.includes(item.node.id) ? { ...item, position: { ...item.position,
       x: item.position.x + (center.x - item.position.x) * lean, y: item.position.y + (center.y - item.position.y) * lean } } : item);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [basePositionedNodes, convergingIds?.[0], convergingIds?.[1]]);
+  }, [basePositionedNodes, deferredSourceIds, convergingIds?.[0], convergingIds?.[1]]);
+
+  useLayoutEffect(() => {
+    const track = trackRef.current;
+    if (!track || !deferredEncounterId) return;
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    if (reduced?.matches) return;
+    let frame = 0, start = 0, last = 0, position = 0, velocity = 0;
+    const reset = () => track.style.removeProperty("--encounter-approach");
+    const animate = (time: number) => {
+      if (reduced?.matches) { reset(); return; }
+      if (!start) start = last = time;
+      const elapsed = time - start;
+      if (elapsed >= 760) { reset(); return; }
+      const goal = elapsed < 355 ? 1 : 0;
+      [position, velocity] = advanceLiquidSpring(position, goal, velocity, (time - last) / 1000);
+      last = time;
+      // Clamp the inward spring at the closest allowed gap and hold before retreat.
+      if (position < 0 || position > 1) { position = Math.max(0, Math.min(1, position)); velocity = 0; }
+      track.style.setProperty("--encounter-approach", String(position));
+      frame = requestAnimationFrame(animate);
+    };
+    frame = requestAnimationFrame(animate);
+    return () => { cancelAnimationFrame(frame); reset(); };
+  }, [deferredEncounterId]);
 
   useLayoutEffect(() => {
     const track = trackRef.current;
@@ -482,6 +517,7 @@ export function BubbleStage({
     return size?.width && size.height ? [{ id: node.id, ...size,
       followSource: compactStage && sizingSynthesisStage && node.sourceRole === "source",
       followSeed: compactOrdinary && Boolean(node.ordinaryTier),
+      ordinaryTier: compactOrdinary ? node.ordinaryTier : undefined,
       x: position.x * labelGeometry.width / 100,
       y: position.y * labelGeometry.height / 100 + size.anchorOffsetY }] : [];
   }), labelGeometry.width, labelGeometry.height, positionedNodes.flatMap(({ node, position }) => {
@@ -906,7 +942,7 @@ export function BubbleStage({
   ]);
 
   const handleStagePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (readingOrbit || suspended || gesture || touchNavigation.blocksSinglePointer() || !canPanStage || metaballRendererState === "fallback" || event.button !== 0 || (event.target !== event.currentTarget && event.target !== trackRef.current)) {
+    if (readingOrbit || deferredEncounterId || suspended || gesture || touchNavigation.blocksSinglePointer() || !canPanStage || metaballRendererState === "fallback" || event.button !== 0 || (event.target !== event.currentTarget && event.target !== trackRef.current)) {
       return;
     }
     event.preventDefault();
@@ -936,8 +972,8 @@ export function BubbleStage({
     if (suspended || gesture || touchNavigation.blocksSinglePointer()) return;
     suppressDragClickRef.current = false;
     pointerTypeRef.current = event.pointerType;
-    // A satellite is chosen, never carried, while reading.
-    if (readingOrbit) return;
+    // Reading and the separated pair use point selection.
+    if (readingOrbit || deferredEncounterId) return;
     if (event.button !== 0) {
       return;
     }
@@ -1123,12 +1159,13 @@ export function BubbleStage({
             }}
             data-testid="dialogue-stage-track"
             data-reading-orbit={readingOrbit ? "true" : undefined}
+            data-deferred-encounter={deferredEncounterId ? "true" : undefined}
             data-metaball-renderer={metaballRendererState}
           >
             {thinkingSpace && onAimThinking && nodes.length ? <StageField space={thinkingSpace} nodes={nodes}
               carrying={gesture?.kind === "node"}
               hidden={viewRotated || Boolean(readingOrbit) || suspended || (metaballRendererState === "fallback" && !isJohari(thinkingSpace))}
-              synthesisActive={synthesisActive || Boolean(synthesisResultId)}
+              synthesisActive={synthesisActive || Boolean(synthesisResultId) || Boolean(deferredEncounterId)}
               onFocus={onAimThinking} /> : null}
             {pendingBranchNodes ? (
               <div
@@ -1276,6 +1313,7 @@ export function BubbleStage({
               const orbitRole = readingOrbit?.places[node.id]?.role;
               const ordinaryTier = ordinaryStage ? node.ordinaryTier : undefined;
               const ordinaryAttention = ordinaryTier ? ORDINARY_ATTENTION[ordinaryTier] : undefined;
+              const encounterSide = deferredSourceIds ? (deferredSourceIds[0] === node.id ? -1 : 1) : undefined;
               const compactOrdinarySeed = compactOrdinary && Boolean(ordinaryTier);
               const seedRole = stageSeedRole(node);
               const ordinaryMarker = pole || node.branchType || (seedRole === "synthesis" ? "合" : undefined);
@@ -1313,6 +1351,7 @@ export function BubbleStage({
                     isDragging ? styles.stageNodeDragging : ""
                   ].join(" ")}
                   data-testid={`dialogue-stage-node-${node.id}`}
+                  data-encounter-source={encounterSide}
                   data-event-state={node.id === eventNodeId ? "synthesis-reveal" : undefined}
                   data-display-role={node.displayRole}
                   data-metaball-surface={node.id}
@@ -1347,8 +1386,8 @@ export function BubbleStage({
                   aria-describedby={`${descriptionPrefix}-${node.id}`}
                   style={
                     {
-                      left: `${position.x}%`,
-                      top: `${position.y}%`,
+                      left: encounterSide ? undefined : `${position.x}%`,
+                      top: encounterSide ? undefined : `${position.y}%`,
                       "--seed-semantic-color": node.semanticColor?.map(channel => `${channel * 100}%`).join(" "),
                       "--stage-node-drag-x": "0px",
                       "--stage-node-drag-y": "0px",
@@ -1365,7 +1404,7 @@ export function BubbleStage({
                   onTransitionEnd={synthesisSize && metaballRendererState === "fallback" ? measureLabels : undefined}
                   onDoubleClick={() => {
                     if (clickTimerRef.current !== null) window.clearTimeout(clickTimerRef.current);
-                    if (readingOrbit || pointerTypeRef.current === "touch" || generationBusy || performance.now() < suppressClickUntilRef.current) return;
+                    if (readingOrbit || deferredEncounterId || pointerTypeRef.current === "touch" || generationBusy || performance.now() < suppressClickUntilRef.current) return;
                     onSplit?.(node.id);
                   }}
                   onPointerDown={(event) => handleNodePointerDown(event, node)}

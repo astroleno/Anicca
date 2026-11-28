@@ -129,6 +129,7 @@ export function buildLiquidFragmentSource(): string {
 }
 
 export type LiquidRenderInteraction = {
+  separated?: boolean;
   draggedId?: string | null;
   partnerId?: string | null;
   atmosphere?: boolean;
