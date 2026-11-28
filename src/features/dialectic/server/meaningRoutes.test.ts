@@ -13,12 +13,12 @@ const synthesis = { text, summary: "识路不自动等于传路", label: "识路
 const sources = [{ id: "a", text: "熟悉地方的人凭转角找到路。", summary: "识路", label: "识路", stance: "想法" },
   { id: "b", text: "熟悉的人可能讲不清路。", summary: "传路", label: "传路", stance: "想法" }];
 const unrelated = [{ ...sources[0], text: "邮编用于划定投递区域。" }, { ...sources[1], text: "薄荷画作探索逆光感受。" }];
-const noLinkCheck = { pass: true, issues: [], authorization: "none", evidence: { sourceA: unrelated[0].text, sourceB: unrelated[1].text,
+const noLinkCheck = { pass: true, issues: [], evidence: { sourceA: unrelated[0].text, sourceB: unrelated[1].text,
   gap: "当前来源没有给出共同过程", opening: deferred.question } };
 const respond = (value: unknown) => ({ text: JSON.stringify(value), transport: "chat_completions" });
 const meaningCheck = { label: synthesis.label, change: { text: synthesis.change, sourceId: "source-a",
   sourceEvidence: sources[0].text, resultEvidence: "熟悉者靠转角、气味和身体习惯找路" }, hypothesesSafe: true, issues: [], novelty: { status: "new" },
-  prose: { pass: true, issues: [], authorization: "none", evidence: { sourceA: sources[0].text, sourceB: sources[1].text,
+  prose: { pass: true, issues: [], evidence: { sourceA: sources[0].text, sourceB: sources[1].text,
     useA: "熟悉者靠转角、气味和身体习惯找路", useB: "不必把转角命名、把气味排成先后",
     consequence: "若让他从外来者的起点重走并逐段指出可见标记" } } };
 const request = (body: object) => new NextRequest("http://localhost/api/synthesis", { method: "POST", body: JSON.stringify({ requestId: "request", meaningVersion: 1, rootInput: "识路与传路", sources, ...body }) });

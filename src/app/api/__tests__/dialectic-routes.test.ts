@@ -866,6 +866,11 @@ describe("dialectic routes", () => {
       synthesis: { text: VALID_HIGH_RISK_FINAL, label: "零采集", stance: "合" }
     });
     expect(createResponse).toHaveBeenCalledTimes(4);
+    for (const stage of [0, 1, 3]) {
+      const { input } = createResponse.mock.calls[stage][0];
+      expect(input).toContain("后续用户原文中明确转达的权利人更新同样有效");
+      expect(input).toContain("缺对应许可的公开用法写成待向本人或获明确授权的代表确认");
+    }
     expect(createResponse.mock.calls[0][0].input).toContain("employee-monitoring");
     expect(createResponse.mock.calls[0][0].input).not.toContain("规则卡【");
     expect(createResponse.mock.calls[1][0].input).toContain("规则卡【员工监控边界】");
@@ -1037,7 +1042,7 @@ describe("dialectic routes", () => {
     };
     createResponse.mockResolvedValueOnce({ output_text: JSON.stringify({ deferred, applicablePolicyCards: [] }) })
       .mockResolvedValueOnce({ output_text: JSON.stringify({ deferred }) })
-      .mockResolvedValueOnce({ output_text: JSON.stringify({ pass: true, issues: [], authorization: "none", evidence: {
+      .mockResolvedValueOnce({ output_text: JSON.stringify({ pass: true, issues: [], evidence: {
         sourceA: "删去自己脑中的童年记忆",
         sourceB: "母亲和女儿在街口重逢",
         gap: "还没有交代它们之间的因果关系",

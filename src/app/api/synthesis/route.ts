@@ -5,7 +5,7 @@ import { getDialecticModel, getDialecticOpenAiClient } from "@/lib/openai/client
 import { createGenerationTrace, type GenerationTrace } from "@/features/dialectic/server/generationTrace";
 import { parseStrictJsonObject } from "@/lib/openai/parseStrictJsonObject";
 import { describeProviderFailure } from "@/lib/openai/providerErrors";
-import { ReviewerProtocolError, SYNTHESIS_AUTHORIZATION_FOCUS_RULE, finalizeSynthesisMeaning, userReportedMaterial } from "@/features/dialectic/server/meaningReview";
+import { ReviewerProtocolError, finalizeSynthesisMeaning, userReportedMaterial } from "@/features/dialectic/server/meaningReview";
 import type { DeferredDraft } from "@/features/dialectic/meaning";
 import {
   analyzeSynthesisOutput,
@@ -42,13 +42,6 @@ type SynthesisInput = {
 };
 
 type SynthesisStageContext = Parameters<typeof buildSynthesisDraftPrompt>[0] & { perspective?: ThinkingSpace; userHistory: string };
-
-function splitAuthorizationFocus(content: string, enabled?: boolean) {
-  const parsed = enabled ? parseStrictJsonObject(content) : null;
-  if (!parsed || !Object.prototype.hasOwnProperty.call(parsed, "authorizationFocus")) return { content, authorizationFocus: undefined };
-  const { authorizationFocus, ...body } = parsed;
-  return { content: JSON.stringify(body), authorizationFocus };
-}
 
 function serializeContextMessages(contextMessages: unknown): string {
   if (!Array.isArray(contextMessages)) {
@@ -126,8 +119,6 @@ async function generateSynthesisStage(
   const suppliedInput = [context.rootInput, context.connectionInput ?? "", context.userHistory];
   function analyze(text: string) {
     let { content } = perspectiveEnvelope(text, context.perspective);
-    const split = splitAuthorizationFocus(content, context.meaning && stage !== "draft");
-    content = split.content;
     let cards = context.cards;
     if (draftCandidates?.length) {
       const { applicablePolicyCards, ...draft } = parseStrictJsonObject(content) ?? {};
@@ -137,7 +128,6 @@ async function generateSynthesisStage(
       if (selected === null) {
         return {
           parsed: null, synthesis: null, deferred: undefined, cards: [],
-          authorizationFocus: split.authorizationFocus,
           errors: ["applicablePolicyCards must contain distinct candidate IDs, object, action and exact evidence from the supplied material"],
           contractIssues: ["synthesis_applicable_cards"] as const
         };
@@ -145,13 +135,11 @@ async function generateSynthesisStage(
       cards = selected;
       content = JSON.stringify(draft);
     }
-    return { ...analyzeSynthesisOutput(content, suppliedInput, { requireContract: stage !== "draft", meaning: context.meaning }),
-      cards, authorizationFocus: split.authorizationFocus };
+    return { ...analyzeSynthesisOutput(content, suppliedInput, { requireContract: stage !== "draft", meaning: context.meaning }), cards };
   }
 
   // In a gated draft the root metadata contract must follow the optional lens example.
-  const focusRule = context.meaning && stage !== "draft" ? SYNTHESIS_AUTHORIZATION_FOCUS_RULE : "";
-  const withLens = (stagePrompt: string) => (draftCandidates?.length ? [lensPrompt, stagePrompt, focusRule] : [stagePrompt, lensPrompt, focusRule])
+  const withLens = (stagePrompt: string) => (draftCandidates?.length ? [lensPrompt, stagePrompt] : [stagePrompt, lensPrompt])
     .filter(Boolean).join("\n\n");
   const maxOutputTokens = context.perspective ? 1800 : 1400;
   const first = await trace.generate(stage, { client, input: withLens(prompt), maxOutputTokens });
@@ -267,7 +255,6 @@ export async function POST(req: NextRequest) {
     const meaningInput = {
       sources: [{ id: "source-a", ...context.thesis }, { id: "source-b", ...context.antithesis }],
       userMaterial: [rootInput, connectionInput, userHistory].join("\n"),
-      authorizationUserMaterial: [seedMode ? "" : rootInput, connectionInput, userHistory].filter(Boolean).join("\n"),
       synthesisPolicyChecks: getDialecticRuleChecks(cards),
       context: context.contextMessages, perspective, meaning: Boolean(context.meaning), trace, client, signal: req.signal
     };
@@ -278,8 +265,8 @@ export async function POST(req: NextRequest) {
     }
 
     function reviewStage(stage: "critic" | "final", output: typeof critic, finalContext?: { audit: SynthesisAudit; original: SynthesisResult }) {
-      const candidate = output.deferred ? { deferred: output.deferred, outputText: output.outputText, authorizationFocus: output.authorizationFocus }
-        : output.synthesis ? { synthesis: output.synthesis, outputText: output.outputText, authorizationFocus: output.authorizationFocus } : null;
+      const candidate = output.deferred ? { deferred: output.deferred, outputText: output.outputText }
+        : output.synthesis ? { synthesis: output.synthesis, outputText: output.outputText } : null;
       if (!candidate) return null;
       return finalizeSynthesisMeaning<SynthesisResult>(meaningInput, candidate, stage === "critic" || context.meaning
         ? async (issues, previous) => {
@@ -289,15 +276,12 @@ export async function POST(req: NextRequest) {
             : buildSynthesisCriticPrompt(context, previousDraft);
           const repairedOutput = await trace!.generate(stage, { client, maxOutputTokens: perspective ? 1800 : 1400,
             input: [prompt, thinkingSpacePrompt(perspective, "synthesis", context.meaning),
-              `必须修复以下审校问题：${issues.join("；")}`,
-              "如果返回 synthesis，保留已成立的联结、保留部分及实际代价，按 230–260 字完整成稿；不要只交代修复点。直接写有据的具体取舍，不添加材料未给的计数。明确各用法当前能否做；不要另造载体，也不要让未经证实有权的人代理同意。",
-              ...(context.meaning ? [SYNTHESIS_AUTHORIZATION_FOCUS_RULE] : [])].filter(Boolean).join("\n\n") }, true, 12000, "prose");
-          const split = splitAuthorizationFocus(perspectiveEnvelope(repairedOutput.text, perspective).content, context.meaning);
-          const repaired = analyzeSynthesisOutput(split.content,
+              `必须修复以下审校问题：${issues.join("；")}`].filter(Boolean).join("\n\n") }, true, 12000, "prose");
+          const repaired = analyzeSynthesisOutput(perspectiveEnvelope(repairedOutput.text, perspective).content,
             [rootInput, connectionInput, userHistory], { requireContract: true, meaning: context.meaning });
           trace!.check(stage, Boolean(repaired.synthesis || repaired.deferred), true, undefined, { contractIssues: repaired.contractIssues });
-          if (repaired.deferred) return { deferred: repaired.deferred, outputText: repairedOutput.text, authorizationFocus: split.authorizationFocus };
-          return repaired.synthesis ? { synthesis: repaired.synthesis, outputText: repairedOutput.text, authorizationFocus: split.authorizationFocus } : null;
+          if (repaired.deferred) return { deferred: repaired.deferred, outputText: repairedOutput.text };
+          return repaired.synthesis ? { synthesis: repaired.synthesis, outputText: repairedOutput.text } : null;
         } : undefined);
     }
 

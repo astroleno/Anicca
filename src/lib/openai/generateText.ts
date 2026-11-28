@@ -10,7 +10,6 @@ export type GenerateTextOptions = {
   input: string;
   maxOutputTokens: number;
   temperature?: number;
-  jsonObject?: boolean;
   client?: OpenAI;
   signal?: AbortSignal;
   onProviderCall?: (transport: OpenAiTransport) => void;
@@ -107,8 +106,7 @@ async function generateViaChatCompletions(
   input: string,
   maxOutputTokens: number,
   temperature?: number,
-  signal?: AbortSignal,
-  jsonObject?: boolean
+  signal?: AbortSignal
 ) {
   const request: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming & {
     thinking?: { type: "disabled" };
@@ -125,7 +123,6 @@ async function generateViaChatCompletions(
   };
   if (model.trim().toLowerCase().startsWith("deepseek-")) {
     request.thinking = { type: "disabled" };
-    if (jsonObject) request.response_format = { type: "json_object" };
   }
 
   const response = await client.chat.completions.create(request, ...(signal ? [{ signal }] : []));
@@ -143,7 +140,6 @@ export async function generateText({
   input,
   maxOutputTokens,
   temperature,
-  jsonObject,
   client,
   signal,
   onProviderCall
@@ -156,7 +152,7 @@ export async function generateText({
 
   if (prefersChatCompletions(model)) {
     observe("chat_completions");
-    return generateViaChatCompletions(resolvedClient, model, input, maxOutputTokens, temperature, signal, jsonObject);
+    return generateViaChatCompletions(resolvedClient, model, input, maxOutputTokens, temperature, signal);
   }
 
   try {

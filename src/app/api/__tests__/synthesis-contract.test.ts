@@ -29,7 +29,7 @@ const checks = () => {
 function review(sourceA: string, sourceB: string, useA: string, useB: string, consequence: string) {
   return emit({ synthesis: {
     label: "成立条件", change: null, hypothesesSafe: true, issues: [], personalEvidence: [], novelty: { status: "unchecked" },
-    prose: { pass: true, issues: [], evidence: { sourceA, sourceB, useA, useB, consequence }, authorization: "none" }
+    prose: { pass: true, issues: [], evidence: { sourceA, sourceB, useA, useB, consequence } }
   } });
 }
 

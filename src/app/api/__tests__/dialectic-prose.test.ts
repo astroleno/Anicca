@@ -12,8 +12,7 @@ vi.mock("@/lib/openai/client", () => ({
 
 const emit = (value: unknown) => ({ text: JSON.stringify(value) });
 const audited = { label: "轮流协调", change: null, hypothesesSafe: true, issues: [], personalEvidence: [], novelty: { status: "unchecked" } };
-const valid = (evidence: Record<string, string | { unit: string; through?: string }>, authorization?: unknown) =>
-  ({ pass: true, issues: [], evidence, ...(authorization === undefined ? {} : { authorization }) });
+const valid = (evidence: Record<string, string | { unit: string; through?: string }>) => ({ pass: true, issues: [], evidence });
 const invalid = (issue: string) => ({ pass: false, issues: [issue] });
 const endpoint = (path: string, body: Record<string, unknown>) =>
   new NextRequest(`http://localhost/api/${path}`, { method: "POST", body: JSON.stringify({ requestId: "prose-test", meaningVersion: 1, ...body }) });
@@ -107,7 +106,7 @@ const combined = {
   summary: "同一处空缺在不同人物身上产生不同的归属变化",
   label: "空缺的距离", stance: "合", change: "用同一处空缺在不同听者耳边的变化呈现不同归属。"
 };
-function synthesisAudit(prose: Record<string, unknown>) { return emit({ synthesis: { ...audited, prose: { authorization: "none", ...prose } } }); }
+function synthesisAudit(prose: Record<string, unknown>) { return emit({ synthesis: { ...audited, prose } }); }
 const combinedEvidence = {
   sourceA: "桌布上逐渐淡去的食渍",
   sourceB: "用搪瓷碗碰桌时不同的响声",
@@ -146,7 +145,7 @@ it("repairs an invented connection into a verified deferral with a concrete reas
     .mockResolvedValueOnce(synthesisAudit(invalid("第二个来源没有搪瓷碗；需说明缺少哪条足以连接两个物件的关系。")))
     .mockResolvedValueOnce(emit({ deferred }))
     .mockResolvedValueOnce(emit(valid({ sourceA: combinedEvidence.sourceA, sourceB: "它停住的指针不能用来判断任何每天重复的习惯",
-      gap: "目前没有给出闹钟和这个故事的关系", opening: deferred.question }, "none")));
+      gap: "目前没有给出闹钟和这个故事的关系", opening: deferred.question })));
   const response = await synthesisPost(endpoint("synthesis", { rootInput: "看看这两个想法有没有联系", sources: [sources[0], unrelated] }));
   expect(response.status).toBe(200);
   expect(await response.json()).toEqual({ requestId: "prose-test", outcome: "deferred", deferred });
@@ -200,48 +199,26 @@ it.each([false, true])("keeps a changed form and audience within actual permissi
   const text = (continuation: string) => "讲者的例子在这里有实际用处：没有具体情境，抽象解释很难让读者知道区别落在哪里。活动简报和工作坊服务的对象不同，读者是在会后自己重建解释，无法当面追问。材料形式也会变，现场演示有上下文，文字转述会独立流通。决定能否把例子用到简报里的，是讲者是否已经许可公开转述这个例子；对原演示的许可只能支持它覆盖的使用。" + continuation;
   const candidate = { ...combined, text: text(next), summary: "依据讲者许可决定例子能在哪种材料中使用。" };
   const repaired = publicPermission ? candidate : { ...candidate, text: text(pause) };
+  const issue = "把例子转述到公开简报超出了组内演示许可；暂缓转述，保留组内演示。";
   const evidence = valid({ sourceA: "保留讲者在演示稿里举的例子", sourceB: publicPermission ? publicUse : privateUse,
     useA: "讲者的例子在这里有实际用处", useB: "对原演示的许可只能支持它覆盖的使用",
-    consequence: publicPermission ? "可以把这个例子转述到公开简报" : "目前只在组内工作坊使用演示稿" }, publicPermission ? [{
-      at: "R", action: "可以把这个例子转述到公开简报", decision: "proceed", use: "对外活动简报转述讲者例子",
-      basis: { owner: "B", quote: publicUse, scope: "在公开活动简报转述这个例子" }, gaps: []
-    }] : [{
-      at: "R", action: "目前只在组内工作坊使用演示稿", decision: "proceed", use: "在组内工作坊展示演示稿",
-      basis: { owner: "B", quote: privateUse, scope: "组内工作坊展示演示稿" }, gaps: []
-    }, {
-      at: "R", focus: "F1", action: "等讲者明确同意向该受众转述再把例子补进去", decision: "conditional", use: "对外活动简报转述讲者例子",
-      basis: { owner: "B", quote: privateUse, scope: "组内工作坊展示演示稿" }, gaps: ["form", "audience"]
-    }]);
+    consequence: publicPermission ? "可以把这个例子转述到公开简报" : "目前只在组内工作坊使用演示稿" });
   generate.mockImplementationOnce(({ input }: { input: string }) => emit({ synthesis: candidate,
     ...(input.includes("候选适用范围：") ? { applicablePolicyCards: [] } : {}) }))
-    .mockResolvedValueOnce(emit({ synthesis: candidate, authorizationFocus: [{
-      action: "可以把这个例子转述到公开简报", nonGrants: publicPermission ? [] : [privateUse]
-    }] }));
-  if (!publicPermission) generate.mockResolvedValueOnce(synthesisAudit({
-    ...evidence, evidence: { ...evidence.evidence, consequence: "可以把这个例子转述到公开简报" },
-    authorization: [{
-      at: "R", action: "可以把这个例子转述到公开简报", decision: "proceed", use: "对外活动简报转述讲者例子",
-      basis: { owner: "B", quote: privateUse, scope: "组内工作坊展示演示稿" }, gaps: ["form", "audience"]
-    }]
-  })).mockResolvedValueOnce(emit({ synthesis: repaired }));
+    .mockResolvedValueOnce(emit({ synthesis: candidate }));
+  if (!publicPermission) generate.mockResolvedValueOnce(synthesisAudit(invalid(issue))).mockResolvedValueOnce(emit({ synthesis: repaired }));
   generate.mockResolvedValueOnce(synthesisAudit(evidence));
 
-  const response = await synthesisPost(endpoint("synthesis", { rootInput: "工作坊的活动简报要公开发布，能用讲者的例子吗？", sources: requestSources,
-    contextMessages: [{ role: "user", content: publicPermission ? publicUse : privateUse }, { role: "assistant", content: "我猜别的受众也能用。" }] }));
+  const response = await synthesisPost(endpoint("synthesis", { rootInput: "工作坊的活动简报要公开发布，能用讲者的例子吗？", sources: requestSources, contextMessages: [{ role: "user", content: publicPermission ? publicUse : privateUse }] }));
   expect(response.status).toBe(200);
-  const body = await response.json();
-  expect(body).toMatchObject({ synthesis: { text: repaired.text } });
-  expect(body).not.toHaveProperty("authorizationFocus");
+  expect(await response.json()).toMatchObject({ synthesis: { text: repaired.text } });
   expect(generate).toHaveBeenCalledTimes(publicPermission ? 3 : 5);
   for (const index of [0, 1, 2]) {
     expect(generate.mock.calls[index][0].input).toContain("许可覆盖哪些对象、用途、内容形式、渠道和受众");
-    expect(generate.mock.calls[index][0].input).toContain("受限内容改成摘引、转述或其他形式");
+    expect(generate.mock.calls[index][0].input).toContain("匿名或改写都不授权网页摘引、转述或其他对外使用");
   }
-  const proof = (generate.mock.calls[2][0].input as string).split("\n").find(line => line.startsWith("授权核对使用的用户原文U="));
-  expect(proof).toEqual(`授权核对使用的用户原文U=${JSON.stringify(publicPermission ? publicUse : privateUse)}`);
-  expect(generate.mock.calls[2][0].input).toContain('"nonGrants":');
   expect(generate.mock.calls[2][0].input).toContain("有足够依据的范围内行动也不应被驳回");
-  if (!publicPermission) expect(generate.mock.calls[3][0].input).toContain("「可以把这个例子转述到公开简报」建议现在执行，但对应的形式、受众未获证实或已超范围");
+  if (!publicPermission) expect(generate.mock.calls[3][0].input).toContain(issue);
 });
 
 it("keeps recovery and deletion metaphors in the user's creative frame", async () => {
@@ -298,7 +275,7 @@ it("corrects a missing deferred evidence field while preserving short sources an
   const evidence = { sourceA: { unit: "A1" }, sourceB: "潮汐", gap: "没有提出它们之间的联系", opening: { unit: "Q1" } };
   const { gap, ...missingGap } = evidence;
   generate.mockResolvedValueOnce(emit({ deferred })).mockResolvedValueOnce(emit({ deferred }))
-    .mockResolvedValueOnce(emit(valid(missingGap, "none"))).mockResolvedValueOnce(emit(valid({ ...missingGap, gap }, "none")));
+    .mockResolvedValueOnce(emit(valid(missingGap))).mockResolvedValueOnce(emit(valid({ ...missingGap, gap })));
   const response = await synthesisPost(endpoint("synthesis", { rootInput: "这两个词之间有什么可写？", sources: shortSources }));
   expect(response.status).toBe(200);
   expect(await response.json()).toEqual({ requestId: "prose-test", outcome: "deferred", deferred });

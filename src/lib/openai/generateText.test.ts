@@ -106,20 +106,7 @@ describe("generateText", () => {
     expect(client.chat.completions.create).toHaveBeenCalledWith(
       expect.objectContaining({ thinking: { type: "disabled" } })
     );
-    expect(client.chat.completions.create.mock.calls[0][0]).not.toHaveProperty("response_format");
     expect(client.responses.create).not.toHaveBeenCalled();
-  });
-
-  it.each(["deepseek-v4-flash", "gemini-flash"])("only applies synthesis JSON mode on DeepSeek (%s)", async model => {
-    const create = vi.fn().mockResolvedValue({ choices: [{ message: { content: "{}" } }] });
-    const client = { chat: { completions: { create } } } as unknown as Parameters<typeof generateText>[0]["client"];
-    await generateText({ client, model, input: "Return JSON object {}", maxOutputTokens: 100, jsonObject: true });
-    if (model.startsWith("deepseek-")) {
-      expect(create.mock.calls[0][0]).toMatchObject({ response_format: { type: "json_object" } });
-    } else {
-      expect(create.mock.calls[0][0]).not.toHaveProperty("response_format");
-    }
-    expect(create).toHaveBeenCalledOnce();
   });
 
   it("falls back to chat completions when responses are unsupported", async () => {
@@ -141,15 +128,12 @@ describe("generateText", () => {
         client,
         model: "gpt-4o-mini",
         input: "hello",
-        maxOutputTokens: 32,
-        jsonObject: true
+        maxOutputTokens: 32
       })
     ).resolves.toEqual({ text: "fallback path", transport: "chat_completions" });
 
     expect(client.responses.create).toHaveBeenCalledTimes(1);
     expect(client.chat.completions.create).toHaveBeenCalledTimes(1);
-    expect(client.responses.create.mock.calls[0][0]).not.toHaveProperty("text");
-    expect(client.chat.completions.create.mock.calls[0][0]).not.toHaveProperty("response_format");
   });
 
   it("uses responses when the model supports it", async () => {
