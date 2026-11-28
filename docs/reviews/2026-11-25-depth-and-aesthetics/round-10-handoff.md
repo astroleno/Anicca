@@ -81,7 +81,9 @@
 
 ### B · 暂不融合与窄屏
 
-用 `ANICCA_BUILD_CPUS=2 npm run build` 构建生产版，以 `npm run start -- --hostname 127.0.0.1 --port 3512` 启动。已安装的 Chromium 通过 Playwright 运行仓库的 `runThoughtFlow`，1440×900、390×844、320×568 各完成六次受控接口响应，从追问、极性及正反推演走到合流、展开来源、刷新与继续推演。三档无页面或控制台错误。[流程结果](./evidence/visual-r10/thought-flow-summary.json)
+提交 `54aaa69`。
+
+用 `ANICCA_BUILD_CPUS=2 npm run build` 构建生产版，以 `npm run start -- --hostname 127.0.0.1 --port 3512` 启动。已安装的 Chromium 通过 Playwright 运行本机 `node /tmp/anicca-r10/visual.mjs http://127.0.0.1:3512` 逐帧脚本，加 `--full` 调用仓库的 `runThoughtFlow`，1440×900、390×844、320×568 各完成六次受控接口响应，从追问、极性及正反推演走到合流、展开来源、刷新与继续推演。三档无页面或控制台错误。[流程结果](./evidence/visual-r10/thought-flow-summary.json)
 
 320×568 的暂不融合结果沿两滴中心连线靠近。液体后端与平面降级均逐帧记录到 18.02 px 最小边缘间距，随后回到约 52.02 px。减少动态效果时两者从首帧直接显示约 52.02 px 间距。结果只显示两颗来源，已有原因、补充联系和分别继续仍可用。[稳定截图](./evidence/visual-r10/deferred-320.png) · [液体后端帧](./evidence/visual-r10/deferred-liquid.csv) · [平面降级帧](./evidence/visual-r10/deferred-flat.csv) · [减少动态效果](./evidence/visual-r10/visual-summary.json)
 
